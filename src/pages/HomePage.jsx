@@ -4,10 +4,8 @@ import api from '../services/api';
 
 const HomePage = () => {
   const navigate = useNavigate();
-
   const [featuredHospitals, setFeaturedHospitals] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
-  const [companyInfo, setCompanyInfo] = useState({});
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');
   const [query, setQuery] = useState('');
@@ -15,14 +13,10 @@ const HomePage = () => {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [hospitalsRes, testimonialsRes, companyRes] = await Promise.all([
+        const [hospitalsRes] = await Promise.all([
           api.get('/hospitals/featured?limit=3'),
-          api.get('/testimonials'),
-          api.get('/company/info'),
         ]);
         setFeaturedHospitals(hospitalsRes.data.data || []);
-        setTestimonials(testimonialsRes.data.data || []);
-        setCompanyInfo(companyRes.data.data || {});
       } catch (err) {
         console.error(err);
       } finally {
@@ -46,7 +40,7 @@ const HomePage = () => {
     { name: 'Lab Tests', icon: 'fas fa-microscope', color: 'bg-purple-50', textColor: 'text-purple-700', path: '/lab-tests', desc: 'Price, home collection, reports' },
     { name: 'Preventive', icon: 'fas fa-heartbeat', color: 'bg-emerald-50', textColor: 'text-emerald-600', path: '/preventive', desc: 'Full body, cardiac, wellness' },
     { name: 'Caregiver', icon: 'fas fa-hand-holding-heart', color: 'bg-pink-50', textColor: 'text-pink-600', path: '/caregivers', desc: 'Elder care, nursing at home' },
-    { name: 'Health EMI', icon: 'fas fa-rupee-sign', color: 'bg-indigo-50', textColor: 'text-indigo-700', path: '/financing', desc: 'No-cost EMI for treatments' },
+    { name: 'Health EMI', icon: 'fas fa-rupee-sign', color: 'bg-indigo-50', textColor: 'text-indigo-700', path: '/financing', desc: 'No‑cost EMI for treatments' },
     { name: 'Online Doctor', icon: 'fas fa-video', color: 'bg-sky-50', textColor: 'text-sky-600', path: '/teleconsult', desc: 'Video consult, prescription' },
     { name: 'Corporate', icon: 'fas fa-building', color: 'bg-gray-100', textColor: 'text-gray-700', path: '/corporate', desc: 'Employee wellness plans' },
   ];
@@ -106,7 +100,7 @@ const HomePage = () => {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center flex-wrap gap-4">
-            <div><h2 className="text-3xl font-bold text-gray-800">Top-rated hospitals near you</h2><p className="text-gray-500 mt-1">Based on patient feedback and quality</p></div>
+            <div><h2 className="text-3xl font-bold text-gray-800">Top‑rated hospitals near you</h2><p className="text-gray-500 mt-1">Based on patient feedback and quality</p></div>
             <button className="text-primary font-semibold border border-primary px-4 py-2 rounded-full hover:bg-primary hover:text-white transition" onClick={() => navigate('/hospitals')}>View all <i className="fas fa-arrow-right ml-1"></i></button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
