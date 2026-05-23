@@ -2,13 +2,14 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ComingSoon from './pages/ComingSoon';
+import HospitalsList from './pages/HospitalsList';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/hospitals" element={<ComingSoon title="Hospitals" />} />
+        <Route path="/hospitals" element={<HospitalsList />} />
         <Route path="/ambulance" element={<ComingSoon title="Ambulance" />} />
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
         <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
