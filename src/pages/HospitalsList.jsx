@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const HospitalsList = () => {
+  const navigate = useNavigate();
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');
@@ -37,7 +38,7 @@ const HospitalsList = () => {
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '1.5rem' }}>Find Hospitals</h1>
-       
+        
         <form onSubmit={handleSearch} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <input type="text" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} style={{ flex: 1, padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }} />
           <input type="text" placeholder="Disease / Specialty" value={disease} onChange={(e) => setDisease(e.target.value)} style={{ flex: 1, padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }} />
@@ -59,8 +60,14 @@ const HospitalsList = () => {
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <span style={{ color: '#fbbf24' }}>⭐</span>
                     <span style={{ marginLeft: '0.25rem' }}>{hospital.ratings?.average || 'N/A'}</span>
+                    <span style={{ marginLeft: '0.25rem', color: '#6b7280' }}>({hospital.ratings?.count || 0} reviews)</span>
                   </div>
-                  <Link to={`/hospitals/${hospital._id}`} style={{ display: 'block', textAlign: 'center', backgroundColor: '#1e3a8a', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', textDecoration: 'none' }}>View Details</Link>
+                  <button 
+                    onClick={() => navigate(`/hospitals/${hospital._id}`)}
+                    style={{ width: '100%', backgroundColor: '#1e3a8a', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', marginTop: '0.5rem' }}
+                  >
+                    View Details
+                  </button>
                 </div>
               </div>
             ))}
