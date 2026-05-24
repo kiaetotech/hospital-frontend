@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [emergencyQuery, setEmergencyQuery] = useState('');
+
+  const handleEmergencySearch = (e) => {
+    e.preventDefault();
+    if (emergencyQuery.trim()) {
+      navigate(`/emergency-search?q=${encodeURIComponent(emergencyQuery)}`);
+    }
+  };
 
   const serviceTags = [
     { name: 'Hospitals', path: '/hospitals', desc: 'Compare price, rating, beds & insurance' },
@@ -18,11 +26,25 @@ const HomePage = () => {
 
   return (
     <div>
-      <div style={{ background: 'linear-gradient(135deg, #0f3b5c 0%, #1e7e6c 100%)', color: 'white', padding: '4rem 2rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>Compare & book healthcare services<br />all in one place</h1>
-        <p style={{ marginTop: '1rem', opacity: 0.9 }}>Hospitals, ambulances, lab tests, insurance, caregivers – transparent comparison, real patient reviews, instant booking.</p>
+      {/* Emergency Section - RED */}
+      <div style={{ backgroundColor: '#dc2626', padding: '2rem', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>🚨 Emergency? Need Help Now?</h1>
+        <p style={{ color: 'white', marginTop: '0.5rem' }}>Type your disease or symptom – we'll find the nearest hospital with available beds</p>
+        <form onSubmit={handleEmergencySearch} style={{ marginTop: '1rem' }}>
+          <input 
+            type="text" 
+            placeholder="Type disease or symptom (e.g., 'heart attack', 'chest pain', 'accident', 'fever')" 
+            value={emergencyQuery}
+            onChange={(e) => setEmergencyQuery(e.target.value)}
+            style={{ width: '60%', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', fontSize: '1rem' }}
+          />
+          <button type="submit" style={{ marginLeft: '0.5rem', backgroundColor: 'white', color: '#dc2626', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
+            🚨 Find Help Now
+          </button>
+        </form>
       </div>
-     
+
+      {/* 9 Service Tags */}
       <div style={{ padding: '3rem 2rem', backgroundColor: '#f8fafc', textAlign: 'center' }}>
         <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Healthcare services at your fingertips</h2>
         <p style={{ color: '#64748b', marginTop: '0.5rem' }}>Compare, choose, book – all in minutes</p>

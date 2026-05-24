@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ComingSoon from './pages/ComingSoon';
 import HospitalsList from './pages/HospitalsList';
+import HospitalDetails from './pages/HospitalDetails';
+import EmergencySearch from './pages/EmergencySearch';
 
 function App() {
   return (
@@ -10,6 +12,8 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/hospitals" element={<HospitalsList />} />
+        <Route path="/hospitals/:id" element={<HospitalDetails />} />
+        <Route path="/emergency-search" element={<EmergencySearch />} />
         <Route path="/ambulance" element={<ComingSoon title="Ambulance" />} />
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
         <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
