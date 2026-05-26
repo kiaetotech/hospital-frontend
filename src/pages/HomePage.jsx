@@ -8,7 +8,7 @@ const HomePage = () => {
   const handleEmergencySearch = (e) => {
     e.preventDefault();
     if (emergencyQuery.trim()) {
-      navigate(`/emergency-search?q=${encodeURIComponent(emergencyQuery)}`);
+      navigate(`/hospitals?q=${encodeURIComponent(emergencyQuery)}`);
     }
   };
 
@@ -26,14 +26,14 @@ const HomePage = () => {
 
   return (
     <div>
-      {/* Emergency Section - RED */}
+      {/* Emergency Section */}
       <div style={{ backgroundColor: '#dc2626', padding: '2rem', textAlign: 'center' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>🚨 Emergency? Need Help Now?</h1>
-        <p style={{ color: 'white', marginTop: '0.5rem' }}>Type your disease or symptom – we'll find the nearest hospital with available beds</p>
+        <p style={{ color: 'white', marginTop: '0.5rem' }}>Type your disease or symptom – we'll find the nearest hospital</p>
         <form onSubmit={handleEmergencySearch} style={{ marginTop: '1rem' }}>
           <input 
             type="text" 
-            placeholder="Type disease or symptom (e.g., 'heart attack', 'chest pain', 'accident', 'fever')" 
+            placeholder="Type disease or symptom (e.g., 'heart attack', 'chest pain', 'fever')" 
             value={emergencyQuery}
             onChange={(e) => setEmergencyQuery(e.target.value)}
             style={{ width: '60%', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', fontSize: '1rem' }}
