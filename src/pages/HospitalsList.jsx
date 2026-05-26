@@ -11,19 +11,44 @@ const HospitalsList = () => {
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [city, setCity] = useState('');
+  const [userLocation, setUserLocation] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalHospitals, setTotalHospitals] = useState(0);
 
+  // Get user location on load
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Location error:', error);
+        }
+      );
+    }
+  }, []);
+
+  // Fetch hospitals when search changes
   useEffect(() => {
     fetchHospitals();
-  }, [searchQuery, page]);
+  }, [searchQuery, city, page, userLocation]);
 
   const fetchHospitals = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (searchQuery) params.append('q', searchQuery);
+      if (city) params.append('city', city);
+      if (userLocation) {
+        params.append('lat', userLocation.lat);
+        params.append('lng', userLocation.lng);
+      }
       params.append('page', page);
       params.append('limit', 10);
       
@@ -45,9 +70,22 @@ const HospitalsList = () => {
     fetchHospitals();
   };
 
-  // Helper to safely get nested data
+  // Helper to get nested values safely
   const getNestedValue = (obj, path, defaultValue = 'N/A') => {
     return path.split('.').reduce((acc, part) => acc && acc[part], obj) || defaultValue;
+  };
+
+  // Calculate distance between two coordinates
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return (R * c).toFixed(1);
   };
 
   if (loading) {
@@ -61,12 +99,19 @@ const HospitalsList = () => {
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '1.5rem' }}>🏥 KiaetoCare Hospitals</h1>
         
         <form onSubmit={handleSearch} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
             <input 
               type="text" 
               placeholder="Search by disease, pain, symptom (e.g., heart attack, chest pain, fever)" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ flex: 3, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '1rem' }}
+            />
+            <input 
+              type="text" 
+              placeholder="City (optional)" 
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
               style={{ flex: 1, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '1rem' }}
             />
             <button type="submit" style={{ backgroundColor: '#10b981', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -86,13 +131,22 @@ const HospitalsList = () => {
               const consultationFee = getNestedValue(hospital, 'pricing.consultation', 500);
               const discountAmount = Math.round(consultationFee * 0.1);
               const discountedPrice = consultationFee - discountAmount;
-              const diseases = getNestedValue(hospital, 'address.diseases_treated', []);
               const rating = getNestedValue(hospital, 'ratings.average', 'N/A');
               const reviewCount = getNestedValue(hospital, 'ratings.count', 0);
+              const insuranceCount = hospital.insurance_accepted?.length || 0;
+              
+              // Calculate distance
+              let distance = null;
+              if (userLocation && hospital.location) {
+                distance = calculateDistance(userLocation.lat, userLocation.lng, hospital.location.lat, hospital.location.lng);
+              } else if (userLocation && hospital.address?.coordinates) {
+                distance = calculateDistance(userLocation.lat, userLocation.lng, hospital.address.coordinates.lat, hospital.address.coordinates.lng);
+              }
               
               return (
                 <div key={hospital._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                   
+                  {/* Hospital Name and Rating Row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{hospital.name}</h2>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -100,20 +154,30 @@ const HospitalsList = () => {
                     </div>
                   </div>
                   
-                  <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>{hospital.address?.city}, {hospital.address?.state}</p>
-                  
-                  {diseases.length > 0 && (
-                    <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
-                      🩺 Treats: {diseases.slice(0, 3).join(', ')}{diseases.length > 3 && ` +${diseases.length - 3}`}
-                    </div>
-                  )}
-                  
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '0.875rem' }}>
-                      🧪 Lab Tests: {hospital.lab_tests_available ? '✅ Available' : '🔗 Linked'}
-                    </span>
+                  {/* Location and Distance */}
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                    <p style={{ color: '#6b7280', margin: 0 }}>{hospital.address?.city}, {hospital.address?.state}</p>
+                    {distance && <span style={{ color: '#3b82f6', fontSize: '0.875rem' }}>📍 {distance} km away</span>}
                   </div>
                   
+                  {/* Doctors List */}
+                  <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                    👨‍⚕️ <strong>Doctors:</strong> {hospital.doctors?.map(d => d.name).join(', ') || 'Information not available'}
+                  </div>
+                  
+                  {/* Lab Test and Insurance Row - Aligned */}
+                  <div style={{ display: 'flex', gap: '2rem', marginBottom: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.875rem' }}>
+                      🧪 <strong>Lab Tests:</strong> {hospital.lab_tests_available ? '✅ Available' : '🔗 Linked'}
+                    </div>
+                    <div style={{ fontSize: '0.875rem' }}>
+                      🛡️ <strong>Insurance:</strong> {hospital.insurance_accepted?.slice(0, 2).join(', ')} 
+                      {insuranceCount > 2 && ` +${insuranceCount - 2} more`}
+                      {insuranceCount === 0 && 'Not specified'}
+                    </div>
+                  </div>
+                  
+                  {/* Pricing Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem', backgroundColor: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem' }}>
                     <div>
                       <strong>📋 OPD Consultation</strong><br />
@@ -125,16 +189,11 @@ const HospitalsList = () => {
                       <strong>🏥 Admission (per day)</strong><br />
                       ICU: ₹{getNestedValue(hospital, 'pricing.icu_bed_per_day', 'N/A')}<br />
                       General: ₹{getNestedValue(hospital, 'pricing.general_bed_per_day', 'N/A')}<br />
-                      <span style={{ fontSize: '0.75rem', color: getNestedValue(hospital, 'beds.available', 0) > 0 ? '#10b981' : '#ef4444' }}>
-                        🛏️ {getNestedValue(hospital, 'beds.available', 0)} beds available
-                      </span>
+                      <span style={{ fontSize: '0.75rem' }}>🛏️ {getNestedValue(hospital, 'beds.available', 0)} beds available</span>
                     </div>
                   </div>
                   
-                  <div style={{ marginBottom: '0.75rem', fontSize: '0.875rem' }}>
-                    <strong>🛡️ Insurance:</strong> {hospital.insurance_accepted?.join(', ') || 'N/A'}
-                  </div>
-                  
+                  {/* Action Buttons */}
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <button onClick={() => navigate(`/book-opd/${hospital._id}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
                       📋 Book OPD (Save ₹{discountAmount})
@@ -150,10 +209,10 @@ const HospitalsList = () => {
                     </button>
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  {/* Emergency Badges (without discount tag) */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
                     {hospital.has24x7ER === 'true' && <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚨 24/7 Emergency</span>}
                     {hospital.ambulance_available === 'true' && <span style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚑 Ambulance</span>}
-                    <span style={{ backgroundColor: '#10b981', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>💰 10% Discount</span>
                   </div>
                 </div>
               );
