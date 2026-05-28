@@ -7,6 +7,8 @@ import HospitalSimpleDetails from './pages/HospitalSimpleDetails';
 import EmergencySearch from './pages/EmergencySearch';
 import BookOPD from './pages/BookOPD';
 import BookAdmission from './pages/BookAdmission';
+import Payment from './pages/Payment';
+import MyBookings from './pages/MyBookings';
 
 function App() {
   return (
@@ -26,6 +28,9 @@ function App() {
         <Route path="/financing" element={<ComingSoon title="Health Financing" />} />
         <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
         <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
+// Add inside <Routes>
+<Route path="/payment" element={<Payment />} />
+<Route path="/my-bookings" element={<MyBookings />} />
       </Routes>
     </BrowserRouter>
   );

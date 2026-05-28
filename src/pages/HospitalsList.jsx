@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 
+const [showAllInsurance, setShowAllInsurance] = useState(null);
 const HospitalsList = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -164,18 +165,70 @@ const HospitalsList = () => {
                   <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
                     👨‍⚕️ <strong>Doctors:</strong> {hospital.doctors?.map(d => d.name).join(', ') || 'Information not available'}
                   </div>
+<div style={{ marginBottom: '0.75rem' }}>
+  <strong>👨‍⚕️ Select Doctor:</strong>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+    {hospital.doctors?.map((doctor, idx) => (
+      <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: selectedDoctor === doctor.name ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', cursor: 'pointer' }}>
+        <input 
+          type="radio" 
+          name={`doctor_${hospital._id}`} 
+          value={doctor.name}
+          checked={selectedDoctor === doctor.name}
+          onChange={() => setSelectedDoctor(doctor.name)}
+        />
+        <div style={{ flex: 1 }}>
+          <strong>{doctor.name}</strong> - {doctor.specialization}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}>
+            <span>⭐ {doctor.rating || '4.5'}</span>
+            <span style={{ color: '#6b7280' }}>({doctor.reviewCount || '120'} reviews)</span>
+          </div>
+        </div>
+        <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doctor.consultation_fee}</span>
+      </label>
+    ))}
+  </div>
+</div>
                   
                   {/* Lab Test and Insurance Row - Aligned */}
                   <div style={{ display: 'flex', gap: '2rem', marginBottom: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
                     <div style={{ fontSize: '0.875rem' }}>
                       🧪 <strong>Lab Tests:</strong> {hospital.lab_tests_available ? '✅ Available' : '🔗 Linked'}
                     </div>
-                    <div style={{ fontSize: '0.875rem' }}>
-                      🛡️ <strong>Insurance:</strong> {hospital.insurance_accepted?.slice(0, 2).join(', ')} 
-                      {insuranceCount > 2 && ` +${insuranceCount - 2} more`}
-                      {insuranceCount === 0 && 'Not specified'}
-                    </div>
-                  </div>
+                    // Insurance Section with Expand/Collapse
+<div style={{ marginBottom: '0.75rem' }}>
+  <div 
+    onClick={() => setShowAllInsurance(showAllInsurance === hospital._id ? null : hospital._id)} 
+    style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+  >
+    <strong>🛡️ Insurance Accepted:</strong>
+    <span style={{ color: '#3b82f6', fontSize: '0.875rem' }}>
+      {showAllInsurance === hospital._id ? '▲ Show less' : `▼ +${hospital.insurance_accepted?.length} more`}
+    </span>
+  </div>
+  
+  {showAllInsurance === hospital._id ? (
+    <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+      {hospital.insurance_accepted?.map((ins, idx) => (
+        <span key={idx} style={{ backgroundColor: '#e0e7ff', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem' }}>
+          {ins}
+        </span>
+      ))}
+    </div>
+  ) : (
+    <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+      {hospital.insurance_accepted?.slice(0, 2).map((ins, idx) => (
+        <span key={idx} style={{ backgroundColor: '#e0e7ff', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem' }}>
+          {ins}
+        </span>
+      ))}
+      {hospital.insurance_accepted?.length > 2 && (
+        <span style={{ color: '#3b82f6', fontSize: '0.75rem', cursor: 'pointer' }}>+{hospital.insurance_accepted.length - 2} more</span>
+      )}
+    </div>
+  )}
+</div>
+
                   
                   {/* Pricing Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem', backgroundColor: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem' }}>
@@ -231,5 +284,7 @@ const HospitalsList = () => {
     </div>
   );
 };
+
+const [selectedDoctor, setSelectedDoctor] = useState('');
 
 export default HospitalsList;
