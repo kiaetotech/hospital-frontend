@@ -20,6 +20,8 @@ function App() {
         <Route path="/emergency-search" element={<EmergencySearch />} />
         <Route path="/book-opd/:id" element={<BookOPD />} />
         <Route path="/book-admission/:id" element={<BookAdmission />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
         <Route path="/ambulance" element={<ComingSoon title="Ambulance Service" />} />
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
         <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
@@ -28,9 +30,6 @@ function App() {
         <Route path="/financing" element={<ComingSoon title="Health Financing" />} />
         <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
         <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
-// Add inside <Routes>
-<Route path="/payment" element={<Payment />} />
-<Route path="/my-bookings" element={<MyBookings />} />
       </Routes>
     </BrowserRouter>
   );
