@@ -17,26 +17,29 @@ const HospitalsList = () => {
   const [selectedDoctor, setSelectedDoctor] = useState({});
   const [expandedInsurance, setExpandedInsurance] = useState({});
 
-  // Dummy doctors for each hospital (since backend may not have doctors array)
-  const getDummyDoctors = (hospitalName) => {
-    if (hospitalName.includes('Apollo')) {
-      return [
-        { name: 'Dr. Priya Sharma', specialization: 'Cardiologist', consultation_fee: 1200, rating: 4.9, reviewCount: 340 },
-        { name: 'Dr. Rajesh Mehta', specialization: 'Neurologist', consultation_fee: 1300, rating: 4.8, reviewCount: 210 }
-      ];
-    }
-    if (hospitalName.includes('Fortis')) {
-      return [
-        { name: 'Dr. Anil Kumar', specialization: 'Cardiologist', consultation_fee: 1500, rating: 4.7, reviewCount: 180 }
-      ];
-    }
-    if (hospitalName.includes('Manipal')) {
-      return [
-        { name: 'Dr. Sunita Reddy', specialization: 'Neurologist', consultation_fee: 1000, rating: 4.9, reviewCount: 310 },
-        { name: 'Dr. Vikram Singh', specialization: 'Oncologist', consultation_fee: 1200, rating: 4.8, reviewCount: 190 }
-      ];
-    }
-    return [];
+  // Hardcoded doctors for each hospital
+  const hospitalDoctors = {
+    'Apollo Hospital Mumbai': [
+      { name: 'Dr. Priya Sharma', specialization: 'Cardiologist', consultation_fee: 1200, rating: 4.9, reviewCount: 340 },
+      { name: 'Dr. Rajesh Mehta', specialization: 'Cardiologist', consultation_fee: 1300, rating: 4.8, reviewCount: 210 },
+      { name: 'Dr. Sunil Patil', specialization: 'Orthopedic', consultation_fee: 1100, rating: 4.7, reviewCount: 180 }
+    ],
+    'Fortis Hospital Delhi': [
+      { name: 'Dr. Anil Kumar', specialization: 'Cardiologist', consultation_fee: 1500, rating: 4.7, reviewCount: 180 },
+      { name: 'Dr. Neha Gupta', specialization: 'Orthopedic', consultation_fee: 1400, rating: 4.6, reviewCount: 150 }
+    ],
+    'Manipal Hospital Bangalore': [
+      { name: 'Dr. Sunita Reddy', specialization: 'Neurologist', consultation_fee: 1000, rating: 4.9, reviewCount: 310 },
+      { name: 'Dr. Vikram Singh', specialization: 'Oncologist', consultation_fee: 1200, rating: 4.8, reviewCount: 190 }
+    ],
+    'Medicover Hospital Hyderabad': [
+      { name: 'Dr. Ajay Kumar', specialization: 'Cardiologist', consultation_fee: 1100, rating: 4.7, reviewCount: 200 },
+      { name: 'Dr. Meera Reddy', specialization: 'Nephrologist', consultation_fee: 1000, rating: 4.8, reviewCount: 170 }
+    ],
+    'Narayana Health Kolkata': [
+      { name: 'Dr. S. Chatterjee', specialization: 'Cardiologist', consultation_fee: 900, rating: 4.6, reviewCount: 160 },
+      { name: 'Dr. R. Banerjee', specialization: 'Oncologist', consultation_fee: 950, rating: 4.7, reviewCount: 130 }
+    ]
   };
 
   // Get user location
@@ -68,10 +71,10 @@ const HospitalsList = () => {
       const res = await api.get(`/hospitals/search?${params.toString()}`);
       let hospitalsData = res.data.data || [];
       
-      // Add dummy doctors to each hospital if they don't have doctors
+      // Attach hardcoded doctors to each hospital
       hospitalsData = hospitalsData.map(h => ({
         ...h,
-        doctors: h.doctors && h.doctors.length > 0 ? h.doctors : getDummyDoctors(h.name)
+        doctors: hospitalDoctors[h.name] || []
       }));
       
       setHospitals(hospitalsData);
@@ -103,29 +106,24 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Map disease keywords to expected specializations
-  const getSpecialtiesForQuery = (query) => {
-    const q = query.toLowerCase();
-    if (q.includes('heart') || q.includes('cardiac') || q.includes('chest pain')) return ['cardiologist', 'cardiology'];
-    if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return ['neurologist', 'neurology'];
-    if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return ['orthopedic', 'orthopedics'];
-    if (q.includes('kidney') || q.includes('stone')) return ['nephrologist', 'nephrology'];
-    if (q.includes('cancer') || q.includes('tumor')) return ['oncologist', 'oncology'];
-    return null;
-  };
-
-  // Filter doctors that match the searched disease
+  // Get doctors that match the searched disease
   const getRelevantDoctors = (hospital) => {
     if (!searchQuery) return [];
-    const specialties = getSpecialtiesForQuery(searchQuery);
-    if (!specialties) return [];
+    const q = searchQuery.toLowerCase();
     const doctors = hospital.doctors || [];
-    return doctors.filter(doc =>
-      specialties.some(spec => doc.specialization.toLowerCase().includes(spec))
-    );
+    
+    // Filter doctors whose specialization matches the search
+    return doctors.filter(doc => {
+      const spec = doc.specialization.toLowerCase();
+      if (q.includes('heart') || q.includes('cardiac')) return spec.includes('cardiologist');
+      if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return spec.includes('neurologist');
+      if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return spec.includes('orthopedic');
+      if (q.includes('kidney') || q.includes('stone')) return spec.includes('nephrologist');
+      if (q.includes('cancer') || q.includes('tumor')) return spec.includes('oncologist');
+      return false;
+    });
   };
 
-  // Get the currently selected doctor object for a hospital
   const getSelectedDoctorObj = (hospital) => {
     const relevant = getRelevantDoctors(hospital);
     if (relevant.length === 0) return null;
@@ -177,7 +175,6 @@ const HospitalsList = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a' }}>🏥 KiaetoCare Hospitals</h1>
 
-        {/* Search Form */}
         <form onSubmit={handleSearch} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', margin: '1rem 0' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
             <input
@@ -200,15 +197,9 @@ const HospitalsList = () => {
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span>Sort by:</span>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <input type="radio" name="sort" value="distance" checked={sortBy === 'distance'} onChange={() => setSortBy('distance')} /> Distance
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <input type="radio" name="sort" value="fee" checked={sortBy === 'fee'} onChange={() => setSortBy('fee')} /> Fee (low to high)
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <input type="radio" name="sort" value="rating" checked={sortBy === 'rating'} onChange={() => setSortBy('rating')} /> Rating (high to low)
-            </label>
+            <label><input type="radio" name="sort" checked={sortBy === 'distance'} onChange={() => setSortBy('distance')} /> Distance</label>
+            <label><input type="radio" name="sort" checked={sortBy === 'fee'} onChange={() => setSortBy('fee')} /> Fee (low to high)</label>
+            <label><input type="radio" name="sort" checked={sortBy === 'rating'} onChange={() => setSortBy('rating')} /> Rating (high to low)</label>
           </div>
         </form>
 
@@ -228,29 +219,22 @@ const HospitalsList = () => {
 
             return (
               <div key={h._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{h.name}</h2>
                   <div>⭐ {h.ratings?.average} ({h.ratings?.count} reviews)</div>
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
 
-                {/* Doctor selection – only when disease searched and multiple matching doctors exist */}
                 {searchQuery && hasMultipleRelevant && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor:</strong>
                     <div style={{ marginTop: '0.25rem' }}>
                       {relevantDoctors.map(doc => (
                         <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.25rem', cursor: 'pointer' }}>
-                          <input
-                            type="radio"
-                            name={`doc_${h._id}`}
-                            checked={selectedDoctor[h._id] === doc.name}
-                            onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))}
-                          />
+                          <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
                           <div style={{ flex: 1 }}>
                             <strong>{doc.name}</strong> - {doc.specialization}
-                            <div style={{ fontSize: '0.75rem' }}>⭐ {doc.rating || '4.5'} ({doc.reviewCount || 100} reviews)</div>
+                            <div style={{ fontSize: '0.75rem' }}>⭐ {doc.rating} ({doc.reviewCount} reviews)</div>
                           </div>
                           <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
                         </label>
@@ -259,12 +243,8 @@ const HospitalsList = () => {
                   </div>
                 )}
 
-                {/* Lab Tests */}
-                <div style={{ margin: '0.5rem 0' }}>
-                  🧪 <strong>Lab Tests:</strong> {h.lab_tests_available ? '✅ Available' : '🔗 Linked'}
-                </div>
+                <div style={{ margin: '0.5rem 0' }}>🧪 <strong>Lab Tests:</strong> {h.lab_tests_available ? '✅ Available' : '🔗 Linked'}</div>
 
-                {/* Insurance with expandable */}
                 <div style={{ margin: '0.5rem 0' }}>
                   <div onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>🛡️ Insurance Accepted:</strong>
@@ -280,34 +260,13 @@ const HospitalsList = () => {
                   </div>
                 </div>
 
-                {/* OPD Consultation & Admission */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '0.5rem 0', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem' }}>
-                  <div>
-                    <strong>📋 OPD Consultation</strong><br />
-                    <span>₹{opdFee}</span>
-                  </div>
-                  <div>
-                    <strong>🏥 Admission (per day)</strong><br />
-                    ICU: ₹{h.pricing?.icu_bed_per_day}<br />
-                    General: ₹{h.pricing?.general_bed_per_day}<br />
-                    🛏️ {h.beds?.available} beds available
-                  </div>
+                  <div><strong>📋 OPD Consultation</strong><br />₹{opdFee}</div>
+                  <div><strong>🏥 Admission (per day)</strong><br />ICU: ₹{h.pricing?.icu_bed_per_day}<br />General: ₹{h.pricing?.general_bed_per_day}<br />🛏️ {h.beds?.available} beds available</div>
                 </div>
 
-                {/* Action buttons */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                  <button
-                    onClick={() => handleBookOPD(h)}
-                    disabled={!canBookOPD}
-                    style={{
-                      backgroundColor: canBookOPD ? '#10b981' : '#9ca3af',
-                      color: 'white',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '0.375rem',
-                      border: 'none',
-                      cursor: canBookOPD ? 'pointer' : 'not-allowed'
-                    }}
-                  >
+                  <button onClick={() => handleBookOPD(h)} disabled={!canBookOPD} style={{ backgroundColor: canBookOPD ? '#10b981' : '#9ca3af', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: canBookOPD ? 'pointer' : 'not-allowed' }}>
                     📋 Book OPD {canBookOPD && discountAmount > 0 ? `(Save ₹${discountAmount})` : ''}
                   </button>
                   <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
@@ -321,7 +280,6 @@ const HospitalsList = () => {
                   </button>
                 </div>
 
-                {/* Badges – only 24/7 Emergency (no ambulance badge) */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                   {h.has24x7ER && <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚨 24/7 Emergency</span>}
                 </div>
