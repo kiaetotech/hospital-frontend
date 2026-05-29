@@ -71,11 +71,21 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Automatically select the only doctor if exists, otherwise return current selection
-  const getSelectedDoctorObj = (hospital) => {
+  // Filter doctors by the searched disease (searchQuery)
+  const getRelevantDoctors = (hospital) => {
     const doctors = hospital.doctors || [];
-    if (doctors.length === 1) {
-      const onlyDoctor = doctors[0];
+    if (!searchQuery) return doctors; // if no search, show all
+    const query = searchQuery.toLowerCase();
+    // Filter doctors whose specialization includes the search term
+    return doctors.filter(doc => doc.specialization.toLowerCase().includes(query));
+  };
+
+  // Get the selected doctor object for a hospital
+  const getSelectedDoctorObj = (hospital) => {
+    const relevantDoctors = getRelevantDoctors(hospital);
+    if (relevantDoctors.length === 0) return null;
+    if (relevantDoctors.length === 1) {
+      const onlyDoctor = relevantDoctors[0];
       if (selectedDoctor[hospital._id] !== onlyDoctor.name) {
         setSelectedDoctor(prev => ({ ...prev, [hospital._id]: onlyDoctor.name }));
       }
@@ -83,7 +93,7 @@ const HospitalsList = () => {
     }
     const selectedName = selectedDoctor[hospital._id];
     if (selectedName) {
-      return doctors.find(d => d.name === selectedName) || null;
+      return relevantDoctors.find(d => d.name === selectedName) || relevantDoctors[0];
     }
     return null;
   };
@@ -91,7 +101,7 @@ const HospitalsList = () => {
   const handleBookOPD = (hospital) => {
     const doctor = getSelectedDoctorObj(hospital);
     if (!doctor) {
-      alert('Please select a doctor first');
+      alert('No relevant doctor found for this disease');
       return;
     }
     const fee = doctor.consultation_fee;
@@ -128,8 +138,8 @@ const HospitalsList = () => {
             const distance = userLocation && h.location ? calculateDistance(userLocation.lat, userLocation.lng, h.location.lat, h.location.lng) : null;
             const insuranceList = h.insurance_accepted || [];
             const showAll = expandedInsurance[h._id];
-            const doctors = h.doctors || [];
-            const hasMultipleDoctors = doctors.length > 1;
+            const relevantDoctors = getRelevantDoctors(h);
+            const hasMultipleRelevantDoctors = relevantDoctors.length > 1;
             const selectedDoctorObj = getSelectedDoctorObj(h);
             const opdFee = selectedDoctorObj ? selectedDoctorObj.consultation_fee : (h.pricing?.consultation || 0);
             const discountAmount = Math.round(opdFee * 0.1);
@@ -144,12 +154,12 @@ const HospitalsList = () => {
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
                 
-                {/* Doctor selection - only if multiple doctors */}
-                {hasMultipleDoctors && (
+                {/* Doctor selection - only if multiple relevant doctors */}
+                {hasMultipleRelevantDoctors && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor:</strong>
                     <div style={{ marginTop: '0.25rem' }}>
-                      {doctors.map(doc => (
+                      {relevantDoctors.map(doc => (
                         <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.25rem', cursor: 'pointer' }}>
                           <input
                             type="radio"
@@ -189,7 +199,7 @@ const HospitalsList = () => {
                   </div>
                 </div>
                 
-                {/* OPD Consultation - show fee from selected doctor, no discount displayed */}
+                {/* OPD Consultation - fee from selected doctor */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '0.5rem 0', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem' }}>
                   <div>
                     <strong>📋 OPD Consultation</strong><br />
@@ -217,7 +227,7 @@ const HospitalsList = () => {
                       cursor: canBookOPD ? 'pointer' : 'not-allowed'
                     }}
                   >
-                    📋 Book OPD {canBookOPD ? `(Save ₹${discountAmount})` : '(Select Doctor)'}
+                    📋 Book OPD {canBookOPD ? `(Save ₹${discountAmount})` : '(No relevant doctor)'}
                   </button>
                   <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
                     🏥 Book Admission (Save 10%)
@@ -225,9 +235,7 @@ const HospitalsList = () => {
                   <button onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
                     View Details
                   </button>
-                  <button onClick={() => navigate('/ambulance')} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-                    🚑 Ambulance
-                  </button>
+                  {/* Ambulance button removed - only badge remains */}
                 </div>
                 
                 {/* Badges */}
