@@ -16,7 +16,6 @@ const HospitalsList = () => {
   const [selectedDoctor, setSelectedDoctor] = useState({});
   const [expandedInsurance, setExpandedInsurance] = useState({});
 
-  // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -26,7 +25,6 @@ const HospitalsList = () => {
     }
   }, []);
 
-  // Fetch hospitals
   useEffect(() => {
     fetchHospitals();
   }, [searchQuery, city, userLocation]);
@@ -71,23 +69,26 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Map disease keywords to expected specializations
-  const getSpecialtiesForQuery = (query) => {
+  // Map disease keywords to relevant specializations (case‑insensitive)
+  const getRelevantSpecialties = (query) => {
     const q = query.toLowerCase();
-    if (q.includes('heart') || q.includes('cardiac') || q.includes('chest pain')) return ['Cardiologist', 'Cardiology'];
-    if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return ['Neurologist', 'Neurology'];
-    if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return ['Orthopedic', 'Orthopedics'];
-    if (q.includes('kidney') || q.includes('stone')) return ['Nephrologist', 'Nephrology'];
-    if (q.includes('cancer') || q.includes('tumor')) return ['Oncologist', 'Oncology'];
-    return null; // no mapping, show all doctors
+    if (q.includes('heart') || q.includes('cardiac') || q.includes('chest pain')) return ['cardiologist', 'cardiology'];
+    if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return ['neurologist', 'neurology'];
+    if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return ['orthopedic', 'orthopedics'];
+    if (q.includes('kidney') || q.includes('stone')) return ['nephrologist', 'nephrology'];
+    if (q.includes('cancer') || q.includes('tumor')) return ['oncologist', 'oncology'];
+    return null; // no filter
   };
 
+  // Filter doctors that match the searched disease
   const getRelevantDoctors = (hospital) => {
     const doctors = hospital.doctors || [];
-    if (!searchQuery) return doctors;
-    const relevantSpecialties = getSpecialtiesForQuery(searchQuery);
-    if (!relevantSpecialties) return doctors;
-    return doctors.filter(doc => relevantSpecialties.some(spec => doc.specialization.toLowerCase().includes(spec.toLowerCase())));
+    if (!searchQuery) return doctors; // no search – show all (but selection won't be shown unless multiple)
+    const relevantSpecs = getRelevantSpecialties(searchQuery);
+    if (!relevantSpecs) return doctors; // no mapping – show all
+    return doctors.filter(doc => 
+      relevantSpecs.some(spec => doc.specialization.toLowerCase().includes(spec))
+    );
   };
 
   const getSelectedDoctorObj = (hospital) => {
@@ -113,7 +114,7 @@ const HospitalsList = () => {
   const handleBookOPD = (hospital) => {
     const doctor = getSelectedDoctorObj(hospital);
     if (!doctor) {
-      alert('No relevant doctor found for this disease');
+      alert('No doctor available for this condition');
       return;
     }
     const fee = doctor.consultation_fee;
@@ -165,6 +166,7 @@ const HospitalsList = () => {
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
                 
+                {/* Only show doctor selection if multiple relevant doctors exist */}
                 {hasMultipleRelevantDoctors && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor:</strong>
@@ -188,10 +190,12 @@ const HospitalsList = () => {
                   </div>
                 )}
                 
+                {/* Lab Tests */}
                 <div style={{ margin: '0.5rem 0' }}>
                   🧪 <strong>Lab Tests:</strong> {h.lab_tests_available ? '✅ Available' : '🔗 Linked'}
                 </div>
                 
+                {/* Insurance */}
                 <div style={{ margin: '0.5rem 0' }}>
                   <div onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>🛡️ Insurance Accepted:</strong>
@@ -207,6 +211,7 @@ const HospitalsList = () => {
                   </div>
                 </div>
                 
+                {/* OPD Consultation – uses selected doctor's fee */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '0.5rem 0', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem' }}>
                   <div>
                     <strong>📋 OPD Consultation</strong><br />
@@ -220,6 +225,7 @@ const HospitalsList = () => {
                   </div>
                 </div>
                 
+                {/* Action Buttons – only one ambulance button (the orange badge) is shown; no duplicate button */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                   <button
                     onClick={() => handleBookOPD(h)}
@@ -233,7 +239,7 @@ const HospitalsList = () => {
                       cursor: canBookOPD ? 'pointer' : 'not-allowed'
                     }}
                   >
-                    📋 Book OPD {canBookOPD ? `(Save ₹${discountAmount})` : '(No relevant doctor)'}
+                    📋 Book OPD {canBookOPD ? `(Save ₹${discountAmount})` : '(No doctor)'}
                   </button>
                   <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
                     🏥 Book Admission (Save 10%)
@@ -243,6 +249,7 @@ const HospitalsList = () => {
                   </button>
                 </div>
                 
+                {/* Badges – includes ambulance availability */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                   {h.has24x7ER && <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚨 24/7 Emergency</span>}
                   {h.ambulance_available && <span style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚑 Ambulance</span>}
