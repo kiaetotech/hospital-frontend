@@ -14,6 +14,7 @@ const HospitalsList = () => {
   const [city, setCity] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [sortBy, setSortBy] = useState('distance');
+  const [selectedDoctor, setSelectedDoctor] = useState({});
   const [expandedInsurance, setExpandedInsurance] = useState({});
 
   // Hardcoded doctors for each hospital
@@ -70,7 +71,6 @@ const HospitalsList = () => {
       const res = await api.get(`/hospitals/search?${params.toString()}`);
       let hospitalsData = res.data.data || [];
       
-      // Attach hardcoded doctors to each hospital
       hospitalsData = hospitalsData.map(h => ({
         ...h,
         doctors: hospitalDoctors[h.name] || []
@@ -105,7 +105,6 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Get doctors that match the searched disease
   const getRelevantDoctors = (hospital) => {
     if (!searchQuery) return hospital.doctors || [];
     const q = searchQuery.toLowerCase();
@@ -118,11 +117,22 @@ const HospitalsList = () => {
       if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return spec.includes('orthopedic');
       if (q.includes('kidney') || q.includes('stone')) return spec.includes('nephrologist');
       if (q.includes('cancer') || q.includes('tumor')) return spec.includes('oncologist');
-      return true; // if no disease filter, show all doctors
+      return true;
     });
   };
 
-  const handleBookOPD = (hospital, doctor) => {
+  const getSelectedDoctorObj = (hospital) => {
+    const relevant = getRelevantDoctors(hospital);
+    const selectedName = selectedDoctor[hospital._id];
+    if (selectedName) {
+      const found = relevant.find(d => d.name === selectedName);
+      if (found) return found;
+    }
+    return relevant.length > 0 ? relevant[0] : null;
+  };
+
+  const handleBookOPD = (hospital) => {
+    const doctor = getSelectedDoctorObj(hospital);
     if (!doctor) {
       alert('Please select a doctor');
       return;
@@ -152,7 +162,6 @@ const HospitalsList = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a' }}>🏥 KiaetoCare Hospitals</h1>
 
-        {/* Search Form */}
         <form onSubmit={handleSearch} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', margin: '1rem 0' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
             <input
@@ -175,15 +184,9 @@ const HospitalsList = () => {
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span>Sort by:</span>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <input type="radio" name="sort" checked={sortBy === 'distance'} onChange={() => setSortBy('distance')} /> Distance
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <input type="radio" name="sort" checked={sortBy === 'fee'} onChange={() => setSortBy('fee')} /> Fee (low to high)
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <input type="radio" name="sort" checked={sortBy === 'rating'} onChange={() => setSortBy('rating')} /> Rating (high to low)
-            </label>
+            <label><input type="radio" name="sort" checked={sortBy === 'distance'} onChange={() => setSortBy('distance')} /> Distance</label>
+            <label><input type="radio" name="sort" checked={sortBy === 'fee'} onChange={() => setSortBy('fee')} /> Fee (low to high)</label>
+            <label><input type="radio" name="sort" checked={sortBy === 'rating'} onChange={() => setSortBy('rating')} /> Rating (high to low)</label>
           </div>
         </form>
 
@@ -195,50 +198,46 @@ const HospitalsList = () => {
             const insuranceList = h.insurance_accepted || [];
             const showAll = expandedInsurance[h._id];
             const relevantDoctors = getRelevantDoctors(h);
+            const selectedDoctorObj = getSelectedDoctorObj(h);
+            const opdFee = selectedDoctorObj ? selectedDoctorObj.consultation_fee : (h.pricing?.consultation || 0);
+            const discountAmount = Math.round(opdFee * 0.1);
 
             return (
               <div key={h._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                {/* Hospital Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{h.name}</h2>
                   <div>⭐ {h.ratings?.average} ({h.ratings?.count} reviews)</div>
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
 
-                {/* Doctors List - Always show relevant doctors */}
-                <div style={{ margin: '0.5rem 0' }}>
-                  <strong>👨‍⚕️ Available Doctors:</strong>
-                  <div style={{ marginTop: '0.25rem' }}>
-                    {relevantDoctors.length === 0 ? (
-                      <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>No doctors available for this condition</p>
-                    ) : (
-                      relevantDoctors.map(doc => (
-                        <div key={doc.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.25rem' }}>
-                          <div>
+                {/* Doctor Selection with Radio Buttons */}
+                {relevantDoctors.length > 0 && (
+                  <div style={{ margin: '0.5rem 0' }}>
+                    <strong>👨‍⚕️ Select Doctor:</strong>
+                    <div style={{ marginTop: '0.25rem' }}>
+                      {relevantDoctors.map(doc => (
+                        <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.25rem', cursor: 'pointer' }}>
+                          <input
+                            type="radio"
+                            name={`doc_${h._id}`}
+                            checked={selectedDoctor[h._id] === doc.name}
+                            onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))}
+                          />
+                          <div style={{ flex: 1 }}>
                             <strong>{doc.name}</strong> - {doc.specialization}
                             <div style={{ fontSize: '0.75rem' }}>⭐ {doc.rating} ({doc.reviewCount} reviews)</div>
                           </div>
-                          <div>
-                            <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
-                            <button
-                              onClick={() => handleBookOPD(h, doc)}
-                              style={{ marginLeft: '0.5rem', backgroundColor: '#10b981', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
-                            >
-                              Book
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                          <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Lab Tests */}
-                <div style={{ margin: '0.5rem 0' }}>
-                  🧪 <strong>Lab Tests:</strong> {h.lab_tests_available ? '✅ Available' : '🔗 Linked'}
-                </div>
+                <div style={{ margin: '0.5rem 0' }}>🧪 <strong>Lab Tests:</strong> {h.lab_tests_available ? '✅ Available' : '🔗 Linked'}</div>
 
-                {/* Insurance with expandable */}
+                {/* Insurance */}
                 <div style={{ margin: '0.5rem 0' }}>
                   <div onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>🛡️ Insurance Accepted:</strong>
@@ -257,6 +256,10 @@ const HospitalsList = () => {
                 {/* Admission Info */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '0.5rem 0', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem' }}>
                   <div>
+                    <strong>📋 OPD Consultation</strong><br />
+                    <span>₹{opdFee}</span>
+                  </div>
+                  <div>
                     <strong>🏥 Admission (per day)</strong><br />
                     ICU: ₹{h.pricing?.icu_bed_per_day}<br />
                     General: ₹{h.pricing?.general_bed_per_day}<br />
@@ -266,6 +269,9 @@ const HospitalsList = () => {
 
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  <button onClick={() => handleBookOPD(h)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
+                    📋 Book OPD (Save ₹{discountAmount})
+                  </button>
                   <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
                     🏥 Book Admission (Save 10%)
                   </button>
