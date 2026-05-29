@@ -71,12 +71,12 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Filter doctors by the searched disease (searchQuery)
+  // Filter doctors by the searched disease (specialization)
   const getRelevantDoctors = (hospital) => {
     const doctors = hospital.doctors || [];
-    if (!searchQuery) return doctors; // if no search, show all
+    if (!searchQuery) return []; // if no disease searched, no doctor selection needed
     const query = searchQuery.toLowerCase();
-    // Filter doctors whose specialization includes the search term
+    // Only keep doctors whose specialization includes the search term
     return doctors.filter(doc => doc.specialization.toLowerCase().includes(query));
   };
 
@@ -93,9 +93,13 @@ const HospitalsList = () => {
     }
     const selectedName = selectedDoctor[hospital._id];
     if (selectedName) {
-      return relevantDoctors.find(d => d.name === selectedName) || relevantDoctors[0];
+      const found = relevantDoctors.find(d => d.name === selectedName);
+      if (found) return found;
     }
-    return null;
+    // default select first
+    const first = relevantDoctors[0];
+    setSelectedDoctor(prev => ({ ...prev, [hospital._id]: first.name }));
+    return first;
   };
 
   const handleBookOPD = (hospital) => {
@@ -147,7 +151,6 @@ const HospitalsList = () => {
 
             return (
               <div key={h._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{h.name}</h2>
                   <div>⭐ {h.ratings?.average} ({h.ratings?.count} reviews)</div>
@@ -235,7 +238,6 @@ const HospitalsList = () => {
                   <button onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
                     View Details
                   </button>
-                  {/* Ambulance button removed - only badge remains */}
                 </div>
                 
                 {/* Badges */}
