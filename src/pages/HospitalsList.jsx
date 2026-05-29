@@ -16,6 +16,7 @@ const HospitalsList = () => {
   const [selectedDoctor, setSelectedDoctor] = useState({});
   const [expandedInsurance, setExpandedInsurance] = useState({});
 
+  // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -25,6 +26,7 @@ const HospitalsList = () => {
     }
   }, []);
 
+  // Fetch hospitals when search or city or location changes
   useEffect(() => {
     fetchHospitals();
   }, [searchQuery, city, userLocation]);
@@ -39,6 +41,8 @@ const HospitalsList = () => {
         params.append('lat', userLocation.lat);
         params.append('lng', userLocation.lng);
       }
+      // Add cache busting
+      params.append('_t', Date.now());
       const res = await api.get(`/hospitals/search?${params.toString()}`);
       setHospitals(res.data.data || []);
     } catch (error) {
@@ -69,7 +73,7 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Map disease keywords to relevant specializations (case‑insensitive)
+  // Map disease keywords to expected specializations (case‑insensitive)
   const getRelevantSpecialties = (query) => {
     const q = query.toLowerCase();
     if (q.includes('heart') || q.includes('cardiac') || q.includes('chest pain')) return ['cardiologist', 'cardiology'];
@@ -80,12 +84,12 @@ const HospitalsList = () => {
     return null; // no filter
   };
 
-  // Filter doctors that match the searched disease
+  // Filter doctors that match the searched disease (only if searchQuery exists)
   const getRelevantDoctors = (hospital) => {
     const doctors = hospital.doctors || [];
-    if (!searchQuery) return doctors; // no search – show all (but selection won't be shown unless multiple)
+    if (!searchQuery) return []; // no search -> no doctor selection
     const relevantSpecs = getRelevantSpecialties(searchQuery);
-    if (!relevantSpecs) return doctors; // no mapping – show all
+    if (!relevantSpecs) return []; // no mapping -> no selection
     return doctors.filter(doc => 
       relevantSpecs.some(spec => doc.specialization.toLowerCase().includes(spec))
     );
@@ -114,7 +118,7 @@ const HospitalsList = () => {
   const handleBookOPD = (hospital) => {
     const doctor = getSelectedDoctorObj(hospital);
     if (!doctor) {
-      alert('No doctor available for this condition');
+      alert('Please select a doctor');
       return;
     }
     const fee = doctor.consultation_fee;
@@ -129,6 +133,10 @@ const HospitalsList = () => {
 
   const handleViewDetails = (hospital) => {
     navigate(`/hospital-info/${hospital._id}`);
+  };
+
+  const handleAmbulance = () => {
+    navigate('/ambulance');
   };
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading hospitals...</div>;
@@ -154,9 +162,13 @@ const HospitalsList = () => {
             const relevantDoctors = getRelevantDoctors(h);
             const hasMultipleRelevantDoctors = relevantDoctors.length > 1;
             const selectedDoctorObj = getSelectedDoctorObj(h);
+            // If no search query or no relevant doctors, fallback to hospital's default consultation fee
             const opdFee = selectedDoctorObj ? selectedDoctorObj.consultation_fee : (h.pricing?.consultation || 0);
             const discountAmount = Math.round(opdFee * 0.1);
-            const canBookOPD = !!selectedDoctorObj;
+            const canBookOPD = !!selectedDoctorObj || !searchQuery; // allow booking even without doctor selection if no search? Actually require doctor. Let's enforce.
+            // More accurate: canBookOPD = (searchQuery ? !!selectedDoctorObj : true) – but for simplicity, require doctor only if search is active.
+            const isDoctorSelectionRequired = searchQuery && relevantDoctors.length > 0;
+            const canBook = isDoctorSelectionRequired ? !!selectedDoctorObj : true;
 
             return (
               <div key={h._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -166,8 +178,8 @@ const HospitalsList = () => {
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
                 
-                {/* Only show doctor selection if multiple relevant doctors exist */}
-                {hasMultipleRelevantDoctors && (
+                {/* Show doctor selection only when a search query exists and multiple relevant doctors found */}
+                {searchQuery && hasMultipleRelevantDoctors && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor:</strong>
                     <div style={{ marginTop: '0.25rem' }}>
@@ -211,7 +223,7 @@ const HospitalsList = () => {
                   </div>
                 </div>
                 
-                {/* OPD Consultation – uses selected doctor's fee */}
+                {/* OPD Consultation – uses selected doctor's fee or default */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '0.5rem 0', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem' }}>
                   <div>
                     <strong>📋 OPD Consultation</strong><br />
@@ -225,21 +237,21 @@ const HospitalsList = () => {
                   </div>
                 </div>
                 
-                {/* Action Buttons – only one ambulance button (the orange badge) is shown; no duplicate button */}
+                {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                   <button
                     onClick={() => handleBookOPD(h)}
-                    disabled={!canBookOPD}
+                    disabled={!canBook}
                     style={{
-                      backgroundColor: canBookOPD ? '#10b981' : '#9ca3af',
+                      backgroundColor: canBook ? '#10b981' : '#9ca3af',
                       color: 'white',
                       padding: '0.5rem 1rem',
                       borderRadius: '0.375rem',
                       border: 'none',
-                      cursor: canBookOPD ? 'pointer' : 'not-allowed'
+                      cursor: canBook ? 'pointer' : 'not-allowed'
                     }}
                   >
-                    📋 Book OPD {canBookOPD ? `(Save ₹${discountAmount})` : '(No doctor)'}
+                    📋 Book OPD {canBook && discountAmount > 0 ? `(Save ₹${discountAmount})` : ''}
                   </button>
                   <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
                     🏥 Book Admission (Save 10%)
@@ -247,9 +259,12 @@ const HospitalsList = () => {
                   <button onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
                     View Details
                   </button>
+                  <button onClick={handleAmbulance} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
+                    🚑 Ambulance
+                  </button>
                 </div>
                 
-                {/* Badges – includes ambulance availability */}
+                {/* Badges (no extra ambulance button) */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                   {h.has24x7ER && <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚨 24/7 Emergency</span>}
                   {h.ambulance_available && <span style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚑 Ambulance</span>}
