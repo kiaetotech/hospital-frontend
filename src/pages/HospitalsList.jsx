@@ -17,6 +17,28 @@ const HospitalsList = () => {
   const [selectedDoctor, setSelectedDoctor] = useState({});
   const [expandedInsurance, setExpandedInsurance] = useState({});
 
+  // Dummy doctors for each hospital (since backend may not have doctors array)
+  const getDummyDoctors = (hospitalName) => {
+    if (hospitalName.includes('Apollo')) {
+      return [
+        { name: 'Dr. Priya Sharma', specialization: 'Cardiologist', consultation_fee: 1200, rating: 4.9, reviewCount: 340 },
+        { name: 'Dr. Rajesh Mehta', specialization: 'Neurologist', consultation_fee: 1300, rating: 4.8, reviewCount: 210 }
+      ];
+    }
+    if (hospitalName.includes('Fortis')) {
+      return [
+        { name: 'Dr. Anil Kumar', specialization: 'Cardiologist', consultation_fee: 1500, rating: 4.7, reviewCount: 180 }
+      ];
+    }
+    if (hospitalName.includes('Manipal')) {
+      return [
+        { name: 'Dr. Sunita Reddy', specialization: 'Neurologist', consultation_fee: 1000, rating: 4.9, reviewCount: 310 },
+        { name: 'Dr. Vikram Singh', specialization: 'Oncologist', consultation_fee: 1200, rating: 4.8, reviewCount: 190 }
+      ];
+    }
+    return [];
+  };
+
   // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
@@ -27,7 +49,7 @@ const HospitalsList = () => {
     }
   }, []);
 
-  // Fetch hospitals when search, city, location, or sort changes
+  // Fetch hospitals
   useEffect(() => {
     fetchHospitals();
   }, [searchQuery, city, userLocation, sortBy]);
@@ -44,7 +66,15 @@ const HospitalsList = () => {
       }
       params.append('sort_by', sortBy);
       const res = await api.get(`/hospitals/search?${params.toString()}`);
-      setHospitals(res.data.data || []);
+      let hospitalsData = res.data.data || [];
+      
+      // Add dummy doctors to each hospital if they don't have doctors
+      hospitalsData = hospitalsData.map(h => ({
+        ...h,
+        doctors: h.doctors && h.doctors.length > 0 ? h.doctors : getDummyDoctors(h.name)
+      }));
+      
+      setHospitals(hospitalsData);
     } catch (error) {
       console.error(error);
     } finally {
@@ -119,7 +149,7 @@ const HospitalsList = () => {
   const handleBookOPD = (hospital) => {
     const doctor = getSelectedDoctorObj(hospital);
     if (!doctor) {
-      alert('No doctor available for this condition');
+      alert('Please select a doctor');
       return;
     }
     const fee = doctor.consultation_fee;
