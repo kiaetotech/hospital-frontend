@@ -20,7 +20,6 @@ const HospitalsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Doctors data with qualifications
   const hospitalDoctors = {
     'Apollo Hospital Mumbai': [
       { name: 'Dr. Priya Sharma', specialization: 'Cardiologist', qualification: 'MBBS, MD (Cardiology), DM', consultation_fee: 1200, rating: 4.9, reviewCount: 340 },
@@ -47,7 +46,7 @@ const HospitalsList = () => {
 
   const getSpecializationFromQuery = (query) => {
     const q = query.toLowerCase();
-    if (q.includes('heart') || q.includes('cardiac') || q.includes('chest pain')) return 'cardiologist';
+    if (q.includes('heart') || q.includes('cardiac') || q.includes('chest pain') || q.includes('chest')) return 'cardiologist';
     if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return 'neurologist';
     if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return 'orthopedic';
     if (q.includes('kidney') || q.includes('stone')) return 'nephrologist';
@@ -75,7 +74,6 @@ const HospitalsList = () => {
     }
   }, []);
 
-  // Fetch hospitals only when searchQuery changes (after button click)
   useEffect(() => {
     fetchHospitals();
   }, [searchQuery, city, userLocation, sortBy]);
@@ -128,7 +126,7 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // ========== BUTTON HANDLERS ==========
+  // ========== WORKING BUTTON NAVIGATION ==========
   const handleBookOPD = (hospital, selectedDoctorObj = null) => {
     const matchingDoctors = getMatchingDoctors(hospital);
     let doc = selectedDoctorObj;
@@ -140,15 +138,16 @@ const HospitalsList = () => {
       doc = matchingDoctors.find(d => d.name === selectedName);
     }
     
+    const doctorName = doc ? encodeURIComponent(doc.name) : 'General';
     const fee = doc ? doc.consultation_fee : (hospital.pricing?.consultation || 500);
     const discount = Math.round(fee * 0.1);
-    alert(`✅ OPD Booking!\n\nHospital: ${hospital.name}\nDoctor: ${doc?.name || 'General Physician'}\nOriginal Fee: ₹${fee}\nDiscount: ₹${discount}\nYou Pay: ₹${fee - discount}\n\nProceeding to payment...`);
-    navigate('/payment');
+    const finalFee = fee - discount;
+    
+    navigate(`/book-opd/${hospital._id}?doctor=${doctorName}&fee=${finalFee}&original=${fee}&hospital=${encodeURIComponent(hospital.name)}`);
   };
 
   const handleBookAdmission = (hospital) => {
-    alert(`✅ Admission Booking!\n\nHospital: ${hospital.name}\n10% discount will be applied on final bill.\n\nProceeding to payment...`);
-    navigate('/payment');
+    navigate(`/book-admission/${hospital._id}?hospital=${encodeURIComponent(hospital.name)}`);
   };
 
   const handleViewDetails = (hospital) => {
@@ -158,7 +157,7 @@ const HospitalsList = () => {
   const handleAmbulance = () => {
     navigate('/ambulance');
   };
-  // ====================================
+  // ============================================
 
   const paginatedHospitals = hospitals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(hospitals.length / itemsPerPage);
@@ -170,26 +169,11 @@ const HospitalsList = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a' }}>🏥 KiaetoCare Hospitals</h1>
 
-        {/* Search Form - Only submits on button click */}
         <form onSubmit={handleSearch} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', margin: '1rem 0' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <input 
-              type="text" 
-              placeholder="Disease, symptom, or hospital name" 
-              value={inputQuery} 
-              onChange={(e) => setInputQuery(e.target.value)} 
-              style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} 
-            />
-            <input 
-              type="text" 
-              placeholder="City (optional)" 
-              value={city} 
-              onChange={(e) => setCity(e.target.value)} 
-              style={{ flex: 1, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} 
-            />
-            <button type="submit" style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-              Search
-            </button>
+            <input type="text" placeholder="Disease, symptom, or hospital name" value={inputQuery} onChange={(e) => setInputQuery(e.target.value)} style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+            <input type="text" placeholder="City (optional)" value={city} onChange={(e) => setCity(e.target.value)} style={{ flex: 1, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+            <button type="submit" style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Search</button>
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span>Sort by:</span>
@@ -200,7 +184,7 @@ const HospitalsList = () => {
         </form>
 
         {paginatedHospitals.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>No hospitals found. Try searching for "heart attack" or "fever".</div>
+          <div style={{ textAlign: 'center', padding: '2rem' }}>No hospitals found.</div>
         ) : (
           paginatedHospitals.map(h => {
             const distance = userLocation && h.location ? calculateDistance(userLocation.lat, userLocation.lng, h.location.lat, h.location.lng) : null;
@@ -226,7 +210,6 @@ const HospitalsList = () => {
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
 
-                {/* Multiple matching doctors - Radio buttons */}
                 {searchQuery && hasMultipleMatching && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor ({matchingDoctors.length} available):</strong>
@@ -244,7 +227,6 @@ const HospitalsList = () => {
                   </div>
                 )}
 
-                {/* Single matching doctor - Show info */}
                 {searchQuery && singleMatching && (
                   <div style={{ margin: '0.5rem 0', padding: '0.5rem', backgroundColor: '#e0e7ff', borderRadius: '0.375rem' }}>
                     <strong>👨‍⚕️ Doctor:</strong> {matchingDoctors[0].name} - {matchingDoctors[0].specialization}<br />
@@ -253,7 +235,6 @@ const HospitalsList = () => {
                   </div>
                 )}
 
-                {/* No matching doctors - Show ALL doctors with Book button */}
                 {searchQuery && matchingDoctors.length === 0 && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Available Doctors at this hospital:</strong>
