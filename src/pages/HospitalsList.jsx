@@ -71,16 +71,25 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Filter doctors by the searched disease (specialization)
-  const getRelevantDoctors = (hospital) => {
-    const doctors = hospital.doctors || [];
-    if (!searchQuery) return []; // if no disease searched, no doctor selection needed
-    const query = searchQuery.toLowerCase();
-    // Only keep doctors whose specialization includes the search term
-    return doctors.filter(doc => doc.specialization.toLowerCase().includes(query));
+  // Map disease keywords to expected specializations
+  const getSpecialtiesForQuery = (query) => {
+    const q = query.toLowerCase();
+    if (q.includes('heart') || q.includes('cardiac') || q.includes('chest pain')) return ['Cardiologist', 'Cardiology'];
+    if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return ['Neurologist', 'Neurology'];
+    if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return ['Orthopedic', 'Orthopedics'];
+    if (q.includes('kidney') || q.includes('stone')) return ['Nephrologist', 'Nephrology'];
+    if (q.includes('cancer') || q.includes('tumor')) return ['Oncologist', 'Oncology'];
+    return null; // no mapping, show all doctors
   };
 
-  // Get the selected doctor object for a hospital
+  const getRelevantDoctors = (hospital) => {
+    const doctors = hospital.doctors || [];
+    if (!searchQuery) return doctors;
+    const relevantSpecialties = getSpecialtiesForQuery(searchQuery);
+    if (!relevantSpecialties) return doctors;
+    return doctors.filter(doc => relevantSpecialties.some(spec => doc.specialization.toLowerCase().includes(spec.toLowerCase())));
+  };
+
   const getSelectedDoctorObj = (hospital) => {
     const relevantDoctors = getRelevantDoctors(hospital);
     if (relevantDoctors.length === 0) return null;
@@ -96,7 +105,6 @@ const HospitalsList = () => {
       const found = relevantDoctors.find(d => d.name === selectedName);
       if (found) return found;
     }
-    // default select first
     const first = relevantDoctors[0];
     setSelectedDoctor(prev => ({ ...prev, [hospital._id]: first.name }));
     return first;
@@ -157,7 +165,6 @@ const HospitalsList = () => {
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
                 
-                {/* Doctor selection - only if multiple relevant doctors */}
                 {hasMultipleRelevantDoctors && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor:</strong>
@@ -181,12 +188,10 @@ const HospitalsList = () => {
                   </div>
                 )}
                 
-                {/* Lab Tests */}
                 <div style={{ margin: '0.5rem 0' }}>
                   🧪 <strong>Lab Tests:</strong> {h.lab_tests_available ? '✅ Available' : '🔗 Linked'}
                 </div>
                 
-                {/* Insurance with expandable */}
                 <div style={{ margin: '0.5rem 0' }}>
                   <div onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>🛡️ Insurance Accepted:</strong>
@@ -202,7 +207,6 @@ const HospitalsList = () => {
                   </div>
                 </div>
                 
-                {/* OPD Consultation - fee from selected doctor */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '0.5rem 0', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem' }}>
                   <div>
                     <strong>📋 OPD Consultation</strong><br />
@@ -216,7 +220,6 @@ const HospitalsList = () => {
                   </div>
                 </div>
                 
-                {/* Buttons */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                   <button
                     onClick={() => handleBookOPD(h)}
@@ -240,7 +243,6 @@ const HospitalsList = () => {
                   </button>
                 </div>
                 
-                {/* Badges */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                   {h.has24x7ER && <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚨 24/7 Emergency</span>}
                   {h.ambulance_available && <span style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚑 Ambulance</span>}
