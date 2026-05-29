@@ -19,28 +19,28 @@ const HospitalsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Doctors data grouped by hospital
+  // Doctors data with qualifications
   const hospitalDoctors = {
     'Apollo Hospital Mumbai': [
-      { name: 'Dr. Priya Sharma', specialization: 'Cardiologist', consultation_fee: 1200, rating: 4.9, reviewCount: 340 },
-      { name: 'Dr. Rajesh Mehta', specialization: 'Neurologist', consultation_fee: 1300, rating: 4.8, reviewCount: 210 },
-      { name: 'Dr. Sunil Patil', specialization: 'Orthopedic', consultation_fee: 1100, rating: 4.7, reviewCount: 180 }
+      { name: 'Dr. Priya Sharma', specialization: 'Cardiologist', qualification: 'MBBS, MD (Cardiology), DM', consultation_fee: 1200, rating: 4.9, reviewCount: 340 },
+      { name: 'Dr. Rajesh Mehta', specialization: 'Neurologist', qualification: 'MBBS, MD (Neurology), DM', consultation_fee: 1300, rating: 4.8, reviewCount: 210 },
+      { name: 'Dr. Sunil Patil', specialization: 'Orthopedic', qualification: 'MBBS, MS (Ortho)', consultation_fee: 1100, rating: 4.7, reviewCount: 180 }
     ],
     'Fortis Hospital Delhi': [
-      { name: 'Dr. Anil Kumar', specialization: 'Cardiologist', consultation_fee: 1500, rating: 4.7, reviewCount: 180 },
-      { name: 'Dr. Neha Gupta', specialization: 'Orthopedic', consultation_fee: 1400, rating: 4.6, reviewCount: 150 }
+      { name: 'Dr. Anil Kumar', specialization: 'Cardiologist', qualification: 'MBBS, MD (Cardiology)', consultation_fee: 1500, rating: 4.7, reviewCount: 180 },
+      { name: 'Dr. Neha Gupta', specialization: 'Orthopedic', qualification: 'MBBS, DNB (Ortho)', consultation_fee: 1400, rating: 4.6, reviewCount: 150 }
     ],
     'Manipal Hospital Bangalore': [
-      { name: 'Dr. Sunita Reddy', specialization: 'Neurologist', consultation_fee: 1000, rating: 4.9, reviewCount: 310 },
-      { name: 'Dr. Vikram Singh', specialization: 'Oncologist', consultation_fee: 1200, rating: 4.8, reviewCount: 190 }
+      { name: 'Dr. Sunita Reddy', specialization: 'Neurologist', qualification: 'MBBS, MD (Neurology), DM', consultation_fee: 1000, rating: 4.9, reviewCount: 310 },
+      { name: 'Dr. Vikram Singh', specialization: 'Oncologist', qualification: 'MBBS, MD (Oncology)', consultation_fee: 1200, rating: 4.8, reviewCount: 190 }
     ],
     'Medicover Hospital Hyderabad': [
-      { name: 'Dr. Ajay Kumar', specialization: 'Cardiologist', consultation_fee: 1100, rating: 4.7, reviewCount: 200 },
-      { name: 'Dr. Meera Reddy', specialization: 'Nephrologist', consultation_fee: 1000, rating: 4.8, reviewCount: 170 }
+      { name: 'Dr. Ajay Kumar', specialization: 'Cardiologist', qualification: 'MBBS, MD (Cardiology)', consultation_fee: 1100, rating: 4.7, reviewCount: 200 },
+      { name: 'Dr. Meera Reddy', specialization: 'Nephrologist', qualification: 'MBBS, MD (Nephrology)', consultation_fee: 1000, rating: 4.8, reviewCount: 170 }
     ],
     'Narayana Health Kolkata': [
-      { name: 'Dr. S. Chatterjee', specialization: 'Cardiologist', consultation_fee: 900, rating: 4.6, reviewCount: 160 },
-      { name: 'Dr. R. Banerjee', specialization: 'Oncologist', consultation_fee: 950, rating: 4.7, reviewCount: 130 }
+      { name: 'Dr. S. Chatterjee', specialization: 'Cardiologist', qualification: 'MBBS, MD (Cardiology)', consultation_fee: 900, rating: 4.6, reviewCount: 160 },
+      { name: 'Dr. R. Banerjee', specialization: 'Oncologist', qualification: 'MBBS, MD (Oncology)', consultation_fee: 950, rating: 4.7, reviewCount: 130 }
     ]
   };
 
@@ -59,11 +59,13 @@ const HospitalsList = () => {
   const getMatchingDoctors = (hospital) => {
     if (!searchQuery) return [];
     const targetSpec = getSpecializationFromQuery(searchQuery);
-    if (!targetSpec) return [];
+    if (!targetSpec) return hospital.doctors || []; // Show all doctors if no specialization match
     const doctors = hospital.doctors || [];
-    return doctors.filter(doc => 
+    const matching = doctors.filter(doc => 
       doc.specialization.toLowerCase().includes(targetSpec)
     );
+    // If no matching doctors, return ALL doctors
+    return matching.length > 0 ? matching : doctors;
   };
 
   useEffect(() => {
@@ -127,20 +129,20 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleBookOPD = (hospital) => {
+  const handleBookOPD = (hospital, selectedDoctorObj = null) => {
     const matchingDoctors = getMatchingDoctors(hospital);
-    let selectedDoc = null;
+    let doc = selectedDoctorObj;
     
-    if (matchingDoctors.length === 1) {
-      selectedDoc = matchingDoctors[0];
-    } else if (matchingDoctors.length > 1) {
+    if (!doc && matchingDoctors.length === 1) {
+      doc = matchingDoctors[0];
+    } else if (!doc && matchingDoctors.length > 1) {
       const selectedName = selectedDoctor[hospital._id];
-      selectedDoc = matchingDoctors.find(d => d.name === selectedName);
+      doc = matchingDoctors.find(d => d.name === selectedName);
     }
     
-    const fee = selectedDoc ? selectedDoc.consultation_fee : (hospital.pricing?.consultation || 500);
+    const fee = doc ? doc.consultation_fee : (hospital.pricing?.consultation || 500);
     const discount = Math.round(fee * 0.1);
-    alert(`✅ OPD Booking!\nHospital: ${hospital.name}\nDoctor: ${selectedDoc?.name || 'General'}\nOriginal: ₹${fee}\nYou Pay: ₹${fee - discount}`);
+    alert(`✅ OPD Booking!\nHospital: ${hospital.name}\nDoctor: ${doc?.name || 'General'}\nOriginal: ₹${fee}\nYou Pay: ₹${fee - discount}`);
     navigate('/payment');
   };
 
@@ -209,32 +211,45 @@ const HospitalsList = () => {
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
 
-                {/* Doctor Selection - Only when multiple matching doctors */}
+                {/* Doctor Selection - Radio buttons when multiple matching doctors */}
                 {searchQuery && hasMultipleMatching && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor ({matchingDoctors.length} available):</strong>
                     {matchingDoctors.map(doc => (
                       <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.25rem', cursor: 'pointer' }}>
                         <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
-                        <div><strong>{doc.name}</strong> - {doc.specialization}<br /><span style={{ fontSize: '0.75rem' }}>⭐ {doc.rating} ({doc.reviewCount} reviews)</span></div>
+                        <div>
+                          <strong>{doc.name}</strong> - {doc.specialization}<br />
+                          <span style={{ fontSize: '0.75rem' }}>📜 {doc.qualification}</span><br />
+                          <span style={{ fontSize: '0.75rem' }}>⭐ {doc.rating} ({doc.reviewCount} reviews)</span>
+                        </div>
                         <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
                       </label>
                     ))}
                   </div>
                 )}
 
-                {/* Show selected doctor info when single matching */}
+                {/* Single matching doctor - show info directly */}
                 {searchQuery && singleMatching && (
                   <div style={{ margin: '0.5rem 0', padding: '0.5rem', backgroundColor: '#e0e7ff', borderRadius: '0.375rem' }}>
                     <strong>👨‍⚕️ Doctor:</strong> {matchingDoctors[0].name} - {matchingDoctors[0].specialization}<br />
+                    📜 {matchingDoctors[0].qualification}<br />
                     ⭐ {matchingDoctors[0].rating} ({matchingDoctors[0].reviewCount} reviews) | Fee: ₹{matchingDoctors[0].consultation_fee}
                   </div>
                 )}
 
-                {/* No doctor message */}
+                {/* No matching doctors - show ALL doctors with details */}
                 {searchQuery && matchingDoctors.length === 0 && (
-                  <div style={{ margin: '0.5rem 0', padding: '0.5rem', backgroundColor: '#fee2e2', borderRadius: '0.375rem', color: '#dc2626' }}>
-                    ⚠️ No {getSpecializationFromQuery(searchQuery)} available at this hospital
+                  <div style={{ margin: '0.5rem 0' }}>
+                    <strong>👨‍⚕️ Available Doctors at this hospital:</strong>
+                    {(h.doctors || []).map(doc => (
+                      <div key={doc.name} style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.5rem' }}>
+                        <strong>{doc.name}</strong> - {doc.specialization}<br />
+                        📜 {doc.qualification}<br />
+                        ⭐ {doc.rating} ({doc.reviewCount} reviews) | Fee: ₹{doc.consultation_fee}
+                        <button onClick={() => handleBookOPD(h, doc)} style={{ marginLeft: '0.5rem', backgroundColor: '#10b981', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer' }}>Book</button>
+                      </div>
+                    ))}
                   </div>
                 )}
 
