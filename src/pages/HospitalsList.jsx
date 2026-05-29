@@ -17,10 +17,9 @@ const HospitalsList = () => {
   const [selectedDoctor, setSelectedDoctor] = useState({});
   const [expandedInsurance, setExpandedInsurance] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 5;
 
-  // Hardcoded doctors for each hospital
+  // Hardcoded doctors
   const hospitalDoctors = {
     'Apollo Hospital Mumbai': [
       { name: 'Dr. Priya Sharma', specialization: 'Cardiologist', consultation_fee: 1200, rating: 4.9, reviewCount: 340 },
@@ -31,16 +30,9 @@ const HospitalsList = () => {
     ],
     'Manipal Hospital Bangalore': [
       { name: 'Dr. Sunita Reddy', specialization: 'Neurologist', consultation_fee: 1000, rating: 4.9, reviewCount: 310 }
-    ],
-    'Medicover Hospital Hyderabad': [
-      { name: 'Dr. Ajay Kumar', specialization: 'Cardiologist', consultation_fee: 1100, rating: 4.7, reviewCount: 200 }
-    ],
-    'Narayana Health Kolkata': [
-      { name: 'Dr. S. Chatterjee', specialization: 'Cardiologist', consultation_fee: 900, rating: 4.6, reviewCount: 160 }
     ]
   };
 
-  // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -50,7 +42,6 @@ const HospitalsList = () => {
     }
   }, []);
 
-  // Fetch hospitals
   useEffect(() => {
     fetchHospitals();
   }, [searchQuery, city, userLocation, sortBy]);
@@ -67,14 +58,11 @@ const HospitalsList = () => {
       }
       const res = await api.get(`/hospitals/search?${params.toString()}`);
       let hospitalsData = res.data.data || [];
-      
       hospitalsData = hospitalsData.map(h => ({
         ...h,
         doctors: hospitalDoctors[h.name] || []
       }));
-      
       setHospitals(hospitalsData);
-      setTotalPages(Math.ceil(hospitalsData.length / itemsPerPage));
     } catch (error) {
       console.error(error);
     } finally {
@@ -107,13 +95,10 @@ const HospitalsList = () => {
   const getRelevantDoctors = (hospital) => {
     if (!searchQuery) return hospital.doctors || [];
     const q = searchQuery.toLowerCase();
-    const doctors = hospital.doctors || [];
-    
-    return doctors.filter(doc => {
+    return (hospital.doctors || []).filter(doc => {
       const spec = doc.specialization.toLowerCase();
       if (q.includes('heart') || q.includes('cardiac')) return spec.includes('cardiologist');
-      if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return spec.includes('neurologist');
-      if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return spec.includes('orthopedic');
+      if (q.includes('brain') || q.includes('neuro')) return spec.includes('neurologist');
       return true;
     });
   };
@@ -128,22 +113,18 @@ const HospitalsList = () => {
     return relevant.length > 0 ? relevant[0] : null;
   };
 
-  // ========== BUTTON HANDLERS ==========
+  // ========== WORKING BUTTON HANDLERS ==========
   const handleBookOPD = (hospital) => {
     const doctor = getSelectedDoctorObj(hospital);
-    if (!doctor && searchQuery && getRelevantDoctors(hospital).length > 0) {
-      alert('Please select a doctor first');
-      return;
-    }
     const fee = doctor ? doctor.consultation_fee : (hospital.pricing?.consultation || 500);
     const discount = Math.round(fee * 0.1);
     const finalFee = fee - discount;
-    alert(`OPD Booking initiated!\n\nHospital: ${hospital.name}\nDoctor: ${doctor?.name || 'General Physician'}\nOriginal Fee: ₹${fee}\nDiscount: ₹${discount}\nYou Pay: ₹${finalFee}\n\nProceeding to payment...`);
+    alert(`✅ OPD Booking Confirmed!\n\nHospital: ${hospital.name}\nDoctor: ${doctor?.name || 'General Physician'}\nOriginal Fee: ₹${fee}\nDiscount: ₹${discount}\nYou Pay: ₹${finalFee}`);
     navigate('/payment');
   };
 
   const handleBookAdmission = (hospital) => {
-    alert(`Admission Booking initiated!\n\nHospital: ${hospital.name}\n10% discount will be applied on final bill.\n\nProceeding to payment...`);
+    alert(`✅ Admission Booking Initiated!\n\nHospital: ${hospital.name}\n10% discount will be applied on final bill.\n\nYou will be redirected to payment.`);
     navigate('/payment');
   };
 
@@ -154,9 +135,10 @@ const HospitalsList = () => {
   const handleAmbulance = () => {
     navigate('/ambulance');
   };
+  // ============================================
 
-  // Pagination
   const paginatedHospitals = hospitals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(hospitals.length / itemsPerPage);
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading hospitals...</div>;
 
@@ -165,7 +147,6 @@ const HospitalsList = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a' }}>🏥 KiaetoCare Hospitals</h1>
 
-        {/* Search Form */}
         <form onSubmit={handleSearch} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', margin: '1rem 0' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
             <input type="text" placeholder="Disease, symptom, or hospital name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
@@ -195,33 +176,27 @@ const HospitalsList = () => {
 
             return (
               <div key={h._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{h.name}</h2>
                   <div>⭐ {h.ratings?.average} ({h.ratings?.count} reviews)</div>
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
 
-                {/* Doctor selection */}
                 {searchQuery && hasMultipleRelevant && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor:</strong>
-                    <div style={{ marginTop: '0.25rem' }}>
-                      {relevantDoctors.map(doc => (
-                        <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.25rem', cursor: 'pointer' }}>
-                          <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
-                          <div style={{ flex: 1 }}><strong>{doc.name}</strong> - {doc.specialization}<div style={{ fontSize: '0.75rem' }}>⭐ {doc.rating} ({doc.reviewCount} reviews)</div></div>
-                          <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
-                        </label>
-                      ))}
-                    </div>
+                    {relevantDoctors.map(doc => (
+                      <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.25rem', cursor: 'pointer' }}>
+                        <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
+                        <div style={{ flex: 1 }}><strong>{doc.name}</strong> - {doc.specialization}<div style={{ fontSize: '0.75rem' }}>⭐ {doc.rating} ({doc.reviewCount} reviews)</div></div>
+                        <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
+                      </label>
+                    ))}
                   </div>
                 )}
 
-                {/* Lab Tests */}
                 <div style={{ margin: '0.5rem 0' }}>🧪 <strong>Lab Tests:</strong> {h.lab_tests_available ? '✅ Available' : '🔗 Linked'}</div>
 
-                {/* Insurance */}
                 <div style={{ margin: '0.5rem 0' }}>
                   <div onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>🛡️ Insurance Accepted:</strong>
@@ -237,13 +212,11 @@ const HospitalsList = () => {
                   </div>
                 </div>
 
-                {/* OPD & Admission */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '0.5rem 0', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem' }}>
                   <div><strong>📋 OPD Consultation</strong><br />₹{opdFee}</div>
                   <div><strong>🏥 Admission (per day)</strong><br />ICU: ₹{h.pricing?.icu_bed_per_day}<br />General: ₹{h.pricing?.general_bed_per_day}<br />🛏️ {h.beds?.available} beds available</div>
                 </div>
 
-                {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                   <button onClick={() => handleBookOPD(h)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>📋 Book OPD (Save ₹{discountAmount})</button>
                   <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>🏥 Book Admission (Save 10%)</button>
@@ -251,7 +224,6 @@ const HospitalsList = () => {
                   <button onClick={handleAmbulance} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>🚑 Ambulance</button>
                 </div>
 
-                {/* Badges */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                   {h.has24x7ER && <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem' }}>🚨 24/7 Emergency</span>}
                 </div>
@@ -260,12 +232,11 @@ const HospitalsList = () => {
           })
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === 1 ? '#e5e7eb' : '#3b82f6', color: currentPage === 1 ? '#9ca3af' : 'white', border: 'none', borderRadius: '0.375rem', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}>Previous</button>
-            <span style={{ padding: '0.5rem 1rem' }}>Page {currentPage} of {totalPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === totalPages ? '#e5e7eb' : '#3b82f6', color: currentPage === totalPages ? '#9ca3af' : 'white', border: 'none', borderRadius: '0.375rem', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}>Next</button>
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === 1 ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Previous</button>
+            <span>Page {currentPage} of {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === totalPages ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Next</button>
           </div>
         )}
       </div>
