@@ -16,29 +16,27 @@ const HospitalsList = () => {
   const [sortBy, setSortBy] = useState('distance');
   const [selectedDoctor, setSelectedDoctor] = useState({});
   const [expandedInsurance, setExpandedInsurance] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 5;
 
   // Hardcoded doctors for each hospital
   const hospitalDoctors = {
     'Apollo Hospital Mumbai': [
       { name: 'Dr. Priya Sharma', specialization: 'Cardiologist', consultation_fee: 1200, rating: 4.9, reviewCount: 340 },
-      { name: 'Dr. Rajesh Mehta', specialization: 'Neurologist', consultation_fee: 1300, rating: 4.8, reviewCount: 210 },
-      { name: 'Dr. Sunil Patil', specialization: 'Orthopedic', consultation_fee: 1100, rating: 4.7, reviewCount: 180 }
+      { name: 'Dr. Rajesh Mehta', specialization: 'Neurologist', consultation_fee: 1300, rating: 4.8, reviewCount: 210 }
     ],
     'Fortis Hospital Delhi': [
-      { name: 'Dr. Anil Kumar', specialization: 'Cardiologist', consultation_fee: 1500, rating: 4.7, reviewCount: 180 },
-      { name: 'Dr. Neha Gupta', specialization: 'Orthopedic', consultation_fee: 1400, rating: 4.6, reviewCount: 150 }
+      { name: 'Dr. Anil Kumar', specialization: 'Cardiologist', consultation_fee: 1500, rating: 4.7, reviewCount: 180 }
     ],
     'Manipal Hospital Bangalore': [
-      { name: 'Dr. Sunita Reddy', specialization: 'Neurologist', consultation_fee: 1000, rating: 4.9, reviewCount: 310 },
-      { name: 'Dr. Vikram Singh', specialization: 'Oncologist', consultation_fee: 1200, rating: 4.8, reviewCount: 190 }
+      { name: 'Dr. Sunita Reddy', specialization: 'Neurologist', consultation_fee: 1000, rating: 4.9, reviewCount: 310 }
     ],
     'Medicover Hospital Hyderabad': [
-      { name: 'Dr. Ajay Kumar', specialization: 'Cardiologist', consultation_fee: 1100, rating: 4.7, reviewCount: 200 },
-      { name: 'Dr. Meera Reddy', specialization: 'Nephrologist', consultation_fee: 1000, rating: 4.8, reviewCount: 170 }
+      { name: 'Dr. Ajay Kumar', specialization: 'Cardiologist', consultation_fee: 1100, rating: 4.7, reviewCount: 200 }
     ],
     'Narayana Health Kolkata': [
-      { name: 'Dr. S. Chatterjee', specialization: 'Cardiologist', consultation_fee: 900, rating: 4.6, reviewCount: 160 },
-      { name: 'Dr. R. Banerjee', specialization: 'Oncologist', consultation_fee: 950, rating: 4.7, reviewCount: 130 }
+      { name: 'Dr. S. Chatterjee', specialization: 'Cardiologist', consultation_fee: 900, rating: 4.6, reviewCount: 160 }
     ]
   };
 
@@ -52,7 +50,7 @@ const HospitalsList = () => {
     }
   }, []);
 
-  // Fetch hospitals when search, city, location, or sort changes
+  // Fetch hospitals
   useEffect(() => {
     fetchHospitals();
   }, [searchQuery, city, userLocation, sortBy]);
@@ -67,7 +65,6 @@ const HospitalsList = () => {
         params.append('lat', userLocation.lat);
         params.append('lng', userLocation.lng);
       }
-      params.append('sort_by', sortBy);
       const res = await api.get(`/hospitals/search?${params.toString()}`);
       let hospitalsData = res.data.data || [];
       
@@ -77,6 +74,7 @@ const HospitalsList = () => {
       }));
       
       setHospitals(hospitalsData);
+      setTotalPages(Math.ceil(hospitalsData.length / itemsPerPage));
     } catch (error) {
       console.error(error);
     } finally {
@@ -86,6 +84,7 @@ const HospitalsList = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setCurrentPage(1);
     fetchHospitals();
   };
 
@@ -112,11 +111,9 @@ const HospitalsList = () => {
     
     return doctors.filter(doc => {
       const spec = doc.specialization.toLowerCase();
-      if (q.includes('heart') || q.includes('cardiac') || q.includes('chest pain')) return spec.includes('cardiologist');
+      if (q.includes('heart') || q.includes('cardiac')) return spec.includes('cardiologist');
       if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return spec.includes('neurologist');
       if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return spec.includes('orthopedic');
-      if (q.includes('kidney') || q.includes('stone')) return spec.includes('nephrologist');
-      if (q.includes('cancer') || q.includes('tumor')) return spec.includes('oncologist');
       return true;
     });
   };
@@ -131,20 +128,23 @@ const HospitalsList = () => {
     return relevant.length > 0 ? relevant[0] : null;
   };
 
+  // ========== BUTTON HANDLERS ==========
   const handleBookOPD = (hospital) => {
     const doctor = getSelectedDoctorObj(hospital);
-    if (!doctor) {
-      alert('Please select a doctor');
+    if (!doctor && searchQuery && getRelevantDoctors(hospital).length > 0) {
+      alert('Please select a doctor first');
       return;
     }
-    const fee = doctor.consultation_fee;
+    const fee = doctor ? doctor.consultation_fee : (hospital.pricing?.consultation || 500);
     const discount = Math.round(fee * 0.1);
     const finalFee = fee - discount;
-    navigate(`/book-opd/${hospital._id}?doctor=${encodeURIComponent(doctor.name)}&fee=${finalFee}&original=${fee}`);
+    alert(`OPD Booking initiated!\n\nHospital: ${hospital.name}\nDoctor: ${doctor?.name || 'General Physician'}\nOriginal Fee: ₹${fee}\nDiscount: ₹${discount}\nYou Pay: ₹${finalFee}\n\nProceeding to payment...`);
+    navigate('/payment');
   };
 
   const handleBookAdmission = (hospital) => {
-    navigate(`/book-admission/${hospital._id}`);
+    alert(`Admission Booking initiated!\n\nHospital: ${hospital.name}\n10% discount will be applied on final bill.\n\nProceeding to payment...`);
+    navigate('/payment');
   };
 
   const handleViewDetails = (hospital) => {
@@ -155,6 +155,9 @@ const HospitalsList = () => {
     navigate('/ambulance');
   };
 
+  // Pagination
+  const paginatedHospitals = hospitals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading hospitals...</div>;
 
   return (
@@ -162,25 +165,12 @@ const HospitalsList = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a' }}>🏥 KiaetoCare Hospitals</h1>
 
+        {/* Search Form */}
         <form onSubmit={handleSearch} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', margin: '1rem 0' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <input
-              type="text"
-              placeholder="Search by disease, symptom, or hospital name"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
-            />
-            <input
-              type="text"
-              placeholder="City (optional)"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              style={{ flex: 1, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
-            />
-            <button type="submit" style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-              Search
-            </button>
+            <input type="text" placeholder="Disease, symptom, or hospital name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+            <input type="text" placeholder="City (optional)" value={city} onChange={(e) => setCity(e.target.value)} style={{ flex: 1, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+            <button type="submit" style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Search</button>
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span>Sort by:</span>
@@ -190,43 +180,37 @@ const HospitalsList = () => {
           </div>
         </form>
 
-        {hospitals.length === 0 ? (
+        {paginatedHospitals.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>No hospitals found.</div>
         ) : (
-          hospitals.map(h => {
+          paginatedHospitals.map(h => {
             const distance = userLocation && h.location ? calculateDistance(userLocation.lat, userLocation.lng, h.location.lat, h.location.lng) : null;
             const insuranceList = h.insurance_accepted || [];
             const showAll = expandedInsurance[h._id];
             const relevantDoctors = getRelevantDoctors(h);
+            const hasMultipleRelevant = relevantDoctors.length > 1;
             const selectedDoctorObj = getSelectedDoctorObj(h);
             const opdFee = selectedDoctorObj ? selectedDoctorObj.consultation_fee : (h.pricing?.consultation || 0);
             const discountAmount = Math.round(opdFee * 0.1);
 
             return (
               <div key={h._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{h.name}</h2>
                   <div>⭐ {h.ratings?.average} ({h.ratings?.count} reviews)</div>
                 </div>
                 <p style={{ color: '#6b7280' }}>{h.address?.city}, {h.address?.state} {distance && `📍 ${distance} km away`}</p>
 
-                {/* Doctor Selection with Radio Buttons */}
-                {relevantDoctors.length > 0 && (
+                {/* Doctor selection */}
+                {searchQuery && hasMultipleRelevant && (
                   <div style={{ margin: '0.5rem 0' }}>
                     <strong>👨‍⚕️ Select Doctor:</strong>
                     <div style={{ marginTop: '0.25rem' }}>
                       {relevantDoctors.map(doc => (
                         <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', marginBottom: '0.25rem', cursor: 'pointer' }}>
-                          <input
-                            type="radio"
-                            name={`doc_${h._id}`}
-                            checked={selectedDoctor[h._id] === doc.name}
-                            onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))}
-                          />
-                          <div style={{ flex: 1 }}>
-                            <strong>{doc.name}</strong> - {doc.specialization}
-                            <div style={{ fontSize: '0.75rem' }}>⭐ {doc.rating} ({doc.reviewCount} reviews)</div>
-                          </div>
+                          <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
+                          <div style={{ flex: 1 }}><strong>{doc.name}</strong> - {doc.specialization}<div style={{ fontSize: '0.75rem' }}>⭐ {doc.rating} ({doc.reviewCount} reviews)</div></div>
                           <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
                         </label>
                       ))}
@@ -253,34 +237,18 @@ const HospitalsList = () => {
                   </div>
                 </div>
 
-                {/* Admission Info */}
+                {/* OPD & Admission */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '0.5rem 0', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem' }}>
-                  <div>
-                    <strong>📋 OPD Consultation</strong><br />
-                    <span>₹{opdFee}</span>
-                  </div>
-                  <div>
-                    <strong>🏥 Admission (per day)</strong><br />
-                    ICU: ₹{h.pricing?.icu_bed_per_day}<br />
-                    General: ₹{h.pricing?.general_bed_per_day}<br />
-                    🛏️ {h.beds?.available} beds available
-                  </div>
+                  <div><strong>📋 OPD Consultation</strong><br />₹{opdFee}</div>
+                  <div><strong>🏥 Admission (per day)</strong><br />ICU: ₹{h.pricing?.icu_bed_per_day}<br />General: ₹{h.pricing?.general_bed_per_day}<br />🛏️ {h.beds?.available} beds available</div>
                 </div>
 
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                  <button onClick={() => handleBookOPD(h)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-                    📋 Book OPD (Save ₹{discountAmount})
-                  </button>
-                  <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-                    🏥 Book Admission (Save 10%)
-                  </button>
-                  <button onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-                    View Details
-                  </button>
-                  <button onClick={handleAmbulance} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-                    🚑 Ambulance
-                  </button>
+                  <button onClick={() => handleBookOPD(h)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>📋 Book OPD (Save ₹{discountAmount})</button>
+                  <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>🏥 Book Admission (Save 10%)</button>
+                  <button onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>View Details</button>
+                  <button onClick={handleAmbulance} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>🚑 Ambulance</button>
                 </div>
 
                 {/* Badges */}
@@ -290,6 +258,15 @@ const HospitalsList = () => {
               </div>
             );
           })
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === 1 ? '#e5e7eb' : '#3b82f6', color: currentPage === 1 ? '#9ca3af' : 'white', border: 'none', borderRadius: '0.375rem', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}>Previous</button>
+            <span style={{ padding: '0.5rem 1rem' }}>Page {currentPage} of {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === totalPages ? '#e5e7eb' : '#3b82f6', color: currentPage === totalPages ? '#9ca3af' : 'white', border: 'none', borderRadius: '0.375rem', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}>Next</button>
+          </div>
         )}
       </div>
     </div>
