@@ -1,20 +1,11 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 
 const BookAdmission = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
-      <h2>Book Admission</h2>
-      <p>Hospital ID: {id}</p>
-      <button 
-        onClick={() => navigate('/hospitals')} 
-        style={{ marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer' }}
-      >
-        ← Back to Hospitals
-      </button>
+    <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <h1>Book Admission Page</h1>
+      <p>This page is working!</p>
+      <a href="/hospitals">← Back to Hospitals</a>
     </div>
   );
 };
