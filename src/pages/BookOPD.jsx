@@ -1,7 +1,15 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 
-function BookOPD() {
-  return <h1>Book OPD Page Working!</h1>;
-}
+const BookOPD = () => {
+  const { id } = useParams();
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h2>Book OPD Page</h2>
+      <p>Hospital ID: {id}</p>
+      <p>This page is working!</p>
+    </div>
+  );
+};
 
 export default BookOPD;
