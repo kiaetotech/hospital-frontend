@@ -147,6 +147,8 @@ const HospitalsList = () => {
   };
 
   const handleBookAdmission = (hospital) => {
+  window.location.href = `/book-admission/${hospital._id}`;
+};
     navigate(`/book-admission/${hospital._id}?hospital=${encodeURIComponent(hospital.name)}`);
   };
 
