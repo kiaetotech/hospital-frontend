@@ -127,12 +127,12 @@ const HospitalsList = () => {
   };
 
   const handleBookOPD = (hospital) => {
-    window.location.href = `/book-opd/${hospital._id}`;
-  };
+  window.location.href = `/#/book-opd/${hospital._id}`;
+};
 
   const handleBookAdmission = (hospital) => {
-    window.location.href = `/book-admission/${hospital._id}`;
-  };
+  window.location.href = `/#/book-admission/${hospital._id}`;
+};
 
   const handleViewDetails = (hospital) => {
     window.location.href = `/hospital-info/${hospital._id}`;
