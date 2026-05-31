@@ -7,7 +7,7 @@ import HospitalSimpleDetails from './pages/HospitalSimpleDetails';
 import EmergencySearch from './pages/EmergencySearch';
 import BookOPD from './pages/BookOPD';
 import BookAdmission from './pages/BookAdmission';
-import Payment from './pages/Payment';
+import Payment from './pages/PaymentPage';
 import MyBookings from './pages/MyBookings';
 import Ambulance from './pages/Ambulance';
 
