@@ -15,6 +15,7 @@ const Caregivers = () => {
     specializations: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(true);
   const itemsPerPage = 6;
 
   // Complete caregiver data
@@ -119,9 +120,6 @@ const Caregivers = () => {
 
   const [filteredCaregivers, setFilteredCaregivers] = useState(allCaregivers);
   const [loading, setLoading] = useState(false);
-  const [showFilters, setShowFilters] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   // Get user location on load
   useEffect(() => {
@@ -193,8 +191,6 @@ const Caregivers = () => {
     
     // Filter by radius (simulated distance)
     if (userLocation && filters.radius) {
-      // In real app, calculate actual distance
-      // For demo, we already have distance values
       const maxDist = parseInt(filters.radius);
       filtered = filtered.filter(c => c.distance <= maxDist);
     }
