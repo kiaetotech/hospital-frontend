@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
 
 const Caregivers = () => {
   const navigate = useNavigate();
-  const [caregivers, setCaregivers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState('loading');
   const [filters, setFilters] = useState({
@@ -18,8 +15,112 @@ const Caregivers = () => {
     specializations: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 6;
+
+  // Complete caregiver data
+  const allCaregivers = [
+    {
+      _id: '1',
+      fullName: 'Priya Sharma',
+      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=PS',
+      gender: 'female',
+      serviceType: 'both',
+      experienceYears: 8,
+      certifications: ['RN', 'CPR', 'BLS'],
+      specializations: ['dementia', 'post-surgery', 'bedridden'],
+      pricing: { personal: { hourly: 350 }, skilled: { hourly: 500 } },
+      ratings: { average: 4.8, count: 124 },
+      isVerified: true,
+      distance: 2.5,
+      location: { city: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+      availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    },
+    {
+      _id: '2',
+      fullName: 'Rajesh Kumar',
+      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=RK',
+      gender: 'male',
+      serviceType: 'personal',
+      experienceYears: 5,
+      certifications: ['CNA', 'CPR'],
+      specializations: ['elder care', 'mobility support'],
+      pricing: { personal: { hourly: 250 } },
+      ratings: { average: 4.6, count: 89 },
+      isVerified: true,
+      distance: 3.8,
+      location: { city: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+      availability: ['Monday', 'Tuesday', 'Wednesday', 'Saturday', 'Sunday']
+    },
+    {
+      _id: '3',
+      fullName: 'Sunita Reddy',
+      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=SR',
+      gender: 'female',
+      serviceType: 'skilled',
+      experienceYears: 12,
+      certifications: ['RN', 'BLS', 'ACLS'],
+      specializations: ['wound care', 'ventilator', 'tracheostomy'],
+      pricing: { skilled: { hourly: 650 } },
+      ratings: { average: 4.9, count: 210 },
+      isVerified: true,
+      distance: 5.2,
+      location: { city: 'Navi Mumbai', lat: 19.0330, lng: 73.0297 },
+      availability: ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    },
+    {
+      _id: '4',
+      fullName: 'Anita Desai',
+      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=AD',
+      gender: 'female',
+      serviceType: 'personal',
+      experienceYears: 3,
+      certifications: ['BLS'],
+      specializations: ['newborn care', 'postnatal'],
+      pricing: { personal: { hourly: 200 } },
+      ratings: { average: 4.5, count: 45 },
+      isVerified: true,
+      distance: 4.5,
+      location: { city: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+      availability: ['Monday', 'Friday', 'Saturday', 'Sunday']
+    },
+    {
+      _id: '5',
+      fullName: 'Vikram Singh',
+      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=VS',
+      gender: 'male',
+      serviceType: 'both',
+      experienceYears: 15,
+      certifications: ['RN', 'CPR', 'ACLS', 'BLS'],
+      specializations: ['dementia', 'palliative', 'hospice'],
+      pricing: { personal: { hourly: 600 }, skilled: { hourly: 800 } },
+      ratings: { average: 4.9, count: 320 },
+      isVerified: true,
+      distance: 6.0,
+      location: { city: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+      availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    },
+    {
+      _id: '6',
+      fullName: 'Meera Joshi',
+      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=MJ',
+      gender: 'female',
+      serviceType: 'skilled',
+      experienceYears: 7,
+      certifications: ['RN', 'CPR'],
+      specializations: ['diabetes care', 'wound care'],
+      pricing: { skilled: { hourly: 550 } },
+      ratings: { average: 4.7, count: 98 },
+      isVerified: true,
+      distance: 3.2,
+      location: { city: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+      availability: ['Monday', 'Tuesday', 'Thursday', 'Friday']
+    }
+  ];
+
+  const [filteredCaregivers, setFilteredCaregivers] = useState(allCaregivers);
+  const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
   // Get user location on load
@@ -40,95 +141,67 @@ const Caregivers = () => {
     }
   }, []);
 
-  // Fetch caregivers when filters or location change
+  // Apply filters whenever filters change
   useEffect(() => {
-    fetchCaregivers();
-  }, [filters, userLocation, currentPage]);
-
-  const fetchCaregivers = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (userLocation) {
-        params.append('lat', userLocation.lat);
-        params.append('lng', userLocation.lng);
-      }
-      if (filters.radius) params.append('radius', filters.radius);
-      if (filters.gender && filters.gender !== 'any') params.append('gender', filters.gender);
-      if (filters.serviceType) params.append('serviceType', filters.serviceType);
-      if (filters.minRating) params.append('minRating', filters.minRating);
-      if (filters.minExperience) params.append('minExperience', filters.minExperience);
-      if (filters.maxHourlyRate) params.append('maxHourlyRate', filters.maxHourlyRate);
-      if (filters.specializations) params.append('specializations', filters.specializations);
-      params.append('page', currentPage);
-      params.append('limit', itemsPerPage);
-      
-      const res = await api.get(`/caregivers/search?${params.toString()}`);
-      setCaregivers(res.data.data || []);
-      setTotalPages(res.data.pagination?.totalPages || 1);
-    } catch (error) {
-      console.error('Error fetching caregivers:', error);
-      // Mock data for demo if backend not ready
-      setCaregivers([
-        {
-          _id: '1',
-          fullName: 'Priya Sharma',
-          photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=PS',
-          gender: 'female',
-          serviceType: 'both',
-          experienceYears: 8,
-          certifications: ['RN', 'CPR', 'BLS'],
-          specializations: ['dementia', 'post-surgery', 'bedridden'],
-          pricing: { personal: { hourly: 350 }, skilled: { hourly: 500 } },
-          ratings: { average: 4.8, count: 124 },
-          isVerified: true,
-          distance: 2.5,
-          location: { city: 'Mumbai' }
-        },
-        {
-          _id: '2',
-          fullName: 'Rajesh Kumar',
-          photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=RK',
-          gender: 'male',
-          serviceType: 'personal',
-          experienceYears: 5,
-          certifications: ['CNA', 'CPR'],
-          specializations: ['elder care', 'mobility support'],
-          pricing: { personal: { hourly: 250 } },
-          ratings: { average: 4.6, count: 89 },
-          isVerified: true,
-          distance: 3.8,
-          location: { city: 'Mumbai' }
-        },
-        {
-          _id: '3',
-          fullName: 'Sunita Reddy',
-          photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=SR',
-          gender: 'female',
-          serviceType: 'skilled',
-          experienceYears: 12,
-          certifications: ['RN', 'BLS', 'ACLS'],
-          specializations: ['wound care', 'ventilator', 'tracheostomy'],
-          pricing: { skilled: { hourly: 650 } },
-          ratings: { average: 4.9, count: 210 },
-          isVerified: true,
-          distance: 5.2,
-          location: { city: 'Navi Mumbai' }
-        }
-      ]);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFilterChange = (key, value) => {
-    setFilters({ ...filters, [key]: value });
-    setCurrentPage(1);
-  };
+    applyFilters();
+  }, [filters]);
 
   const applyFilters = () => {
-    fetchCaregivers();
+    setLoading(true);
+    let filtered = [...allCaregivers];
+    
+    // Filter by service type
+    if (filters.serviceType) {
+      if (filters.serviceType === 'personal') {
+        filtered = filtered.filter(c => c.serviceType === 'personal' || c.serviceType === 'both');
+      } else if (filters.serviceType === 'skilled') {
+        filtered = filtered.filter(c => c.serviceType === 'skilled' || c.serviceType === 'both');
+      }
+    }
+    
+    // Filter by gender
+    if (filters.gender && filters.gender !== 'any') {
+      filtered = filtered.filter(c => c.gender === filters.gender);
+    }
+    
+    // Filter by min experience
+    if (filters.minExperience) {
+      filtered = filtered.filter(c => c.experienceYears >= parseInt(filters.minExperience));
+    }
+    
+    // Filter by min rating
+    if (filters.minRating) {
+      filtered = filtered.filter(c => c.ratings.average >= parseFloat(filters.minRating));
+    }
+    
+    // Filter by max hourly rate
+    if (filters.maxHourlyRate) {
+      const maxRate = parseInt(filters.maxHourlyRate);
+      filtered = filtered.filter(c => {
+        const rate = c.serviceType === 'personal' ? c.pricing.personal?.hourly : c.pricing.skilled?.hourly;
+        return rate <= maxRate;
+      });
+    }
+    
+    // Filter by specializations
+    if (filters.specializations) {
+      const specTerms = filters.specializations.toLowerCase().split(',').map(s => s.trim());
+      filtered = filtered.filter(c => 
+        c.specializations.some(spec => specTerms.some(term => spec.toLowerCase().includes(term)))
+      );
+    }
+    
+    // Filter by radius (simulated distance)
+    if (userLocation && filters.radius) {
+      // In real app, calculate actual distance
+      // For demo, we already have distance values
+      const maxDist = parseInt(filters.radius);
+      filtered = filtered.filter(c => c.distance <= maxDist);
+    }
+    
+    setFilteredCaregivers(filtered);
+    setCurrentPage(1);
+    setLoading(false);
   };
 
   const resetFilters = () => {
@@ -141,7 +214,10 @@ const Caregivers = () => {
       maxHourlyRate: '',
       specializations: ''
     });
-    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters({ ...filters, [key]: value });
   };
 
   const getServiceTypeText = (type) => {
@@ -155,6 +231,10 @@ const Caregivers = () => {
     const half = rating % 1 >= 0.5;
     return '⭐'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
   };
+
+  // Pagination
+  const paginatedCaregivers = filteredCaregivers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredCaregivers.length / itemsPerPage);
 
   if (locationStatus === 'loading') {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Detecting your location...</div>;
@@ -171,12 +251,9 @@ const Caregivers = () => {
           {locationStatus === 'success' && userLocation && (
             <p style={{ fontSize: '0.875rem', color: '#10b981' }}>📍 Location detected! Showing caregivers near you.</p>
           )}
-          {locationStatus === 'error' && (
-            <p style={{ fontSize: '0.875rem', color: '#f59e0b' }}>⚠️ Location access denied. Showing all caregivers.</p>
-          )}
         </div>
 
-        {/* Filters Section - Always Visible */}
+        {/* Filters Section */}
         <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
             <h3 style={{ fontWeight: 'bold' }}>🔍 Filter Caregivers</h3>
@@ -232,21 +309,19 @@ const Caregivers = () => {
         </div>
 
         {/* Results Count */}
-        {!loading && (
-          <p style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>Found {caregivers.length} caregivers</p>
-        )}
+        <p style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>Found {filteredCaregivers.length} caregivers</p>
 
         {/* Caregiver Cards Grid */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '3rem' }}>Loading caregivers...</div>
-        ) : caregivers.length === 0 ? (
+        ) : paginatedCaregivers.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '0.5rem' }}>
             <p>No caregivers found matching your criteria.</p>
             <button onClick={resetFilters} style={{ marginTop: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Reset Filters</button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1rem' }}>
-            {caregivers.map(c => (
+            {paginatedCaregivers.map(c => (
               <div key={c._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <img src={c.photo} alt={c.fullName} style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
