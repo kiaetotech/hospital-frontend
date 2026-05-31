@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ComingSoon from './pages/ComingSoon';
 import HospitalsList from './pages/HospitalsList';
@@ -13,7 +13,7 @@ import Ambulance from './pages/Ambulance';
 
 function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         {/* Main Pages */}
         <Route path="/" element={<HomePage />} />
@@ -41,7 +41,7 @@ function App() {
         <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
         <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
       </Routes>
-    </HashRouter>
+    <BrowserRouter>
   );
 }
 
