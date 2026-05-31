@@ -41,7 +41,7 @@ function App() {
         <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
         <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
       </Routes>
-    <BrowserRouter>
+    </BrowserRouter> //
   );
 }
 
