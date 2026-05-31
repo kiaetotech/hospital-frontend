@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const Ambulance = () => {
@@ -18,7 +19,7 @@ const Ambulance = () => {
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
   const [pickupAddress, setPickupAddress] = useState('');
-  const [requiresAttendant, setRequiresAttendant] = useState(false);
+  const [requiresAttendant, setRequiresAttendant] = useState(false);const navigate = useNavigate();
 
   // Ambulance types with pricing
   const ambulanceTypes = {

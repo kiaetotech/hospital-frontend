@@ -10,6 +10,7 @@ import BookAdmission from './pages/BookAdmission';
 import Payment from './pages/PaymentPage';
 import MyBookings from './pages/MyBookings';
 import Ambulance from './pages/Ambulance';
+import Caregivers from './pages/Caregivers';
 
 function App() {
   return (
@@ -31,12 +32,14 @@ function App() {
         
         {/* Ambulance Tag */}
         <Route path="/ambulance" element={<Ambulance />} />
+
+	{/* caregiver Tag */}
+	<Route path="/caregivers" element={<Caregivers />} />
         
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
         <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
         <Route path="/preventive" element={<ComingSoon title="Preventive Checkups" />} />
-        <Route path="/caregivers" element={<ComingSoon title="Caregiver Services" />} />
         <Route path="/financing" element={<ComingSoon title="Health Financing" />} />
         <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
         <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
