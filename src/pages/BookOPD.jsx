@@ -1,13 +1,11 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
 
 const BookOPD = () => {
-  const { id } = useParams();
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Book OPD Page</h2>
-      <p>Hospital ID: {id}</p>
+    <div style={{ padding: '50px', textAlign: 'center' }}>
+      <h1 style={{ color: 'green' }}>Book OPD Page</h1>
       <p>This page is working!</p>
+      <button onClick={() => window.location.href = '/hospitals'}>← Back to Hospitals</button>
     </div>
   );
 };
