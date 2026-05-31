@@ -126,40 +126,21 @@ const HospitalsList = () => {
     setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // ========== WORKING BUTTON NAVIGATION ==========
-  const handleBookOPD = (hospital, selectedDoctorObj = null) => {
-    const matchingDoctors = getMatchingDoctors(hospital);
-    let doc = selectedDoctorObj;
-    
-    if (!doc && matchingDoctors.length === 1) {
-      doc = matchingDoctors[0];
-    } else if (!doc && matchingDoctors.length > 1) {
-      const selectedName = selectedDoctor[hospital._id];
-      doc = matchingDoctors.find(d => d.name === selectedName);
-    }
-    
-    const doctorName = doc ? encodeURIComponent(doc.name) : 'General';
-    const fee = doc ? doc.consultation_fee : (hospital.pricing?.consultation || 500);
-    const discount = Math.round(fee * 0.1);
-    const finalFee = fee - discount;
-    
-    navigate(`/book-opd/${hospital._id}?doctor=${doctorName}&fee=${finalFee}&original=${fee}&hospital=${encodeURIComponent(hospital.name)}`);
+  const handleBookOPD = (hospital) => {
+    window.location.href = `/book-opd/${hospital._id}`;
   };
 
   const handleBookAdmission = (hospital) => {
-  window.location.href = `/book-admission/${hospital._id}`;
-};
-    navigate(`/book-admission/${hospital._id}?hospital=${encodeURIComponent(hospital.name)}`);
+    window.location.href = `/book-admission/${hospital._id}`;
   };
 
   const handleViewDetails = (hospital) => {
-    navigate(`/hospital-info/${hospital._id}`);
+    window.location.href = `/hospital-info/${hospital._id}`;
   };
 
   const handleAmbulance = () => {
-    navigate('/ambulance');
+    window.location.href = '/ambulance';
   };
-  // ============================================
 
   const paginatedHospitals = hospitals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(hospitals.length / itemsPerPage);
@@ -245,7 +226,7 @@ const HospitalsList = () => {
                         <strong>{doc.name}</strong> - {doc.specialization}<br />
                         📜 {doc.qualification}<br />
                         ⭐ {doc.rating} ({doc.reviewCount} reviews) | Fee: ₹{doc.consultation_fee}
-                        <button onClick={() => handleBookOPD(h, doc)} style={{ marginLeft: '0.5rem', backgroundColor: '#10b981', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer' }}>Book This Doctor</button>
+                        <button onClick={() => handleBookOPD(h)} style={{ marginLeft: '0.5rem', backgroundColor: '#10b981', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer' }}>Book This Doctor</button>
                       </div>
                     ))}
                   </div>
