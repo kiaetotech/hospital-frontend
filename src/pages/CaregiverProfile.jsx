@@ -52,7 +52,7 @@ const CaregiverProfile = () => {
         <h3>Availability</h3>
         <p>{caregiver.availableDays.join(', ')}</p>
         
-        <button onClick={() => navigate('/book-caregiver', { state: { caregiver } })} style={{ marginTop: '1rem', width: '100%', backgroundColor: '#10b981', color: 'white', padding: '0.75rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+        <button onClick={() => navigate(`/book-caregiver/${caregiver._id}`, { state: { caregiver } })} style={{ marginTop: '1rem', width: '100%', backgroundColor: '#10b981', color: 'white', padding: '0.75rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
           Book This Caregiver
         </button>
       </div>

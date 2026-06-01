@@ -5,8 +5,8 @@ const BookCaregiver = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { caregiver } = location.state || {};
-  const [durationType, setDurationType] = useState('hourly'); // hourly, daily, weekly, monthly
-  const [durationValue, setDurationValue] = useState(4); // hours, days, weeks, months
+  const [durationType, setDurationType] = useState('hourly'); // hourly, daily, weekly, monthly, yearly
+  const [durationValue, setDurationValue] = useState(4);
   const [formData, setFormData] = useState({
     patientName: '',
     patientAge: '',
@@ -18,7 +18,7 @@ const BookCaregiver = () => {
     endDate: '',
     requirements: '',
     recurringWeekly: false,
-    recurringDays: [] // ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+    recurringDays: []
   });
 
   if (!caregiver) {
@@ -26,17 +26,18 @@ const BookCaregiver = () => {
   }
 
   const hourlyRate = caregiver.pricing?.personal?.hourly || caregiver.pricing?.skilled?.hourly || 300;
-  const dailyRate = hourlyRate * 8; // 8 hours day
-  const weeklyRate = dailyRate * 5; // 5 days week
-  const monthlyRate = weeklyRate * 4; // 4 weeks month
+  const dailyRate = hourlyRate * 8;
+  const weeklyRate = dailyRate * 5;
+  const monthlyRate = weeklyRate * 4;
+  const yearlyRate = monthlyRate * 12;
 
-  // Calculate total amount based on duration type
   const getTotalAmount = () => {
     switch (durationType) {
       case 'hourly': return hourlyRate * durationValue;
       case 'daily': return dailyRate * durationValue;
       case 'weekly': return weeklyRate * durationValue;
       case 'monthly': return monthlyRate * durationValue;
+      case 'yearly': return yearlyRate * durationValue;
       default: return hourlyRate * 4;
     }
   };
@@ -51,6 +52,7 @@ const BookCaregiver = () => {
       case 'daily': return `${durationValue} day(s)`;
       case 'weekly': return `${durationValue} week(s)`;
       case 'monthly': return `${durationValue} month(s)`;
+      case 'yearly': return `${durationValue} year(s)`;
       default: return '';
     }
   };
@@ -61,7 +63,30 @@ const BookCaregiver = () => {
       case 'daily': return `₹${dailyRate}/day (8 hours)`;
       case 'weekly': return `₹${weeklyRate}/week (5 days)`;
       case 'monthly': return `₹${monthlyRate}/month (20 days)`;
+      case 'yearly': return `₹${yearlyRate}/year (240 days)`;
       default: return '';
+    }
+  };
+
+  const getMaxValue = () => {
+    switch (durationType) {
+      case 'hourly': return 24;
+      case 'daily': return 30;
+      case 'weekly': return 52;
+      case 'monthly': return 12;
+      case 'yearly': return 5;
+      default: return 24;
+    }
+  };
+
+  const getMinValue = () => {
+    switch (durationType) {
+      case 'hourly': return 1;
+      case 'daily': return 1;
+      case 'weekly': return 1;
+      case 'monthly': return 1;
+      case 'yearly': return 1;
+      default: return 1;
     }
   };
 
@@ -86,7 +111,6 @@ const BookCaregiver = () => {
       endDate: formData.endDate,
       durationType: durationType,
       durationValue: durationValue,
-      totalHours: durationType === 'hourly' ? durationValue : durationType === 'daily' ? durationValue * 8 : durationType === 'weekly' ? durationValue * 40 : durationValue * 160,
       originalAmount: totalAmount,
       platformFee: platformFee,
       finalAmount: finalAmount,
@@ -125,10 +149,8 @@ const BookCaregiver = () => {
         
         <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f3f4f6', borderRadius: '0.5rem' }}>
           <p><strong>Specializations:</strong> {caregiver.specializations.join(', ')}</p>
-          <p><strong>Hourly Rate:</strong> ₹{hourlyRate}/hour</p>
-          <p><strong>Daily Rate (8 hrs):</strong> ₹{dailyRate}/day</p>
-          <p><strong>Weekly Rate (5 days):</strong> ₹{weeklyRate}/week</p>
-          <p><strong>Monthly Rate (20 days):</strong> ₹{monthlyRate}/month</p>
+          <p><strong>Hourly:</strong> ₹{hourlyRate}/hour | <strong>Daily (8h):</strong> ₹{dailyRate} | <strong>Weekly (5d):</strong> ₹{weeklyRate}</p>
+          <p><strong>Monthly (20d):</strong> ₹{monthlyRate} | <strong>Yearly (240d):</strong> ₹{yearlyRate}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -140,19 +162,20 @@ const BookCaregiver = () => {
               <button type="button" onClick={() => { setDurationType('daily'); setDurationValue(1); }} style={{ padding: '0.5rem 1rem', backgroundColor: durationType === 'daily' ? '#10b981' : '#e5e7eb', color: durationType === 'daily' ? 'white' : 'black', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Daily</button>
               <button type="button" onClick={() => { setDurationType('weekly'); setDurationValue(1); }} style={{ padding: '0.5rem 1rem', backgroundColor: durationType === 'weekly' ? '#10b981' : '#e5e7eb', color: durationType === 'weekly' ? 'white' : 'black', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Weekly</button>
               <button type="button" onClick={() => { setDurationType('monthly'); setDurationValue(1); }} style={{ padding: '0.5rem 1rem', backgroundColor: durationType === 'monthly' ? '#10b981' : '#e5e7eb', color: durationType === 'monthly' ? 'white' : 'black', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Monthly</button>
+              <button type="button" onClick={() => { setDurationType('yearly'); setDurationValue(1); }} style={{ padding: '0.5rem 1rem', backgroundColor: durationType === 'yearly' ? '#10b981' : '#e5e7eb', color: durationType === 'yearly' ? 'white' : 'black', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Yearly</button>
             </div>
           </div>
 
           {/* Duration Value */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>
-              {durationType === 'hourly' ? 'Number of Hours' : durationType === 'daily' ? 'Number of Days' : durationType === 'weekly' ? 'Number of Weeks' : 'Number of Months'} *
+              {durationType === 'hourly' ? 'Number of Hours' : durationType === 'daily' ? 'Number of Days' : durationType === 'weekly' ? 'Number of Weeks' : durationType === 'monthly' ? 'Number of Months' : 'Number of Years'} *
             </label>
-            <input type="number" value={durationValue} onChange={(e) => setDurationValue(parseInt(e.target.value))} min={durationType === 'hourly' ? 1 : 1} max={durationType === 'hourly' ? 24 : durationType === 'daily' ? 30 : durationType === 'weekly' ? 12 : 6} required style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+            <input type="number" value={durationValue} onChange={(e) => setDurationValue(parseInt(e.target.value))} min={getMinValue()} max={getMaxValue()} required style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
             <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>{getRateText()}</p>
           </div>
 
-          {/* Patient Details */}
+          {/* Rest of the form - patient details */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>Patient Name *</label>
             <input type="text" value={formData.patientName} onChange={(e) => setFormData({...formData, patientName: e.target.value})} required style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
@@ -193,15 +216,13 @@ const BookCaregiver = () => {
             <input type="time" value={formData.startTime} onChange={(e) => setFormData({...formData, startTime: e.target.value})} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
           </div>
 
-          {/* End Date for long-term bookings */}
-          {(durationType === 'weekly' || durationType === 'monthly') && (
+          {(durationType === 'weekly' || durationType === 'monthly' || durationType === 'yearly') && (
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>End Date (optional)</label>
               <input type="date" value={formData.endDate} onChange={(e) => setFormData({...formData, endDate: e.target.value})} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
             </div>
           )}
 
-          {/* Recurring Weekly Option */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <input type="checkbox" checked={formData.recurringWeekly} onChange={(e) => setFormData({...formData, recurringWeekly: e.target.checked})} />
