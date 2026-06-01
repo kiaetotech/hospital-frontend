@@ -14,10 +14,13 @@ const Caregivers = () => {
     maxHourlyRate: '',
     specializations: ''
   });
+  const [filteredCaregivers, setFilteredCaregivers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(true);
   const itemsPerPage = 6;
 
+  // Complete caregiver data
   const allCaregivers = [
     {
       _id: '1',
@@ -32,7 +35,10 @@ const Caregivers = () => {
       ratings: { average: 4.8, count: 124 },
       isVerified: true,
       distance: 2.5,
-      location: { city: 'Mumbai' }
+      phone: '9876543210',
+      email: 'priya@example.com',
+      location: { city: 'Mumbai' },
+      availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
     },
     {
       _id: '2',
@@ -47,7 +53,10 @@ const Caregivers = () => {
       ratings: { average: 4.6, count: 89 },
       isVerified: true,
       distance: 3.8,
-      location: { city: 'Mumbai' }
+      phone: '9876543211',
+      email: 'rajesh@example.com',
+      location: { city: 'Mumbai' },
+      availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Saturday', 'Sunday']
     },
     {
       _id: '3',
@@ -62,7 +71,10 @@ const Caregivers = () => {
       ratings: { average: 4.9, count: 210 },
       isVerified: true,
       distance: 5.2,
-      location: { city: 'Navi Mumbai' }
+      phone: '9876543212',
+      email: 'sunita@example.com',
+      location: { city: 'Navi Mumbai' },
+      availableDays: ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     },
     {
       _id: '4',
@@ -77,7 +89,10 @@ const Caregivers = () => {
       ratings: { average: 4.5, count: 45 },
       isVerified: true,
       distance: 4.5,
-      location: { city: 'Mumbai' }
+      phone: '9876543213',
+      email: 'anita@example.com',
+      location: { city: 'Mumbai' },
+      availableDays: ['Monday', 'Friday', 'Saturday', 'Sunday']
     },
     {
       _id: '5',
@@ -92,7 +107,10 @@ const Caregivers = () => {
       ratings: { average: 4.9, count: 320 },
       isVerified: true,
       distance: 6.0,
-      location: { city: 'Mumbai' }
+      phone: '9876543214',
+      email: 'vikram@example.com',
+      location: { city: 'Mumbai' },
+      availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     },
     {
       _id: '6',
@@ -107,31 +125,35 @@ const Caregivers = () => {
       ratings: { average: 4.7, count: 98 },
       isVerified: true,
       distance: 3.2,
-      location: { city: 'Mumbai' }
+      phone: '9876543215',
+      email: 'meera@example.com',
+      location: { city: 'Mumbai' },
+      availableDays: ['Monday', 'Tuesday', 'Thursday', 'Friday']
     }
   ];
 
-  const [filteredCaregivers, setFilteredCaregivers] = useState(allCaregivers);
-  const [loading, setLoading] = useState(false);
-
+  // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
           setLocationStatus('success');
+          // Apply initial filters after location is set
+          setTimeout(() => applyFilters(), 500);
         },
-        () => setLocationStatus('error')
+        () => {
+          setLocationStatus('error');
+          applyFilters();
+        }
       );
     } else {
       setLocationStatus('unsupported');
+      applyFilters();
     }
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [filters]);
-
+  // Apply filters
   const applyFilters = () => {
     setLoading(true);
     let filtered = [...allCaregivers];
@@ -191,11 +213,17 @@ const Caregivers = () => {
       maxHourlyRate: '',
       specializations: ''
     });
+    setTimeout(() => applyFilters(), 100);
   };
 
   const handleFilterChange = (key, value) => {
     setFilters({ ...filters, [key]: value });
   };
+
+  // Apply filters when filters change
+  useEffect(() => {
+    applyFilters();
+  }, [filters]);
 
   const getServiceTypeText = (type) => {
     if (type === 'personal') return '🩺 Personal Care';
@@ -209,10 +237,20 @@ const Caregivers = () => {
     return '⭐'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
   };
 
+  // Handle View Profile
+  const handleViewProfile = (caregiver) => {
+    navigate(`/caregiver-profile/${caregiver._id}`, { state: { caregiver } });
+  };
+
+  // Handle Book Now
+  const handleBookNow = (caregiver) => {
+    navigate(`/book-caregiver/${caregiver._id}`, { state: { caregiver } });
+  };
+
   const paginatedCaregivers = filteredCaregivers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredCaregivers.length / itemsPerPage);
 
-  if (locationStatus === 'loading') {
+  if (locationStatus === 'loading' && filteredCaregivers.length === 0) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Detecting your location...</div>;
   }
 
@@ -224,7 +262,7 @@ const Caregivers = () => {
           <p style={{ color: '#6b7280' }}>Connect with trusted caregivers for in-home care services</p>
         </div>
 
-        {/* Filters */}
+        {/* Filters Section */}
         <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ fontWeight: 'bold' }}>🔍 Filter Caregivers</h3>
@@ -240,30 +278,37 @@ const Caregivers = () => {
                 <option value="personal">Personal Only</option>
                 <option value="skilled">Skilled Only</option>
               </select>
+              
               <select value={filters.gender} onChange={(e) => handleFilterChange('gender', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
                 <option value="any">Any Gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
+              
               <select value={filters.minExperience} onChange={(e) => handleFilterChange('minExperience', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
                 <option value="">Experience</option>
                 <option value="2">2+ years</option>
                 <option value="5">5+ years</option>
                 <option value="10">10+ years</option>
               </select>
+              
               <select value={filters.minRating} onChange={(e) => handleFilterChange('minRating', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
                 <option value="">Rating</option>
                 <option value="4">4★ & up</option>
                 <option value="4.5">4.5★ & up</option>
               </select>
+              
               <input type="number" placeholder="Max hourly rate (₹)" value={filters.maxHourlyRate} onChange={(e) => handleFilterChange('maxHourlyRate', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+              
               <select value={filters.radius} onChange={(e) => handleFilterChange('radius', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
                 <option value="5">Within 5 km</option>
                 <option value="10">Within 10 km</option>
                 <option value="20">Within 20 km</option>
                 <option value="50">Within 50 km</option>
               </select>
+              
               <input type="text" placeholder="Specializations (comma separated)" value={filters.specializations} onChange={(e) => handleFilterChange('specializations', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+              
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={applyFilters} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Apply</button>
                 <button onClick={resetFilters} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Reset</button>
@@ -278,7 +323,7 @@ const Caregivers = () => {
           <div style={{ textAlign: 'center', padding: '3rem' }}>Loading...</div>
         ) : paginatedCaregivers.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '0.5rem' }}>
-            <p>No caregivers found.</p>
+            <p>No caregivers found matching your criteria.</p>
             <button onClick={resetFilters} style={{ marginTop: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Reset Filters</button>
           </div>
         ) : (
@@ -298,8 +343,18 @@ const Caregivers = () => {
                     <p style={{ fontSize: '0.875rem', color: '#3b82f6' }}>📍 {c.distance} km away</p>
                     <p style={{ fontSize: '1rem', fontWeight: 'bold', color: '#10b981' }}>₹{c.pricing?.personal?.hourly || c.pricing?.skilled?.hourly}/hour</p>
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <button onClick={() => navigate(`/caregiver-profile/${c._id}`)} style={{ flex: 1, backgroundColor: '#3b82f6', color: 'white', padding: '0.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>View Profile</button>
-                      <button onClick={() => navigate(`/book-caregiver/${c._id}`)} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '0.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>Book Now</button>
+                      <button 
+                        onClick={() => handleViewProfile(c)}
+                        style={{ flex: 1, backgroundColor: '#3b82f6', color: 'white', padding: '0.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
+                      >
+                        View Profile
+                      </button>
+                      <button 
+                        onClick={() => handleBookNow(c)}
+                        style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '0.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
+                      >
+                        Book Now
+                      </button>
                     </div>
                   </div>
                 </div>
