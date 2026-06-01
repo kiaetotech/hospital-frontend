@@ -4,4 +4,12 @@ const api = axios.create({
   baseURL: 'https://hospital-backend-production-8de3.up.railway.app/api'
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export default api;

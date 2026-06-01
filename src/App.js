@@ -13,6 +13,7 @@ import Ambulance from './pages/Ambulance';
 import Caregivers from './pages/Caregivers';
 import CaregiverProfile from './pages/CaregiverProfile';
 import BookCaregiver from './pages/BookCaregiver';
+import Login from './pages/Login';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
 	<Route path="/caregivers" element={<Caregivers />} />
 	<Route path="/caregiver-profile/:id" element={<CaregiverProfile />} />
 	<Route path="/book-caregiver/:id" element={<BookCaregiver />} />
+	<Route path="/login" element={<Login />} />
         
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
