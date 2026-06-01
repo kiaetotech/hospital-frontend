@@ -14,6 +14,7 @@ import Caregivers from './pages/Caregivers';
 import CaregiverProfile from './pages/CaregiverProfile';
 import BookCaregiver from './pages/BookCaregiver';
 import Login from './pages/Login';
+import Diagnostics from './pages/Diagnostics';
 
 function App() {
   return (
@@ -41,6 +42,9 @@ function App() {
 	<Route path="/caregiver-profile/:id" element={<CaregiverProfile />} />
 	<Route path="/book-caregiver/:id" element={<BookCaregiver />} />
 	<Route path="/login" element={<Login />} />
+
+	{/* diagnostics Tag */}
+	<Route path="/diagnostics" element={<Diagnostics />} />
         
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
