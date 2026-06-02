@@ -15,6 +15,7 @@ import CaregiverProfile from './pages/CaregiverProfile';
 import BookCaregiver from './pages/BookCaregiver';
 import Login from './pages/Login';
 import Diagnostics from './pages/Diagnostics';
+import AdminUpload from './pages/AdminUpload';
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
         <Route path="/financing" element={<ComingSoon title="Health Financing" />} />
         <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
         <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
+	<Route path="/admin/upload" element={<AdminUpload />} />
       </Routes>
     </BrowserRouter> //
   );
