@@ -10,6 +10,7 @@ const Diagnostics = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [categories, setCategories] = useState([]);
   const itemsPerPage = 10;
 
   // Filter states
@@ -20,22 +21,13 @@ const Diagnostics = () => {
   const [cityFilter, setCityFilter] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [useMyLocation, setUseMyLocation] = useState(false);
-  const [categories, setCategories] = useState([]);
 
-  // Categories for filter
-  const testCategories = [
-    { value: '', label: 'All Categories' },
-    { value: 'BLD', label: 'Blood Tests' },
-    { value: 'IMG', label: 'Medical Imaging' },
-    { value: 'CRD', label: 'Cardiac Diagnostics' },
-    { value: 'URN', label: 'Urine Tests' },
-    { value: 'STL', label: 'Stool Tests' }
-  ];
-
+  // Fetch categories on load
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  // Fetch items when filters change
   useEffect(() => {
     fetchItems();
   }, [activeTab, searchQuery, selectedCategory, minPrice, maxPrice, cityFilter, useMyLocation, userLocation, currentPage]);
@@ -43,11 +35,17 @@ const Diagnostics = () => {
   const fetchCategories = async () => {
     try {
       const res = await api.get('/diagnostics/categories');
-      if (res.data.data && res.data.data.length > 0) {
+      if (res.data.data) {
         setCategories(res.data.data);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Fallback categories
+      setCategories([
+        { category_code: 'BLD', category_name: 'Blood Tests' },
+        { category_code: 'IMG', category_name: 'Medical Imaging' },
+        { category_code: 'CRD', category_name: 'Cardiac Diagnostics' }
+      ]);
     }
   };
 
@@ -60,10 +58,10 @@ const Diagnostics = () => {
           setCityFilter('');
           setCurrentPage(1);
         },
-        () => alert('Unable to get location')
+        () => alert('Unable to get location. Please check permissions.')
       );
     } else {
-      alert('Geolocation not supported');
+      alert('Geolocation not supported by your browser');
     }
   };
 
@@ -110,33 +108,43 @@ const Diagnostics = () => {
       alert('Please select at least 2 items to compare');
       return;
     }
-    navigate(`/diagnostics-compare?type=${activeTab === 'tests' ? 'tests' : 'packages'}&ids=${selectedItems.join(',')}`);
+    const type = activeTab === 'tests' ? 'tests' : 'packages';
+    navigate(`/diagnostics-compare?type=${type}&ids=${selectedItems.join(',')}`);
   };
 
   const handleBook = (item) => {
-    const discountedPrice = Math.round((item.min_price || item.discounted_price || item.price) * 0.9);
+    const originalPrice = item.min_price || item.discounted_price || item.price || 0;
+    const discountedPrice = Math.round(originalPrice * 0.9);
     navigate('/diagnostics-booking', {
       state: {
         itemType: activeTab === 'tests' ? 'test' : 'package',
         itemId: item._id,
         itemName: item.test_name || item.package_name,
-        originalPrice: item.min_price || item.discounted_price || item.price,
+        originalPrice: originalPrice,
         discountedPrice: discountedPrice
       }
     });
   };
 
-  const currentCategories = activeTab === 'tests' ? testCategories : categories.map(c => ({ value: c.category_code, label: c.category_name }));
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    setMinPrice('');
+    setMaxPrice('');
+    setCityFilter('');
+    setUseMyLocation(false);
+    setUserLocation(null);
+    setCurrentPage(1);
+  };
 
-  const paginatedItems = items;
-  const discountPercent = (item) => {
-    const original = item.min_price || item.discounted_price || item.price;
-    const discounted = original * 0.9;
-    return Math.round(((original - discounted) / original) * 100);
+  const getDiscountPercent = (originalPrice) => {
+    if (!originalPrice) return 0;
+    const discounted = originalPrice * 0.9;
+    return Math.round(((originalPrice - discounted) / originalPrice) * 100);
   };
 
   if (loading && items.length === 0) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading diagnostics data...</div>;
   }
 
   return (
@@ -149,44 +157,116 @@ const Diagnostics = () => {
 
         {/* Tab Switcher */}
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', borderBottom: '1px solid #e5e7eb' }}>
-          <button onClick={() => { setActiveTab('tests'); setSelectedItems([]); setCurrentPage(1); }} style={{ padding: '0.5rem 1rem', borderBottom: activeTab === 'tests' ? '2px solid #10b981' : 'none', color: activeTab === 'tests' ? '#10b981' : '#6b7280', background: 'none', cursor: 'pointer' }}>🧪 Lab Tests</button>
-          <button onClick={() => { setActiveTab('packages'); setSelectedItems([]); setCurrentPage(1); }} style={{ padding: '0.5rem 1rem', borderBottom: activeTab === 'packages' ? '2px solid #10b981' : 'none', color: activeTab === 'packages' ? '#10b981' : '#6b7280', background: 'none', cursor: 'pointer' }}>📦 Preventive Packages</button>
+          <button
+            onClick={() => { setActiveTab('tests'); setSelectedItems([]); setCurrentPage(1); }}
+            style={{ padding: '0.5rem 1rem', borderBottom: activeTab === 'tests' ? '2px solid #10b981' : 'none', color: activeTab === 'tests' ? '#10b981' : '#6b7280', background: 'none', cursor: 'pointer' }}
+          >
+            🧪 Lab Tests
+          </button>
+          <button
+            onClick={() => { setActiveTab('packages'); setSelectedItems([]); setCurrentPage(1); }}
+            style={{ padding: '0.5rem 1rem', borderBottom: activeTab === 'packages' ? '2px solid #10b981' : 'none', color: activeTab === 'packages' ? '#10b981' : '#6b7280', background: 'none', cursor: 'pointer' }}
+          >
+            📦 Preventive Packages
+          </button>
+          <button
+            onClick={() => navigate('/diagnostics-custom')}
+            style={{ padding: '0.5rem 1rem', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
+          >
+            ✨ Build Your Own Package
+          </button>
         </div>
 
-        {/* City / Location Search Row */}
+        {/* Location Search Row */}
         <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="text" placeholder="Search by city..." value={cityFilter} onChange={(e) => { setCityFilter(e.target.value); setUseMyLocation(false); setCurrentPage(1); }} style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
-          <button onClick={getUserLocation} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>📍 Use My Location</button>
-          {useMyLocation && userLocation && <span style={{ fontSize: '0.75rem', color: '#10b981' }}>📍 Using your location</span>}
+          <input
+            type="text"
+            placeholder="Search by city (e.g., Mumbai, Delhi)..."
+            value={cityFilter}
+            onChange={(e) => { setCityFilter(e.target.value); setUseMyLocation(false); setCurrentPage(1); }}
+            style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+          />
+          <button
+            onClick={getUserLocation}
+            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
+          >
+            📍 Use My Location
+          </button>
+          {useMyLocation && userLocation && (
+            <span style={{ fontSize: '0.75rem', color: '#10b981' }}>📍 Using your location</span>
+          )}
         </div>
 
         {/* Filters Row */}
         <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="text" placeholder="Search tests..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
-          <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
-            {currentCategories.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
+          <input
+            type="text"
+            placeholder="Search tests or packages..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+          />
+          <select
+            value={selectedCategory}
+            onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+            style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+          >
+            <option value="">All Categories</option>
+            {categories.map(cat => (
+              <option key={cat.category_code} value={cat.category_code}>{cat.category_name}</option>
+            ))}
           </select>
-          <input type="number" placeholder="Min Price" value={minPrice} onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }} style={{ width: '100px', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
-          <input type="number" placeholder="Max Price" value={maxPrice} onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }} style={{ width: '100px', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
-          <button onClick={() => { setCurrentPage(1); fetchItems(); }} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Apply</button>
-          <button onClick={() => { setSearchQuery(''); setSelectedCategory(''); setMinPrice(''); setMaxPrice(''); setCityFilter(''); setUseMyLocation(false); setCurrentPage(1); }} style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Reset</button>
+          <input
+            type="number"
+            placeholder="Min Price"
+            value={minPrice}
+            onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+            style={{ width: '100px', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+          />
+          <input
+            type="number"
+            placeholder="Max Price"
+            value={maxPrice}
+            onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+            style={{ width: '100px', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+          />
+          <button
+            onClick={() => { setCurrentPage(1); fetchItems(); }}
+            style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
+          >
+            Apply
+          </button>
+          <button
+            onClick={resetFilters}
+            style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
+          >
+            Reset
+          </button>
         </div>
 
         {/* Compare Button */}
         {selectedItems.length >= 2 && (
-          <button onClick={handleCompare} style={{ marginBottom: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Compare Selected ({selectedItems.length})</button>
+          <button
+            onClick={handleCompare}
+            style={{ marginBottom: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
+          >
+            Compare Selected ({selectedItems.length})
+          </button>
         )}
 
         {/* Items Grid */}
-        {paginatedItems.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '0.5rem' }}>No items found. Try adjusting your filters.</div>
+        {items.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '0.5rem' }}>
+            <p>No items found. Try adjusting your filters.</p>
+          </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-            {paginatedItems.map(item => {
+            {items.map(item => {
               const originalPrice = item.min_price || item.discounted_price || item.price || 0;
               const discountedPrice = Math.round(originalPrice * 0.9);
               const saving = originalPrice - discountedPrice;
               const providerCount = item.provider_count || 0;
+              const discountPercent = originalPrice > 0 ? Math.round((saving / originalPrice) * 100) : 0;
               
               return (
                 <div key={item._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -194,15 +274,20 @@ const Diagnostics = () => {
                     <h3 style={{ fontSize: '1rem', fontWeight: 'bold' }}>{item.test_name || item.package_name}</h3>
                     <input type="checkbox" checked={selectedItems.includes(item._id)} onChange={() => toggleSelect(item._id)} />
                   </div>
-                  <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>{item.major_category_name || item.category}</p>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>{item.major_category_name || 'Health Package'}</p>
                   <div style={{ marginTop: '0.5rem' }}>
                     <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.875rem' }}>₹{originalPrice}</span>
                     <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem', marginLeft: '0.5rem' }}>₹{discountedPrice}</span>
-                    <span style={{ fontSize: '0.7rem', color: '#10b981', marginLeft: '0.25rem' }}>(Save ₹{saving})</span>
+                    <span style={{ fontSize: '0.7rem', color: '#10b981', marginLeft: '0.25rem' }}>(Save {discountPercent}%)</span>
                   </div>
                   <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>🏥 {providerCount} {providerCount === 1 ? 'lab' : 'labs'} offering this test</p>
                   {item.requires_fasting && <p style={{ fontSize: '0.7rem', color: '#f59e0b' }}>⏰ Fasting required</p>}
-                  <button onClick={() => handleBook(item)} style={{ width: '100%', marginTop: '0.75rem', backgroundColor: '#10b981', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Book Now</button>
+                  <button
+                    onClick={() => handleBook(item)}
+                    style={{ width: '100%', marginTop: '0.75rem', backgroundColor: '#10b981', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
+                  >
+                    Book Now
+                  </button>
                 </div>
               );
             })}
@@ -212,9 +297,21 @@ const Diagnostics = () => {
         {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === 1 ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Previous</button>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === 1 ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
+            >
+              Previous
+            </button>
             <span>Page {currentPage} of {totalPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === totalPages ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Next</button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === totalPages ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
+            >
+              Next
+            </button>
           </div>
         )}
       </div>
