@@ -15,6 +15,7 @@ import CaregiverProfile from './pages/CaregiverProfile';
 import BookCaregiver from './pages/BookCaregiver';
 import Login from './pages/Login';
 import Diagnostics from './pages/Diagnostics';
+import DiagnosticsCompare from './pages/DiagnosticsCompare';
 import AdminUpload from './pages/AdminUpload';
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
 
 	{/* diagnostics Tag */}
 	<Route path="/diagnostics" element={<Diagnostics />} />
+	<Route path="/diagnostics-compare" element={<DiagnosticsCompare />} />
         
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
