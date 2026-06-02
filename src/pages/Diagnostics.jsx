@@ -40,11 +40,12 @@ const Diagnostics = () => {
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
-      // Fallback categories
       setCategories([
         { category_code: 'BLD', category_name: 'Blood Tests' },
         { category_code: 'IMG', category_name: 'Medical Imaging' },
-        { category_code: 'CRD', category_name: 'Cardiac Diagnostics' }
+        { category_code: 'CRD', category_name: 'Cardiac Diagnostics' },
+        { category_code: 'URN', category_name: 'Urine Tests' },
+        { category_code: 'STL', category_name: 'Stool Tests' }
       ]);
     }
   };
@@ -83,6 +84,7 @@ const Diagnostics = () => {
       params.append('limit', itemsPerPage);
       
       const res = await api.get(`${endpoint}?${params.toString()}`);
+      console.log('Fetch response:', res.data);
       setItems(res.data.data || []);
       setTotalPages(res.data.pagination?.pages || 1);
     } catch (error) {
@@ -126,6 +128,10 @@ const Diagnostics = () => {
     });
   };
 
+  const handleCustomPackage = () => {
+    navigate('/diagnostics-custom');
+  };
+
   const resetFilters = () => {
     setSearchQuery('');
     setSelectedCategory('');
@@ -135,12 +141,6 @@ const Diagnostics = () => {
     setUseMyLocation(false);
     setUserLocation(null);
     setCurrentPage(1);
-  };
-
-  const getDiscountPercent = (originalPrice) => {
-    if (!originalPrice) return 0;
-    const discounted = originalPrice * 0.9;
-    return Math.round(((originalPrice - discounted) / originalPrice) * 100);
   };
 
   if (loading && items.length === 0) {
@@ -170,7 +170,7 @@ const Diagnostics = () => {
             📦 Preventive Packages
           </button>
           <button
-            onClick={() => navigate('/diagnostics-custom')}
+            onClick={handleCustomPackage}
             style={{ padding: '0.5rem 1rem', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
           >
             ✨ Build Your Own Package
