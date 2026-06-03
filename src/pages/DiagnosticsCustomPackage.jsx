@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api from '../services/api';
+import axios from 'axios';
 
 const DiagnosticsCustomPackage = () => {
   const navigate = useNavigate();
@@ -15,6 +15,8 @@ const DiagnosticsCustomPackage = () => {
   const [comparing, setComparing] = useState(false);
   const [providers, setProviders] = useState([]);
   const [error, setError] = useState('');
+
+  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
   useEffect(() => {
     loadTests();
@@ -32,11 +34,10 @@ const DiagnosticsCustomPackage = () => {
 
   const loadTests = async () => {
     try {
-      const res = await api.get('/diagnostics/tests');
+      const res = await axios.get(`${API_URL}/diagnostics/tests`);
+      console.log('Tests loaded:', res.data);
       if (res.data?.data) {
         setAllTests(res.data.data);
-      } else if (res.data?.tests) {
-        setAllTests(res.data.tests);
       }
     } catch (error) {
       console.error('Error loading tests:', error);
@@ -77,7 +78,7 @@ const DiagnosticsCustomPackage = () => {
       const testIds = tests.map(t => t._id);
       console.log('Sending testIds:', testIds);
       
-      const res = await api.post('/diagnostics/compare-package', { testIds });
+      const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { testIds });
       console.log('Response:', res.data);
       
       if (res.data.providers && res.data.providers.length > 0) {
@@ -89,6 +90,7 @@ const DiagnosticsCustomPackage = () => {
     } catch (error) {
       console.error('Compare error:', error);
       setError(error.response?.data?.message || 'Error comparing packages');
+      setProviders([]);
     } finally {
       setComparing(false);
     }
@@ -98,7 +100,7 @@ const DiagnosticsCustomPackage = () => {
     const total = selectedTests.reduce((sum, test) => {
       return sum + (provider.individual_prices[test._id] || 0);
     }, 0);
-    alert(`Booking package with ${provider.provider_name}\nTotal: ₹${total}\nProceeding to payment...`);
+    alert(`Booking package with ${provider.provider_name}\nTotal: ₹${total}`);
   };
 
   const filteredTests = allTests.filter(test =>
@@ -161,6 +163,11 @@ const DiagnosticsCustomPackage = () => {
         </div>
       )}
       
+      {/* Loading */}
+      {comparing && (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading comparison data...</div>
+      )}
+      
       {/* Comparison Results */}
       {providers.length > 0 && selectedTests.length >= 2 && (
         <div>
@@ -180,14 +187,14 @@ const DiagnosticsCustomPackage = () => {
               </thead>
               <tbody>
                 {selectedTests.map(test => (
-                  <tr key={test._id} style={{ borderBottom: '1px solid #ddd' }}>
+                  <tr key={test._id}>
                     <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>
                       {test.test_name}
                     </td>
                     {providers.map((provider, idx) => (
                       <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                         <span style={{ fontWeight: 'bold', color: '#10b981' }}>
-                          ₹{provider.individual_prices[test._id] || 'N/A'}
+                          ₹{provider.individual_prices?.[test._id] || 'N/A'}
                         </span>
                       </td>
                     ))}
@@ -197,7 +204,7 @@ const DiagnosticsCustomPackage = () => {
                 <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
                   <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total Price</td>
                   {providers.map((provider, idx) => {
-                    const total = selectedTests.reduce((sum, test) => sum + (provider.individual_prices[test._id] || 0), 0);
+                    const total = selectedTests.reduce((sum, test) => sum + (provider.individual_prices?.[test._id] || 0), 0);
                     return (
                       <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center', backgroundColor: idx === 0 ? '#d1fae5' : '#fef3c7' }}>
                         <strong>₹{total}</strong>
@@ -210,7 +217,7 @@ const DiagnosticsCustomPackage = () => {
                   <td style={{ padding: '10px', border: '1px solid #ddd' }}>Rating</td>
                   {providers.map((provider, idx) => (
                     <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                      ⭐ {provider.rating} ({provider.total_reviews} reviews)
+                      ⭐ {provider.rating}
                     </td>
                   ))}
                 </tr>
@@ -232,10 +239,6 @@ const DiagnosticsCustomPackage = () => {
             </table>
           </div>
         </div>
-      )}
-      
-      {comparing && (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading comparison data...</div>
       )}
       
       {providers.length === 0 && selectedTests.length >= 2 && !comparing && !error && (

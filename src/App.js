@@ -15,17 +15,10 @@ import CaregiverProfile from './pages/CaregiverProfile';
 import BookCaregiver from './pages/BookCaregiver';
 import Login from './pages/Login';
 import AdminUpload from './pages/AdminUpload';
-import Diagnostics from './pages/Diagnostics';
-import DiagnosticsCompare from './pages/DiagnosticsCompare';
-import DiagnosticsBooking from './pages/DiagnosticsBooking';
-import DiagnosticsCustom from './pages/DiagnosticsCustom';
-import DiagnosticsSafe from './pages/DiagnosticsSafe';
-import DiagnosticsMinimal from './pages/DiagnosticsMinimal';
-import DiagnosticsCompareMinimal from './pages/DiagnosticsCompareMinimal';
 import TestAPI from './pages/TestAPI';
 import DiagnosticsList from './pages/DiagnosticsList';
-import DiagnosticsCompareResult from './pages/DiagnosticsCompareResult';
 import DiagnosticsCompareProviders from './pages/DiagnosticsCompareProviders';
+import DiagnosticsCustomPackage from './pages/DiagnosticsCustomPackage';
 
 function App() {
   return (
@@ -56,16 +49,9 @@ function App() {
 
 	{/* diagnostics Tag */}
 	<Route path="/diagnostics" element={<Diagnostics />} />
-	<Route path="/diagnostics-compare" element={<DiagnosticsCompare />} />
-	<Route path="/diagnostics-booking" element={<DiagnosticsBooking />} />
-	<Route path="/diagnostics-custom" element={<DiagnosticsCustom />} />
-	<Route path="/diagnostics-safe" element={<DiagnosticsSafe />} />
-	<Route path="/diagnostics-minimal" element={<DiagnosticsMinimal />} />
-	<Route path="/diagnostics-compare-minimal" element={<DiagnosticsCompareMinimal />} />
-        <Route path="/test-api" element={<TestAPI />} />
 	<Route path="/diagnostics-list" element={<DiagnosticsList />} />
-	<Route path="/diagnostics-compare-result" element={<DiagnosticsCompareResult />} />
 	<Route path="/diagnostics-compare-providers" element={<DiagnosticsCompareProviders />} />
+	<Route path="/diagnostics-custom-package" element={<DiagnosticsCustomPackage />} />
 
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
