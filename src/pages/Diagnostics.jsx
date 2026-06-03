@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 
 // ALL 12 MAIN CATEGORIES WITH SUBCATEGORIES
@@ -28,8 +29,7 @@ const testCategories = [
       { name: 'X-ray', tests: ['Chest X-ray', 'Limb X-ray', 'Spine X-ray', 'Mammogram', 'DEXA'] },
       { name: 'CT Scan', tests: ['CT Head', 'CT Chest', 'CT Abdomen', 'CT Spine', 'CT Angiography'] },
       { name: 'MRI', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen', 'MRI Breast'] },
-      { name: 'Ultrasound', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'Doppler Studies', 'Echocardiography'] },
-      { name: 'Fluoroscopy', tests: ['Barium Swallow', 'Barium Enema', 'ERCP'] }
+      { name: 'Ultrasound', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'Doppler Studies', 'Echocardiography'] }
     ]
   },
   {
@@ -38,9 +38,8 @@ const testCategories = [
     color: '#e67e22',
     icon: '❤️',
     subcategories: [
-      { name: 'ECG', tests: ['ECG 12-lead', 'Stress ECG (TMT)', 'Holter Monitor', 'Event Recorder'] },
-      { name: 'Echocardiography', tests: ['2D Echo', 'Stress Echo', 'Transesophageal Echo'] },
-      { name: 'Vascular', tests: ['Ankle-Brachial Index', 'Carotid Doppler'] }
+      { name: 'ECG', tests: ['ECG 12-lead', 'Stress ECG (TMT)', 'Holter Monitor'] },
+      { name: 'Echocardiography', tests: ['2D Echo', 'Stress Echo'] }
     ]
   },
   {
@@ -51,8 +50,7 @@ const testCategories = [
     subcategories: [
       { name: 'Routine', tests: ['Urinalysis', 'Urine Glucose', 'Urine Ketones'] },
       { name: 'Culture', tests: ['Urine Culture & Sensitivity'] },
-      { name: 'Chemistry', tests: ['Urine Protein', 'Urine Microalbumin', 'Urine Electrolytes'] },
-      { name: 'Hormones', tests: ['Urine Pregnancy Test', 'Urine Cortisol'] }
+      { name: 'Chemistry', tests: ['Urine Protein', 'Urine Microalbumin', 'Urine Electrolytes'] }
     ]
   },
   {
@@ -61,10 +59,9 @@ const testCategories = [
     color: '#27ae60',
     icon: '🧫',
     subcategories: [
-      { name: 'Routine', tests: ['Stool Routine', 'Stool Microscopy'] },
+      { name: 'Routine', tests: ['Stool Routine'] },
       { name: 'Occult Blood', tests: ['FOBT', 'FIT'] },
-      { name: 'Culture', tests: ['Stool Culture & Sensitivity'] },
-      { name: 'Parasites', tests: ['Ova/Cyst Examination'] }
+      { name: 'Culture', tests: ['Stool Culture & Sensitivity'] }
     ]
   },
   {
@@ -73,9 +70,8 @@ const testCategories = [
     color: '#9b59b6',
     icon: '🧠',
     subcategories: [
-      { name: 'EEG', tests: ['Routine EEG', 'Sleep Deprived EEG', 'Video EEG'] },
-      { name: 'Nerve Studies', tests: ['EMG', 'Nerve Conduction Studies', 'Repetitive Nerve Stimulation'] },
-      { name: 'Evoked Potentials', tests: ['VEP', 'BAER', 'SSEP'] }
+      { name: 'EEG', tests: ['Routine EEG', 'Sleep Deprived EEG'] },
+      { name: 'Nerve Studies', tests: ['EMG', 'Nerve Conduction Studies'] }
     ]
   },
   {
@@ -85,19 +81,7 @@ const testCategories = [
     icon: '🫁',
     subcategories: [
       { name: 'Spirometry', tests: ['Spirometry', 'Bronchodilator Reversibility'] },
-      { name: 'Lung Volumes', tests: ['Lung Volumes', 'Diffusing Capacity (DLCO)'] },
-      { name: 'Other', tests: ['FeNO', 'Methacholine Challenge', '6-Minute Walk Test'] }
-    ]
-  },
-  {
-    code: 'NM',
-    name: '⚛️ Nuclear Medicine',
-    color: '#16a085',
-    icon: '⚛️',
-    subcategories: [
-      { name: 'PET', tests: ['PET-CT Whole Body', 'PET-CT Cardiac', 'PET-CT Brain'] },
-      { name: 'Bone Scan', tests: ['Whole Body Bone Scan'] },
-      { name: 'Thyroid', tests: ['Thyroid Uptake & Scan'] }
+      { name: 'Lung Volumes', tests: ['Lung Volumes', 'Diffusing Capacity (DLCO)'] }
     ]
   },
   {
@@ -106,9 +90,8 @@ const testCategories = [
     color: '#2c3e50',
     icon: '🔬',
     subcategories: [
-      { name: 'Upper GI', tests: ['EGD', 'ERCP', 'Capsule Endoscopy'] },
-      { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy'] },
-      { name: 'Other', tests: ['Bronchoscopy', 'Cystoscopy', 'Hysteroscopy'] }
+      { name: 'Upper GI', tests: ['EGD', 'ERCP'] },
+      { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy'] }
     ]
   },
   {
@@ -117,9 +100,8 @@ const testCategories = [
     color: '#c0392b',
     icon: '🔬',
     subcategories: [
-      { name: 'Cytology', tests: ['Pap Smear', 'Urine Cytology', 'Sputum Cytology'] },
-      { name: 'FNAC', tests: ['Thyroid FNAC', 'Lymph Node FNAC', 'Breast FNAC'] },
-      { name: 'Biopsy', tests: ['Core Needle Biopsy', 'Excisional Biopsy', 'Histopathology'] }
+      { name: 'Cytology', tests: ['Pap Smear', 'Urine Cytology'] },
+      { name: 'FNAC', tests: ['Thyroid FNAC', 'Lymph Node FNAC'] }
     ]
   },
   {
@@ -128,9 +110,17 @@ const testCategories = [
     color: '#2980b9',
     icon: '🧬',
     subcategories: [
-      { name: 'Chromosome', tests: ['Karyotype', 'FISH', 'Chromosomal Microarray'] },
-      { name: 'Sequencing', tests: ['Single Gene Sequencing', 'NGS Panel', 'Whole Exome Sequencing'] },
-      { name: 'Other', tests: ['NIPT', 'HLA Typing', 'Paternity Testing'] }
+      { name: 'Chromosome', tests: ['Karyotype', 'FISH'] },
+      { name: 'Sequencing', tests: ['Single Gene Sequencing', 'NGS Panel'] }
+    ]
+  },
+  {
+    code: 'MIC',
+    name: '🦠 Microbiology',
+    color: '#d35400',
+    icon: '🦠',
+    subcategories: [
+      { name: 'Cultures', tests: ['Blood Culture', 'Sputum Culture', 'Wound Culture'] }
     ]
   },
   {
@@ -139,9 +129,19 @@ const testCategories = [
     color: '#7f8c8d',
     icon: '⭐',
     subcategories: [
-      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Toxicology Screen', 'Heavy Metals', 'Therapeutic Drug Monitoring'] }
+      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Toxicology Screen'] }
     ]
   }
+];
+
+// Health Packages Data
+const healthPackages = [
+  { id: 1, name: 'Full Body Checkup', provider: 'ABC Diagnostics', description: 'Complete health checkup with 65+ tests', mrp: 2500, price: 1299, homeCollection: true, reportTime: '24 hours', popular: true, tests: ['Complete Blood Count', 'Liver Function Test', 'Kidney Function Test', 'Lipid Profile', 'Blood Sugar Fasting'] },
+  { id: 2, name: 'Cardiac Care Package', provider: 'ABC Diagnostics', description: 'Heart health checkup with lipid profile, ECG, and more', mrp: 1800, price: 999, homeCollection: true, reportTime: '12 hours', popular: true, tests: ['Lipid Profile', 'ECG 12-lead', 'Troponin', 'Stress ECG'] },
+  { id: 3, name: 'Diabetes Profile', provider: 'HealthCare Diagnostics', description: 'Complete diabetes screening with HbA1c, fasting, post meal', mrp: 1200, price: 699, homeCollection: true, reportTime: '8 hours', popular: true, tests: ['Glucose Fasting', 'HbA1c', 'Blood Sugar Post Meal', 'Insulin'] },
+  { id: 4, name: 'Women Health Package', provider: 'ABC Diagnostics', description: 'Comprehensive health checkup for women', mrp: 2200, price: 1199, homeCollection: true, reportTime: '24 hours', popular: false, tests: ['Pap Smear', 'Complete Blood Count', 'Thyroid Profile', 'Vitamin D'] },
+  { id: 5, name: 'Senior Citizen Package', provider: 'ABC Diagnostics', description: 'Health checkup for elderly with age-specific tests', mrp: 2000, price: 1099, homeCollection: true, reportTime: '24 hours', popular: false, tests: ['Complete Blood Count', 'Kidney Function Test', 'Liver Function Test', 'Vitamin B12', 'Vitamin D'] },
+  { id: 6, name: 'Liver Profile', provider: 'ABC Diagnostics', description: 'Complete liver function tests', mrp: 1500, price: 799, homeCollection: true, reportTime: '8 hours', popular: false, tests: ['Liver Function Test', 'PT/INR', 'AFP'] }
 ];
 
 const Diagnostics = () => {
@@ -150,6 +150,32 @@ const Diagnostics = () => {
   const [showCompare, setShowCompare] = useState(false);
   const [expandedMainCat, setExpandedMainCat] = useState({});
   const [expandedSubCat, setExpandedSubCat] = useState({});
+  const [providerPrices, setProviderPrices] = useState({});
+
+  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+
+  // Load provider prices from database
+  useEffect(() => {
+    loadProviderPrices();
+  }, []);
+
+  const loadProviderPrices = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/diagnostics/tests`);
+      if (res.data?.data) {
+        const priceMap = {};
+        res.data.data.forEach(test => {
+          priceMap[test.test_name] = {
+            price: test.discounted_price || test.min_price || test.price || 'N/A',
+            provider: test.provider_name || 'Multiple'
+          };
+        });
+        setProviderPrices(priceMap);
+      }
+    } catch (error) {
+      console.error('Error loading prices:', error);
+    }
+  };
 
   const toggleMainCategory = (code) => {
     setExpandedMainCat(prev => ({ ...prev, [code]: !prev[code] }));
@@ -168,12 +194,17 @@ const Diagnostics = () => {
     }
   };
 
-  const handleCompare = () => {
+  const handleCompareMultiple = () => {
     if (selectedTests.length >= 2) {
       setShowCompare(true);
     } else {
-      alert('Select at least 2 tests');
+      alert('Please select at least 2 tests to compare');
     }
+  };
+
+  const handleSingleTestCompare = (testName) => {
+    setSelectedTests([testName]);
+    setShowCompare(true);
   };
 
   if (showCompare) {
@@ -182,6 +213,8 @@ const Diagnostics = () => {
 
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
   const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
+
+  const totalTests = testCategories.reduce((sum, cat) => sum + cat.subcategories.reduce((s, sub) => s + sub.tests.length, 0), 0);
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
@@ -195,7 +228,7 @@ const Diagnostics = () => {
 
       {activeTab === 'labtests' && (
         <div>
-          <p>Select 2 or more tests to compare. Total: {testCategories.reduce((sum, cat) => sum + cat.subcategories.reduce((s, sub) => s + sub.tests.length, 0), 0)} tests</p>
+          <p>Total {totalTests} tests. Select tests using checkboxes or click "Compare Prices" on any test.</p>
           
           {testCategories.map(category => (
             <div key={category.code} style={{ marginBottom: '15px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
@@ -214,12 +247,25 @@ const Diagnostics = () => {
                       </div>
                       
                       {expandedSubCat[`${category.code}_${sub.name}`] && (
-                        <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {sub.tests.map(test => (
-                            <label key={test} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '220px', cursor: 'pointer' }}>
-                              <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} />
-                              {test}
-                            </label>
+                            <div key={test} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1 }}>
+                                <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} />
+                                <span>{test}</span>
+                              </label>
+                              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                {providerPrices[test] && (
+                                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>₹{providerPrices[test].price}</span>
+                                )}
+                                <button 
+                                  onClick={() => handleSingleTestCompare(test)}
+                                  style={{ backgroundColor: '#3b82f6', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                                >
+                                  Compare Prices
+                                </button>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -229,17 +275,51 @@ const Diagnostics = () => {
               )}
             </div>
           ))}
+          
+          {selectedTests.length >= 2 && (
+            <button onClick={handleCompareMultiple} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+              Compare Selected ({selectedTests.length} Tests)
+            </button>
+          )}
         </div>
       )}
 
-      {activeTab === 'packages' && <div><h2>Health Packages</h2><p>Full Body Checkup, Cardiac Care, Diabetes Profile - Coming Soon</p></div>}
-      {activeTab === 'custom' && <DiagnosticsCustomPackage />}
-
-      {selectedTests.length >= 2 && (
-        <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000 }}>
-          Compare {selectedTests.length} Tests
-        </button>
+      {activeTab === 'packages' && (
+        <div>
+          <h2>🏥 Preventive Health Check Packages</h2>
+          <p>Choose from our curated health packages at discounted prices</p>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', marginTop: '20px' }}>
+            {healthPackages.map(pkg => (
+              <div key={pkg.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                {pkg.popular && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', marginBottom: '10px', display: 'inline-block' }}>🔥 Popular</span>}
+                <h3 style={{ margin: '10px 0' }}>{pkg.name}</h3>
+                <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '10px' }}>{pkg.description}</p>
+                <p style={{ fontSize: '14px', color: '#4b5563' }}>🏥 {pkg.provider}</p>
+                <div style={{ margin: '10px 0' }}>
+                  <span style={{ textDecoration: 'line-through', color: '#9ca3af' }}>₹{pkg.mrp}</span>
+                  <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', marginLeft: '10px' }}>₹{pkg.price}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '12px', color: '#6b7280' }}>
+                  <span>🏠 {pkg.homeCollection ? 'Home Collection Available' : 'Lab Visit Required'}</span>
+                  <span>⏱️ {pkg.reportTime}</span>
+                </div>
+                <details style={{ marginTop: '10px', fontSize: '12px' }}>
+                  <summary style={{ cursor: 'pointer', color: '#3b82f6' }}>Included Tests ({pkg.tests.length})</summary>
+                  <ul style={{ marginTop: '5px', paddingLeft: '20px' }}>
+                    {pkg.tests.map(test => <li key={test}>{test}</li>)}
+                  </ul>
+                </details>
+                <button onClick={() => alert(`Booking ${pkg.name} with ${pkg.provider}\nPrice: ₹${pkg.price}`)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', marginTop: '10px' }}>
+                  Book Now
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
+      
+      {activeTab === 'custom' && <DiagnosticsCustomPackage />}
     </div>
   );
 };
