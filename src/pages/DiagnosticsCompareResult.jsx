@@ -18,27 +18,33 @@ const DiagnosticsCompareResult = () => {
       setLoading(false);
       return;
     }
-    fetchCompareData();
+    
+    console.log('Fetching comparison for IDs:', ids);
+    
+    api.post('/diagnostics/compare', { type: 'tests', ids })
+      .then(res => {
+        console.log('API Response:', res.data);
+        if (res.data && res.data.data) {
+          setItems(res.data.data);
+        } else {
+          setError('No data received from server');
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        setError(err.message);
+        setLoading(false);
+      });
   }, [ids]);
 
-  const fetchCompareData = async () => {
-    setLoading(true);
-    try {
-      const response = await api.post('/diagnostics/compare', { type: 'tests', ids });
-      if (response.data && response.data.success) {
-        setItems(response.data.data || []);
-      } else {
-        setError(response.data?.message || 'Failed to load comparison');
-      }
-    } catch (err) {
-      setError(err.message || 'Network error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison...</div>;
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <h2>Loading comparison...</h2>
+        <p>Please wait while we fetch the data.</p>
+      </div>
+    );
   }
 
   if (error) {
@@ -62,13 +68,24 @@ const DiagnosticsCompareResult = () => {
   return (
     <div style={{ padding: '2rem' }}>
       <button onClick={() => navigate('/diagnostics-list')}>← Back to Tests</button>
-      <h1>Compare Lab Tests</h1>
+      <h1>Comparison Results</h1>
+      <p>Found {items.length} tests to compare.</p>
+      
       {items.map((item, idx) => (
-        <div key={idx} style={{ border: '1px solid #ccc', margin: '1rem 0', padding: '1rem', borderRadius: '8px' }}>
+        <div key={idx} style={{ border: '1px solid #ddd', margin: '1rem 0', padding: '1rem', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
           <h3>{item.test_name}</h3>
-          <p>Category: {item.major_category_name}</p>
-          <p>Price: ₹{Math.round((item.min_price || item.price || 0) * 0.9)}</p>
-          <button onClick={() => alert(`Booking ${item.test_name}`)}>Book Now</button>
+          <p><strong>Category:</strong> {item.major_category_name}</p>
+          <p><strong>Original Price:</strong> ₹{item.min_price || item.price || 0}</p>
+          <p><strong>Discounted Price (10% off):</strong> ₹{Math.round((item.min_price || item.price || 0) * 0.9)}</p>
+          <p><strong>Report Time:</strong> {item.turnaround_time_default_hours || 24} hours</p>
+          <p><strong>Home Collection:</strong> {item.home_collection_possible ? '✅ Yes' : '❌ No'}</p>
+          <p><strong>Fasting Required:</strong> {item.requires_fasting ? '✅ Yes' : '❌ No'}</p>
+          <button 
+            onClick={() => alert(`Booking ${item.test_name} - Proceed to payment`)}
+            style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '0.5rem' }}
+          >
+            Book Now
+          </button>
         </div>
       ))}
     </div>
