@@ -48,7 +48,6 @@ function App() {
 	<Route path="/login" element={<Login />} />
 
 	{/* diagnostics Tag */}
-	<Route path="/diagnostics" element={<Diagnostics />} />
 	<Route path="/diagnostics-list" element={<DiagnosticsList />} />
 	<Route path="/diagnostics-compare-providers" element={<DiagnosticsCompareProviders />} />
 	<Route path="/diagnostics-custom-package" element={<DiagnosticsCustomPackage />} />
