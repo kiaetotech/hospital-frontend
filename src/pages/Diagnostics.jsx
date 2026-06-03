@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import DiagnosticsList from './DiagnosticsList';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import CategorizedTests from './CategorizedTests';
 
@@ -52,10 +51,7 @@ const Diagnostics = () => {
       
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px' }}>
         <button onClick={() => setActiveTab('labtests')} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>
-          📋 All Lab Tests
-        </button>
-        <button onClick={() => setActiveTab('categorized')} style={activeTab === 'categorized' ? activeTabStyle : tabStyle}>
-          📂 Browse by Category
+          📋 Lab Tests
         </button>
         <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>
           🏥 Health Packages
@@ -65,8 +61,7 @@ const Diagnostics = () => {
         </button>
       </div>
 
-      {activeTab === 'labtests' && <DiagnosticsList />}
-      {activeTab === 'categorized' && (
+      {activeTab === 'labtests' && (
         <CategorizedTests 
           selectedTests={selectedTests}
           setSelectedTests={setSelectedTests}
