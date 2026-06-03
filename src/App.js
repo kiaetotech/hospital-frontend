@@ -19,6 +19,7 @@ import TestAPI from './pages/TestAPI';
 import DiagnosticsList from './pages/DiagnosticsList';
 import DiagnosticsCompareProviders from './pages/DiagnosticsCompareProviders';
 import DiagnosticsCustomPackage from './pages/DiagnosticsCustomPackage';
+import Diagnostics from './pages/Diagnostics';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
 	<Route path="/diagnostics-list" element={<DiagnosticsList />} />
 	<Route path="/diagnostics-compare-providers" element={<DiagnosticsCompareProviders />} />
 	<Route path="/diagnostics-custom-package" element={<DiagnosticsCustomPackage />} />
+	<Route path="/diagnostics" element={<Diagnostics />} />
 
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
