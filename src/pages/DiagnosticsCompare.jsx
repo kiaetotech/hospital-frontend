@@ -26,8 +26,12 @@ const DiagnosticsCompare = () => {
     setError(null);
     try {
       const res = await api.post('/diagnostics/compare', { type, ids });
-      console.log('Compare response:', res.data);
-      setItems(res.data.data || []);
+      console.log('Compare data received:', res.data);
+      if (res.data.success && res.data.data) {
+        setItems(res.data.data);
+      } else {
+        setError('No data received');
+      }
     } catch (err) {
       console.error('Compare error:', err);
       setError(err.message || 'Failed to load comparison data');
@@ -90,128 +94,131 @@ const DiagnosticsCompare = () => {
           Compare {type === 'tests' ? 'Lab Tests' : 'Packages'}
         </h2>
         
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f3f4f6' }}>
-                <th style={{ padding: '0.75rem', textAlign: 'left', border: '1px solid #e5e7eb' }}>Feature</th>
-                {items.map(item => (
-                  <th key={item._id} style={{ padding: '0.75rem', textAlign: 'left', border: '1px solid #e5e7eb', minWidth: '150px' }}>
-                    {item.test_name || item.package_name}
-                  </th>
-                ))}
-               </tr>
-            </thead>
-            <tbody>
-              {/* Category */}
-              <tr>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Category</td>
-                {items.map(item => (
-                  <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
-                    {item.major_category_name || '-'}
-                  </td>
-                ))}
-              </tr>
-              
-              {/* Original Price */}
-              <tr>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Original Price</td>
-                {items.map(item => {
-                  const price = item.min_price || item.price || 0;
-                  return (
-                    <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
-                      ₹{price}
+        {items.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f3f4f6' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', border: '1px solid #e5e7eb' }}>Feature</th>
+                  {items.map((item, idx) => (
+                    <th key={item._id || idx} style={{ padding: '0.75rem', textAlign: 'left', border: '1px solid #e5e7eb', minWidth: '150px' }}>
+                      {item.test_name || item.package_name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {/* Category */}
+                <tr>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Category</td>
+                  {items.map((item, idx) => (
+                    <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                      {item.major_category_name || '-'}
                     </td>
-                  );
-                })}
-              </tr>
-              
-              {/* Discounted Price */}
-              <tr style={{ backgroundColor: '#d1fae5' }}>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold' }}>Discounted Price (10% off)</td>
-                {items.map(item => {
-                  const price = item.min_price || item.price || 0;
-                  const discounted = Math.round(price * 0.9);
-                  return (
-                    <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', color: '#10b981' }}>
-                      ₹{discounted}
+                  ))}
+                </tr>
+                
+                {/* Original Price */}
+                <tr>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Original Price</td>
+                  {items.map((item, idx) => {
+                    const price = item.min_price || item.price || 0;
+                    return (
+                      <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                        ₹{price}
+                      </td>
+                    );
+                  })}
+                </tr>
+                
+                {/* Discounted Price */}
+                <tr style={{ backgroundColor: '#d1fae5' }}>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold' }}>Discounted Price (10% off)</td>
+                  {items.map((item, idx) => {
+                    const price = item.min_price || item.price || 0;
+                    const discounted = Math.round(price * 0.9);
+                    return (
+                      <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', color: '#10b981' }}>
+                        ₹{discounted}
+                      </td>
+                    );
+                  })}
+                </tr>
+                
+                {/* You Save */}
+                <tr>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>You Save</td>
+                  {items.map((item, idx) => {
+                    const price = item.min_price || item.price || 0;
+                    const discounted = Math.round(price * 0.9);
+                    const saving = price - discounted;
+                    const percent = price > 0 ? Math.round((saving / price) * 100) : 0;
+                    return (
+                      <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', color: '#10b981' }}>
+                        ₹{saving} ({percent}% off)
+                      </td>
+                    );
+                  })}
+                </tr>
+                
+                {/* Report Time */}
+                <tr>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Report Time</td>
+                  {items.map((item, idx) => (
+                    <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                      {item.turnaround_time_default_hours || 24} hours
                     </td>
-                  );
-                })}
-              </tr>
-              
-              {/* You Save */}
-              <tr>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>You Save</td>
-                {items.map(item => {
-                  const price = item.min_price || item.price || 0;
-                  const discounted = Math.round(price * 0.9);
-                  const saving = price - discounted;
-                  return (
-                    <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', color: '#10b981' }}>
-                      ₹{saving} ({Math.round((saving / price) * 100)}% off)
+                  ))}
+                </tr>
+                
+                {/* Home Collection */}
+                <tr>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Home Collection</td>
+                  {items.map((item, idx) => (
+                    <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                      {item.home_collection_possible ? '✅ Yes' : '❌ No'}
                     </td>
-                  );
-                })}
-              </tr>
-              
-              {/* Report Time */}
-              <tr>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Report Time</td>
-                {items.map(item => (
-                  <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
-                    {item.turnaround_time_default_hours || 24} hours
-                  </td>
-                ))}
-              </tr>
-              
-              {/* Home Collection */}
-              <tr>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Home Collection</td>
-                {items.map(item => (
-                  <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
-                    {item.home_collection_possible ? '✅ Yes' : '❌ No'}
-                  </td>
-                ))}
-              </tr>
-              
-              {/* Fasting Required */}
-              <tr>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Fasting Required</td>
-                {items.map(item => (
-                  <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
-                    {item.requires_fasting ? '✅ Yes' : '❌ No'}
-                  </td>
-                ))}
-              </tr>
-              
-              {/* Labs Offering */}
-              <tr>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Labs Offering</td>
-                {items.map(item => (
-                  <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
-                    {item.provider_count || 0} labs
-                  </td>
-                ))}
-              </tr>
-              
-              {/* Book Button Row */}
-              <tr>
-                <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Action</td>
-                {items.map(item => (
-                  <td key={item._id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', textAlign: 'center' }}>
-                    <button
-                      onClick={() => handleBook(item)}
-                      style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
-                    >
-                      Book Now
-                    </button>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  ))}
+                </tr>
+                
+                {/* Fasting Required */}
+                <tr>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Fasting Required</td>
+                  {items.map((item, idx) => (
+                    <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                      {item.requires_fasting ? '✅ Yes' : '❌ No'}
+                    </td>
+                  ))}
+                </tr>
+                
+                {/* Labs Offering */}
+                <tr>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Labs Offering</td>
+                  {items.map((item, idx) => (
+                    <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                      {item.provider_count || 0} labs
+                    </td>
+                  ))}
+                </tr>
+                
+                {/* Book Button */}
+                <tr>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e5e7eb', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>Action</td>
+                  {items.map((item, idx) => (
+                    <td key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                      <button
+                        onClick={() => handleBook(item)}
+                        style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
+                      >
+                        Book Now
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
