@@ -25,6 +25,7 @@ import DiagnosticsCompareMinimal from './pages/DiagnosticsCompareMinimal';
 import TestAPI from './pages/TestAPI';
 import DiagnosticsList from './pages/DiagnosticsList';
 import DiagnosticsCompareResult from './pages/DiagnosticsCompareResult';
+import DiagnosticsCompareProviders from './pages/DiagnosticsCompareProviders';
 
 function App() {
   return (
@@ -64,6 +65,7 @@ function App() {
         <Route path="/test-api" element={<TestAPI />} />
 	<Route path="/diagnostics-list" element={<DiagnosticsList />} />
 	<Route path="/diagnostics-compare-result" element={<DiagnosticsCompareResult />} />
+	<Route path="/diagnostics-compare-providers" element={<DiagnosticsCompareProviders />} />
 
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />

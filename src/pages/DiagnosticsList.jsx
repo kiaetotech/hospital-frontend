@@ -6,7 +6,6 @@ const DiagnosticsList = () => {
   const navigate = useNavigate();
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTests, setSelectedTests] = useState([]);
 
   useEffect(() => {
     api.get('/diagnostics/tests')
@@ -17,41 +16,29 @@ const DiagnosticsList = () => {
       .catch(() => setLoading(false));
   }, []);
 
-  const toggleSelect = (testId) => {
-    if (selectedTests.includes(testId)) {
-      setSelectedTests(selectedTests.filter(id => id !== testId));
-    } else if (selectedTests.length < 4) {
-      setSelectedTests([...selectedTests, testId]);
-    } else {
-      alert('You can compare up to 4 tests');
-    }
-  };
-
-  const handleCompare = () => {
-    if (selectedTests.length < 2) {
-      alert('Please select at least 2 tests');
-      return;
-    }
-    navigate(`/diagnostics-compare-result?ids=${selectedTests.join(',')}`);
+  const handleComparePrices = (testId, testName) => {
+    navigate(`/diagnostics-compare-providers?testId=${testId}&testName=${encodeURIComponent(testName)}`);
   };
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading tests...</div>;
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <h1>🔬 Diagnostics - Lab Tests</h1>
-      {selectedTests.length >= 2 && (
-        <button onClick={handleCompare} style={{ marginBottom: '1rem', backgroundColor: 'blue', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          Compare Selected ({selectedTests.length})
-        </button>
-      )}
+      <p>Click "Compare Prices" to see which lab offers the best price for each test.</p>
+      
       {tests.map(test => (
-        <div key={test._id} style={{ border: '1px solid #ccc', margin: '0.5rem 0', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <input type="checkbox" checked={selectedTests.includes(test._id)} onChange={() => toggleSelect(test._id)} />
+        <div key={test._id} style={{ border: '1px solid #ccc', margin: '0.5rem 0', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', borderRadius: '8px' }}>
           <div>
             <strong>{test.test_name}</strong>
-            <p style={{ margin: 0, fontSize: '0.875rem' }}>{test.major_category_name}</p>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>{test.major_category_name}</p>
           </div>
+          <button
+            onClick={() => handleComparePrices(test._id, test.test_name)}
+            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Compare Prices
+          </button>
         </div>
       ))}
     </div>
