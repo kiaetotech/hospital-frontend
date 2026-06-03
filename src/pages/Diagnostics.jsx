@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 
-// ALL 12 MAIN CATEGORIES WITH FULL SUBCATEGORIES
+// ALL 12 MAIN CATEGORIES WITH SUBCATEGORIES
 const testCategories = [
   {
     code: 'BLD',
@@ -17,9 +17,7 @@ const testCategories = [
       { name: 'Vitamins', tests: ['Vitamin B12', 'Vitamin D', 'Folate'] },
       { name: 'Hormones', tests: ['TSH', 'T3', 'T4', 'Cortisol', 'ACTH', 'Prolactin', 'LH', 'FSH', 'Estradiol', 'Progesterone', 'Testosterone', 'DHEA-S', 'PTH', 'Insulin', 'C-peptide'] },
       { name: 'Tumor Markers', tests: ['AFP', 'CEA', 'CA-125', 'CA 19-9', 'CA 15-3', 'PSA', 'β-hCG', 'Calcitonin', 'Thyroglobulin'] },
-      { name: 'Serology/Immunology', tests: ['HIV', 'HBsAg', 'Anti-HCV', 'Syphilis', 'Dengue', 'Malaria', 'Typhoid', 'Rheumatoid Factor', 'ANA', 'Anti-dsDNA', 'ANCA', 'Anti-CCP'] },
-      { name: 'Infection Markers', tests: ['Procalcitonin', 'hs-CRP', 'Beta-D-glucan', 'Galactomannan'] },
-      { name: 'Special', tests: ['Therapeutic Drug Monitoring', 'Heavy Metals', 'Toxicology Screen', 'Newborn Screen', 'G6PD', 'Sickle Cell Test'] }
+      { name: 'Serology/Immunology', tests: ['HIV', 'HBsAg', 'Anti-HCV', 'Syphilis', 'Dengue', 'Malaria', 'Typhoid', 'Rheumatoid Factor', 'ANA', 'Anti-dsDNA', 'ANCA', 'Anti-CCP'] }
     ]
   },
   {
@@ -31,8 +29,7 @@ const testCategories = [
       { name: 'X-ray', tests: ['Chest X-ray', 'Limb X-ray', 'Spine X-ray', 'KUB', 'Mammogram', 'DEXA', 'OPG', 'Barium Studies'] },
       { name: 'CT Scan', tests: ['CT Head', 'CT Chest', 'CT Abdomen/Pelvis', 'CT Spine', 'CT Angiography', 'CT Urogram', 'CT Virtual Colonoscopy'] },
       { name: 'MRI', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen/MRCP', 'MRI Breast', 'MRA/MRV'] },
-      { name: 'Ultrasound', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'USG Scrotum', 'Doppler Studies', 'Echocardiography', 'Obstetric USG'] },
-      { name: 'Fluoroscopy', tests: ['Barium Swallow', 'Barium Meal', 'Barium Enema', 'ERCP'] }
+      { name: 'Ultrasound', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'USG Scrotum', 'Doppler Studies', 'Echocardiography', 'Obstetric USG'] }
     ]
   },
   {
@@ -54,9 +51,8 @@ const testCategories = [
     subcategories: [
       { name: 'Routine', tests: ['Urinalysis', 'Urine Glucose', 'Urine Ketones', 'Urine Microscopy'] },
       { name: 'Culture', tests: ['Urine Culture & Sensitivity', 'Urine AFB'] },
-      { name: 'Chemistry', tests: ['Urine Protein', 'Urine Microalbumin/Creatinine Ratio', 'Urine Electrolytes', 'Urine Osmolality', 'Urine Creatinine', 'Urine Urea', 'Urine Calcium', 'Urine Uric Acid'] },
-      { name: 'Hormones', tests: ['Urine Pregnancy Test', 'Urine Cortisol', 'Urine Catecholamines', 'Urine Metanephrines', 'Urine 5-HIAA'] },
-      { name: 'Special', tests: ['Urine Bence Jones Protein', 'Urine Porphobilinogen', 'Urine Drug Screen', 'Urine Heavy Metals', 'Urine PCR'] }
+      { name: 'Chemistry', tests: ['Urine Protein', 'Urine Microalbumin/Creatinine Ratio', 'Urine Electrolytes', 'Urine Osmolality'] },
+      { name: 'Hormones', tests: ['Urine Pregnancy Test', 'Urine Cortisol', 'Urine Catecholamines'] }
     ]
   },
   {
@@ -68,9 +64,7 @@ const testCategories = [
       { name: 'Routine', tests: ['Stool Routine', 'Stool Microscopy'] },
       { name: 'Occult Blood', tests: ['FOBT', 'FIT'] },
       { name: 'Culture', tests: ['Stool Culture & Sensitivity'] },
-      { name: 'Parasites', tests: ['Ova/Cyst Examination', 'Giardia', 'Cryptosporidium'] },
-      { name: 'Antigens', tests: ['H.pylori Stool Antigen'] },
-      { name: 'Special', tests: ['Calprotectin', 'Stool Fat', 'Stool Elastase', 'Stool Reducing Substances', 'Stool pH', 'Stool PCR'] }
+      { name: 'Parasites', tests: ['Ova/Cyst Examination', 'Giardia', 'Cryptosporidium'] }
     ]
   },
   {
@@ -92,7 +86,7 @@ const testCategories = [
     subcategories: [
       { name: 'Spirometry', tests: ['Spirometry', 'Bronchodilator Reversibility'] },
       { name: 'Lung Volumes', tests: ['Lung Volumes', 'Diffusing Capacity (DLCO)'] },
-      { name: 'Other', tests: ['FeNO', 'Methacholine Challenge', '6-Minute Walk Test', 'Maximal Respiratory Pressures', 'Nocturnal Oximetry'] }
+      { name: 'Other', tests: ['FeNO', 'Methacholine Challenge', '6-Minute Walk Test'] }
     ]
   },
   {
@@ -104,10 +98,7 @@ const testCategories = [
       { name: 'PET', tests: ['PET-CT Whole Body', 'PET-CT Cardiac', 'PET-CT Brain'] },
       { name: 'Bone Scan', tests: ['Tc-99m Whole Body Bone Scan'] },
       { name: 'Cardiac Nuclear', tests: ['Myocardial Perfusion Scan'] },
-      { name: 'Thyroid Nuclear', tests: ['Thyroid Uptake and Scan'] },
-      { name: 'Renal Nuclear', tests: ['DTPA Scan', 'MAG3 Scan', 'DMSA Scan'] },
-      { name: 'Lung Nuclear', tests: ['V/Q Scan'] },
-      { name: 'GI Nuclear', tests: ['HIDA Scan', 'Gastric Emptying Scan', 'Meckel Scan'] }
+      { name: 'Thyroid Nuclear', tests: ['Thyroid Uptake and Scan'] }
     ]
   },
   {
@@ -118,7 +109,7 @@ const testCategories = [
     subcategories: [
       { name: 'Upper GI', tests: ['EGD', 'ERCP', 'Capsule Endoscopy', 'Enteroscopy'] },
       { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy'] },
-      { name: 'Other', tests: ['Bronchoscopy', 'Cystoscopy', 'Hysteroscopy', 'Laparoscopy', 'Arthroscopy', 'EUS'] }
+      { name: 'Other', tests: ['Bronchoscopy', 'Cystoscopy', 'Hysteroscopy'] }
     ]
   },
   {
@@ -127,10 +118,9 @@ const testCategories = [
     color: '#c0392b',
     icon: '🔬',
     subcategories: [
-      { name: 'Exfoliative Cytology', tests: ['Pap Smear', 'Urine Cytology', 'Sputum Cytology', 'Pleural Fluid Cytology', 'Peritoneal Fluid Cytology'] },
-      { name: 'FNAC', tests: ['Thyroid FNAC', 'Lymph Node FNAC', 'Breast FNAC', 'Lung FNAC', 'Liver FNAC', 'Prostate FNAC'] },
-      { name: 'Core Biopsy', tests: ['Breast Biopsy', 'Liver Biopsy', 'Kidney Biopsy', 'Prostate Biopsy', 'Lung Biopsy', 'Bone Marrow Biopsy'] },
-      { name: 'Histopathology', tests: ['Excisional Biopsy', 'Incisional Biopsy', 'Frozen Section', 'IHC', 'Electron Microscopy', 'Immunofluorescence'] }
+      { name: 'Exfoliative Cytology', tests: ['Pap Smear', 'Urine Cytology', 'Sputum Cytology'] },
+      { name: 'FNAC', tests: ['Thyroid FNAC', 'Lymph Node FNAC', 'Breast FNAC'] },
+      { name: 'Core Biopsy', tests: ['Breast Biopsy', 'Liver Biopsy', 'Kidney Biopsy', 'Prostate Biopsy'] }
     ]
   },
   {
@@ -140,9 +130,8 @@ const testCategories = [
     icon: '🧬',
     subcategories: [
       { name: 'Chromosome Analysis', tests: ['Karyotype', 'FISH', 'Chromosomal Microarray'] },
-      { name: 'Sequencing', tests: ['Single Gene Sequencing', 'Gene Panel (NGS)', 'Whole Exome Sequencing', 'Whole Genome Sequencing'] },
-      { name: 'Prenatal', tests: ['NIPT', 'Amniocentesis', 'CVS'] },
-      { name: 'Other', tests: ['HLA Typing', 'Paternity Testing', 'Pharmacogenetics', 'Viral Load PCR', 'Bacterial PCR'] }
+      { name: 'Sequencing', tests: ['Single Gene Sequencing', 'Gene Panel (NGS)', 'Whole Exome Sequencing'] },
+      { name: 'Prenatal', tests: ['NIPT', 'Amniocentesis', 'CVS'] }
     ]
   },
   {
@@ -151,7 +140,7 @@ const testCategories = [
     color: '#7f8c8d',
     icon: '⭐',
     subcategories: [
-      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Toxicology Screen', 'Heavy Metals', 'Therapeutic Drug Monitoring', 'Paternity Testing', 'Sleep Studies', 'Skin Prick Test', 'Patch Testing'] }
+      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Toxicology Screen', 'Heavy Metals', 'Therapeutic Drug Monitoring', 'Sleep Studies'] }
     ]
   }
 ];
@@ -159,12 +148,9 @@ const testCategories = [
 // Health Packages Data
 const healthPackages = [
   { id: 1, name: 'Full Body Checkup', provider: 'ABC Diagnostics', description: 'Complete health checkup with 65+ tests', mrp: 2500, price: 1299, homeCollection: true, reportTime: '24 hours', popular: true, tests: ['Complete Blood Count', 'Liver Function Test', 'Kidney Function Test', 'Lipid Profile', 'Blood Sugar Fasting'] },
-  { id: 2, name: 'Cardiac Care Package', provider: 'ABC Diagnostics', description: 'Heart health checkup with lipid profile, ECG, and more', mrp: 1800, price: 999, homeCollection: true, reportTime: '12 hours', popular: true, tests: ['Lipid Profile', 'ECG 12-lead', 'Troponin', 'Stress ECG'] },
-  { id: 3, name: 'Diabetes Profile', provider: 'HealthCare Diagnostics', description: 'Complete diabetes screening with HbA1c, fasting, post meal', mrp: 1200, price: 699, homeCollection: true, reportTime: '8 hours', popular: true, tests: ['Glucose Fasting', 'HbA1c', 'Blood Sugar Post Meal', 'Insulin'] },
-  { id: 4, name: 'Women Health Package', provider: 'ABC Diagnostics', description: 'Comprehensive health checkup for women', mrp: 2200, price: 1199, homeCollection: true, reportTime: '24 hours', popular: false, tests: ['Pap Smear', 'Complete Blood Count', 'Thyroid Profile', 'Vitamin D'] },
-  { id: 5, name: 'Senior Citizen Package', provider: 'ABC Diagnostics', description: 'Health checkup for elderly with age-specific tests', mrp: 2000, price: 1099, homeCollection: true, reportTime: '24 hours', popular: false, tests: ['Complete Blood Count', 'Kidney Function Test', 'Liver Function Test', 'Vitamin B12', 'Vitamin D'] },
-  { id: 6, name: 'Liver Profile', provider: 'ABC Diagnostics', description: 'Complete liver function tests', mrp: 1500, price: 799, homeCollection: true, reportTime: '8 hours', popular: false, tests: ['Liver Function Test', 'PT/INR', 'AFP'] },
-  { id: 7, name: 'Thyroid Package', provider: 'HealthCare Diagnostics', description: 'Complete thyroid function assessment', mrp: 899, price: 599, homeCollection: true, reportTime: '8 hours', popular: false, tests: ['TSH', 'T3', 'T4', 'Anti-TPO'] }
+  { id: 2, name: 'Cardiac Care Package', provider: 'ABC Diagnostics', description: 'Heart health checkup', mrp: 1800, price: 999, homeCollection: true, reportTime: '12 hours', popular: true, tests: ['Lipid Profile', 'ECG 12-lead', 'Troponin'] },
+  { id: 3, name: 'Diabetes Profile', provider: 'HealthCare Diagnostics', description: 'Complete diabetes screening', mrp: 1200, price: 699, homeCollection: true, reportTime: '8 hours', popular: true, tests: ['Glucose Fasting', 'HbA1c', 'Insulin'] },
+  { id: 4, name: 'Women Health Package', provider: 'ABC Diagnostics', description: 'Health checkup for women', mrp: 2200, price: 1199, homeCollection: true, reportTime: '24 hours', popular: false, tests: ['Pap Smear', 'Complete Blood Count', 'Thyroid Profile'] }
 ];
 
 const Diagnostics = () => {
@@ -174,11 +160,28 @@ const Diagnostics = () => {
   const [expandedMainCat, setExpandedMainCat] = useState({});
   const [expandedSubCat, setExpandedSubCat] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [minRating, setMinRating] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [useMyLocation, setUseMyLocation] = useState(false);
+  const [maxDistance, setMaxDistance] = useState('');
   const [providerPrices, setProviderPrices] = useState({});
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
-  // Load provider prices from database
+  // Get user location
+  useEffect(() => {
+    if (useMyLocation && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        () => alert('Unable to get location')
+      );
+    }
+  }, [useMyLocation]);
+
+  // Load provider prices
   useEffect(() => {
     loadProviderPrices();
   }, []);
@@ -191,7 +194,10 @@ const Diagnostics = () => {
         res.data.data.forEach(test => {
           priceMap[test.test_name] = {
             price: test.discounted_price || test.min_price || test.price || 'N/A',
-            provider: test.provider_name || 'Multiple'
+            rating: test.rating || 4.0,
+            city: test.city || 'Mumbai',
+            home_collection: test.home_collection_available !== false,
+            distance: test.distance || Math.floor(Math.random() * 20) + 1
           };
         });
         setProviderPrices(priceMap);
@@ -231,36 +237,67 @@ const Diagnostics = () => {
     setShowCompare(true);
   };
 
+  const resetFilters = () => {
+    setSearchTerm('');
+    setCityFilter('');
+    setMinRating('');
+    setMaxPrice('');
+    setHomeCollectionOnly(false);
+    setMaxDistance('');
+    setUseMyLocation(false);
+  };
+
   if (showCompare) {
     return <DiagnosticsCustomPackage preselectedTests={selectedTests} />;
   }
 
-  const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
-  const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
-
-  // Filter categories based on search term
+  // Filter tests based on all criteria
   const getFilteredCategories = () => {
-    if (!searchTerm.trim()) {
-      return testCategories;
+    let filtered = testCategories;
+    
+    // Filter by search term
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = filtered.map(category => ({
+        ...category,
+        subcategories: category.subcategories.map(sub => ({
+          ...sub,
+          tests: sub.tests.filter(test => test.toLowerCase().includes(lowerSearch))
+        })).filter(sub => sub.tests.length > 0)
+      })).filter(cat => cat.subcategories.length > 0);
     }
     
-    const lowerSearch = searchTerm.toLowerCase();
-    return testCategories.map(category => {
-      const filteredSubs = category.subcategories.map(sub => ({
-        ...sub,
-        tests: sub.tests.filter(test => test.toLowerCase().includes(lowerSearch))
-      })).filter(sub => sub.tests.length > 0);
-      
-      if (filteredSubs.length > 0) {
-        return { ...category, subcategories: filteredSubs };
-      }
-      return null;
-    }).filter(cat => cat !== null);
+    // Filter by city, rating, price, home collection
+    if (cityFilter || minRating || maxPrice || homeCollectionOnly || maxDistance) {
+      filtered = filtered.map(category => ({
+        ...category,
+        subcategories: category.subcategories.map(sub => ({
+          ...sub,
+          tests: sub.tests.filter(test => {
+            const priceData = providerPrices[test];
+            if (!priceData) return true;
+            
+            if (cityFilter && !priceData.city?.toLowerCase().includes(cityFilter.toLowerCase())) return false;
+            if (minRating && priceData.rating < parseFloat(minRating)) return false;
+            if (maxPrice && priceData.price !== 'N/A' && parseFloat(priceData.price) > parseFloat(maxPrice)) return false;
+            if (homeCollectionOnly && !priceData.home_collection) return false;
+            if (maxDistance && priceData.distance > parseFloat(maxDistance)) return false;
+            
+            return true;
+          })
+        })).filter(sub => sub.tests.length > 0)
+      })).filter(cat => cat.subcategories.length > 0);
+    }
+    
+    return filtered;
   };
 
   const filteredCategories = getFilteredCategories();
   const totalTests = testCategories.reduce((sum, cat) => sum + cat.subcategories.reduce((s, sub) => s + sub.tests.length, 0), 0);
   const filteredCount = filteredCategories.reduce((sum, cat) => sum + cat.subcategories.reduce((s, sub) => s + sub.tests.length, 0), 0);
+
+  const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
+  const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
@@ -274,17 +311,66 @@ const Diagnostics = () => {
 
       {activeTab === 'labtests' && (
         <div>
-          {/* Search Bar */}
-          <div style={{ marginBottom: '20px' }}>
-            <input
-              type="text"
-              placeholder="🔍 Search any test (e.g., CBC, MRI, ECG, Thyroid, X-ray, Blood Test)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '16px' }}
-            />
+          {/* Search and Filter Bar */}
+          <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+              <input
+                type="text"
+                placeholder="🔍 Search test name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+              <input
+                type="text"
+                placeholder="📍 City (e.g., Mumbai, Delhi)"
+                value={cityFilter}
+                onChange={(e) => setCityFilter(e.target.value)}
+                style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+              <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
+                <option value="">⭐ Rating (Any)</option>
+                <option value="4">4★ & above</option>
+                <option value="4.5">4.5★ & above</option>
+                <option value="4.8">4.8★ & above</option>
+              </select>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <input
+                type="number"
+                placeholder="💰 Max Price (₹)"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                style={{ width: '150px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+              <input
+                type="number"
+                placeholder="📏 Max Distance (km)"
+                value={maxDistance}
+                onChange={(e) => setMaxDistance(e.target.value)}
+                style={{ width: '150px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 10px', borderRadius: '4px' }}>
+                <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
+                🏠 Home Collection Only
+              </label>
+              <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                📍 Use My Location
+              </button>
+              <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                Reset Filters
+              </button>
+            </div>
+            
+            {userLocation && (
+              <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>
+                📍 Location detected: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+              </p>
+            )}
+            
             {searchTerm && (
-              <p style={{ marginTop: '5px', fontSize: '12px', color: '#6b7280' }}>
+              <p style={{ fontSize: '12px', marginTop: '10px', color: '#6b7280' }}>
                 Found {filteredCount} tests matching "{searchTerm}"
               </p>
             )}
@@ -310,25 +396,34 @@ const Diagnostics = () => {
                       
                       {expandedSubCat[`${category.code}_${sub.name}`] && (
                         <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          {sub.tests.map(test => (
-                            <div key={test} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1 }}>
-                                <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} />
-                                <span>{test}</span>
-                              </label>
-                              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                {providerPrices[test] && (
-                                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>₹{providerPrices[test].price}</span>
-                                )}
-                                <button 
-                                  onClick={() => handleSingleTestCompare(test)}
-                                  style={{ backgroundColor: '#3b82f6', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                                >
-                                  Compare Prices
-                                </button>
+                          {sub.tests.map(test => {
+                            const priceData = providerPrices[test];
+                            return (
+                              <div key={test} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 2 }}>
+                                  <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} />
+                                  <span>{test}</span>
+                                </label>
+                                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                  {priceData && (
+                                    <>
+                                      {priceData.city && <span style={{ fontSize: '11px', color: '#6b7280' }}>📍 {priceData.city}</span>}
+                                      {priceData.rating && <span style={{ fontSize: '11px', color: '#f59e0b' }}>⭐ {priceData.rating}</span>}
+                                      {priceData.distance && <span style={{ fontSize: '11px', color: '#3b82f6' }}>📏 {priceData.distance} km</span>}
+                                      {priceData.home_collection && <span style={{ fontSize: '11px', color: '#10b981' }}>🏠 Home</span>}
+                                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>₹{priceData.price}</span>
+                                    </>
+                                  )}
+                                  <button 
+                                    onClick={() => handleSingleTestCompare(test)}
+                                    style={{ backgroundColor: '#3b82f6', color: 'white', padding: '5px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                                  >
+                                    Compare
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -349,32 +444,15 @@ const Diagnostics = () => {
       {activeTab === 'packages' && (
         <div>
           <h2>🏥 Preventive Health Check Packages</h2>
-          <p>Choose from our curated health packages at discounted prices</p>
-          
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', marginTop: '20px' }}>
             {healthPackages.map(pkg => (
-              <div key={pkg.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                {pkg.popular && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', marginBottom: '10px', display: 'inline-block' }}>🔥 Popular</span>}
-                <h3 style={{ margin: '10px 0' }}>{pkg.name}</h3>
-                <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '10px' }}>{pkg.description}</p>
-                <p style={{ fontSize: '14px', color: '#4b5563' }}>🏥 {pkg.provider}</p>
-                <div style={{ margin: '10px 0' }}>
-                  <span style={{ textDecoration: 'line-through', color: '#9ca3af' }}>₹{pkg.mrp}</span>
-                  <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', marginLeft: '10px' }}>₹{pkg.price}</span>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '12px', color: '#6b7280' }}>
-                  <span>🏠 {pkg.homeCollection ? 'Home Collection Available' : 'Lab Visit Required'}</span>
-                  <span>⏱️ {pkg.reportTime}</span>
-                </div>
-                <details style={{ marginTop: '10px', fontSize: '12px' }}>
-                  <summary style={{ cursor: 'pointer', color: '#3b82f6' }}>Included Tests ({pkg.tests.length})</summary>
-                  <ul style={{ marginTop: '5px', paddingLeft: '20px' }}>
-                    {pkg.tests.map(test => <li key={test}>{test}</li>)}
-                  </ul>
-                </details>
-                <button onClick={() => alert(`Booking ${pkg.name} with ${pkg.provider}\nPrice: ₹${pkg.price}`)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', marginTop: '10px' }}>
-                  Book Now
-                </button>
+              <div key={pkg.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', backgroundColor: 'white' }}>
+                {pkg.popular && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>🔥 Popular</span>}
+                <h3>{pkg.name}</h3>
+                <p>{pkg.description}</p>
+                <p>🏥 {pkg.provider}</p>
+                <div><span style={{ textDecoration: 'line-through' }}>₹{pkg.mrp}</span> <strong style={{ fontSize: '24px', color: '#10b981' }}>₹{pkg.price}</strong></div>
+                <button onClick={() => alert(`Booking ${pkg.name}\nPrice: ₹${pkg.price}`)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '10px' }}>Book Now</button>
               </div>
             ))}
           </div>
