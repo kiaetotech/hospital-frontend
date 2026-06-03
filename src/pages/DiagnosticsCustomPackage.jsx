@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
 const DiagnosticsCustomPackage = () => {
   const navigate = useNavigate();
   const [allTests, setAllTests] = useState([]);
@@ -13,6 +14,13 @@ const DiagnosticsCustomPackage = () => {
   const [userLocation, setUserLocation] = useState(null);
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+
+  useEffect(() => {
+  if (preselectedTests && preselectedTests.length > 0) {
+    setSelectedTests(preselectedTests);
+    handleCompare(preselectedTests);
+  }
+}, [preselectedTests]);
 
   useEffect(() => {
     if (navigator.geolocation) {
