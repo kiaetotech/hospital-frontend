@@ -20,6 +20,8 @@ import DiagnosticsCompare from './pages/DiagnosticsCompare';
 import DiagnosticsBooking from './pages/DiagnosticsBooking';
 import DiagnosticsCustom from './pages/DiagnosticsCustom';
 import DiagnosticsSafe from './pages/DiagnosticsSafe';
+import DiagnosticsMinimal from './pages/DiagnosticsMinimal';
+import DiagnosticsCompareMinimal from './pages/DiagnosticsCompareMinimal';
 
 function App() {
   return (
@@ -54,6 +56,8 @@ function App() {
 	<Route path="/diagnostics-booking" element={<DiagnosticsBooking />} />
 	<Route path="/diagnostics-custom" element={<DiagnosticsCustom />} />
 	<Route path="/diagnostics-safe" element={<DiagnosticsSafe />} />
+	<Route path="/diagnostics-minimal" element={<DiagnosticsMinimal />} />
+	<Route path="/diagnostics-compare-minimal" element={<DiagnosticsCompareMinimal />} />
         
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
