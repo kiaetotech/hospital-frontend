@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 
-// ALL 12 MAIN CATEGORIES WITH SUBCATEGORIES
+// ALL 12 MAIN CATEGORIES WITH FULL SUBCATEGORIES
 const testCategories = [
   {
     code: 'BLD',
@@ -10,14 +10,16 @@ const testCategories = [
     color: '#e74c3c',
     icon: '🩸',
     subcategories: [
-      { name: 'Hematology', tests: ['Complete Blood Count', 'Hemoglobin', 'White Blood Cell Count', 'Platelet Count', 'ESR', 'CRP'] },
-      { name: 'Coagulation', tests: ['PT/INR', 'aPTT', 'D-Dimer', 'Fibrinogen'] },
-      { name: 'Biochemistry', tests: ['Glucose Fasting', 'HbA1c', 'Liver Function Test', 'Kidney Function Test', 'Electrolytes', 'Lipid Profile'] },
-      { name: 'Iron Studies', tests: ['Serum Iron', 'TIBC', 'Ferritin'] },
+      { name: 'Hematology', tests: ['Complete Blood Count', 'Hemoglobin', 'White Blood Cell Count', 'Platelet Count', 'ESR', 'CRP', 'Peripheral Smear', 'Hb Electrophoresis', 'Reticulocyte Count'] },
+      { name: 'Coagulation', tests: ['PT/INR', 'aPTT', 'D-Dimer', 'Fibrinogen', 'Factor Assays', 'Protein C/S', 'Antithrombin III'] },
+      { name: 'Biochemistry', tests: ['Glucose Fasting', 'HbA1c', 'Liver Function Test', 'Kidney Function Test', 'Electrolytes', 'Calcium', 'Magnesium', 'Phosphate', 'Uric Acid', 'Lipid Profile', 'Amylase', 'Lipase', 'LDH', 'Troponin', 'CK-MB'] },
+      { name: 'Iron Studies', tests: ['Serum Iron', 'TIBC', 'Ferritin', 'Transferrin Saturation'] },
       { name: 'Vitamins', tests: ['Vitamin B12', 'Vitamin D', 'Folate'] },
-      { name: 'Hormones', tests: ['TSH', 'T3', 'T4', 'Cortisol', 'Testosterone', 'Estradiol', 'Progesterone'] },
-      { name: 'Tumor Markers', tests: ['AFP', 'CEA', 'CA-125', 'PSA'] },
-      { name: 'Serology', tests: ['HIV', 'HBsAg', 'Dengue', 'Malaria', 'Rheumatoid Factor', 'ANA'] }
+      { name: 'Hormones', tests: ['TSH', 'T3', 'T4', 'Cortisol', 'ACTH', 'Prolactin', 'LH', 'FSH', 'Estradiol', 'Progesterone', 'Testosterone', 'DHEA-S', 'PTH', 'Insulin', 'C-peptide'] },
+      { name: 'Tumor Markers', tests: ['AFP', 'CEA', 'CA-125', 'CA 19-9', 'CA 15-3', 'PSA', 'β-hCG', 'Calcitonin', 'Thyroglobulin'] },
+      { name: 'Serology/Immunology', tests: ['HIV', 'HBsAg', 'Anti-HCV', 'Syphilis', 'Dengue', 'Malaria', 'Typhoid', 'Rheumatoid Factor', 'ANA', 'Anti-dsDNA', 'ANCA', 'Anti-CCP'] },
+      { name: 'Infection Markers', tests: ['Procalcitonin', 'hs-CRP', 'Beta-D-glucan', 'Galactomannan'] },
+      { name: 'Special', tests: ['Therapeutic Drug Monitoring', 'Heavy Metals', 'Toxicology Screen', 'Newborn Screen', 'G6PD', 'Sickle Cell Test'] }
     ]
   },
   {
@@ -26,10 +28,11 @@ const testCategories = [
     color: '#3498db',
     icon: '📷',
     subcategories: [
-      { name: 'X-ray', tests: ['Chest X-ray', 'Limb X-ray', 'Spine X-ray', 'Mammogram', 'DEXA'] },
-      { name: 'CT Scan', tests: ['CT Head', 'CT Chest', 'CT Abdomen', 'CT Spine', 'CT Angiography'] },
-      { name: 'MRI', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen', 'MRI Breast'] },
-      { name: 'Ultrasound', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'Doppler Studies', 'Echocardiography'] }
+      { name: 'X-ray', tests: ['Chest X-ray', 'Limb X-ray', 'Spine X-ray', 'KUB', 'Mammogram', 'DEXA', 'OPG', 'Barium Studies'] },
+      { name: 'CT Scan', tests: ['CT Head', 'CT Chest', 'CT Abdomen/Pelvis', 'CT Spine', 'CT Angiography', 'CT Urogram', 'CT Virtual Colonoscopy'] },
+      { name: 'MRI', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen/MRCP', 'MRI Breast', 'MRA/MRV'] },
+      { name: 'Ultrasound', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'USG Scrotum', 'Doppler Studies', 'Echocardiography', 'Obstetric USG'] },
+      { name: 'Fluoroscopy', tests: ['Barium Swallow', 'Barium Meal', 'Barium Enema', 'ERCP'] }
     ]
   },
   {
@@ -38,8 +41,9 @@ const testCategories = [
     color: '#e67e22',
     icon: '❤️',
     subcategories: [
-      { name: 'ECG', tests: ['ECG 12-lead', 'Stress ECG (TMT)', 'Holter Monitor'] },
-      { name: 'Echocardiography', tests: ['2D Echo', 'Stress Echo'] }
+      { name: 'ECG', tests: ['ECG 12-lead', 'Stress ECG (TMT)', 'Holter Monitor', 'Event Recorder', 'Tilt Table Test'] },
+      { name: 'Echocardiography', tests: ['2D Echo', 'Stress Echo', 'Transesophageal Echo', 'Fetal Echo'] },
+      { name: 'Vascular', tests: ['Ankle-Brachial Index', 'Pulse Volume Recording', 'Carotid Doppler'] }
     ]
   },
   {
@@ -48,9 +52,11 @@ const testCategories = [
     color: '#f39c12',
     icon: '💧',
     subcategories: [
-      { name: 'Routine', tests: ['Urinalysis', 'Urine Glucose', 'Urine Ketones'] },
-      { name: 'Culture', tests: ['Urine Culture & Sensitivity'] },
-      { name: 'Chemistry', tests: ['Urine Protein', 'Urine Microalbumin', 'Urine Electrolytes'] }
+      { name: 'Routine', tests: ['Urinalysis', 'Urine Glucose', 'Urine Ketones', 'Urine Microscopy'] },
+      { name: 'Culture', tests: ['Urine Culture & Sensitivity', 'Urine AFB'] },
+      { name: 'Chemistry', tests: ['Urine Protein', 'Urine Microalbumin/Creatinine Ratio', 'Urine Electrolytes', 'Urine Osmolality', 'Urine Creatinine', 'Urine Urea', 'Urine Calcium', 'Urine Uric Acid'] },
+      { name: 'Hormones', tests: ['Urine Pregnancy Test', 'Urine Cortisol', 'Urine Catecholamines', 'Urine Metanephrines', 'Urine 5-HIAA'] },
+      { name: 'Special', tests: ['Urine Bence Jones Protein', 'Urine Porphobilinogen', 'Urine Drug Screen', 'Urine Heavy Metals', 'Urine PCR'] }
     ]
   },
   {
@@ -59,9 +65,12 @@ const testCategories = [
     color: '#27ae60',
     icon: '🧫',
     subcategories: [
-      { name: 'Routine', tests: ['Stool Routine'] },
+      { name: 'Routine', tests: ['Stool Routine', 'Stool Microscopy'] },
       { name: 'Occult Blood', tests: ['FOBT', 'FIT'] },
-      { name: 'Culture', tests: ['Stool Culture & Sensitivity'] }
+      { name: 'Culture', tests: ['Stool Culture & Sensitivity'] },
+      { name: 'Parasites', tests: ['Ova/Cyst Examination', 'Giardia', 'Cryptosporidium'] },
+      { name: 'Antigens', tests: ['H.pylori Stool Antigen'] },
+      { name: 'Special', tests: ['Calprotectin', 'Stool Fat', 'Stool Elastase', 'Stool Reducing Substances', 'Stool pH', 'Stool PCR'] }
     ]
   },
   {
@@ -70,8 +79,9 @@ const testCategories = [
     color: '#9b59b6',
     icon: '🧠',
     subcategories: [
-      { name: 'EEG', tests: ['Routine EEG', 'Sleep Deprived EEG'] },
-      { name: 'Nerve Studies', tests: ['EMG', 'Nerve Conduction Studies'] }
+      { name: 'EEG', tests: ['Routine EEG', 'Sleep Deprived EEG', 'Video EEG', 'Ambulatory EEG'] },
+      { name: 'Nerve Studies', tests: ['EMG', 'Nerve Conduction Studies', 'Repetitive Nerve Stimulation'] },
+      { name: 'Evoked Potentials', tests: ['Visual Evoked Potentials', 'Brainstem Auditory Evoked Potentials', 'Somatosensory Evoked Potentials'] }
     ]
   },
   {
@@ -81,7 +91,23 @@ const testCategories = [
     icon: '🫁',
     subcategories: [
       { name: 'Spirometry', tests: ['Spirometry', 'Bronchodilator Reversibility'] },
-      { name: 'Lung Volumes', tests: ['Lung Volumes', 'Diffusing Capacity (DLCO)'] }
+      { name: 'Lung Volumes', tests: ['Lung Volumes', 'Diffusing Capacity (DLCO)'] },
+      { name: 'Other', tests: ['FeNO', 'Methacholine Challenge', '6-Minute Walk Test', 'Maximal Respiratory Pressures', 'Nocturnal Oximetry'] }
+    ]
+  },
+  {
+    code: 'NM',
+    name: '⚛️ Nuclear Medicine',
+    color: '#16a085',
+    icon: '⚛️',
+    subcategories: [
+      { name: 'PET', tests: ['PET-CT Whole Body', 'PET-CT Cardiac', 'PET-CT Brain'] },
+      { name: 'Bone Scan', tests: ['Tc-99m Whole Body Bone Scan'] },
+      { name: 'Cardiac Nuclear', tests: ['Myocardial Perfusion Scan'] },
+      { name: 'Thyroid Nuclear', tests: ['Thyroid Uptake and Scan'] },
+      { name: 'Renal Nuclear', tests: ['DTPA Scan', 'MAG3 Scan', 'DMSA Scan'] },
+      { name: 'Lung Nuclear', tests: ['V/Q Scan'] },
+      { name: 'GI Nuclear', tests: ['HIDA Scan', 'Gastric Emptying Scan', 'Meckel Scan'] }
     ]
   },
   {
@@ -90,8 +116,9 @@ const testCategories = [
     color: '#2c3e50',
     icon: '🔬',
     subcategories: [
-      { name: 'Upper GI', tests: ['EGD', 'ERCP'] },
-      { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy'] }
+      { name: 'Upper GI', tests: ['EGD', 'ERCP', 'Capsule Endoscopy', 'Enteroscopy'] },
+      { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy'] },
+      { name: 'Other', tests: ['Bronchoscopy', 'Cystoscopy', 'Hysteroscopy', 'Laparoscopy', 'Arthroscopy', 'EUS'] }
     ]
   },
   {
@@ -100,8 +127,10 @@ const testCategories = [
     color: '#c0392b',
     icon: '🔬',
     subcategories: [
-      { name: 'Cytology', tests: ['Pap Smear', 'Urine Cytology'] },
-      { name: 'FNAC', tests: ['Thyroid FNAC', 'Lymph Node FNAC'] }
+      { name: 'Exfoliative Cytology', tests: ['Pap Smear', 'Urine Cytology', 'Sputum Cytology', 'Pleural Fluid Cytology', 'Peritoneal Fluid Cytology'] },
+      { name: 'FNAC', tests: ['Thyroid FNAC', 'Lymph Node FNAC', 'Breast FNAC', 'Lung FNAC', 'Liver FNAC', 'Prostate FNAC'] },
+      { name: 'Core Biopsy', tests: ['Breast Biopsy', 'Liver Biopsy', 'Kidney Biopsy', 'Prostate Biopsy', 'Lung Biopsy', 'Bone Marrow Biopsy'] },
+      { name: 'Histopathology', tests: ['Excisional Biopsy', 'Incisional Biopsy', 'Frozen Section', 'IHC', 'Electron Microscopy', 'Immunofluorescence'] }
     ]
   },
   {
@@ -110,17 +139,10 @@ const testCategories = [
     color: '#2980b9',
     icon: '🧬',
     subcategories: [
-      { name: 'Chromosome', tests: ['Karyotype', 'FISH'] },
-      { name: 'Sequencing', tests: ['Single Gene Sequencing', 'NGS Panel'] }
-    ]
-  },
-  {
-    code: 'MIC',
-    name: '🦠 Microbiology',
-    color: '#d35400',
-    icon: '🦠',
-    subcategories: [
-      { name: 'Cultures', tests: ['Blood Culture', 'Sputum Culture', 'Wound Culture'] }
+      { name: 'Chromosome Analysis', tests: ['Karyotype', 'FISH', 'Chromosomal Microarray'] },
+      { name: 'Sequencing', tests: ['Single Gene Sequencing', 'Gene Panel (NGS)', 'Whole Exome Sequencing', 'Whole Genome Sequencing'] },
+      { name: 'Prenatal', tests: ['NIPT', 'Amniocentesis', 'CVS'] },
+      { name: 'Other', tests: ['HLA Typing', 'Paternity Testing', 'Pharmacogenetics', 'Viral Load PCR', 'Bacterial PCR'] }
     ]
   },
   {
@@ -129,7 +151,7 @@ const testCategories = [
     color: '#7f8c8d',
     icon: '⭐',
     subcategories: [
-      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Toxicology Screen'] }
+      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Toxicology Screen', 'Heavy Metals', 'Therapeutic Drug Monitoring', 'Paternity Testing', 'Sleep Studies', 'Skin Prick Test', 'Patch Testing'] }
     ]
   }
 ];
@@ -141,7 +163,8 @@ const healthPackages = [
   { id: 3, name: 'Diabetes Profile', provider: 'HealthCare Diagnostics', description: 'Complete diabetes screening with HbA1c, fasting, post meal', mrp: 1200, price: 699, homeCollection: true, reportTime: '8 hours', popular: true, tests: ['Glucose Fasting', 'HbA1c', 'Blood Sugar Post Meal', 'Insulin'] },
   { id: 4, name: 'Women Health Package', provider: 'ABC Diagnostics', description: 'Comprehensive health checkup for women', mrp: 2200, price: 1199, homeCollection: true, reportTime: '24 hours', popular: false, tests: ['Pap Smear', 'Complete Blood Count', 'Thyroid Profile', 'Vitamin D'] },
   { id: 5, name: 'Senior Citizen Package', provider: 'ABC Diagnostics', description: 'Health checkup for elderly with age-specific tests', mrp: 2000, price: 1099, homeCollection: true, reportTime: '24 hours', popular: false, tests: ['Complete Blood Count', 'Kidney Function Test', 'Liver Function Test', 'Vitamin B12', 'Vitamin D'] },
-  { id: 6, name: 'Liver Profile', provider: 'ABC Diagnostics', description: 'Complete liver function tests', mrp: 1500, price: 799, homeCollection: true, reportTime: '8 hours', popular: false, tests: ['Liver Function Test', 'PT/INR', 'AFP'] }
+  { id: 6, name: 'Liver Profile', provider: 'ABC Diagnostics', description: 'Complete liver function tests', mrp: 1500, price: 799, homeCollection: true, reportTime: '8 hours', popular: false, tests: ['Liver Function Test', 'PT/INR', 'AFP'] },
+  { id: 7, name: 'Thyroid Package', provider: 'HealthCare Diagnostics', description: 'Complete thyroid function assessment', mrp: 899, price: 599, homeCollection: true, reportTime: '8 hours', popular: false, tests: ['TSH', 'T3', 'T4', 'Anti-TPO'] }
 ];
 
 const Diagnostics = () => {
@@ -150,6 +173,7 @@ const Diagnostics = () => {
   const [showCompare, setShowCompare] = useState(false);
   const [expandedMainCat, setExpandedMainCat] = useState({});
   const [expandedSubCat, setExpandedSubCat] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
   const [providerPrices, setProviderPrices] = useState({});
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
@@ -214,7 +238,29 @@ const Diagnostics = () => {
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
   const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
 
+  // Filter categories based on search term
+  const getFilteredCategories = () => {
+    if (!searchTerm.trim()) {
+      return testCategories;
+    }
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    return testCategories.map(category => {
+      const filteredSubs = category.subcategories.map(sub => ({
+        ...sub,
+        tests: sub.tests.filter(test => test.toLowerCase().includes(lowerSearch))
+      })).filter(sub => sub.tests.length > 0);
+      
+      if (filteredSubs.length > 0) {
+        return { ...category, subcategories: filteredSubs };
+      }
+      return null;
+    }).filter(cat => cat !== null);
+  };
+
+  const filteredCategories = getFilteredCategories();
   const totalTests = testCategories.reduce((sum, cat) => sum + cat.subcategories.reduce((s, sub) => s + sub.tests.length, 0), 0);
+  const filteredCount = filteredCategories.reduce((sum, cat) => sum + cat.subcategories.reduce((s, sub) => s + sub.tests.length, 0), 0);
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
@@ -228,9 +274,25 @@ const Diagnostics = () => {
 
       {activeTab === 'labtests' && (
         <div>
+          {/* Search Bar */}
+          <div style={{ marginBottom: '20px' }}>
+            <input
+              type="text"
+              placeholder="🔍 Search any test (e.g., CBC, MRI, ECG, Thyroid, X-ray, Blood Test)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '16px' }}
+            />
+            {searchTerm && (
+              <p style={{ marginTop: '5px', fontSize: '12px', color: '#6b7280' }}>
+                Found {filteredCount} tests matching "{searchTerm}"
+              </p>
+            )}
+          </div>
+
           <p>Total {totalTests} tests. Select tests using checkboxes or click "Compare Prices" on any test.</p>
           
-          {testCategories.map(category => (
+          {filteredCategories.map(category => (
             <div key={category.code} style={{ marginBottom: '15px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
               <div onClick={() => toggleMainCategory(category.code)} style={{ backgroundColor: category.color, color: 'white', padding: '12px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
                 <span>{category.icon} {category.name}</span>
