@@ -68,11 +68,7 @@ const DiagnosticsList = () => {
     navigate(`/diagnostics-compare-providers?testId=${testId}&testName=${encodeURIComponent(testName)}`);
   };
 
-  const handleCustomPackage = () => {
-    navigate('/diagnostics-custom-package');
-  };
-
-  if (loading) {
+   if (loading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading tests...</div>;
   }
 
@@ -81,9 +77,7 @@ const DiagnosticsList = () => {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h1 style={{ margin: 0 }}>🔬 Diagnostics - Lab Tests</h1>
-        <button onClick={handleCustomPackage} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          ✨ Build Custom Package
-        </button>
+        
       </div>
       
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
