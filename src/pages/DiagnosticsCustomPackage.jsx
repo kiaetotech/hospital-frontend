@@ -139,11 +139,11 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
                         Book
                       </button>
                     </td>
-                  <tr>
+                  </tr>
                 );
               })}
             </tbody>
-           </table>
+          </table>
         </div>
       )}
     </div>
