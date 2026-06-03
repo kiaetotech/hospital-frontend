@@ -21,16 +21,20 @@ const Diagnostics = () => {
   const [cityFilter, setCityFilter] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [useMyLocation, setUseMyLocation] = useState(false);
+  const [applyFilters, setApplyFilters] = useState(false);
 
   // Fetch categories on load
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // Fetch items when filters change
+  // Fetch items when applyFilters is true or tab changes
   useEffect(() => {
-    fetchItems();
-  }, [activeTab, searchQuery, selectedCategory, minPrice, maxPrice, cityFilter, useMyLocation, userLocation, currentPage]);
+    if (applyFilters || activeTab) {
+      fetchItems();
+      setApplyFilters(false);
+    }
+  }, [activeTab, searchQuery, selectedCategory, minPrice, maxPrice, cityFilter, useMyLocation, userLocation, currentPage, applyFilters]);
 
   const fetchCategories = async () => {
     try {
@@ -43,9 +47,7 @@ const Diagnostics = () => {
       setCategories([
         { category_code: 'BLD', category_name: 'Blood Tests' },
         { category_code: 'IMG', category_name: 'Medical Imaging' },
-        { category_code: 'CRD', category_name: 'Cardiac Diagnostics' },
-        { category_code: 'URN', category_name: 'Urine Tests' },
-        { category_code: 'STL', category_name: 'Stool Tests' }
+        { category_code: 'CRD', category_name: 'Cardiac Diagnostics' }
       ]);
     }
   };
@@ -58,6 +60,7 @@ const Diagnostics = () => {
           setUseMyLocation(true);
           setCityFilter('');
           setCurrentPage(1);
+          setApplyFilters(true);
         },
         () => alert('Unable to get location. Please check permissions.')
       );
@@ -83,8 +86,9 @@ const Diagnostics = () => {
       params.append('page', currentPage);
       params.append('limit', itemsPerPage);
       
+      console.log('Fetching with params:', params.toString());
       const res = await api.get(`${endpoint}?${params.toString()}`);
-      console.log('Fetch response:', res.data);
+      console.log('Response:', res.data);
       setItems(res.data.data || []);
       setTotalPages(res.data.pagination?.pages || 1);
     } catch (error) {
@@ -93,6 +97,11 @@ const Diagnostics = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplyFilters = () => {
+    setCurrentPage(1);
+    setApplyFilters(true);
   };
 
   const toggleSelect = (id) => {
@@ -141,6 +150,7 @@ const Diagnostics = () => {
     setUseMyLocation(false);
     setUserLocation(null);
     setCurrentPage(1);
+    setApplyFilters(true);
   };
 
   if (loading && items.length === 0) {
@@ -151,21 +161,20 @@ const Diagnostics = () => {
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* Header */}
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a' }}>🔬 Diagnostics</h1>
         <p style={{ marginBottom: '1rem' }}>Book lab tests and health checkup packages at 10% discount</p>
 
         {/* Tab Switcher */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <button
-            onClick={() => { setActiveTab('tests'); setSelectedItems([]); setCurrentPage(1); }}
-            style={{ padding: '0.5rem 1rem', borderBottom: activeTab === 'tests' ? '2px solid #10b981' : 'none', color: activeTab === 'tests' ? '#10b981' : '#6b7280', background: 'none', cursor: 'pointer' }}
+            onClick={() => { setActiveTab('tests'); setSelectedItems([]); setCurrentPage(1); setApplyFilters(true); }}
+            style={{ padding: '0.5rem 1rem', backgroundColor: activeTab === 'tests' ? '#10b981' : '#e5e7eb', color: activeTab === 'tests' ? 'white' : 'black', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
           >
             🧪 Lab Tests
           </button>
           <button
-            onClick={() => { setActiveTab('packages'); setSelectedItems([]); setCurrentPage(1); }}
-            style={{ padding: '0.5rem 1rem', borderBottom: activeTab === 'packages' ? '2px solid #10b981' : 'none', color: activeTab === 'packages' ? '#10b981' : '#6b7280', background: 'none', cursor: 'pointer' }}
+            onClick={() => { setActiveTab('packages'); setSelectedItems([]); setCurrentPage(1); setApplyFilters(true); }}
+            style={{ padding: '0.5rem 1rem', backgroundColor: activeTab === 'packages' ? '#10b981' : '#e5e7eb', color: activeTab === 'packages' ? 'white' : 'black', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
           >
             📦 Preventive Packages
           </button>
@@ -177,13 +186,13 @@ const Diagnostics = () => {
           </button>
         </div>
 
-        {/* Location Search Row */}
+        {/* Location Search */}
         <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             type="text"
             placeholder="Search by city (e.g., Mumbai, Delhi)..."
             value={cityFilter}
-            onChange={(e) => { setCityFilter(e.target.value); setUseMyLocation(false); setCurrentPage(1); }}
+            onChange={(e) => { setCityFilter(e.target.value); setUseMyLocation(false); }}
             style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
           />
           <button
@@ -197,18 +206,18 @@ const Diagnostics = () => {
           )}
         </div>
 
-        {/* Filters Row */}
+        {/* Filters */}
         <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             type="text"
-            placeholder="Search tests or packages..."
+            placeholder="Search tests..."
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{ flex: 2, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
           />
           <select
             value={selectedCategory}
-            onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setSelectedCategory(e.target.value)}
             style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
           >
             <option value="">All Categories</option>
@@ -220,18 +229,18 @@ const Diagnostics = () => {
             type="number"
             placeholder="Min Price"
             value={minPrice}
-            onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setMinPrice(e.target.value)}
             style={{ width: '100px', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
           />
           <input
             type="number"
             placeholder="Max Price"
             value={maxPrice}
-            onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setMaxPrice(e.target.value)}
             style={{ width: '100px', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
           />
           <button
-            onClick={() => { setCurrentPage(1); fetchItems(); }}
+            onClick={handleApplyFilters}
             style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
           >
             Apply
@@ -280,7 +289,7 @@ const Diagnostics = () => {
                     <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem', marginLeft: '0.5rem' }}>₹{discountedPrice}</span>
                     <span style={{ fontSize: '0.7rem', color: '#10b981', marginLeft: '0.25rem' }}>(Save {discountPercent}%)</span>
                   </div>
-                  <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>🏥 {providerCount} {providerCount === 1 ? 'lab' : 'labs'} offering this test</p>
+                  <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>🏥 {providerCount} {providerCount === 1 ? 'lab' : 'labs'} offering</p>
                   {item.requires_fasting && <p style={{ fontSize: '0.7rem', color: '#f59e0b' }}>⏰ Fasting required</p>}
                   <button
                     onClick={() => handleBook(item)}
