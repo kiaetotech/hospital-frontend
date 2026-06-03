@@ -18,11 +18,8 @@ const DiagnosticsCompareMinimal = () => {
       return;
     }
     
-    console.log('Comparing IDs:', ids);
-    
     api.post('/diagnostics/compare', { type: 'tests', ids })
       .then(res => {
-        console.log('Compare response:', res.data);
         if (res.data && res.data.data) {
           setItems(res.data.data);
         } else {
@@ -31,7 +28,7 @@ const DiagnosticsCompareMinimal = () => {
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error:', err);
+        console.error(err);
         setError(err.message);
         setLoading(false);
       });
@@ -63,74 +60,19 @@ const DiagnosticsCompareMinimal = () => {
     <div style={{ padding: '2rem' }}>
       <a href="/diagnostics-minimal">← Back to Tests</a>
       <h1>Compare Lab Tests</h1>
-      
-      <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Feature</th>
-              {items.map((item, idx) => (
-                <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>
-                  {item.test_name}
-                </th>
-              ))}
-            </table>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Category</td>
-              {items.map((item, idx) => (
-                <td key={idx} style={{ padding: '8px', border: '1px solid #ddd' }}>{item.major_category_name}</td>
-              ))}
-            </tr>
-            <tr>
-              <td style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Original Price</td>
-              {items.map((item, idx) => {
-                const price = item.min_price || item.price || 0;
-                return <td key={idx} style={{ padding: '8px', border: '1px solid #ddd' }}>₹{price}</td>;
-              })}
-            </tr>
-            <tr style={{ backgroundColor: '#e8f5e9' }}>
-              <td style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Discounted (10% off)</td>
-              {items.map((item, idx) => {
-                const price = item.min_price || item.price || 0;
-                const discounted = Math.round(price * 0.9);
-                return <td key={idx} style={{ padding: '8px', border: '1px solid #ddd', color: '#2e7d32', fontWeight: 'bold' }}>₹{discounted}</td>;
-              })}
-            </tr>
-            <tr>
-              <td style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Report Time</td>
-              {items.map((item, idx) => (
-                <td key={idx} style={{ padding: '8px', border: '1px solid #ddd' }}>{item.turnaround_time_default_hours || 24} hours</td>
-              ))}
-            </tr>
-            <tr>
-              <td style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Home Collection</td>
-              {items.map((item, idx) => (
-                <td key={idx} style={{ padding: '8px', border: '1px solid #ddd' }}>{item.home_collection_possible ? '✅ Yes' : '❌ No'}</td>
-              ))}
-            </tr>
-            <tr>
-              <td style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Fasting Required</td>
-              {items.map((item, idx) => (
-                <td key={idx} style={{ padding: '8px', border: '1px solid #ddd' }}>{item.requires_fasting ? '✅ Yes' : '❌ No'}</td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      
-      <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-        {items.map((item, idx) => (
-          <button
-            key={idx}
-            onClick={() => alert(`Booking ${item.test_name} - Proceed to payment`)}
-            style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            Book {item.test_name}
+      {items.map((item, idx) => (
+        <div key={idx} style={{ border: '1px solid #ccc', margin: '1rem 0', padding: '1rem', borderRadius: '8px' }}>
+          <h3>{item.test_name}</h3>
+          <p>Category: {item.major_category_name}</p>
+          <p>Price: ₹{Math.round((item.min_price || item.price || 0) * 0.9)}</p>
+          <p>Report Time: {item.turnaround_time_default_hours || 24} hours</p>
+          <p>Home Collection: {item.home_collection_possible ? 'Yes' : 'No'}</p>
+          <p>Fasting Required: {item.requires_fasting ? 'Yes' : 'No'}</p>
+          <button onClick={() => alert(`Booking ${item.test_name}`)} style={{ marginTop: '0.5rem', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>
+            Book Now
           </button>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 };
