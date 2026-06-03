@@ -22,7 +22,7 @@ const HomePage = () => {
     { name: 'Health EMI', path: '/financing', desc: 'No‑cost EMI for treatments' },
     { name: 'Online Doctor', path: '/teleconsult', desc: 'Video consult, prescription' },
     { name: 'Corporate', path: '/corporate', desc: 'Employee wellness plans' },
-    { name: 'Diagnostics', path: '/diagnostics', desc: 'Lab tests & health checkups' },
+    { name: 'Diagnostics', path: '/diagnostics-list', desc: 'Lab tests & health checkups' },
   ];
 
   return (
