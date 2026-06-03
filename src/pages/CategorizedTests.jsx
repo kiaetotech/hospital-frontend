@@ -4,27 +4,31 @@ import axios from 'axios';
 const CategorizedTests = ({ selectedTests, setSelectedTests, onCompare }) => {
   const [allTests, setAllTests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedCategory, setExpandedCategory] = useState(null);
+  const [expandedMainCat, setExpandedMainCat] = useState(null);
+  const [expandedSubCat, setExpandedSubCat] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
-  // Category display mapping
-  const categoryDisplay = {
-    'BLD': { name: 'Blood Tests', icon: '🩸', color: '#e74c3c' },
-    'IMG': { name: 'Medical Imaging', icon: '📷', color: '#3498db' },
-    'CRD': { name: 'Cardiac Diagnostics', icon: '❤️', color: '#e67e22' },
-    'URN': { name: 'Urine Tests', icon: '💧', color: '#f39c12' },
-    'STL': { name: 'Stool Tests', icon: '🧫', color: '#27ae60' },
-    'NEU': { name: 'Neurodiagnostics', icon: '🧠', color: '#9b59b6' },
-    'PFT': { name: 'Pulmonary Function', icon: '🫁', color: '#1abc9c' },
-    'NM': { name: 'Nuclear Medicine', icon: '⚛️', color: '#16a085' },
-    'END': { name: 'Endoscopy', icon: '🔬', color: '#2c3e50' },
-    'CSF': { name: 'Body Fluids', icon: '💧', color: '#8e44ad' },
-    'CYT': { name: 'Pathology/Biopsy', icon: '🔬', color: '#c0392b' },
-    'GEN': { name: 'Genetic Tests', icon: '🧬', color: '#2980b9' },
-    'MIC': { name: 'Microbiology', icon: '🦠', color: '#d35400' },
-    'SPL': { name: 'Special Tests', icon: '⭐', color: '#7f8c8d' }
+  // Main Category Display based on major_category
+  const getMainCategoryInfo = (majorCategory) => {
+    const categories = {
+      'BLD': { name: '🩸 Blood Tests', color: '#e74c3c', icon: '🩸' },
+      'IMG': { name: '📷 Medical Imaging', color: '#3498db', icon: '📷' },
+      'CRD': { name: '❤️ Cardiac Diagnostics', color: '#e67e22', icon: '❤️' },
+      'URN': { name: '💧 Urine Tests', color: '#f39c12', icon: '💧' },
+      'STL': { name: '🧫 Stool Tests', color: '#27ae60', icon: '🧫' },
+      'NEU': { name: '🧠 Neurodiagnostics', color: '#9b59b6', icon: '🧠' },
+      'PFT': { name: '🫁 Pulmonary Function', color: '#1abc9c', icon: '🫁' },
+      'NM': { name: '⚛️ Nuclear Medicine', color: '#16a085', icon: '⚛️' },
+      'END': { name: '🔬 Endoscopy', color: '#2c3e50', icon: '🔬' },
+      'CSF': { name: '💧 Body Fluids', color: '#8e44ad', icon: '💧' },
+      'CYT': { name: '🔬 Pathology/Biopsy', color: '#c0392b', icon: '🔬' },
+      'GEN': { name: '🧬 Genetic Tests', color: '#2980b9', icon: '🧬' },
+      'MIC': { name: '🦠 Microbiology', color: '#d35400', icon: '🦠' },
+      'SPL': { name: '⭐ Special Tests', color: '#7f8c8d', icon: '⭐' }
+    };
+    return categories[majorCategory] || { name: majorCategory, color: '#6b7280', icon: '📋' };
   };
 
   useEffect(() => {
@@ -34,36 +38,25 @@ const CategorizedTests = ({ selectedTests, setSelectedTests, onCompare }) => {
   const loadTests = async () => {
     try {
       const res = await axios.get(`${API_URL}/diagnostics/tests`);
-      console.log('Full API Response:', res.data);
-      
-      let tests = [];
+      console.log('API Response:', res.data);
       if (res.data?.data) {
-        tests = res.data.data;
-      } else if (res.data?.tests) {
-        tests = res.data.tests;
+        setAllTests(res.data.data);
+        console.log('Tests loaded:', res.data.data.length);
       }
-      
-      console.log('Tests count:', tests.length);
-      console.log('First test object:', tests[0]);
-      
-      // Log what categories exist
-      const categories = [...new Set(tests.map(t => t.major_category))];
-      console.log('Categories found:', categories);
-      
-      setAllTests(tests);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error loading tests:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleCategory = (category) => {
-    if (expandedCategory === category) {
-      setExpandedCategory(null);
-    } else {
-      setExpandedCategory(category);
-    }
+  const toggleMainCategory = (cat) => {
+    setExpandedMainCat(expandedMainCat === cat ? null : cat);
+  };
+
+  const toggleSubCategory = (mainCat, subCat) => {
+    const key = `${mainCat}_${subCat}`;
+    setExpandedSubCat(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const toggleTest = (test) => {
@@ -74,33 +67,48 @@ const CategorizedTests = ({ selectedTests, setSelectedTests, onCompare }) => {
     }
   };
 
-  // Group tests by major_category
-  const groupedTests = {};
-  allTests.forEach(test => {
-    let cat = test.major_category || test.major_category_name || 'Other';
-    if (cat === 'BLD') cat = 'BLD';
-    if (cat === 'Blood Tests') cat = 'BLD';
+  // Group: Main Category → Sub Category → Tests
+  const organizeTests = () => {
+    const organized = {};
     
-    if (!groupedTests[cat]) {
-      groupedTests[cat] = [];
-    }
-    groupedTests[cat].push(test);
-  });
-
-  // Filter by search
-  let filteredGroups = {};
-  Object.keys(groupedTests).forEach(cat => {
-    const filtered = groupedTests[cat].filter(test =>
-      test.test_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    if (filtered.length > 0) {
-      filteredGroups[cat] = filtered;
-    }
-  });
-
-  const getCategoryInfo = (catCode) => {
-    return categoryDisplay[catCode] || { name: catCode, icon: '📋', color: '#6b7280' };
+    allTests.forEach(test => {
+      const mainCat = test.major_category || 'OTHER';
+      const subCat = test.sub_category || 'General';
+      
+      if (!organized[mainCat]) {
+        organized[mainCat] = {};
+      }
+      if (!organized[mainCat][subCat]) {
+        organized[mainCat][subCat] = [];
+      }
+      organized[mainCat][subCat].push(test);
+    });
+    
+    return organized;
   };
+
+  const organizedTests = organizeTests();
+  
+  // Filter by search
+  const filterBySearch = () => {
+    if (!searchTerm) return organizedTests;
+    
+    const filtered = {};
+    Object.keys(organizedTests).forEach(mainCat => {
+      Object.keys(organizedTests[mainCat]).forEach(subCat => {
+        const filteredTests = organizedTests[mainCat][subCat].filter(test =>
+          test.test_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        if (filteredTests.length > 0) {
+          if (!filtered[mainCat]) filtered[mainCat] = {};
+          filtered[mainCat][subCat] = filteredTests;
+        }
+      });
+    });
+    return filtered;
+  };
+
+  const displayedTests = filterBySearch();
 
   if (loading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading tests...</div>;
@@ -109,8 +117,13 @@ const CategorizedTests = ({ selectedTests, setSelectedTests, onCompare }) => {
   if (allTests.length === 0) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <p>No tests found. Please run import:</p>
-        <code>https://hospital-backend-production-8de3.up.railway.app/api/diagnostics/import-all</code>
+        <p>No tests found. Please import data first.</p>
+        <button 
+          onClick={() => window.open('https://hospital-backend-production-8de3.up.railway.app/api/diagnostics/import-all', '_blank')}
+          style={{ padding: '10px 20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+        >
+          Click to Import Tests
+        </button>
       </div>
     );
   }
@@ -119,48 +132,91 @@ const CategorizedTests = ({ selectedTests, setSelectedTests, onCompare }) => {
     <div>
       <input
         type="text"
-        placeholder="🔍 Search tests..."
+        placeholder="🔍 Search tests (CBC, MRI, ECG, Thyroid, X-ray...)"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         style={{ width: '100%', padding: '12px', marginBottom: '20px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '16px' }}
       />
 
-      <p>Total Tests: {allTests.length} | Categories: {Object.keys(filteredGroups).length}</p>
+      <p style={{ marginBottom: '15px', color: '#6b7280' }}>
+        Total {allTests.length} tests. Select 2 or more to compare prices.
+      </p>
 
-      {Object.keys(filteredGroups).map(category => {
-        const catInfo = getCategoryInfo(category);
+      {Object.keys(displayedTests).map(mainCat => {
+        const catInfo = getMainCategoryInfo(mainCat);
+        const subCategories = displayedTests[mainCat];
+        const totalTests = Object.values(subCategories).reduce((sum, arr) => sum + arr.length, 0);
+        
         return (
-          <div key={category} style={{ marginBottom: '15px', border: `1px solid ${catInfo.color}`, borderRadius: '8px', overflow: 'hidden' }}>
+          <div key={mainCat} style={{ marginBottom: '15px', border: `1px solid ${catInfo.color}`, borderRadius: '8px', overflow: 'hidden' }}>
+            {/* Main Category Header */}
             <div
-              onClick={() => toggleCategory(category)}
+              onClick={() => toggleMainCategory(mainCat)}
               style={{
                 backgroundColor: catInfo.color,
                 color: 'white',
-                padding: '15px',
+                padding: '15px 20px',
                 cursor: 'pointer',
-                fontWeight: 'bold',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}
             >
-              <span>{catInfo.icon} {catInfo.name} ({filteredGroups[category].length} tests)</span>
-              <span>{expandedCategory === category ? '▼' : '▶'}</span>
+              <span>{catInfo.icon} {catInfo.name} ({totalTests} tests)</span>
+              <span>{expandedMainCat === mainCat ? '▼' : '▶'}</span>
             </div>
             
-            {expandedCategory === category && (
-              <div style={{ padding: '15px', backgroundColor: '#f9fafb' }}>
-                {filteredGroups[category].map(test => (
-                  <label key={test._id} style={{ display: 'flex', alignItems: 'center', padding: '8px', borderBottom: '1px solid #e5e7eb', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={!!selectedTests.find(t => t._id === test._id)}
-                      onChange={() => toggleTest(test)}
-                      style={{ marginRight: '12px', width: '18px', height: '18px' }}
-                    />
-                    <span>{test.test_name}</span>
-                    <span style={{ marginLeft: '10px', fontSize: '11px', color: '#888' }}>{test.sub_category || ''}</span>
-                  </label>
+            {/* Subcategories */}
+            {expandedMainCat === mainCat && (
+              <div style={{ backgroundColor: '#f9fafb' }}>
+                {Object.keys(subCategories).map(subCat => (
+                  <div key={subCat} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    {/* Subcategory Header */}
+                    <div
+                      onClick={() => toggleSubCategory(mainCat, subCat)}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#f3f4f6',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        borderLeft: `4px solid ${catInfo.color}`
+                      }}
+                    >
+                      <span>📂 {subCat} ({subCategories[subCat].length} tests)</span>
+                      <span>{expandedSubCat[`${mainCat}_${subCat}`] ? '▼' : '▶'}</span>
+                    </div>
+                    
+                    {/* Tests */}
+                    {expandedSubCat[`${mainCat}_${subCat}`] && (
+                      <div style={{ padding: '10px 20px' }}>
+                        {subCategories[subCat].map(test => (
+                          <label key={test._id} style={{ display: 'flex', alignItems: 'center', padding: '10px', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', backgroundColor: 'white' }}>
+                            <input
+                              type="checkbox"
+                              checked={!!selectedTests.find(t => t._id === test._id)}
+                              onChange={() => toggleTest(test)}
+                              style={{ marginRight: '12px', width: '18px', height: '18px', cursor: 'pointer' }}
+                            />
+                            <span style={{ flex: 1 }}>{test.test_name}</span>
+                            {test.requires_fasting === true && (
+                              <span style={{ fontSize: '11px', backgroundColor: '#fef3c7', padding: '2px 8px', borderRadius: '4px', color: '#92400e' }}>
+                                🌙 Fasting
+                              </span>
+                            )}
+                            <span style={{ fontSize: '12px', color: '#10b981', marginLeft: '10px' }}>
+                              ₹{test.min_price || test.price || 'N/A'}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
