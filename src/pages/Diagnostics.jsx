@@ -9,7 +9,6 @@ const healthPackages = [
   { id: 3, name: 'Diabetes Profile', provider: 'HealthCare Diagnostics', description: 'Complete diabetes screening', mrp: 1200, price: 699, homeCollection: true, reportTime: '8 hours', popular: true }
 ];
 
-// Comparison Results Component
 const ComparisonResults = ({ selectedTests, onBack }) => {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,15 +19,34 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
     const fetchComparison = async () => {
       setLoading(true);
       try {
-        const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { testIds: selectedTests });
+        // First, fetch all tests to get IDs
+        const testsRes = await axios.get(`${API_URL}/diagnostics/tests`);
+        const allTests = testsRes.data?.data || [];
+        
+        // Find test IDs for selected test names
+        const testIds = [];
+        selectedTests.forEach(testName => {
+          const found = allTests.find(t => t.test_name === testName);
+          if (found) testIds.push(found._id);
+        });
+        
+        if (testIds.length === 0) {
+          setError('No matching tests found in database');
+          setLoading(false);
+          return;
+        }
+        
+        // Now compare using IDs
+        const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { testIds });
         if (res.data.providers && res.data.providers.length > 0) {
           const sorted = [...res.data.providers].sort((a, b) => a.total_price - b.total_price);
           setProviders(sorted);
         } else {
-          setError('No labs found offering all selected tests');
+          setError('No labs found offering all selected tests. Please run import first.');
         }
       } catch (err) {
-        setError('Error fetching comparison data');
+        console.error('Compare error:', err);
+        setError('Error fetching comparison data. Make sure backend is running and data is imported.');
       } finally {
         setLoading(false);
       }
@@ -37,7 +55,7 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
   }, [selectedTests]);
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
-  if (error) return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>{error}<br /><button onClick={onBack}>← Back</button></div>;
+  if (error) return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>{error}<br /><button onClick={onBack} style={{ marginTop: '10px', cursor: 'pointer' }}>← Back</button></div>;
 
   return (
     <div>
