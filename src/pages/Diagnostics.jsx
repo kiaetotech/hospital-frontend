@@ -2,12 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 
-const healthPackages = [
-  { id: 1, name: 'Full Body Checkup', provider: 'ABC Diagnostics', description: 'Complete health checkup', mrp: 2500, price: 1299, homeCollection: true, reportTime: '24 hours', popular: true },
-  { id: 2, name: 'Cardiac Care Package', provider: 'ABC Diagnostics', description: 'Heart health checkup', mrp: 1800, price: 999, homeCollection: true, reportTime: '12 hours', popular: true },
-  { id: 3, name: 'Diabetes Profile', provider: 'HealthCare Diagnostics', description: 'Complete diabetes screening', mrp: 1200, price: 699, homeCollection: true, reportTime: '8 hours', popular: true }
-];
-
 const testCategories = [
   { code: 'MRI', name: '🧠 MRI (Magnetic Resonance Imaging)', icon: '🧠', color: '#8e44ad', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen / MRCP', 'MRI Pelvis', 'MRI Cardiac', 'MRI Angiography (MRA)', 'MRI Breast', 'MRI Orbit / IAC', 'MRI Soft tissue', 'MR Venography (MRV)'] },
   { code: 'CT', name: '📷 CT (Computed Tomography)', icon: '📷', color: '#3498db', tests: ['CT Head', 'CT Chest', 'CT Abdomen + Pelvis', 'CT Angiography (CTA)', 'CT Spine', 'CT Facial bones / Sinus', 'CT Temporal bone', 'CT Urogram', 'CT Virtual colonoscopy', 'CT Perfusion', 'CT Guided biopsy'] },
@@ -126,6 +120,74 @@ const Diagnostics = () => {
   const [directSearchResults, setDirectSearchResults] = useState([]);
   const [showDirectResults, setShowDirectResults] = useState(false);
   const [visibleTests, setVisibleTests] = useState({});
+  
+  // Health Packages State
+  const [healthPackages, setHealthPackages] = useState([]);
+  const [filteredPackages, setFilteredPackages] = useState([]);
+  const [packagesLoading, setPackagesLoading] = useState(true);
+  const [packageSearchTerm, setPackageSearchTerm] = useState('');
+  const [minPackagePrice, setMinPackagePrice] = useState('');
+  const [maxPackagePrice, setMaxPackagePrice] = useState('');
+  const [packageHomeCollectionOnly, setPackageHomeCollectionOnly] = useState(false);
+  const [showPackageFilters, setShowPackageFilters] = useState(false);
+  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+
+  // Load health packages
+  useEffect(() => {
+    loadHealthPackages();
+  }, []);
+
+  useEffect(() => {
+    filterHealthPackages();
+  }, [healthPackages, packageSearchTerm, minPackagePrice, maxPackagePrice, packageHomeCollectionOnly]);
+
+  const loadHealthPackages = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/health-packages`);
+      setHealthPackages(res.data.packages || []);
+    } catch (error) {
+      console.error('Error loading packages:', error);
+    } finally {
+      setPackagesLoading(false);
+    }
+  };
+
+  const filterHealthPackages = () => {
+    let filtered = [...healthPackages];
+    
+    if (packageSearchTerm) {
+      filtered = filtered.filter(p => 
+        p.package_name?.toLowerCase().includes(packageSearchTerm.toLowerCase()) ||
+        p.package_description?.toLowerCase().includes(packageSearchTerm.toLowerCase())
+      );
+    }
+    
+    if (minPackagePrice) {
+      filtered = filtered.filter(p => p.discounted_price >= parseFloat(minPackagePrice));
+    }
+    
+    if (maxPackagePrice) {
+      filtered = filtered.filter(p => p.discounted_price <= parseFloat(maxPackagePrice));
+    }
+    
+    if (packageHomeCollectionOnly) {
+      filtered = filtered.filter(p => p.home_collection_available === true);
+    }
+    
+    setFilteredPackages(filtered);
+  };
+
+  const resetPackageFilters = () => {
+    setPackageSearchTerm('');
+    setMinPackagePrice('');
+    setMaxPackagePrice('');
+    setPackageHomeCollectionOnly(false);
+    setFilteredPackages(healthPackages);
+  };
+
+  const handlePackageBook = (pkg) => {
+    alert(`Booking ${pkg.package_name}\nProvider: ${pkg.provider_id?.provider_name}\nPrice: ₹${pkg.discounted_price}\nReport Time: ${pkg.report_time_hours} hours\nHome Collection: ${pkg.home_collection_available ? 'Yes' : 'No'}`);
+  };
 
   useEffect(() => {
     if (useMyLocation && navigator.geolocation) {
@@ -253,7 +315,7 @@ const Diagnostics = () => {
             </div>
           )}
 
-          {/* Categories View - ALL EXPANDED BY DEFAULT */}
+          {/* Categories View */}
           {!searchTerm && (
             <div>
               {testCategories.map(category => {
@@ -300,18 +362,122 @@ const Diagnostics = () => {
       {activeTab === 'packages' && (
         <div>
           <h2>🏥 Preventive Health Check Packages</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', marginTop: '20px' }}>
-            {healthPackages.map(pkg => (
-              <div key={pkg.id} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '8px' }}>
-                {pkg.popular && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>🔥 Popular</span>}
-                <h3>{pkg.name}</h3>
-                <p>{pkg.description}</p>
-                <p>Provider: {pkg.provider}</p>
-                <p><span style={{ textDecoration: 'line-through' }}>₹{pkg.mrp}</span> <strong style={{ fontSize: '24px', color: '#10b981' }}>₹{pkg.price}</strong></p>
-                <button onClick={() => alert(`Booking ${pkg.name}`)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
+          <p>Choose from our curated health packages at discounted prices</p>
+
+          {/* Search and Filter Bar */}
+          <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="🔍 Search packages by name..."
+                value={packageSearchTerm}
+                onChange={(e) => setPackageSearchTerm(e.target.value)}
+                style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px' }}
+              />
+              <button onClick={() => setShowPackageFilters(!showPackageFilters)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                {showPackageFilters ? 'Hide Filters ▲' : 'Show Filters ▼'}
+              </button>
+              <button onClick={resetPackageFilters} style={{ backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                Reset
+              </button>
+            </div>
+
+            {showPackageFilters && (
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #e5e7eb' }}>
+                <div>
+                  <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Min Price (₹)</label>
+                  <input type="number" placeholder="Min" value={minPackagePrice} onChange={(e) => setMinPackagePrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Max Price (₹)</label>
+                  <input type="number" placeholder="Max" value={maxPackagePrice} onChange={(e) => setMaxPackagePrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={packageHomeCollectionOnly} onChange={(e) => setPackageHomeCollectionOnly(e.target.checked)} />
+                    🏠 Home Collection Only
+                  </label>
+                </div>
               </div>
-            ))}
+            )}
+            
+            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '10px' }}>
+              Found {filteredPackages.length} packages
+            </div>
           </div>
+
+          {/* Packages Grid */}
+          {packagesLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>Loading packages...</div>
+          ) : filteredPackages.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>
+              <p>No packages found matching your filters. Try adjusting your search criteria.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '20px', marginTop: '20px' }}>
+              {filteredPackages.map(pkg => {
+                const testsList = pkg.tests_included_text ? pkg.tests_included_text.split(',').map(t => t.trim()) : [];
+                const [expanded, setExpanded] = useState(false);
+                
+                return (
+                  <div key={pkg._id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                    {pkg.is_popular && (
+                      <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-block', marginBottom: '10px' }}>
+                        🔥 Popular
+                      </span>
+                    )}
+                    
+                    <h3 style={{ margin: '10px 0 8px 0', fontSize: '18px' }}>{pkg.package_name}</h3>
+                    
+                    <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '10px', lineHeight: '1.4' }}>
+                      {pkg.package_description?.substring(0, 120)}...
+                    </p>
+                    
+                    <p style={{ fontSize: '13px', color: '#4b5563', marginBottom: '8px' }}>
+                      🏥 {pkg.provider_id?.provider_name}
+                    </p>
+                    
+                    <div style={{ margin: '10px 0' }}>
+                      <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '14px' }}>₹{pkg.mrp}</span>
+                      <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', marginLeft: '10px' }}>₹{pkg.discounted_price}</span>
+                      <span style={{ fontSize: '12px', color: '#10b981', marginLeft: '8px' }}>({pkg.discount_percentage}% OFF)</span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '12px', fontSize: '12px', color: '#6b7280' }}>
+                      {pkg.home_collection_available && <span>🏠 Home Collection</span>}
+                      <span>⏱️ {pkg.report_time_hours} hours</span>
+                      <span>👤 {pkg.gender}</span>
+                      {pkg.min_age && <span>📅 {pkg.min_age}-{pkg.max_age} years</span>}
+                    </div>
+                    
+                    {/* Tests Included Section */}
+                    <div style={{ marginTop: '10px', fontSize: '12px' }}>
+                      <div 
+                        onClick={() => setExpanded(!expanded)} 
+                        style={{ cursor: 'pointer', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      >
+                        <span>📋 {expanded ? '▼' : '▶'} Included Tests ({testsList.length})</span>
+                      </div>
+                      {expanded && (
+                        <div style={{ marginTop: '8px', paddingLeft: '15px', maxHeight: '150px', overflowY: 'auto' }}>
+                          <ul style={{ margin: '0', paddingLeft: '15px' }}>
+                            {testsList.map((test, i) => <li key={i} style={{ margin: '4px 0' }}>{test}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <button 
+                      onClick={() => handlePackageBook(pkg)} 
+                      style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '15px', marginTop: '15px' }}
+                    >
+                      Book Now
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
