@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
+import HealthPackagesTab from './HealthPackagesTab';
 
 const testCategories = [
   { code: 'MRI', name: '🧠 MRI (Magnetic Resonance Imaging)', icon: '🧠', color: '#8e44ad', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen / MRCP', 'MRI Pelvis', 'MRI Cardiac', 'MRI Angiography (MRA)', 'MRI Breast', 'MRI Orbit / IAC', 'MRI Soft tissue', 'MR Venography (MRV)'] },
@@ -436,7 +437,7 @@ const handlePackageBook = (pkg) => {
         </div>
       )}
 
-      {activeTab === 'packages' && (
+      {activeTab === 'packages' && <HealthPackagesTab />}
   <div>
     <h2>🏥 Preventive Health Check Packages</h2>
     <p>Choose from our curated health packages at discounted prices</p>
