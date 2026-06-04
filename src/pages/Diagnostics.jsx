@@ -27,7 +27,7 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
         const testIds = [];
         const testNameToId = {};
         selectedTests.forEach(testName => {
-          const found = allTests.find(t => t.test_name === testName);
+          const found = allTests.find(t => t.test_name && t.test_name.toLowerCase().trim() === testName.toLowerCase().trim());
           if (found) {
             testIds.push(found._id);
             testNameToId[testName] = found._id;
@@ -176,19 +176,360 @@ const Diagnostics = () => {
 
   // All test categories
   const testCategories = [
-    { code: 'BLD', name: 'Blood Tests', icon: '🩸', color: '#e74c3c', tests: ['Complete Blood Count', 'Hemoglobin', 'Platelet Count', 'ESR', 'Glucose Fasting', 'HbA1c', 'Liver Function Test', 'Kidney Function Test', 'Lipid Profile', 'TSH', 'T3', 'T4', 'Vitamin B12', 'Vitamin D'] },
-    { code: 'IMG', name: 'Medical Imaging', icon: '📷', color: '#3498db', tests: ['Chest X-ray', 'Limb X-ray', 'CT Head', 'CT Chest', 'MRI Brain', 'MRI Spine', 'USG Abdomen', 'USG Pelvis'] },
-    { code: 'CRD', name: 'Cardiac Diagnostics', icon: '❤️', color: '#e67e22', tests: ['ECG 12-lead', 'Stress ECG', 'Holter Monitor', '2D Echo'] },
-    { code: 'URN', name: 'Urine Tests', icon: '💧', color: '#f39c12', tests: ['Urinalysis', 'Urine Culture', 'Urine Protein', 'Urine Pregnancy Test'] },
-    { code: 'STL', name: 'Stool Tests', icon: '🧫', color: '#27ae60', tests: ['Stool Routine', 'FOBT', 'Stool Culture'] },
-    { code: 'NEU', name: 'Neurodiagnostics', icon: '🧠', color: '#9b59b6', tests: ['Routine EEG', 'Sleep Deprived EEG', 'EMG', 'Nerve Conduction Study'] },
-    { code: 'PFT', name: 'Pulmonary Function', icon: '🫁', color: '#1abc9c', tests: ['Spirometry', 'Bronchodilator Reversibility', 'Lung Volumes'] },
-    { code: 'END', name: 'Endoscopy', icon: '🔬', color: '#2c3e50', tests: ['EGD', 'Colonoscopy', 'ERCP'] },
-    { code: 'CYT', name: 'Pathology/Biopsy', icon: '🔬', color: '#c0392b', tests: ['Pap Smear', 'FNAC', 'Biopsy'] },
-    { code: 'GEN', name: 'Genetic Tests', icon: '🧬', color: '#2980b9', tests: ['Karyotype', 'FISH', 'NIPT'] },
-    { code: 'MIC', name: 'Microbiology', icon: '🦠', color: '#d35400', tests: ['Blood Culture', 'Sputum Culture', 'Wound Culture'] },
-    { code: 'SPL', name: 'Special Tests', icon: '⭐', color: '#7f8c8d', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Toxicology Screen'] }
-  ];
+  // ========== 1. MRI (Magnetic Resonance Imaging) ==========
+  {
+    code: 'MRI',
+    name: '🧠 MRI (Magnetic Resonance Imaging)',
+    icon: '🧠',
+    color: '#8e44ad',
+    tests: [
+      'MRI Brain (with/without contrast)',
+      'MRI Spine (cervical, thoracic, lumbar)',
+      'MRI Joints (shoulder, knee, hip, wrist, ankle)',
+      'MRI Abdomen / MRCP',
+      'MRI Pelvis (uterus, prostate, rectum)',
+      'MRI Cardiac',
+      'MRI Angiography (MRA)',
+      'MRI Breast',
+      'MRI Orbit / IAC',
+      'MRI Soft tissue',
+      'MR Venography (MRV)'
+    ]
+  },
+  // ========== 2. CT (Computed Tomography) ==========
+  {
+    code: 'CT',
+    name: '📷 CT (Computed Tomography)',
+    icon: '📷',
+    color: '#3498db',
+    tests: [
+      'CT Head (with/without contrast)',
+      'CT Chest',
+      'CT Abdomen + Pelvis',
+      'CT Angiography (CTA)',
+      'CT Spine',
+      'CT Facial bones / Sinus',
+      'CT Temporal bone',
+      'CT Urogram',
+      'CT Virtual colonoscopy',
+      'CT Perfusion',
+      'CT Guided biopsy'
+    ]
+  },
+  // ========== 3. X-ray (Radiography) ==========
+  {
+    code: 'XR',
+    name: '🦴 X-ray (Radiography)',
+    icon: '🦴',
+    color: '#e67e22',
+    tests: [
+      'Chest X-ray (CXR)',
+      'X-ray Spine (cervical, thoracic, lumbar, sacrum)',
+      'X-ray Limbs (arm, forearm, hand, fingers)',
+      'X-ray Legs (thigh, knee, leg, ankle, foot)',
+      'X-ray Pelvis / Hip',
+      'X-ray Shoulder / Clavicle / Scapula',
+      'X-ray Skull / Facial bones',
+      'X-ray Sinus',
+      'X-ray Abdomen (KUB)',
+      'X-ray Joints (elbow, wrist, knee, ankle)',
+      'X-ray Dental (OPG)',
+      'X-ray Mammogram',
+      'X-ray Barium swallow / meal / enema',
+      'X-ray DEXA'
+    ]
+  },
+  // ========== 4. Ultrasound (Sonography) ==========
+  {
+    code: 'USG',
+    name: '🔊 Ultrasound (Sonography)',
+    icon: '🔊',
+    color: '#1abc9c',
+    tests: [
+      'USG Abdomen',
+      'USG Pelvis (transabdominal)',
+      'USG Transvaginal',
+      'USG Transrectal',
+      'USG Thyroid / Neck',
+      'USG Breast',
+      'USG Scrotum',
+      'USG Musculoskeletal',
+      'USG Vascular Doppler',
+      'USG Lower limb (DVT)',
+      'USG Upper limb (AV fistula)',
+      'USG Renal Doppler',
+      'USG Hepatobiliary Doppler',
+      'USG Neonatal brain',
+      'USG KUB',
+      'USG Guided procedures',
+      'ECHO (Echocardiography)',
+      'Obstetric USG'
+    ]
+  },
+  // ========== 5. Blood Tests - Hematology ==========
+  {
+    code: 'HEM',
+    name: '🩸 Hematology',
+    icon: '🩸',
+    color: '#e74c3c',
+    tests: [
+      'Complete Blood Count (CBC) + differential',
+      'Hemoglobin (Hb)',
+      'Hematocrit (HCT)',
+      'RBC count, MCV, MCH, MCHC, RDW',
+      'WBC count (TLC, DLC)',
+      'Platelet count',
+      'Peripheral smear',
+      'ESR',
+      'CRP',
+      'Coagulation profile (PT, INR, aPTT)',
+      'Bleeding time, Clotting time',
+      'D-Dimer',
+      'Fibrinogen',
+      'Hb electrophoresis',
+      'Reticulocyte count',
+      'Blood grouping + Rh typing'
+    ]
+  },
+  // ========== 6. Blood Tests - Biochemistry ==========
+  {
+    code: 'BIO',
+    name: '🧪 Biochemistry',
+    icon: '🧪',
+    color: '#f39c12',
+    tests: [
+      'Blood glucose (Fasting, Postprandial, Random)',
+      'HbA1c',
+      'Liver Function Test (LFT)',
+      'Renal Function Test (RFT)',
+      'Electrolytes (Na, K, Cl, Ca, Mg, P)',
+      'Lipid profile',
+      'Cardiac enzymes (CK-MB, Troponin I/T, LDH)',
+      'Pancreatic enzymes (Amylase, Lipase)',
+      'Iron studies (Serum iron, TIBC, Ferritin)',
+      'Vitamin B12, Folate',
+      'Vitamin D (25-hydroxy)',
+      'Homocysteine',
+      'Ammonia',
+      'Lactate',
+      'Blood gas (ABG / VBG)'
+    ]
+  },
+  // ========== 7. Blood Tests - Serology / Immunology ==========
+  {
+    code: 'SER',
+    name: '🦠 Serology / Immunology',
+    icon: '🦠',
+    color: '#9b59b6',
+    tests: [
+      'HIV (1+2)',
+      'HBsAg (Hepatitis B)',
+      'Anti-HBs, Anti-HBc',
+      'Hepatitis C antibody / HCV RNA',
+      'Hepatitis A IgM, Hepatitis E IgM',
+      'Syphilis (VDRL, TPHA)',
+      'Dengue (NS1 antigen, IgM, IgG)',
+      'Chikungunya IgM/IgG',
+      'Malaria (rapid antigen, smear)',
+      'Typhoid (Widal, Typhidot)',
+      'Rheumatoid factor (RF)',
+      'Anti-CCP (ACPA)',
+      'ANA + ENA profile',
+      'Anti-dsDNA',
+      'ANCA (c-ANCA, p-ANCA)',
+      'Anti-phospholipid antibodies',
+      'Complement C3, C4',
+      'Serum protein electrophoresis (SPEP)',
+      'Quantitative immunoglobulins (IgG, IgA, IgM, IgE)',
+      'Total IgE',
+      'RAST test',
+      'hs-CRP',
+      'Procalcitonin',
+      'Tumor markers (AFP, CEA, CA-125, CA 19-9, CA 15-3, PSA, β-hCG)'
+    ]
+  },
+  // ========== 8. Hormones / Endocrine ==========
+  {
+    code: 'HOR',
+    name: '⚖️ Hormones / Endocrine',
+    icon: '⚖️',
+    color: '#16a085',
+    tests: [
+      'Thyroid profile (TSH, Free T3, Free T4)',
+      'Cortisol (morning/evening)',
+      'ACTH',
+      'Prolactin',
+      'LH, FSH',
+      'Estradiol (E2)',
+      'Progesterone',
+      'Testosterone (total/free)',
+      'DHEA-S',
+      'Aldosterone / Renin ratio',
+      'Metanephrines',
+      'Parathyroid hormone (PTH)',
+      'Insulin, C-peptide',
+      'Growth hormone (GH) + IGF-1',
+      'Anti-Mullerian hormone (AMH)'
+    ]
+  },
+  // ========== 9. Urine Tests ==========
+  {
+    code: 'URN',
+    name: '💧 Urine Tests',
+    icon: '💧',
+    color: '#2980b9',
+    tests: [
+      'Urinalysis (routine & microscopy)',
+      'Urine glucose, ketones',
+      'Urine protein (spot, 24-hour)',
+      'Urine microalbumin / creatinine ratio',
+      'Urine culture & sensitivity',
+      'Urine pregnancy test (β-hCG)',
+      'Urine electrolytes (Na, K, Cl)',
+      'Urine osmolality',
+      'Urine creatinine',
+      'Urine calcium (24-hour)',
+      'Urine uric acid',
+      'Urine catecholamines / metanephrines',
+      'Urine cortisol (free)',
+      'Urine drug screen',
+      'Urine Bence Jones protein'
+    ]
+  },
+  // ========== 10. Stool Tests ==========
+  {
+    code: 'STL',
+    name: '🧫 Stool Tests',
+    icon: '🧫',
+    color: '#27ae60',
+    tests: [
+      'Stool routine & microscopy',
+      'Occult blood (FOBT / FIT)',
+      'Stool culture & sensitivity',
+      'Stool for ova, cyst, parasite',
+      'Stool antigen tests (Giardia, Cryptosporidium, H.pylori)',
+      'Calprotectin',
+      'Stool reducing substances',
+      'Stool fat',
+      'Stool elastase'
+    ]
+  },
+  // ========== 11. ECG / Cardiac Electrophysiology ==========
+  {
+    code: 'ECG',
+    name: '❤️ ECG / Cardiac Electrophysiology',
+    icon: '❤️',
+    color: '#e74c3c',
+    tests: [
+      'ECG (12-lead, resting)',
+      'Stress ECG (Treadmill test - TMT)',
+      'Holter monitoring (24/48-hour)',
+      'Event recorder',
+      'Signal-averaged ECG'
+    ]
+  },
+  // ========== 12. EEG / Neurophysiology ==========
+  {
+    code: 'EEG',
+    name: '🧠 EEG / Neurophysiology',
+    icon: '🧠',
+    color: '#9b59b6',
+    tests: [
+      'Routine EEG',
+      'Sleep-deprived EEG',
+      'Video-EEG monitoring',
+      'Ambulatory EEG',
+      'Evoked potentials (VEP, BAER, SSEP)',
+      'Electromyography (EMG)',
+      'Nerve conduction studies (NCS)',
+      'Repetitive nerve stimulation'
+    ]
+  },
+  // ========== 13. Pulmonary Function Tests (PFT) ==========
+  {
+    code: 'PFT',
+    name: '🫁 Pulmonary Function Tests',
+    icon: '🫁',
+    color: '#1abc9c',
+    tests: [
+      'Spirometry (FEV1, FVC, FEV1/FVC)',
+      'Bronchodilator reversibility test',
+      'Lung volumes (plethysmography)',
+      'Diffusing capacity (DLCO)',
+      '6-minute walk test',
+      'Fractional exhaled nitric oxide (FeNO)',
+      'Methacholine challenge test'
+    ]
+  },
+  // ========== 14. Endoscopy ==========
+  {
+    code: 'END',
+    name: '🔬 Endoscopy',
+    icon: '🔬',
+    color: '#2c3e50',
+    tests: [
+      'Upper GI endoscopy (EGD)',
+      'Colonoscopy',
+      'Sigmoidoscopy',
+      'Bronchoscopy',
+      'Cystoscopy',
+      'Hysteroscopy',
+      'Laparoscopy',
+      'Arthroscopy',
+      'ERCP',
+      'Capsule endoscopy'
+    ]
+  },
+  // ========== 15. Nuclear Medicine / PET ==========
+  {
+    code: 'NUC',
+    name: '⚛️ Nuclear Medicine / PET',
+    icon: '⚛️',
+    color: '#16a085',
+    tests: [
+      'PET-CT (whole body, cardiac, brain)',
+      'Bone scan (Tc-99m)',
+      'Thyroid scan',
+      'Renal scan (DTPA, MAG3, DMSA)',
+      'V/Q scan',
+      'HIDA scan',
+      'Myocardial perfusion scan (MIBI, Thallium)',
+      'Parathyroid scan',
+      'Octreotide scan',
+      'MIBG scan',
+      'Gallium scan',
+      'Gastric emptying scan',
+      'Meckel\'s scan'
+    ]
+  },
+  // ========== 16. Special / Other Tests ==========
+  {
+    code: 'SPL',
+    name: '⭐ Special / Other Tests',
+    icon: '⭐',
+    color: '#7f8c8d',
+    tests: [
+      'Sweat chloride test',
+      'Genetic testing (DNA/RNA sequencing, karyotype, FISH)',
+      'Paternity testing',
+      'HLA typing',
+      'CSF analysis',
+      'Synovial fluid analysis',
+      'Peritoneal fluid analysis',
+      'Pleural fluid analysis',
+      'Amniotic fluid analysis',
+      'Chorionic villus sampling',
+      'Skin biopsy',
+      'Muscle biopsy',
+      'Nerve biopsy',
+      'Bone marrow aspirate & biopsy',
+      'Fine needle aspiration cytology (FNAC)',
+      'Pap smear',
+      'Semen analysis',
+      'Swabs (throat, nasal, wound, genital)'
+    ]
+  }
+];
 
   // Handle search
   useEffect(() => {
