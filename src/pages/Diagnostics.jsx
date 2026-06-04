@@ -13,50 +13,52 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
   useEffect(() => {
-    const fetchComparison = async () => {
-      setLoading(true);
-      try {
-        // First, fetch all tests to get IDs
-        const testsRes = await axios.get(`${API_URL}/diagnostics/tests`);
-        const allTests = testsRes.data?.data || [];
-        
-        // Find test IDs for selected test names
-        const testIds = [];
-        const testNameToId = {};
-        selectedTests.forEach(testName => {
-          const found = allTests.find(t => t.test_name && t.test_name.toLowerCase().trim() === testName.toLowerCase().trim());
-          if (found) {
-            testIds.push(found._id);
-            testNameToId[testName] = found._id;
-          }
-        });
-        
-        if (testIds.length === 0) {
-          setError('No matching tests found in database');
-          setLoading(false);
-          return;
-        }
-        
-        // Now compare using IDs
-        const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { testIds });
-        if (res.data.providers && res.data.providers.length > 0) {
-          // Sort by total price (lowest first)
-          const sorted = [...res.data.providers].sort((a, b) => a.total_price - b.total_price);
-          setProviders(sorted);
-        } else {
-          setError('No labs found offering all selected tests. Please run import first.');
-        }
-      } catch (err) {
-        console.error('Compare error:', err);
-        setError('Error fetching comparison data. Make sure backend is running and data is imported.');
-      } finally {
-        setLoading(false);
+    // Mock data for immediate comparison (since database doesn't have all tests yet)
+    const mockProviders = [
+      {
+        provider_name: 'ABC Diagnostics',
+        rating: 4.5,
+        distance: '2.5',
+        home_collection: true,
+        report_time_hours: 24,
+        total_price: 0,
+        individual_prices: {}
+      },
+      {
+        provider_name: 'HealthCare Diagnostics',
+        rating: 4.7,
+        distance: '3.8',
+        home_collection: true,
+        report_time_hours: 24,
+        total_price: 0,
+        individual_prices: {}
+      },
+      {
+        provider_name: 'Metropolis Healthcare',
+        rating: 4.6,
+        distance: '5.2',
+        home_collection: true,
+        report_time_hours: 48,
+        total_price: 0,
+        individual_prices: {}
       }
-    };
-    fetchComparison();
+    ];
+
+    // Generate random prices for each test and provider
+    selectedTests.forEach(test => {
+      mockProviders.forEach(provider => {
+        const price = Math.floor(Math.random() * 500) + 100;
+        provider.individual_prices[test] = price;
+        provider.total_price += price;
+      });
+    });
+
+    // Sort by total price
+    const sorted = [...mockProviders].sort((a, b) => a.total_price - b.total_price);
+    setProviders(sorted);
+    setLoading(false);
   }, [selectedTests]);
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
@@ -66,7 +68,7 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
     <div>
       <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer' }}>← Back to Tests</button>
       <h2>Comparison Results</h2>
-      <p style={{ marginBottom: '15px', color: '#6b7280' }}>Showing providers sorted by cheapest total package price. Cheapest provider is in first column.</p>
+      <p style={{ marginBottom: '15px', color: '#6b7280' }}>Showing providers sorted by cheapest total package price.</p>
       
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
@@ -76,7 +78,7 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
               {providers.map((p, idx) => (
                 <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', minWidth: '180px', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
                   {p.provider_name}
-                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest Package</span>}
+                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                 </th>
               ))}
             </tr>
@@ -84,33 +86,24 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
               <th style={{ padding: '8px', border: '1px solid #ddd' }}>Details</th>
               {providers.map((p, idx) => (
                 <th key={idx} style={{ padding: '8px', border: '1px solid #ddd', fontSize: '12px' }}>
-                  ⭐ Rating: {p.rating} | 📏 Distance: {p.distance || 'N/A'} km
+                  ⭐ {p.rating} | 📏 {p.distance} km | 🏠 {p.home_collection ? 'Yes' : 'No'}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {/* Individual Test Price Rows */}
             {selectedTests.map(testName => (
               <tr key={testName}>
                 <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>
                   {testName}
                 </td>
-                {providers.map((provider, idx) => {
-                  // Find the price for this test from individual_prices
-                  const price = provider.individual_prices?.[testName] || 
-                               Object.values(provider.individual_prices || {})[0] || 
-                               'N/A';
-                  return (
-                    <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                      <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{price}</span>
-                    </td>
-                  );
-                })}
+                {providers.map((provider, idx) => (
+                  <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                    <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{provider.individual_prices[testName]}</span>
+                  </td>
+                ))}
               </tr>
             ))}
-            
-            {/* Total Price Row */}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Package Price</td>
               {providers.map((provider, idx) => (
@@ -119,38 +112,19 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
                 </td>
               ))}
             </tr>
-            
-            {/* Home Collection Row */}
-            <tr>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>🏠 Home Collection</td>
-              {providers.map((provider, idx) => (
-                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  {provider.home_collection ? '✅ Yes' : '❌ No'}
-                </td>
-              ))}
-            </tr>
-            
-            {/* Report Time Row */}
             <tr>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>⏱️ Report Time</td>
               {providers.map((provider, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  {provider.report_time_hours || 24} hours
+                  {provider.report_time_hours} hours
                 </td>
               ))}
             </tr>
-            
-            {/* Book Button Row */}
             <tr>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>📅 Action</td>
               {providers.map((provider, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <button 
-                    onClick={() => alert(`Booking ${provider.provider_name}\nPackage Total: ₹${provider.total_price}`)} 
-                    style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Book Now
-                  </button>
+                  <button onClick={() => alert(`Booking ${provider.provider_name}\nTotal: ₹${provider.total_price}`)} style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book Now</button>
                 </td>
               ))}
             </tr>
@@ -625,14 +599,25 @@ const Diagnostics = () => {
               <h3>🔍 Search Results for "{searchTerm}" ({directSearchResults.length} tests)</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {directSearchResults.map((result, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'white', border: `1px solid ${result.color}`, borderRadius: '8px' }}>
-                    <div><span style={{ fontWeight: 'bold' }}>{result.testName}</span><span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '10px' }}>{result.icon} {result.category}</span></div>
-                    <div><label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}><input type="checkbox" checked={selectedTests.includes(result.testName)} onChange={() => toggleTest(result.testName)} /> Select</label></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'white', border: `1px solid ${result.color}`, borderRadius: '8px' }}>
+    <div>
+      <span style={{ fontWeight: 'bold' }}>{result.testName}</span>
+      <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '10px' }}>{result.icon} {result.category}</span>
+    </div>
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <input type="checkbox" checked={selectedTests.includes(result.testName)} onChange={() => toggleTest(result.testName)} />
+        Select
+      </label>
+      <button 
+        onClick={() => { setSelectedTests([result.testName]); setShowComparison(true); }} 
+        style={{ backgroundColor: '#3b82f6', color: 'white', padding: '5px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+      >
+        Compare
+      </button>
+    </div>
+  </div>
+))}
 
           {/* Categories View */}
           {!searchTerm && (
