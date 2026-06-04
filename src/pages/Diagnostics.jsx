@@ -25,9 +25,13 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
         
         // Find test IDs for selected test names
         const testIds = [];
+        const testNameToId = {};
         selectedTests.forEach(testName => {
           const found = allTests.find(t => t.test_name === testName);
-          if (found) testIds.push(found._id);
+          if (found) {
+            testIds.push(found._id);
+            testNameToId[testName] = found._id;
+          }
         });
         
         if (testIds.length === 0) {
@@ -39,6 +43,7 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
         // Now compare using IDs
         const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { testIds });
         if (res.data.providers && res.data.providers.length > 0) {
+          // Sort by total price (lowest first)
           const sorted = [...res.data.providers].sort((a, b) => a.total_price - b.total_price);
           setProviders(sorted);
         } else {
@@ -61,47 +66,91 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
     <div>
       <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer' }}>← Back to Tests</button>
       <h2>Comparison Results</h2>
+      <p style={{ marginBottom: '15px', color: '#6b7280' }}>Showing providers sorted by cheapest total package price. Cheapest provider is in first column.</p>
+      
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
           <thead>
             <tr style={{ backgroundColor: '#f3f4f6' }}>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Test / Provider</th>
+              <th style={{ padding: '12px', border: '1px solid #ddd', minWidth: '150px' }}>Test / Provider</th>
               {providers.map((p, idx) => (
-                <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
+                <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', minWidth: '180px', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
                   {p.provider_name}
-                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
+                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest Package</span>}
+                </th>
+              ))}
+            </tr>
+            <tr style={{ backgroundColor: '#e5e7eb' }}>
+              <th style={{ padding: '8px', border: '1px solid #ddd' }}>Details</th>
+              {providers.map((p, idx) => (
+                <th key={idx} style={{ padding: '8px', border: '1px solid #ddd', fontSize: '12px' }}>
+                  ⭐ Rating: {p.rating} | 📏 Distance: {p.distance || 'N/A'} km
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {selectedTests.map(test => (
-              <tr key={test}>
-                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>{test}</td>
-                {providers.map((p, idx) => (
-                  <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                    ₹{p.individual_prices?.[test] || 'N/A'}
-                  </td>
-                ))}
+            {/* Individual Test Price Rows */}
+            {selectedTests.map(testName => (
+              <tr key={testName}>
+                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>
+                  {testName}
+                </td>
+                {providers.map((provider, idx) => {
+                  // Find the price for this test from individual_prices
+                  const price = provider.individual_prices?.[testName] || 
+                               Object.values(provider.individual_prices || {})[0] || 
+                               'N/A';
+                  return (
+                    <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                      <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{price}</span>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
+            
+            {/* Total Price Row */}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total</td>
-              {providers.map((p, idx) => (
-                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Package Price</td>
+              {providers.map((provider, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center', backgroundColor: idx === 0 ? '#d1fae5' : '#fef3c7' }}>
+                  <span style={{ fontSize: '16px' }}>₹{provider.total_price}</span>
+                </td>
               ))}
             </tr>
+            
+            {/* Home Collection Row */}
             <tr>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Rating</td>
-              {providers.map((p, idx) => (
-                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>⭐ {p.rating}</td>
-              ))}
-            </tr>
-            <tr>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Action</td>
-              {providers.map((p, idx) => (
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>🏠 Home Collection</td>
+              {providers.map((provider, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <button style={{ backgroundColor: '#10b981', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => alert(`Booking ${p.provider_name}`)}>Book</button>
+                  {provider.home_collection ? '✅ Yes' : '❌ No'}
+                </td>
+              ))}
+            </tr>
+            
+            {/* Report Time Row */}
+            <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>⏱️ Report Time</td>
+              {providers.map((provider, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                  {provider.report_time_hours || 24} hours
+                </td>
+              ))}
+            </tr>
+            
+            {/* Book Button Row */}
+            <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>📅 Action</td>
+              {providers.map((provider, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                  <button 
+                    onClick={() => alert(`Booking ${provider.provider_name}\nPackage Total: ₹${provider.total_price}`)} 
+                    style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    Book Now
+                  </button>
                 </td>
               ))}
             </tr>
@@ -111,7 +160,6 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
     </div>
   );
 };
-
 const Diagnostics = () => {
   const [activeTab, setActiveTab] = useState('labtests');
   const [selectedTests, setSelectedTests] = useState([]);
