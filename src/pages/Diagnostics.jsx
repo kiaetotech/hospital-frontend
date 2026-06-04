@@ -9,22 +9,18 @@ const healthPackages = [
 ];
 
 const testCategories = [
-  { code: 'MRI', name: '🧠 MRI (Magnetic Resonance Imaging)', icon: '🧠', color: '#8e44ad', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen / MRCP', 'MRI Pelvis', 'MRI Cardiac', 'MRI Angiography', 'MRI Breast', 'MRI Orbit', 'MRI Soft tissue', 'MR Venography'] },
-  { code: 'CT', name: '📷 CT (Computed Tomography)', icon: '📷', color: '#3498db', tests: ['CT Head', 'CT Chest', 'CT Abdomen + Pelvis', 'CT Angiography', 'CT Spine', 'CT Facial bones', 'CT Temporal bone', 'CT Urogram', 'CT Virtual colonoscopy', 'CT Perfusion', 'CT Guided biopsy'] },
-  { code: 'XR', name: '🦴 X-ray (Radiography)', icon: '🦴', color: '#e67e22', tests: ['Chest X-ray', 'X-ray Spine', 'X-ray Limbs', 'X-ray Legs', 'X-ray Pelvis', 'X-ray Shoulder', 'X-ray Skull', 'X-ray Sinus', 'X-ray Abdomen (KUB)', 'X-ray Joints', 'X-ray Dental (OPG)', 'X-ray Mammogram', 'X-ray Barium', 'X-ray DEXA'] },
-  { code: 'USG', name: '🔊 Ultrasound (Sonography)', icon: '🔊', color: '#1abc9c', tests: ['USG Abdomen', 'USG Pelvis', 'USG Transvaginal', 'USG Transrectal', 'USG Thyroid', 'USG Breast', 'USG Scrotum', 'USG Musculoskeletal', 'USG Vascular Doppler', 'USG Lower limb', 'USG Renal Doppler', 'USG Neonatal brain', 'USG KUB', 'USG Guided', 'ECHO', 'Obstetric USG'] },
-  { code: 'HEM', name: '🩸 Hematology', icon: '🩸', color: '#e74c3c', tests: ['Complete Blood Count (CBC)', 'Hemoglobin (Hb)', 'Hematocrit (HCT)', 'RBC count', 'WBC count', 'Platelet count', 'Peripheral smear', 'ESR', 'CRP', 'Coagulation profile', 'D-Dimer', 'Fibrinogen', 'Hb electrophoresis', 'Reticulocyte count', 'Blood grouping'] },
-  { code: 'BIO', name: '🧪 Biochemistry', icon: '🧪', color: '#f39c12', tests: ['Blood glucose', 'HbA1c', 'Liver Function Test', 'Renal Function Test', 'Electrolytes', 'Lipid profile', 'Cardiac enzymes', 'Pancreatic enzymes', 'Iron studies', 'Vitamin B12', 'Vitamin D', 'Folate', 'Homocysteine', 'Ammonia', 'Lactate', 'Blood gas'] },
-  { code: 'SER', name: '🦠 Serology', icon: '🦠', color: '#9b59b6', tests: ['HIV', 'HBsAg', 'Hepatitis C', 'Hepatitis A', 'Syphilis', 'Dengue', 'Chikungunya', 'Malaria', 'Typhoid', 'Rheumatoid factor', 'Anti-CCP', 'ANA', 'Anti-dsDNA', 'ANCA', 'Complement', 'Tumor markers'] },
-  { code: 'HOR', name: '⚖️ Hormones', icon: '⚖️', color: '#16a085', tests: ['Thyroid profile', 'Cortisol', 'ACTH', 'Prolactin', 'LH/FSH', 'Estradiol', 'Progesterone', 'Testosterone', 'DHEA-S', 'Aldosterone', 'Parathyroid hormone', 'Insulin', 'Growth hormone', 'AMH'] },
-  { code: 'URN', name: '💧 Urine Tests', icon: '💧', color: '#2980b9', tests: ['Urinalysis', 'Urine culture', 'Urine protein', 'Urine microalbumin', 'Urine pregnancy', 'Urine electrolytes', 'Urine osmolality', 'Urine creatinine', 'Urine calcium', 'Urine uric acid', 'Urine drug screen'] },
-  { code: 'STL', name: '🧫 Stool Tests', icon: '🧫', color: '#27ae60', tests: ['Stool routine', 'Occult blood', 'Stool culture', 'Ova/parasite', 'Stool antigens', 'Calprotectin', 'Stool fat', 'Stool elastase'] },
-  { code: 'ECG', name: '❤️ ECG/Cardiac', icon: '❤️', color: '#e74c3c', tests: ['ECG 12-lead', 'Stress ECG', 'Holter monitor', 'Event recorder'] },
-  { code: 'EEG', name: '🧠 EEG/Neuro', icon: '🧠', color: '#9b59b6', tests: ['Routine EEG', 'Sleep EEG', 'Video EEG', 'Ambulatory EEG', 'Evoked potentials', 'EMG', 'Nerve conduction', 'Repetitive stimulation'] },
-  { code: 'PFT', name: '🫁 Pulmonary', icon: '🫁', color: '#1abc9c', tests: ['Spirometry', 'Bronchodilator', 'Lung volumes', 'DLCO', '6-minute walk', 'FeNO', 'Methacholine'] },
-  { code: 'END', name: '🔬 Endoscopy', icon: '🔬', color: '#2c3e50', tests: ['EGD', 'Colonoscopy', 'Sigmoidoscopy', 'Bronchoscopy', 'Cystoscopy', 'Hysteroscopy', 'Laparoscopy', 'Arthroscopy', 'ERCP', 'Capsule endoscopy'] },
-  { code: 'NUC', name: '⚛️ Nuclear Medicine', icon: '⚛️', color: '#16a085', tests: ['PET-CT', 'Bone scan', 'Thyroid scan', 'Renal scan', 'V/Q scan', 'HIDA scan', 'Myocardial perfusion', 'Parathyroid scan', 'Octreotide scan', 'MIBG scan', 'Gallium scan'] },
-  { code: 'SPL', name: '⭐ Special Tests', icon: '⭐', color: '#7f8c8d', tests: ['Sweat chloride', 'Genetic testing', 'Paternity', 'HLA typing', 'CSF analysis', 'Synovial fluid', 'Peritoneal fluid', 'Pleural fluid', 'Amniotic fluid', 'Skin biopsy', 'Muscle biopsy', 'Bone marrow', 'FNAC', 'Pap smear', 'Semen analysis'] }
+  { code: 'MRI', name: '🧠 MRI', icon: '🧠', color: '#8e44ad', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen', 'MRI Pelvis'] },
+  { code: 'CT', name: '📷 CT Scan', icon: '📷', color: '#3498db', tests: ['CT Head', 'CT Chest', 'CT Abdomen', 'CT Spine', 'CT Angiography'] },
+  { code: 'XR', name: '🦴 X-ray', icon: '🦴', color: '#e67e22', tests: ['Chest X-ray', 'Limb X-ray', 'Spine X-ray', 'Pelvis X-ray', 'Mammogram'] },
+  { code: 'USG', name: '🔊 Ultrasound', icon: '🔊', color: '#1abc9c', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'USG Breast', 'ECHO'] },
+  { code: 'BLD', name: '🩸 Blood Tests', icon: '🩸', color: '#e74c3c', tests: ['CBC', 'Liver Function Test', 'Kidney Function Test', 'Lipid Profile', 'Blood Sugar'] },
+  { code: 'URN', name: '💧 Urine Tests', icon: '💧', color: '#f39c12', tests: ['Urinalysis', 'Urine Culture', 'Urine Protein', 'Urine Pregnancy'] },
+  { code: 'STL', name: '🧫 Stool Tests', icon: '🧫', color: '#27ae60', tests: ['Stool Routine', 'Occult Blood', 'Stool Culture'] },
+  { code: 'ECG', name: '❤️ ECG', icon: '❤️', color: '#e74c3c', tests: ['ECG 12-lead', 'Stress ECG', 'Holter Monitor'] },
+  { code: 'EEG', name: '🧠 EEG', icon: '🧠', color: '#9b59b6', tests: ['Routine EEG', 'Sleep EEG', 'Video EEG'] },
+  { code: 'PFT', name: '🫁 PFT', icon: '🫁', color: '#1abc9c', tests: ['Spirometry', 'Lung Volumes', 'DLCO'] },
+  { code: 'END', name: '🔬 Endoscopy', icon: '🔬', color: '#2c3e50', tests: ['EGD', 'Colonoscopy', 'ERCP'] },
+  { code: 'SPL', name: '⭐ Special', icon: '⭐', color: '#7f8c8d', tests: ['Sweat Test', 'Genetic Test', 'Biopsy'] }
 ];
 
 const ComparisonResults = ({ selectedTests, onBack }) => {
@@ -33,9 +29,11 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
 
   useEffect(() => {
     const mockProviders = [
-      { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2', home_collection: true, report_time_hours: 48, total_price: 0, individual_prices: {} }
+      { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+      { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+      { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
+      { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+      { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
     ];
     selectedTests.forEach(test => {
       mockProviders.forEach(provider => {
@@ -54,49 +52,69 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
     <div>
       <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer' }}>← Back</button>
       <h2>Comparison Results</h2>
-      <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f3f4f6' }}>
-            <th style={{ padding: '12px', border: '1px solid #ddd' }}>Test / Provider</th>
-            {providers.map((p, idx) => (
-              <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
-                {p.provider_name}
-                {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {selectedTests.map(test => (
-            <tr key={test}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f3f4f6' }}>
+              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Test / Provider</th>
               {providers.map((p, idx) => (
-                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test] || 'N/A'}</td>
+                <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
+                  {p.provider_name}
+                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
+                </th>
               ))}
             </tr>
-          ))}
-          <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
-            <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total</td>
-            {providers.map((p, idx) => (
-              <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>
+          </thead>
+          <tbody>
+            <tr style={{ backgroundColor: '#e5e7eb' }}>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⭐ Rating</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>
+              ))}
+            <tr>
+            <tr style={{ backgroundColor: '#e5e7eb' }}>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>
+              ))}
+            </tr>
+            <tr style={{ backgroundColor: '#e5e7eb' }}>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? '✅ Yes' : '❌ No'}</td>
+              ))}
+            </tr>
+            <tr style={{ backgroundColor: '#e5e7eb' }}>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>
+              ))}
+            </tr>
+            {selectedTests.map(test => (
+              <tr key={test}>
+                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
+                {providers.map((p, idx) => (
+                  <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test]}</td>
+                ))}
+              </tr>
             ))}
-          </tr>
-          <tr>
-            <td style={{ padding: '10px', border: '1px solid #ddd' }}>Rating</td>
-            {providers.map((p, idx) => (
-              <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>⭐ {p.rating}</td>
-            ))}
-          </tr>
-          <tr>
-            <td style={{ padding: '10px', border: '1px solid #ddd' }}>Action</td>
-            {providers.map((p, idx) => (
-              <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                <button onClick={() => alert(`Booking ${p.provider_name}\nTotal: ₹${p.total_price}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button>
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
+            <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>
+              ))}
+            </tr>
+            <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                  <button onClick={() => alert(`Booking ${p.provider_name}\nTotal: ₹${p.total_price}`)} style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button>
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
@@ -193,9 +211,9 @@ const Diagnostics = () => {
 
       {activeTab === 'labtests' && (
         <div>
-          {/* FULL SEARCH BAR WITH ALL FILTERS */}
+          {/* Search and Filter Bar */}
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-            <input type="text" placeholder="🔍 Search any test (e.g., MRI Brain, CBC, X-ray, CT Scan)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px', marginBottom: '10px' }} />
+            <input type="text" placeholder="🔍 Search any test (e.g., MRI Brain, CBC, X-ray)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px', marginBottom: '10px' }} />
             
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
               <input type="text" placeholder="📍 City (e.g., Mumbai, Delhi)" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
@@ -212,25 +230,27 @@ const Diagnostics = () => {
               <input type="number" placeholder="📏 Max Distance (km)" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '140px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
               <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 10px', borderRadius: '4px', height: '42px' }}>
                 <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
-                🏠 Home Collection
+                🏠 Home Collection Only
               </label>
-              <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 My Location</button>
-              <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset</button>
+              <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 Use My Location</button>
+              <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset Filters</button>
             </div>
             
-            {userLocation && <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>📍 Location detected</p>}
-            {searchTerm && <p style={{ fontSize: '12px', marginTop: '10px' }}>Found {directSearchResults.length} tests</p>}
+            {userLocation && <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>📍 Location detected: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}</p>}
+            {searchTerm && <p style={{ fontSize: '12px', marginTop: '10px' }}>Found {directSearchResults.length} tests matching "{searchTerm}"</p>}
           </div>
 
-          {/* SEARCH RESULTS */}
+          {/* Search Results */}
           {showDirectResults && searchTerm && (
             <div style={{ marginBottom: '20px' }}>
-              <h3>Search Results ({directSearchResults.length})</h3>
+              <h3>🔍 Search Results ({directSearchResults.length})</h3>
               {directSearchResults.map((result, idx) => (
                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'white', border: `1px solid ${result.color}`, borderRadius: '8px', marginBottom: '8px' }}>
                   <div><strong>{result.testName}</strong> <span style={{ fontSize: '12px', color: '#6b7280' }}>{result.icon} {result.category}</span></div>
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <label><input type="checkbox" checked={selectedTests.includes(result.testName)} onChange={() => toggleTest(result.testName)} /> Select</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <input type="checkbox" checked={selectedTests.includes(result.testName)} onChange={() => toggleTest(result.testName)} /> Select
+                    </label>
                     <button onClick={() => handleSingleCompare(result.testName)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '5px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Compare</button>
                   </div>
                 </div>
@@ -238,7 +258,7 @@ const Diagnostics = () => {
             </div>
           )}
 
-          {/* CATEGORIES VIEW */}
+          {/* Categories View */}
           {!searchTerm && (
             <div>
               {testCategories.map(category => (
@@ -247,7 +267,9 @@ const Diagnostics = () => {
                   <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px', backgroundColor: '#f9fafb' }}>
                     {category.tests.map(test => (
                       <div key={test} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
-                        <label><input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} /> {test}</label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} /> {test}
+                        </label>
                         <button onClick={() => handleSingleCompare(test)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Compare</button>
                       </div>
                     ))}
@@ -258,8 +280,8 @@ const Diagnostics = () => {
           )}
 
           {selectedTests.length >= 2 && (
-            <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000 }}>
-              Compare Selected ({selectedTests.length})
+            <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+              Compare Selected ({selectedTests.length} Tests)
             </button>
           )}
         </div>
@@ -267,16 +289,19 @@ const Diagnostics = () => {
 
       {activeTab === 'packages' && (
         <div>
-          <h2>Health Packages</h2>
-          {healthPackages.map(pkg => (
-            <div key={pkg.id} style={{ border: '1px solid #ddd', padding: '15px', marginBottom: '10px', borderRadius: '8px' }}>
-              <h3>{pkg.name}</h3>
-              <p>{pkg.description}</p>
-              <p>Provider: {pkg.provider}</p>
-              <p><span style={{ textDecoration: 'line-through' }}>₹{pkg.mrp}</span> <strong>₹{pkg.price}</strong></p>
-              <button onClick={() => alert(`Booking ${pkg.name}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book Now</button>
-            </div>
-          ))}
+          <h2>🏥 Preventive Health Check Packages</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', marginTop: '20px' }}>
+            {healthPackages.map(pkg => (
+              <div key={pkg.id} style={{ border: '1px solid #ddd', padding: '15px', marginBottom: '10px', borderRadius: '8px' }}>
+                {pkg.popular && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>🔥 Popular</span>}
+                <h3>{pkg.name}</h3>
+                <p>{pkg.description}</p>
+                <p>Provider: {pkg.provider}</p>
+                <p><span style={{ textDecoration: 'line-through' }}>₹{pkg.mrp}</span> <strong style={{ fontSize: '24px', color: '#10b981' }}>₹{pkg.price}</strong></p>
+                <button onClick={() => alert(`Booking ${pkg.name}`)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
