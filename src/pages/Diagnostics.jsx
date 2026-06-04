@@ -48,6 +48,13 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (useMyLocation && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+      () => alert('Unable to get location')
+    );
+  }
+}, [useMyLocation]);
     const mockProviders = [
       { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
       { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
@@ -124,7 +131,13 @@ const Diagnostics = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [directSearchResults, setDirectSearchResults] = useState([]);
   const [showDirectResults, setShowDirectResults] = useState(false);
-
+  const [cityFilter, setCityFilter] = useState('');
+  const [minRating, setMinRating] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
+  const [maxDistance, setMaxDistance] = useState('');
+  const [useMyLocation, setUseMyLocation] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
   useEffect(() => {
     if (!searchTerm.trim()) {
       setShowDirectResults(false);
@@ -184,8 +197,31 @@ const Diagnostics = () => {
       {activeTab === 'labtests' && (
         <div>
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-            <input type="text" placeholder="🔍 Search any test (e.g., MRI Brain, CBC, X-ray)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px' }} />
-          </div>
+  <input type="text" placeholder="🔍 Search any test (e.g., MRI Brain, CBC, X-ray)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px', marginBottom: '10px' }} />
+  
+  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+    <input type="text" placeholder="📍 City (e.g., Mumbai, Delhi)" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+    <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
+      <option value="">⭐ Rating (Any)</option>
+      <option value="4">4★ & above</option>
+      <option value="4.5">4.5★ & above</option>
+      <option value="4.8">4.8★ & above</option>
+    </select>
+  </div>
+  
+  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+    <input type="number" placeholder="💰 Max Price (₹)" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '130px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+    <input type="number" placeholder="📏 Max Distance (km)" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '140px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 10px', borderRadius: '4px' }}>
+      <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
+      🏠 Home Collection Only
+    </label>
+    <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 Use My Location</button>
+    <button onClick={() => { setCityFilter(''); setMinRating(''); setMaxPrice(''); setHomeCollectionOnly(false); setMaxDistance(''); setUseMyLocation(false); }} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset Filters</button>
+  </div>
+  
+  {userLocation && <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>📍 Location detected: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}</p>}
+</div>
 
           {showDirectResults && searchTerm && (
             <div style={{ marginBottom: '20px' }}>
