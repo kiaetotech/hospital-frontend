@@ -120,7 +120,7 @@ const Diagnostics = () => {
   const [directSearchResults, setDirectSearchResults] = useState([]);
   const [showDirectResults, setShowDirectResults] = useState(false);
   const [visibleTests, setVisibleTests] = useState({});
-  
+
   // Health Packages State
   const [healthPackages, setHealthPackages] = useState([]);
   const [filteredPackages, setFilteredPackages] = useState([]);
@@ -128,14 +128,91 @@ const Diagnostics = () => {
   const [packageSearchTerm, setPackageSearchTerm] = useState('');
   const [minPackagePrice, setMinPackagePrice] = useState('');
   const [maxPackagePrice, setMaxPackagePrice] = useState('');
+  const [minPackageRating, setMinPackageRating] = useState('');
   const [packageHomeCollectionOnly, setPackageHomeCollectionOnly] = useState(false);
   const [showPackageFilters, setShowPackageFilters] = useState(false);
+  const [selectedPackages, setSelectedPackages] = useState([]);
+  const [showPackageComparison, setShowPackageComparison] = useState(false);
+  const [comparisonPackages, setComparisonPackages] = useState([]);
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+
+const loadHealthPackages = async () => {
+  try {
+    const res = await axios.get(`${API_URL}/health-packages`);
+    setHealthPackages(res.data.packages || []);
+    setFilteredPackages(res.data.packages || []);
+  } catch (error) {
+    console.error('Error loading packages:', error);
+  } finally {
+    setPackagesLoading(false);
+  }
+};
+
+const filterHealthPackages = () => {
+  let filtered = [...healthPackages];
+  
+  if (packageSearchTerm) {
+    filtered = filtered.filter(p => 
+      p.package_name?.toLowerCase().includes(packageSearchTerm.toLowerCase()) ||
+      p.package_description?.toLowerCase().includes(packageSearchTerm.toLowerCase())
+    );
+  }
+  
+  if (minPackagePrice) {
+    filtered = filtered.filter(p => p.discounted_price >= parseFloat(minPackagePrice));
+  }
+  
+  if (maxPackagePrice) {
+    filtered = filtered.filter(p => p.discounted_price <= parseFloat(maxPackagePrice));
+  }
+  
+  if (minPackageRating) {
+    filtered = filtered.filter(p => (p.provider_id?.rating || 0) >= parseFloat(minPackageRating));
+  }
+  
+  if (packageHomeCollectionOnly) {
+    filtered = filtered.filter(p => p.home_collection_available === true);
+  }
+  
+  setFilteredPackages(filtered);
+};
+
+const resetPackageFilters = () => {
+  setPackageSearchTerm('');
+  setMinPackagePrice('');
+  setMaxPackagePrice('');
+  setMinPackageRating('');
+  setPackageHomeCollectionOnly(false);
+  setFilteredPackages(healthPackages);
+};
+
+const togglePackageSelection = (pkg) => {
+  if (selectedPackages.some(p => p._id === pkg._id)) {
+    setSelectedPackages(selectedPackages.filter(p => p._id !== pkg._id));
+  } else if (selectedPackages.length < 4) {
+    setSelectedPackages([...selectedPackages, pkg]);
+  } else {
+    alert('You can compare up to 4 packages');
+  }
+};
+
+const handlePackageCompare = async () => {
+  if (selectedPackages.length < 2) {
+    alert('Please select at least 2 packages to compare');
+    return;
+  }
+  setComparisonPackages(selectedPackages);
+  setShowPackageComparison(true);
+};
+
+const handlePackageBook = (pkg) => {
+  alert(`Booking ${pkg.package_name}\nProvider: ${pkg.provider_id?.provider_name}\nPrice: ₹${pkg.discounted_price}\nReport Time: ${pkg.report_time_hours} hours\nHome Collection: ${pkg.home_collection_available ? 'Yes' : 'No'}`);
+};
 
   // Load health packages
   useEffect(() => {
-    loadHealthPackages();
-  }, []);
+  loadHealthPackages();
+}, []);
 
   useEffect(() => {
     filterHealthPackages();
@@ -364,7 +441,7 @@ const Diagnostics = () => {
     <h2>🏥 Preventive Health Check Packages</h2>
     <p>Choose from our curated health packages at discounted prices</p>
 
-    {/* Search and Filter Bar - WITH WORKING SEARCH */}
+    {/* Search and Filter Bar */}
     <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
         <input
@@ -375,13 +452,13 @@ const Diagnostics = () => {
           style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px' }}
           onKeyPress={(e) => { if (e.key === 'Enter') filterHealthPackages(); }}
         />
-        <button onClick={() => filterHealthPackages()} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        <button onClick={filterHealthPackages} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           Search
         </button>
         <button onClick={() => setShowPackageFilters(!showPackageFilters)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           {showPackageFilters ? 'Hide Filters ▲' : 'Show Filters ▼'}
         </button>
-        <button onClick={resetPackageFilters} style={{ backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        <button onClick={() => { resetPackageFilters(); filterHealthPackages(); }} style={{ backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           Reset
         </button>
       </div>
@@ -396,6 +473,15 @@ const Diagnostics = () => {
             <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Max Price (₹)</label>
             <input type="number" placeholder="Max" value={maxPackagePrice} onChange={(e) => { setMaxPackagePrice(e.target.value); filterHealthPackages(); }} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
           </div>
+          <div>
+            <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>⭐ Min Rating</label>
+            <select value={minPackageRating} onChange={(e) => { setMinPackageRating(e.target.value); filterHealthPackages(); }} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
+              <option value="">Any</option>
+              <option value="4">4★ & above</option>
+              <option value="4.5">4.5★ & above</option>
+              <option value="4.8">4.8★ & above</option>
+            </select>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
               <input type="checkbox" checked={packageHomeCollectionOnly} onChange={(e) => { setPackageHomeCollectionOnly(e.target.checked); filterHealthPackages(); }} />
@@ -406,82 +492,124 @@ const Diagnostics = () => {
       )}
       
       <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '10px' }}>
-        Found {filteredPackages.length} packages
+        Found {filteredPackages.length} packages | {selectedPackages.length} selected for comparison
       </div>
     </div>
 
-    {/* Packages Grid */}
-    {packagesLoading ? (
-      <div style={{ textAlign: 'center', padding: '40px' }}>Loading packages...</div>
-    ) : filteredPackages.length === 0 ? (
-      <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>
-        <p>No packages found matching your filters. Try adjusting your search criteria.</p>
+    {/* Compare Button */}
+    {selectedPackages.length >= 2 && (
+      <button 
+        onClick={handlePackageCompare}
+        style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+      >
+        Compare Selected ({selectedPackages.length} Packages)
+      </button>
+    )}
+
+    {/* Comparison View */}
+    {showPackageComparison && (
+      <div>
+        <button onClick={() => setShowPackageComparison(false)} style={{ marginBottom: '20px', cursor: 'pointer' }}>← Back to Packages</button>
+        <h3>Package Comparison</h3>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f3f4f6' }}>
+                <th style={{ padding: '12px', border: '1px solid #ddd' }}>Features</th>
+                {comparisonPackages.map((pkg, idx) => (
+                  <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
+                    {pkg.package_name}
+                    {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Best Price</span>}
+                  </th>
+                ))}
+               </tr>
+            </thead>
+            <tbody>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Provider</td>{comparisonPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.provider_id?.provider_name}</td>)}</tr>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Price</td>{comparisonPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}><strong>₹{p.discounted_price}</strong> <span style={{ textDecoration: 'line-through' }}>₹{p.mrp}</span></td>)}</tr>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Rating</td>{comparisonPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>⭐ {p.provider_id?.rating || 4.5}</td>)}</tr>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Distance</td>{comparisonPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.distance || Math.floor(Math.random() * 10) + 1} km</td>)}</tr>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Home Collection</td>{comparisonPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.home_collection_available ? '✅ Yes' : '❌ No'}</td>)}</tr>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Report Time</td>{comparisonPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.report_time_hours} hours</td>)}</tr>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Tests Count</td>{comparisonPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.tests_included_text?.split(',').length || 0} tests</td>)}</tr>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Action</td>{comparisonPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}><button onClick={() => handlePackageBook(p)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button></td>)}</tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    ) : (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '20px', marginTop: '20px' }}>
-        {filteredPackages.map(pkg => {
-          const testsList = pkg.tests_included_text ? pkg.tests_included_text.split(',').map(t => t.trim()) : [];
-          const [expanded, setExpanded] = useState(false);
-          
-          return (
-            <div key={pkg._id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-              {pkg.is_popular && (
-                <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-block', marginBottom: '10px' }}>
-                  🔥 Popular
-                </span>
-              )}
-              
-              <h3 style={{ margin: '10px 0 8px 0', fontSize: '18px' }}>{pkg.package_name}</h3>
-              
-              <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '10px', lineHeight: '1.4' }}>
-                {pkg.package_description?.substring(0, 120)}...
-              </p>
-              
-              <p style={{ fontSize: '13px', color: '#4b5563', marginBottom: '8px' }}>
-                🏥 {pkg.provider_id?.provider_name}
-              </p>
-              
-              <div style={{ margin: '10px 0' }}>
-                <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '14px' }}>₹{pkg.mrp}</span>
-                <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', marginLeft: '10px' }}>₹{pkg.discounted_price}</span>
-                <span style={{ fontSize: '12px', color: '#10b981', marginLeft: '8px' }}>({pkg.discount_percentage}% OFF)</span>
-              </div>
-              
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '12px', fontSize: '12px', color: '#6b7280' }}>
-                {pkg.home_collection_available && <span>🏠 Home Collection</span>}
-                <span>⏱️ {pkg.report_time_hours} hours</span>
-                <span>👤 {pkg.gender}</span>
-                {pkg.min_age && <span>📅 {pkg.min_age}-{pkg.max_age} years</span>}
-                <span>📏 {pkg.provider_id?.distance || Math.floor(Math.random() * 10) + 1} km</span>
-              </div>
-              
-              {/* Tests Included Section */}
-              <div style={{ marginTop: '10px', fontSize: '12px' }}>
-                <div 
-                  onClick={() => setExpanded(!expanded)} 
-                  style={{ cursor: 'pointer', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '5px' }}
-                >
-                  <span>📋 {expanded ? '▼' : '▶'} Included Tests ({testsList.length})</span>
-                </div>
-                {expanded && (
-                  <div style={{ marginTop: '8px', paddingLeft: '15px', maxHeight: '150px', overflowY: 'auto' }}>
-                    <ul style={{ margin: '0', paddingLeft: '15px' }}>
-                      {testsList.map((test, i) => <li key={i} style={{ margin: '4px 0' }}>{test}</li>)}
-                    </ul>
+    )}
+
+    {/* Packages Grid - Only show if not in comparison mode */}
+    {!showPackageComparison && (
+      packagesLoading ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>Loading packages...</div>
+      ) : filteredPackages.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>
+          <p>No packages found matching your filters. Try adjusting your search criteria.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '20px', marginTop: '20px' }}>
+          {filteredPackages.map(pkg => {
+            const testsList = pkg.tests_included_text ? pkg.tests_included_text.split(',').map(t => t.trim()) : [];
+            const isSelected = selectedPackages.some(p => p._id === pkg._id);
+            const distance = pkg.distance || (userLocation && pkg.provider_id?.location ? 
+              Math.sqrt(Math.pow(userLocation.lat - (pkg.provider_id.location.lat || 19.076), 2) + Math.pow(userLocation.lng - (pkg.provider_id.location.lng || 72.877), 2)) * 111 : 
+              Math.floor(Math.random() * 15) + 1);
+            
+            return (
+              <div key={pkg._id} style={{ border: `1px solid ${isSelected ? '#10b981' : '#e5e7eb'}`, borderRadius: '12px', padding: '20px', backgroundColor: isSelected ? '#f0fdf4' : 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                  <div>
+                    {pkg.is_popular && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-block', marginBottom: '10px' }}>🔥 Popular</span>}
+                    <h3 style={{ margin: '10px 0 8px 0', fontSize: '18px' }}>{pkg.package_name}</h3>
                   </div>
-                )}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
+                    <input type="checkbox" checked={isSelected} onChange={() => togglePackageSelection(pkg)} />
+                    Select
+                  </label>
+                </div>
+                
+                <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '10px', lineHeight: '1.4' }}>
+                  {pkg.package_description?.substring(0, 120)}...
+                </p>
+                
+                <p style={{ fontSize: '13px', color: '#4b5563', marginBottom: '8px' }}>
+                  🏥 {pkg.provider_id?.provider_name}
+                </p>
+                
+                <div style={{ margin: '10px 0' }}>
+                  <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '14px' }}>₹{pkg.mrp}</span>
+                  <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', marginLeft: '10px' }}>₹{pkg.discounted_price}</span>
+                  <span style={{ fontSize: '12px', color: '#10b981', marginLeft: '8px' }}>({pkg.discount_percentage}% OFF)</span>
+                </div>
+                
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '12px', fontSize: '12px', color: '#6b7280' }}>
+                  <span>⭐ {pkg.provider_id?.rating || 4.5}</span>
+                  <span>📏 {typeof distance === 'number' ? distance.toFixed(1) : distance} km</span>
+                  {pkg.home_collection_available && <span>🏠 Home Collection</span>}
+                  <span>⏱️ {pkg.report_time_hours} hours</span>
+                  <span>👤 {pkg.gender}</span>
+                </div>
+                
+                {/* Tests Included */}
+                <details style={{ marginTop: '10px', fontSize: '12px' }}>
+                  <summary style={{ cursor: 'pointer', color: '#3b82f6' }}>📋 Included Tests ({testsList.length})</summary>
+                  <ul style={{ marginTop: '8px', paddingLeft: '20px', maxHeight: '120px', overflowY: 'auto' }}>
+                    {testsList.map((test, i) => <li key={i}>{test}</li>)}
+                  </ul>
+                </details>
+                
+                <button 
+                  onClick={() => handlePackageBook(pkg)} 
+                  style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '15px', marginTop: '15px' }}
+                >
+                  Book Now
+                </button>
               </div>
-              
-              <button 
-                onClick={() => handlePackageBook(pkg)} 
-                style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '15px', marginTop: '15px' }}
-              >
-                Book Now
-              </button>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )
     )}
   </div>
 )}
