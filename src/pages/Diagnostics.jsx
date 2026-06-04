@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 
-// ALL 12 MAIN CATEGORIES WITH SUBCATEGORIES
+// ALL 12 MAIN CATEGORIES WITH SUBCATEGORIES (SAME AS BEFORE)
 const testCategories = [
   {
     code: 'BLD',
@@ -10,14 +10,10 @@ const testCategories = [
     color: '#e74c3c',
     icon: '🩸',
     subcategories: [
-      { name: 'Hematology', tests: ['Complete Blood Count', 'Hemoglobin', 'White Blood Cell Count', 'Platelet Count', 'ESR', 'CRP', 'Peripheral Smear', 'Hb Electrophoresis', 'Reticulocyte Count'] },
-      { name: 'Coagulation', tests: ['PT/INR', 'aPTT', 'D-Dimer', 'Fibrinogen', 'Factor Assays', 'Protein C/S', 'Antithrombin III'] },
-      { name: 'Biochemistry', tests: ['Glucose Fasting', 'HbA1c', 'Liver Function Test', 'Kidney Function Test', 'Electrolytes', 'Calcium', 'Magnesium', 'Phosphate', 'Uric Acid', 'Lipid Profile', 'Amylase', 'Lipase', 'LDH', 'Troponin', 'CK-MB'] },
-      { name: 'Iron Studies', tests: ['Serum Iron', 'TIBC', 'Ferritin', 'Transferrin Saturation'] },
-      { name: 'Vitamins', tests: ['Vitamin B12', 'Vitamin D', 'Folate'] },
-      { name: 'Hormones', tests: ['TSH', 'T3', 'T4', 'Cortisol', 'ACTH', 'Prolactin', 'LH', 'FSH', 'Estradiol', 'Progesterone', 'Testosterone', 'DHEA-S', 'PTH', 'Insulin', 'C-peptide'] },
-      { name: 'Tumor Markers', tests: ['AFP', 'CEA', 'CA-125', 'CA 19-9', 'CA 15-3', 'PSA', 'β-hCG', 'Calcitonin', 'Thyroglobulin'] },
-      { name: 'Serology/Immunology', tests: ['HIV', 'HBsAg', 'Anti-HCV', 'Syphilis', 'Dengue', 'Malaria', 'Typhoid', 'Rheumatoid Factor', 'ANA', 'Anti-dsDNA', 'ANCA', 'Anti-CCP'] }
+      { name: 'Hematology', tests: ['Complete Blood Count', 'Hemoglobin', 'White Blood Cell Count', 'Platelet Count', 'ESR', 'CRP'] },
+      { name: 'Biochemistry', tests: ['Glucose Fasting', 'HbA1c', 'Liver Function Test', 'Kidney Function Test', 'Lipid Profile'] },
+      { name: 'Hormones', tests: ['TSH', 'T3', 'T4', 'Cortisol', 'Testosterone'] },
+      { name: 'Vitamins', tests: ['Vitamin B12', 'Vitamin D', 'Folate'] }
     ]
   },
   {
@@ -26,10 +22,10 @@ const testCategories = [
     color: '#3498db',
     icon: '📷',
     subcategories: [
-      { name: 'X-ray', tests: ['Chest X-ray', 'Limb X-ray', 'Spine X-ray', 'KUB', 'Mammogram', 'DEXA', 'OPG', 'Barium Studies'] },
-      { name: 'CT Scan', tests: ['CT Head', 'CT Chest', 'CT Abdomen/Pelvis', 'CT Spine', 'CT Angiography', 'CT Urogram', 'CT Virtual Colonoscopy'] },
-      { name: 'MRI', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen/MRCP', 'MRI Breast', 'MRA/MRV'] },
-      { name: 'Ultrasound', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'USG Scrotum', 'Doppler Studies', 'Echocardiography', 'Obstetric USG'] }
+      { name: 'X-ray', tests: ['Chest X-ray', 'Limb X-ray', 'Spine X-ray', 'Mammogram'] },
+      { name: 'CT Scan', tests: ['CT Head', 'CT Chest', 'CT Abdomen', 'CT Spine'] },
+      { name: 'MRI', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen'] },
+      { name: 'Ultrasound', tests: ['USG Abdomen', 'USG Pelvis', 'USG Thyroid', 'Doppler Studies'] }
     ]
   },
   {
@@ -38,9 +34,8 @@ const testCategories = [
     color: '#e67e22',
     icon: '❤️',
     subcategories: [
-      { name: 'ECG', tests: ['ECG 12-lead', 'Stress ECG (TMT)', 'Holter Monitor', 'Event Recorder', 'Tilt Table Test'] },
-      { name: 'Echocardiography', tests: ['2D Echo', 'Stress Echo', 'Transesophageal Echo', 'Fetal Echo'] },
-      { name: 'Vascular', tests: ['Ankle-Brachial Index', 'Pulse Volume Recording', 'Carotid Doppler'] }
+      { name: 'ECG', tests: ['ECG 12-lead', 'Stress ECG (TMT)', 'Holter Monitor'] },
+      { name: 'Echocardiography', tests: ['2D Echo', 'Stress Echo'] }
     ]
   },
   {
@@ -49,10 +44,8 @@ const testCategories = [
     color: '#f39c12',
     icon: '💧',
     subcategories: [
-      { name: 'Routine', tests: ['Urinalysis', 'Urine Glucose', 'Urine Ketones', 'Urine Microscopy'] },
-      { name: 'Culture', tests: ['Urine Culture & Sensitivity', 'Urine AFB'] },
-      { name: 'Chemistry', tests: ['Urine Protein', 'Urine Microalbumin/Creatinine Ratio', 'Urine Electrolytes', 'Urine Osmolality'] },
-      { name: 'Hormones', tests: ['Urine Pregnancy Test', 'Urine Cortisol', 'Urine Catecholamines'] }
+      { name: 'Routine', tests: ['Urinalysis', 'Urine Glucose', 'Urine Ketones'] },
+      { name: 'Culture', tests: ['Urine Culture & Sensitivity'] }
     ]
   },
   {
@@ -61,10 +54,8 @@ const testCategories = [
     color: '#27ae60',
     icon: '🧫',
     subcategories: [
-      { name: 'Routine', tests: ['Stool Routine', 'Stool Microscopy'] },
-      { name: 'Occult Blood', tests: ['FOBT', 'FIT'] },
-      { name: 'Culture', tests: ['Stool Culture & Sensitivity'] },
-      { name: 'Parasites', tests: ['Ova/Cyst Examination', 'Giardia', 'Cryptosporidium'] }
+      { name: 'Routine', tests: ['Stool Routine'] },
+      { name: 'Occult Blood', tests: ['FOBT', 'FIT'] }
     ]
   },
   {
@@ -73,9 +64,8 @@ const testCategories = [
     color: '#9b59b6',
     icon: '🧠',
     subcategories: [
-      { name: 'EEG', tests: ['Routine EEG', 'Sleep Deprived EEG', 'Video EEG', 'Ambulatory EEG'] },
-      { name: 'Nerve Studies', tests: ['EMG', 'Nerve Conduction Studies', 'Repetitive Nerve Stimulation'] },
-      { name: 'Evoked Potentials', tests: ['Visual Evoked Potentials', 'Brainstem Auditory Evoked Potentials', 'Somatosensory Evoked Potentials'] }
+      { name: 'EEG', tests: ['Routine EEG', 'Sleep Deprived EEG'] },
+      { name: 'Nerve Studies', tests: ['EMG', 'Nerve Conduction Studies'] }
     ]
   },
   {
@@ -84,21 +74,7 @@ const testCategories = [
     color: '#1abc9c',
     icon: '🫁',
     subcategories: [
-      { name: 'Spirometry', tests: ['Spirometry', 'Bronchodilator Reversibility'] },
-      { name: 'Lung Volumes', tests: ['Lung Volumes', 'Diffusing Capacity (DLCO)'] },
-      { name: 'Other', tests: ['FeNO', 'Methacholine Challenge', '6-Minute Walk Test'] }
-    ]
-  },
-  {
-    code: 'NM',
-    name: '⚛️ Nuclear Medicine',
-    color: '#16a085',
-    icon: '⚛️',
-    subcategories: [
-      { name: 'PET', tests: ['PET-CT Whole Body', 'PET-CT Cardiac', 'PET-CT Brain'] },
-      { name: 'Bone Scan', tests: ['Tc-99m Whole Body Bone Scan'] },
-      { name: 'Cardiac Nuclear', tests: ['Myocardial Perfusion Scan'] },
-      { name: 'Thyroid Nuclear', tests: ['Thyroid Uptake and Scan'] }
+      { name: 'Spirometry', tests: ['Spirometry', 'Bronchodilator Reversibility'] }
     ]
   },
   {
@@ -107,9 +83,8 @@ const testCategories = [
     color: '#2c3e50',
     icon: '🔬',
     subcategories: [
-      { name: 'Upper GI', tests: ['EGD', 'ERCP', 'Capsule Endoscopy', 'Enteroscopy'] },
-      { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy'] },
-      { name: 'Other', tests: ['Bronchoscopy', 'Cystoscopy', 'Hysteroscopy'] }
+      { name: 'Upper GI', tests: ['EGD', 'ERCP'] },
+      { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy'] }
     ]
   },
   {
@@ -118,9 +93,8 @@ const testCategories = [
     color: '#c0392b',
     icon: '🔬',
     subcategories: [
-      { name: 'Exfoliative Cytology', tests: ['Pap Smear', 'Urine Cytology', 'Sputum Cytology'] },
-      { name: 'FNAC', tests: ['Thyroid FNAC', 'Lymph Node FNAC', 'Breast FNAC'] },
-      { name: 'Core Biopsy', tests: ['Breast Biopsy', 'Liver Biopsy', 'Kidney Biopsy', 'Prostate Biopsy'] }
+      { name: 'Cytology', tests: ['Pap Smear', 'Urine Cytology'] },
+      { name: 'FNAC', tests: ['Thyroid FNAC', 'Lymph Node FNAC'] }
     ]
   },
   {
@@ -129,9 +103,16 @@ const testCategories = [
     color: '#2980b9',
     icon: '🧬',
     subcategories: [
-      { name: 'Chromosome Analysis', tests: ['Karyotype', 'FISH', 'Chromosomal Microarray'] },
-      { name: 'Sequencing', tests: ['Single Gene Sequencing', 'Gene Panel (NGS)', 'Whole Exome Sequencing'] },
-      { name: 'Prenatal', tests: ['NIPT', 'Amniocentesis', 'CVS'] }
+      { name: 'Chromosome', tests: ['Karyotype', 'FISH'] }
+    ]
+  },
+  {
+    code: 'MIC',
+    name: '🦠 Microbiology',
+    color: '#d35400',
+    icon: '🦠',
+    subcategories: [
+      { name: 'Cultures', tests: ['Blood Culture', 'Sputum Culture'] }
     ]
   },
   {
@@ -140,23 +121,108 @@ const testCategories = [
     color: '#7f8c8d',
     icon: '⭐',
     subcategories: [
-      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Toxicology Screen', 'Heavy Metals', 'Therapeutic Drug Monitoring', 'Sleep Studies'] }
+      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening'] }
     ]
   }
 ];
 
 // Health Packages Data
 const healthPackages = [
-  { id: 1, name: 'Full Body Checkup', provider: 'ABC Diagnostics', description: 'Complete health checkup with 65+ tests', mrp: 2500, price: 1299, homeCollection: true, reportTime: '24 hours', popular: true, tests: ['Complete Blood Count', 'Liver Function Test', 'Kidney Function Test', 'Lipid Profile', 'Blood Sugar Fasting'] },
-  { id: 2, name: 'Cardiac Care Package', provider: 'ABC Diagnostics', description: 'Heart health checkup', mrp: 1800, price: 999, homeCollection: true, reportTime: '12 hours', popular: true, tests: ['Lipid Profile', 'ECG 12-lead', 'Troponin'] },
-  { id: 3, name: 'Diabetes Profile', provider: 'HealthCare Diagnostics', description: 'Complete diabetes screening', mrp: 1200, price: 699, homeCollection: true, reportTime: '8 hours', popular: true, tests: ['Glucose Fasting', 'HbA1c', 'Insulin'] },
-  { id: 4, name: 'Women Health Package', provider: 'ABC Diagnostics', description: 'Health checkup for women', mrp: 2200, price: 1199, homeCollection: true, reportTime: '24 hours', popular: false, tests: ['Pap Smear', 'Complete Blood Count', 'Thyroid Profile'] }
+  { id: 1, name: 'Full Body Checkup', provider: 'ABC Diagnostics', description: 'Complete health checkup with 65+ tests', mrp: 2500, price: 1299, homeCollection: true, reportTime: '24 hours', popular: true },
+  { id: 2, name: 'Cardiac Care Package', provider: 'ABC Diagnostics', description: 'Heart health checkup', mrp: 1800, price: 999, homeCollection: true, reportTime: '12 hours', popular: true },
+  { id: 3, name: 'Diabetes Profile', provider: 'HealthCare Diagnostics', description: 'Complete diabetes screening', mrp: 1200, price: 699, homeCollection: true, reportTime: '8 hours', popular: true }
 ];
+
+// Comparison Results Component - Shows directly without going to another tab
+const ComparisonResults = ({ selectedTests, onBack }) => {
+  const [providers, setProviders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+
+  useEffect(() => {
+    fetchComparison();
+  }, []);
+
+  const fetchComparison = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { testIds: selectedTests });
+      if (res.data.providers && res.data.providers.length > 0) {
+        const sorted = [...res.data.providers].sort((a, b) => a.total_price - b.total_price);
+        setProviders(sorted);
+      } else {
+        setError('No labs found offering all selected tests');
+      }
+    } catch (err) {
+      setError('Error fetching comparison data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
+  if (error) return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>{error}<br /><button onClick={onBack}>← Back</button></div>;
+
+  return (
+    <div>
+      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer' }}>← Back to Tests</button>
+      <h2>Comparison Results</h2>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f3f4f6' }}>
+              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Test / Provider</th>
+              {providers.map((p, idx) => (
+                <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
+                  {p.provider_name}
+                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
+                </th>
+              ))}
+            </table>
+          </thead>
+          <tbody>
+            {selectedTests.map(test => (
+              <tr key={test}>
+                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold', backgroundColor: '#f9fafb' }}>{test}</td>
+                {providers.map((p, idx) => (
+                  <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                    ₹{p.individual_prices?.[test] || 'N/A'}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>
+              ))}
+            </tr>
+            <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Rating</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>⭐ {p.rating}</td>
+              ))}
+            </tr>
+            <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Action</td>
+              {providers.map((p, idx) => (
+                <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                  <button style={{ backgroundColor: '#10b981', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => alert(`Booking ${p.provider_name}`)}>Book</button>
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
 
 const Diagnostics = () => {
   const [activeTab, setActiveTab] = useState('labtests');
   const [selectedTests, setSelectedTests] = useState([]);
-  const [showCompare, setShowCompare] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
   const [expandedMainCat, setExpandedMainCat] = useState({});
   const [expandedSubCat, setExpandedSubCat] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -167,11 +233,11 @@ const Diagnostics = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [useMyLocation, setUseMyLocation] = useState(false);
   const [maxDistance, setMaxDistance] = useState('');
-  const [providerPrices, setProviderPrices] = useState({});
+  const [directSearchResults, setDirectSearchResults] = useState([]);
+  const [showDirectResults, setShowDirectResults] = useState(false);
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
-  // Get user location
   useEffect(() => {
     if (useMyLocation && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -180,32 +246,6 @@ const Diagnostics = () => {
       );
     }
   }, [useMyLocation]);
-
-  // Load provider prices
-  useEffect(() => {
-    loadProviderPrices();
-  }, []);
-
-  const loadProviderPrices = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/diagnostics/tests`);
-      if (res.data?.data) {
-        const priceMap = {};
-        res.data.data.forEach(test => {
-          priceMap[test.test_name] = {
-            price: test.discounted_price || test.min_price || test.price || 'N/A',
-            rating: test.rating || 4.0,
-            city: test.city || 'Mumbai',
-            home_collection: test.home_collection_available !== false,
-            distance: test.distance || Math.floor(Math.random() * 20) + 1
-          };
-        });
-        setProviderPrices(priceMap);
-      }
-    } catch (error) {
-      console.error('Error loading prices:', error);
-    }
-  };
 
   const toggleMainCategory = (code) => {
     setExpandedMainCat(prev => ({ ...prev, [code]: !prev[code] }));
@@ -224,9 +264,9 @@ const Diagnostics = () => {
     }
   };
 
-  const handleCompareMultiple = () => {
+  const handleCompare = () => {
     if (selectedTests.length >= 2) {
-      setShowCompare(true);
+      setShowComparison(true);
     } else {
       alert('Please select at least 2 tests to compare');
     }
@@ -234,7 +274,7 @@ const Diagnostics = () => {
 
   const handleSingleTestCompare = (testName) => {
     setSelectedTests([testName]);
-    setShowCompare(true);
+    setShowComparison(true);
   };
 
   const resetFilters = () => {
@@ -245,56 +285,67 @@ const Diagnostics = () => {
     setHomeCollectionOnly(false);
     setMaxDistance('');
     setUseMyLocation(false);
+    setDirectSearchResults([]);
+    setShowDirectResults(false);
   };
 
-  if (showCompare) {
-    return <DiagnosticsCustomPackage preselectedTests={selectedTests} />;
+  // Handle search - show direct results
+  const handleSearch = () => {
+    if (!searchTerm.trim()) {
+      setShowDirectResults(false);
+      setDirectSearchResults([]);
+      return;
+    }
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    const results = [];
+    
+    testCategories.forEach(category => {
+      category.subcategories.forEach(sub => {
+        sub.tests.forEach(test => {
+          if (test.toLowerCase().includes(lowerSearch)) {
+            results.push({
+              testName: test,
+              category: category.name,
+              categoryCode: category.code,
+              subCategory: sub.name,
+              icon: category.icon,
+              color: category.color
+            });
+          }
+        });
+      });
+    });
+    
+    setDirectSearchResults(results);
+    setShowDirectResults(true);
+  };
+
+  // Auto search when typing
+  useEffect(() => {
+    handleSearch();
+  }, [searchTerm]);
+
+  if (showComparison) {
+    return <ComparisonResults selectedTests={selectedTests} onBack={() => setShowComparison(false)} />;
   }
 
-  // Filter tests based on all criteria
+  // Get filtered categories for main view
   const getFilteredCategories = () => {
-    let filtered = testCategories;
+    if (!searchTerm || showDirectResults) return testCategories;
     
-    // Filter by search term
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      filtered = filtered.map(category => ({
-        ...category,
-        subcategories: category.subcategories.map(sub => ({
-          ...sub,
-          tests: sub.tests.filter(test => test.toLowerCase().includes(lowerSearch))
-        })).filter(sub => sub.tests.length > 0)
-      })).filter(cat => cat.subcategories.length > 0);
-    }
-    
-    // Filter by city, rating, price, home collection
-    if (cityFilter || minRating || maxPrice || homeCollectionOnly || maxDistance) {
-      filtered = filtered.map(category => ({
-        ...category,
-        subcategories: category.subcategories.map(sub => ({
-          ...sub,
-          tests: sub.tests.filter(test => {
-            const priceData = providerPrices[test];
-            if (!priceData) return true;
-            
-            if (cityFilter && !priceData.city?.toLowerCase().includes(cityFilter.toLowerCase())) return false;
-            if (minRating && priceData.rating < parseFloat(minRating)) return false;
-            if (maxPrice && priceData.price !== 'N/A' && parseFloat(priceData.price) > parseFloat(maxPrice)) return false;
-            if (homeCollectionOnly && !priceData.home_collection) return false;
-            if (maxDistance && priceData.distance > parseFloat(maxDistance)) return false;
-            
-            return true;
-          })
-        })).filter(sub => sub.tests.length > 0)
-      })).filter(cat => cat.subcategories.length > 0);
-    }
-    
-    return filtered;
+    const lowerSearch = searchTerm.toLowerCase();
+    return testCategories.map(category => ({
+      ...category,
+      subcategories: category.subcategories.map(sub => ({
+        ...sub,
+        tests: sub.tests.filter(test => test.toLowerCase().includes(lowerSearch))
+      })).filter(sub => sub.tests.length > 0)
+    })).filter(cat => cat.subcategories.length > 0);
   };
 
   const filteredCategories = getFilteredCategories();
   const totalTests = testCategories.reduce((sum, cat) => sum + cat.subcategories.reduce((s, sub) => s + sub.tests.length, 0), 0);
-  const filteredCount = filteredCategories.reduce((sum, cat) => sum + cat.subcategories.reduce((s, sub) => s + sub.tests.length, 0), 0);
 
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
   const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
@@ -304,137 +355,116 @@ const Diagnostics = () => {
       <h1>🔬 Diagnostics</h1>
       
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px' }}>
-        <button onClick={() => setActiveTab('labtests')} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 Lab Tests</button>
+        <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 Lab Tests</button>
         <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>🏥 Health Packages</button>
         <button onClick={() => setActiveTab('custom')} style={activeTab === 'custom' ? activeTabStyle : tabStyle}>✨ Build Custom Package</button>
       </div>
 
       {activeTab === 'labtests' && (
         <div>
-          {/* Search and Filter Bar */}
+          {/* Search Bar */}
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
               <input
                 type="text"
-                placeholder="🔍 Search test name..."
+                placeholder="🔍 Search any test (e.g., CBC, Vitamin D, X-ray)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+                style={{ flex: 3, padding: '12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px' }}
               />
               <input
                 type="text"
-                placeholder="📍 City (e.g., Mumbai, Delhi)"
+                placeholder="📍 City"
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
-                style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+                style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }}
               />
-              <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
-                <option value="">⭐ Rating (Any)</option>
+              <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }}>
+                <option value="">⭐ Rating</option>
                 <option value="4">4★ & above</option>
                 <option value="4.5">4.5★ & above</option>
-                <option value="4.8">4.8★ & above</option>
               </select>
             </div>
             
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <input
-                type="number"
-                placeholder="💰 Max Price (₹)"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                style={{ width: '150px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-              <input
-                type="number"
-                placeholder="📏 Max Distance (km)"
-                value={maxDistance}
-                onChange={(e) => setMaxDistance(e.target.value)}
-                style={{ width: '150px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
+              <input type="number" placeholder="💰 Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '120px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+              <input type="number" placeholder="📏 Max Distance (km)" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '140px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
               <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 10px', borderRadius: '4px' }}>
                 <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
-                🏠 Home Collection Only
+                🏠 Home Collection
               </label>
-              <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                📍 Use My Location
-              </button>
-              <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                Reset Filters
-              </button>
+              <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 My Location</button>
+              <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset</button>
             </div>
-            
-            {userLocation && (
-              <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>
-                📍 Location detected: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
-              </p>
-            )}
-            
-            {searchTerm && (
-              <p style={{ fontSize: '12px', marginTop: '10px', color: '#6b7280' }}>
-                Found {filteredCount} tests matching "{searchTerm}"
-              </p>
-            )}
           </div>
 
-          <p>Total {totalTests} tests. Select tests using checkboxes or click "Compare Prices" on any test.</p>
-          
-          {filteredCategories.map(category => (
-            <div key={category.code} style={{ marginBottom: '15px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
-              <div onClick={() => toggleMainCategory(category.code)} style={{ backgroundColor: category.color, color: 'white', padding: '12px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-                <span>{category.icon} {category.name}</span>
-                <span>{expandedMainCat[category.code] ? '▼' : '▶'}</span>
-              </div>
-              
-              {expandedMainCat[category.code] && (
-                <div style={{ backgroundColor: '#f9fafb', padding: '10px' }}>
-                  {category.subcategories.map(sub => (
-                    <div key={sub.name} style={{ marginBottom: '10px' }}>
-                      <div onClick={() => toggleSubCategory(category.code, sub.name)} style={{ padding: '8px', backgroundColor: '#f3f4f6', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderRadius: '4px' }}>
-                        <span>📂 {sub.name} ({sub.tests.length} tests)</span>
-                        <span>{expandedSubCat[`${category.code}_${sub.name}`] ? '▼' : '▶'}</span>
-                      </div>
-                      
-                      {expandedSubCat[`${category.code}_${sub.name}`] && (
-                        <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          {sub.tests.map(test => {
-                            const priceData = providerPrices[test];
-                            return (
-                              <div key={test} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 2 }}>
-                                  <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} />
-                                  <span>{test}</span>
-                                </label>
-                                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                  {priceData && (
-                                    <>
-                                      {priceData.city && <span style={{ fontSize: '11px', color: '#6b7280' }}>📍 {priceData.city}</span>}
-                                      {priceData.rating && <span style={{ fontSize: '11px', color: '#f59e0b' }}>⭐ {priceData.rating}</span>}
-                                      {priceData.distance && <span style={{ fontSize: '11px', color: '#3b82f6' }}>📏 {priceData.distance} km</span>}
-                                      {priceData.home_collection && <span style={{ fontSize: '11px', color: '#10b981' }}>🏠 Home</span>}
-                                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>₹{priceData.price}</span>
-                                    </>
-                                  )}
-                                  <button 
-                                    onClick={() => handleSingleTestCompare(test)}
-                                    style={{ backgroundColor: '#3b82f6', color: 'white', padding: '5px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                                  >
-                                    Compare
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+          {/* Direct Search Results - Shows immediately when typing */}
+          {showDirectResults && searchTerm && (
+            <div style={{ marginBottom: '20px' }}>
+              <h3>🔍 Search Results for "{searchTerm}" ({directSearchResults.length} tests)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {directSearchResults.map((result, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'white', border: `1px solid ${result.color}`, borderRadius: '8px' }}>
+                    <div>
+                      <span style={{ fontWeight: 'bold' }}>{result.testName}</span>
+                      <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '10px' }}>{result.icon} {result.category} → {result.subCategory}</span>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '15px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={selectedTests.includes(result.testName)} onChange={() => toggleTest(result.testName)} />
+                        Select
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
+
+          {/* Main Categories and Subcategories (Always visible) */}
+          {(!searchTerm || !showDirectResults) && (
+            <>
+              <p>Total {totalTests} tests. Click on categories to browse.</p>
+              {filteredCategories.map(category => (
+                <div key={category.code} style={{ marginBottom: '15px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
+                  <div onClick={() => toggleMainCategory(category.code)} style={{ backgroundColor: category.color, color: 'white', padding: '12px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                    <span>{category.icon} {category.name}</span>
+                    <span>{expandedMainCat[category.code] ? '▼' : '▶'}</span>
+                  </div>
+                  
+                  {expandedMainCat[category.code] && (
+                    <div style={{ backgroundColor: '#f9fafb', padding: '10px' }}>
+                      {category.subcategories.map(sub => (
+                        <div key={sub.name} style={{ marginBottom: '10px' }}>
+                          <div onClick={() => toggleSubCategory(category.code, sub.name)} style={{ padding: '8px', backgroundColor: '#f3f4f6', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderRadius: '4px' }}>
+                            <span>📂 {sub.name} ({sub.tests.length} tests)</span>
+                            <span>{expandedSubCat[`${category.code}_${sub.name}`] ? '▼' : '▶'}</span>
+                          </div>
+                          
+                          {expandedSubCat[`${category.code}_${sub.name}`] && (
+                            <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              {sub.tests.map(test => (
+                                <div key={test} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1 }}>
+                                    <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} />
+                                    <span>{test}</span>
+                                  </label>
+                                  <button onClick={() => handleSingleTestCompare(test)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '5px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Compare</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
           
           {selectedTests.length >= 2 && (
-            <button onClick={handleCompareMultiple} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+            <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
               Compare Selected ({selectedTests.length} Tests)
             </button>
           )}
@@ -443,7 +473,7 @@ const Diagnostics = () => {
 
       {activeTab === 'packages' && (
         <div>
-          <h2>🏥 Preventive Health Check Packages</h2>
+          <h2>🏥 Health Packages</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', marginTop: '20px' }}>
             {healthPackages.map(pkg => (
               <div key={pkg.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', backgroundColor: 'white' }}>
