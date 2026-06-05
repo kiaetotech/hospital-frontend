@@ -326,9 +326,12 @@ const handlePackageBook = (pkg) => {
     setSearchTerm('');
   };
 
-  const showMoreTests = (categoryCode, currentCount) => {
-    setVisibleTests(prev => ({ ...prev, [categoryCode]: currentCount + 10 }));
-  };
+  const showMoreTests = (categoryCode) => {
+  setVisibleTests(prev => {
+    const currentCount = prev[categoryCode] || 10;
+    return { ...prev, [categoryCode]: currentCount + 10 };
+  });
+};
 
   if (showComparison) {
     return <ComparisonResults selectedTests={selectedTests} onBack={() => setShowComparison(false)} />;
@@ -418,7 +421,7 @@ const handlePackageBook = (pkg) => {
                     </div>
                     {hasMore && (
                       <div style={{ padding: '8px', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
-                        <button onClick={() => showMoreTests(category.code, visibleCount)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        <button onClick={() => showMoreTests(category.code)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                           Show More... ({category.tests.length - visibleCount} more)
                         </button>
                       </div>
