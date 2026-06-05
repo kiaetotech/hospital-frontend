@@ -15,6 +15,8 @@ const HealthPackagesTab = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [useLocation, setUseLocation] = useState(false);
   const [expandedPackages, setExpandedPackages] = useState({});
+  const [minRating, setMinRating] = useState('');
+  const [maxDistance, setMaxDistance] = useState('');
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
@@ -33,7 +35,7 @@ const HealthPackagesTab = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, minPrice, maxPrice, homeCollectionOnly, packages]);
+  }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation]);
 
   const loadPackages = async () => {
     try {
@@ -46,6 +48,24 @@ const HealthPackagesTab = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getDistance = (pkg) => {
+    if (!userLocation || !pkg.provider_id?.location?.lat) {
+      return Math.floor(Math.random() * 15) + 1;
+    }
+    const lat1 = userLocation.lat;
+    const lon1 = userLocation.lng;
+    const lat2 = pkg.provider_id.location.lat;
+    const lon2 = pkg.provider_id.location.lng;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return (R * c).toFixed(1);
   };
 
   const applyFilters = () => {
@@ -61,6 +81,19 @@ const HealthPackagesTab = () => {
     if (maxPrice) filtered = filtered.filter(p => p.discounted_price <= parseFloat(maxPrice));
     if (homeCollectionOnly) filtered = filtered.filter(p => p.home_collection_available === true);
     
+    // Rating filter
+    if (minRating) {
+      filtered = filtered.filter(p => (p.provider_id?.rating || 0) >= parseFloat(minRating));
+    }
+    
+    // Distance filter
+    if (maxDistance) {
+      filtered = filtered.filter(p => {
+        const distance = parseFloat(getDistance(p));
+        return distance <= parseFloat(maxDistance);
+      });
+    }
+    
     setFilteredPackages(filtered);
   };
 
@@ -68,6 +101,8 @@ const HealthPackagesTab = () => {
     setSearchTerm('');
     setMinPrice('');
     setMaxPrice('');
+    setMinRating('');
+    setMaxDistance('');
     setHomeCollectionOnly(false);
     setFilteredPackages(packages);
   };
@@ -97,24 +132,6 @@ const HealthPackagesTab = () => {
     }));
   };
 
-  const getDistance = (pkg) => {
-    if (!userLocation || !pkg.provider_id?.location?.lat) {
-      return Math.floor(Math.random() * 15) + 1;
-    }
-    const lat1 = userLocation.lat;
-    const lon1 = userLocation.lng;
-    const lat2 = pkg.provider_id.location.lat;
-    const lon2 = pkg.provider_id.location.lng;
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return (R * c).toFixed(1);
-  };
-
   if (showCompare) {
     const sortedPackages = [...selectedPackages].sort((a, b) => a.discounted_price - b.discounted_price);
     
@@ -133,7 +150,7 @@ const HealthPackagesTab = () => {
                     {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                   </th>
                 ))}
-              </tr>
+              </table>
             </thead>
             <tbody>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Provider</td>
@@ -204,28 +221,33 @@ const HealthPackagesTab = () => {
 
         {showFilters && (
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #e5e7eb' }}>
-            <input 
-              type="number" 
-              placeholder="Min Price" 
-              value={minPrice} 
-              onChange={(e) => setMinPrice(e.target.value)} 
-              style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} 
-            />
-            <input 
-              type="number" 
-              placeholder="Max Price" 
-              value={maxPrice} 
-              onChange={(e) => setMaxPrice(e.target.value)} 
-              style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} 
-            />
-            <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input 
-                type="checkbox" 
-                checked={homeCollectionOnly} 
-                onChange={(e) => setHomeCollectionOnly(e.target.checked)} 
-              />
-              🏠 Home Collection Only
-            </label>
+            <div>
+              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Min Price</label>
+              <input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Max Price</label>
+              <input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>⭐ Min Rating</label>
+              <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
+                <option value="">Any</option>
+                <option value="4">4★ & above</option>
+                <option value="4.5">4.5★ & above</option>
+                <option value="4.8">4.8★ & above</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>📏 Max Distance (km)</label>
+              <input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
+                🏠 Home Collection Only
+              </label>
+            </div>
           </div>
         )}
         <div style={{ fontSize: '12px', marginTop: '10px' }}>
@@ -317,7 +339,7 @@ const HealthPackagesTab = () => {
                   <span>👤 {pkg.gender || 'Unisex'}</span>
                 </div>
                 
-                {/* Tests Section - Fixed Hook Issue */}
+                {/* Tests Section */}
                 <details open={isExpanded}>
                   <summary 
                     onClick={(e) => {
