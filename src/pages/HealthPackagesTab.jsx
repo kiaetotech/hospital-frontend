@@ -69,31 +69,33 @@ const HealthPackagesTab = () => {
   };
 
   const applyFilters = () => {
-    let filtered = [...packages];
-    
-    if (searchTerm) {
-      filtered = filtered.filter(p => 
-        p.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.package_description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    if (minPrice) filtered = filtered.filter(p => p.discounted_price >= parseFloat(minPrice));
-    if (maxPrice) filtered = filtered.filter(p => p.discounted_price <= parseFloat(maxPrice));
-    if (homeCollectionOnly) filtered = filtered.filter(p => p.home_collection_available === true);
-    
-    if (minRating) {
-      filtered = filtered.filter(p => (p.provider_id?.rating || 0) >= parseFloat(minRating));
-    }
-    
-    if (maxDistance) {
-      filtered = filtered.filter(p => {
-        const distance = parseFloat(getDistance(p));
-        return distance <= parseFloat(maxDistance);
-      });
-    }
-    
-    setFilteredPackages(filtered);
-  };
+  let filtered = [...packages];
+  
+  if (searchTerm) {
+    filtered = filtered.filter(p => 
+      p.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.package_description?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+  if (minPrice) filtered = filtered.filter(p => p.discounted_price >= parseFloat(minPrice));
+  if (maxPrice) filtered = filtered.filter(p => p.discounted_price <= parseFloat(maxPrice));
+  if (homeCollectionOnly) filtered = filtered.filter(p => p.home_collection_available === true);
+  
+  // Rating filter
+  if (minRating) {
+    filtered = filtered.filter(p => (p.provider_id?.rating || 0) >= parseFloat(minRating));
+  }
+  
+  // Distance filter
+  if (maxDistance) {
+    filtered = filtered.filter(p => {
+      const distance = parseFloat(getDistance(p));
+      return distance <= parseFloat(maxDistance);
+    });
+  }
+  
+  setFilteredPackages(filtered);
+};
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -218,36 +220,36 @@ const HealthPackagesTab = () => {
         </div>
 
         {showFilters && (
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #e5e7eb', alignItems: 'flex-end' }}>
-            <div>
-              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Min Price</label>
-              <input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Max Price</label>
-              <input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>⭐ Min Rating</label>
-              <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
-                <option value="">Any</option>
-                <option value="4">4★ & above</option>
-                <option value="4.5">4.5★ & above</option>
-                <option value="4.8">4.8★ & above</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>📏 Max Distance</label>
-              <input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
-                🏠 Home Collection
-              </label>
-            </div>
-          </div>
-        )}
+  <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #e5e7eb', alignItems: 'flex-end' }}>
+    <div>
+      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Min Price</label>
+      <input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+    </div>
+    <div>
+      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Max Price</label>
+      <input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+    </div>
+    <div>
+      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>⭐ Min Rating</label>
+      <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
+        <option value="">Any</option>
+        <option value="4">4★ & above</option>
+        <option value="4.5">4.5★ & above</option>
+        <option value="4.8">4.8★ & above</option>
+      </select>
+    </div>
+    <div>
+      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>📏 Max Distance</label>
+      <input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
+        🏠 Home Collection
+      </label>
+    </div>
+  </div>
+)}
         <div style={{ fontSize: '12px', marginTop: '10px' }}>
           Found {filteredPackages.length} packages | {selectedPackages.length} selected
         </div>
