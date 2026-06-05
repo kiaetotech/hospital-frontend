@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import PackageTypeFilter from '../components/PackageTypeFilter';
+import SmartSuggestions from '../components/SmartSuggestions';
+import NearbyPackages from '../components/NearbyPackages';
 
 const HealthPackagesTab = () => {
   const [packages, setPackages] = useState([]);
@@ -16,6 +19,9 @@ const HealthPackagesTab = () => {
   const [expandedPackages, setExpandedPackages] = useState({});
   const [minRating, setMinRating] = useState('');
   const [maxDistance, setMaxDistance] = useState('');
+  const [packageType, setPackageType] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showNearby, setShowNearby] = useState(false);
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
@@ -34,11 +40,15 @@ const HealthPackagesTab = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation]);
+  }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation, packageType]);
 
   const loadPackages = async () => {
     try {
-      const res = await axios.get(`${API_URL}/health-packages`);
+      let url = `${API_URL}/health-packages`;
+      if (packageType) {
+        url = `${API_URL}/health-packages/by-type/${packageType}`;
+      }
+      const res = await axios.get(url);
       setPackages(res.data.packages || []);
       setFilteredPackages(res.data.packages || []);
     } catch (error) {
@@ -95,6 +105,7 @@ const HealthPackagesTab = () => {
     setMinRating('');
     setMaxDistance('');
     setHomeCollectionOnly(false);
+    setPackageType('');
     setFilteredPackages(packages);
   };
 
@@ -178,6 +189,23 @@ const HealthPackagesTab = () => {
       <h2>🏥 Health Packages</h2>
       <p>Select packages to compare prices, features, and more</p>
 
+      {/* Package Type Filter */}
+      <PackageTypeFilter selectedType={packageType} onSelectType={setPackageType} />
+
+      {/* Smart Suggestions Button */}
+      <button onClick={() => setShowSuggestions(!showSuggestions)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>
+        🤖 Smart Suggestions
+      </button>
+
+      {/* Nearby Packages Button */}
+      <button onClick={() => setShowNearby(!showNearby)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px', marginLeft: '10px' }}>
+        📍 Nearby Packages
+      </button>
+
+      {showSuggestions && <SmartSuggestions onSelectPackage={(pkg) => alert(`Selected: ${pkg.package_name}`)} />}
+      {showNearby && <NearbyPackages onSelectPackage={(pkg) => alert(`Selected: ${pkg.package_name}`)} />}
+
+      {/* Search and Filters */}
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
           <input type="text" placeholder="🔍 Search packages..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
