@@ -25,9 +25,10 @@ const HealthPackagesTab = () => {
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
+  // Load packages when packageType changes
   useEffect(() => {
     loadPackages();
-  }, []);
+  }, [packageType]);
 
   useEffect(() => {
     if (useLocation && navigator.geolocation) {
@@ -40,19 +41,26 @@ const HealthPackagesTab = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation, packageType]);
+  }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation]);
 
   const loadPackages = async () => {
     try {
+      setLoading(true);
       let url = `${API_URL}/health-packages`;
+      
+      // If a package type is selected, use the by-type endpoint
       if (packageType) {
         url = `${API_URL}/health-packages/by-type/${packageType}`;
       }
+      
+      console.log('Loading from URL:', url);
       const res = await axios.get(url);
+      console.log('Loaded packages:', res.data.packages?.length || 0);
+      
       setPackages(res.data.packages || []);
       setFilteredPackages(res.data.packages || []);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error loading packages:', error);
     } finally {
       setLoading(false);
     }
@@ -105,7 +113,6 @@ const HealthPackagesTab = () => {
     setMinRating('');
     setMaxDistance('');
     setHomeCollectionOnly(false);
-    setPackageType('');
     setFilteredPackages(packages);
   };
 
@@ -134,6 +141,11 @@ const HealthPackagesTab = () => {
     }));
   };
 
+  const handleTypeSelect = (type) => {
+    console.log('Type selected:', type);
+    setPackageType(type);
+  };
+
   if (showCompare) {
     const sortedPackages = [...selectedPackages].sort((a, b) => a.discounted_price - b.discounted_price);
     return (
@@ -150,34 +162,13 @@ const HealthPackagesTab = () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Price</td>
-              {sortedPackages.map((p, i) => <td key={i}>₹{p.discounted_price}</td>)}
-            </tr>
-            <tr>
-              <td>Provider</td>
-              {sortedPackages.map((p, i) => <td key={i}>{p.provider_id?.provider_name}</td>)}
-            </tr>
-            <tr>
-              <td>Rating</td>
-              {sortedPackages.map((p, i) => <td key={i}>⭐ {p.provider_id?.rating}</td>)}
-            </tr>
-            <tr>
-              <td>Distance</td>
-              {sortedPackages.map((p, i) => <td key={i}>{getDistance(p)} km</td>)}
-            </tr>
-            <tr>
-              <td>Home Collection</td>
-              {sortedPackages.map((p, i) => <td key={i}>{p.home_collection_available ? 'Yes' : 'No'}</td>)}
-            </tr>
-            <tr>
-              <td>Report Time</td>
-              {sortedPackages.map((p, i) => <td key={i}>{p.report_time_hours} hrs</td>)}
-            </tr>
-            <tr>
-              <td>Action</td>
-              {sortedPackages.map((p, i) => <td key={i}><button onClick={() => alert(`Booking ${p.package_name}`)}>Book</button></td>)}
-            </tr>
+            <tr><td>Price</td>{sortedPackages.map((p, i) => <td key={i}>₹{p.discounted_price}</td>)}</tr>
+            <tr><td>Provider</td>{sortedPackages.map((p, i) => <td key={i}>{p.provider_id?.provider_name}</td>)}</tr>
+            <tr><td>Rating</td>{sortedPackages.map((p, i) => <td key={i}>⭐ {p.provider_id?.rating}</td>)}</tr>
+            <tr><td>Distance</td>{sortedPackages.map((p, i) => <td key={i}>{getDistance(p)} km</td>)}</tr>
+            <tr><td>Home Collection</td>{sortedPackages.map((p, i) => <td key={i}>{p.home_collection_available ? 'Yes' : 'No'}</td>)}</tr>
+            <tr><td>Report Time</td>{sortedPackages.map((p, i) => <td key={i}>{p.report_time_hours} hrs</td>)}</tr>
+            <tr><td>Action</td>{sortedPackages.map((p, i) => <td key={i}><button onClick={() => alert(`Booking ${p.package_name}`)}>Book</button></td>)}</tr>
           </tbody>
         </table>
       </div>
@@ -187,10 +178,10 @@ const HealthPackagesTab = () => {
   return (
     <div>
       <h2>🏥 Health Packages</h2>
-      <p>Select packages to compare prices, features, and more</p>
+      <p>Select packages to compare prices, features, and more. Current package type filter: {packageType || 'All'}</p>
 
       {/* Package Type Filter */}
-      <PackageTypeFilter selectedType={packageType} onSelectType={setPackageType} />
+      <PackageTypeFilter selectedType={packageType} onSelectType={handleTypeSelect} />
 
       {/* Smart Suggestions Button */}
       <button onClick={() => setShowSuggestions(!showSuggestions)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>
@@ -214,44 +205,22 @@ const HealthPackagesTab = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div>
-            <label style={{ fontSize: '12px' }}>💰 Min Price</label>
-            <input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '12px' }}>💰 Max Price</label>
-            <input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '12px' }}>⭐ Min Rating</label>
+          <div><label style={{ fontSize: '12px' }}>💰 Min Price</label><input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
+          <div><label style={{ fontSize: '12px' }}>💰 Max Price</label><input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
+          <div><label style={{ fontSize: '12px' }}>⭐ Min Rating</label>
             <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
-              <option value="">Any</option>
-              <option value="4">4★ & above</option>
-              <option value="4.5">4.5★ & above</option>
-              <option value="4.8">4.8★ & above</option>
+              <option value="">Any</option><option value="4">4★ & above</option><option value="4.5">4.5★ & above</option><option value="4.8">4.8★ & above</option>
             </select>
           </div>
-          <div>
-            <label style={{ fontSize: '12px' }}>📏 Max Distance</label>
-            <input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-          </div>
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
-              🏠 Home Collection
-            </label>
-          </div>
+          <div><label style={{ fontSize: '12px' }}>📏 Max Distance</label><input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
+          <div><label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> 🏠 Home Collection</label></div>
         </div>
         
-        <div style={{ fontSize: '12px', marginTop: '15px' }}>
-          Found {filteredPackages.length} packages | {selectedPackages.length} selected
-        </div>
+        <div style={{ fontSize: '12px', marginTop: '15px' }}>Found {filteredPackages.length} packages | {selectedPackages.length} selected | Filter: {packageType || 'All'}</div>
       </div>
 
       {selectedPackages.length >= 2 && (
-        <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000 }}>
-          Compare ({selectedPackages.length})
-        </button>
+        <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000 }}>Compare ({selectedPackages.length})</button>
       )}
 
       {loading ? (
@@ -272,20 +241,9 @@ const HealthPackagesTab = () => {
                 <p>{pkg.package_description?.substring(0, 100)}...</p>
                 <p>🏥 {pkg.provider_id?.provider_name}</p>
                 <div><span style={{ textDecoration: 'line-through' }}>₹{pkg.mrp}</span> <strong style={{ fontSize: '24px', color: '#10b981' }}>₹{pkg.discounted_price}</strong></div>
-                <div style={{ display: 'flex', gap: '10px', fontSize: '12px' }}>
-                  <span>⭐ {pkg.provider_id?.rating}</span>
-                  <span>📏 {distance} km</span>
-                  {pkg.home_collection_available && <span>🏠 Home</span>}
-                  <span>⏱️ {pkg.report_time_hours}h</span>
-                </div>
-                <details open={isExpanded}>
-                  <summary onClick={(e) => { e.preventDefault(); toggleExpand(pkg._id); }} style={{ cursor: 'pointer', color: '#3b82f6' }}>📋 Tests ({testsList.length})</summary>
-                  <ul>{testsList.map((t, i) => <li key={i}>{t}</li>)}</ul>
-                </details>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  <label><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} /> Compare</label>
-                  <button onClick={() => alert(`Booking ${pkg.package_name}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book</button>
-                </div>
+                <div style={{ display: 'flex', gap: '10px', fontSize: '12px' }}><span>⭐ {pkg.provider_id?.rating}</span><span>📏 {distance} km</span>{pkg.home_collection_available && <span>🏠 Home</span>}<span>⏱️ {pkg.report_time_hours}h</span></div>
+                <details open={isExpanded}><summary onClick={(e) => { e.preventDefault(); toggleExpand(pkg._id); }} style={{ cursor: 'pointer', color: '#3b82f6' }}>📋 Tests ({testsList.length})</summary><ul>{testsList.map((t, i) => <li key={i}>{t}</li>)}</ul></details>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}><label><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} /> Compare</label><button onClick={() => alert(`Booking ${pkg.package_name}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book</button></div>
               </div>
             );
           })}
