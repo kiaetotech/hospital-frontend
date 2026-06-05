@@ -9,7 +9,7 @@ const HealthPackagesTab = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [selectedPackages, setSelectedPackages] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
@@ -190,36 +190,31 @@ const HealthPackagesTab = () => {
       <p>Select packages to compare prices, features, and more</p>
 
       {/* Search and Filters */}
-      <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-          <input 
-            type="text" 
-            placeholder="🔍 Search packages..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
-            style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} 
-          />
-          <button 
-            onClick={() => setShowFilters(!showFilters)} 
-            style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            {showFilters ? 'Hide Filters ▲' : 'Show Filters ▼'}
-          </button>
-          <button 
-            onClick={resetFilters} 
-            style={{ backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            Reset
-          </button>
-          <button 
-            onClick={() => setUseLocation(true)} 
-            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            📍 My Location
-          </button>
-        </div>
+      {/* Search and Filters - Always Visible */}
+<div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+    <input 
+      type="text" 
+      placeholder="🔍 Search packages..." 
+      value={searchTerm} 
+      onChange={(e) => setSearchTerm(e.target.value)} 
+      style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} 
+    />
+    <button 
+      onClick={resetFilters} 
+      style={{ backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+    >
+      Reset
+    </button>
+    <button 
+      onClick={() => setUseLocation(true)} 
+      style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+    >
+      📍 My Location
+    </button>
+  </div>
 
-        {showFilters && (
+  {/* Filters Row - Always Visible */}
   <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #e5e7eb', alignItems: 'flex-end' }}>
     <div>
       <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Min Price</label>
@@ -249,12 +244,12 @@ const HealthPackagesTab = () => {
       </label>
     </div>
   </div>
-)}
-        <div style={{ fontSize: '12px', marginTop: '10px' }}>
-          Found {filteredPackages.length} packages | {selectedPackages.length} selected
-        </div>
-      </div>
-
+  
+  <div style={{ fontSize: '12px', marginTop: '10px' }}>
+    Found {filteredPackages.length} packages | {selectedPackages.length} selected
+  </div>
+</div>
+       
       {/* Compare Button */}
       {selectedPackages.length >= 2 && (
         <button 
