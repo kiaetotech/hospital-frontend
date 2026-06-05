@@ -81,12 +81,10 @@ const HealthPackagesTab = () => {
     if (maxPrice) filtered = filtered.filter(p => p.discounted_price <= parseFloat(maxPrice));
     if (homeCollectionOnly) filtered = filtered.filter(p => p.home_collection_available === true);
     
-    // Rating filter
     if (minRating) {
       filtered = filtered.filter(p => (p.provider_id?.rating || 0) >= parseFloat(minRating));
     }
     
-    // Distance filter
     if (maxDistance) {
       filtered = filtered.filter(p => {
         const distance = parseFloat(getDistance(p));
@@ -150,7 +148,7 @@ const HealthPackagesTab = () => {
                     {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                   </th>
                 ))}
-              </table>
+              </tr>
             </thead>
             <tbody>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Provider</td>
@@ -175,7 +173,7 @@ const HealthPackagesTab = () => {
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.tests_included_text?.split(',').length || 0} tests</td>)}
                </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Action</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}><button onClick={() => alert(`Booking ${p.package_name}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button></td>)}
+                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}><button onClick={() => alert(`Booking ${p.package_name}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button><tr>)}
                </tr>
             </tbody>
           </table>
@@ -220,7 +218,7 @@ const HealthPackagesTab = () => {
         </div>
 
         {showFilters && (
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #e5e7eb' }}>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #e5e7eb', alignItems: 'flex-end' }}>
             <div>
               <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Min Price</label>
               <input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
@@ -239,13 +237,13 @@ const HealthPackagesTab = () => {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>📏 Max Distance (km)</label>
+              <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>📏 Max Distance</label>
               <input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
-                🏠 Home Collection Only
+                🏠 Home Collection
               </label>
             </div>
           </div>
@@ -339,7 +337,6 @@ const HealthPackagesTab = () => {
                   <span>👤 {pkg.gender || 'Unisex'}</span>
                 </div>
                 
-                {/* Tests Section */}
                 <details open={isExpanded}>
                   <summary 
                     onClick={(e) => {
