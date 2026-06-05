@@ -86,23 +86,31 @@ const HealthPackagesTab = () => {
     }
   };
 
-  // ========== DISTANCE CALCULATION ==========
+  // ========== DISTANCE CALCULATION - FIXED (NO RANDOM) ==========
   const getDistance = (pkg) => {
-    if (!userLocation || !pkg.provider_id?.location?.lat) {
-      return Math.floor(Math.random() * 15) + 1;
+    // If package has stored distance
+    if (pkg.distance_km) return pkg.distance_km;
+    if (pkg.distance) return pkg.distance;
+    
+    // Calculate real distance if user location available
+    if (userLocation && pkg.provider_id?.location?.lat) {
+      const lat1 = userLocation.lat;
+      const lon1 = userLocation.lng;
+      const lat2 = pkg.provider_id.location.lat;
+      const lon2 = pkg.provider_id.location.lng;
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return (R * c).toFixed(1);
     }
-    const lat1 = userLocation.lat;
-    const lon1 = userLocation.lng;
-    const lat2 = pkg.provider_id.location.lat;
-    const lon2 = pkg.provider_id.location.lng;
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return (R * c).toFixed(1);
+    
+    // Consistent fallback (based on package ID, not random)
+    const idNum = parseInt(pkg._id?.slice(-4) || '1000', 16) || 1000;
+    return (idNum % 15) + 1;
   };
 
   // ========== FILTER FUNCTIONS ==========
@@ -184,6 +192,7 @@ const HealthPackagesTab = () => {
       const res = await axios.post(`${API_URL}/health-packages/${selectedPackage._id}/book`, bookingForm);
       alert(`Booking successful! Reference: ${res.data.booking_reference}`);
       setShowBookingModal(false);
+      setSelectedPackage(null);
       setBookingForm({
         patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
         patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
@@ -196,6 +205,10 @@ const HealthPackagesTab = () => {
   const closeBookingModal = () => {
     setShowBookingModal(false);
     setSelectedPackage(null);
+    setBookingForm({
+      patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
+      patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
+    });
   };
 
   // ========== COMPARISON VIEW ==========
