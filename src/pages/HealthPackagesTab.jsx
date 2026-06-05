@@ -191,8 +191,10 @@ const HealthPackagesTab = () => {
 
       {/* Search and Filters */}
       {/* Search and Filters - Always Visible */}
+{/* Search and Filters - All Always Visible */}
 <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+  {/* Search Row */}
+  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
     <input 
       type="text" 
       placeholder="🔍 Search packages..." 
@@ -214,14 +216,14 @@ const HealthPackagesTab = () => {
     </button>
   </div>
 
-  {/* Filters Row - Always Visible */}
-  <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #e5e7eb', alignItems: 'flex-end' }}>
+  {/* All Filters Row - Always Visible */}
+  <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
     <div>
-      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Min Price</label>
+      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Min Price (₹)</label>
       <input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
     </div>
     <div>
-      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Max Price</label>
+      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>💰 Max Price (₹)</label>
       <input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
     </div>
     <div>
@@ -234,22 +236,21 @@ const HealthPackagesTab = () => {
       </select>
     </div>
     <div>
-      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>📏 Max Distance</label>
+      <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>📏 Max Distance (km)</label>
       <input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
     </div>
-    <div style={{ display: 'flex', alignItems: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'center', height: '38px' }}>
       <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
         <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
-        🏠 Home Collection
+        🏠 Home Collection Only
       </label>
     </div>
   </div>
   
-  <div style={{ fontSize: '12px', marginTop: '10px' }}>
-    Found {filteredPackages.length} packages | {selectedPackages.length} selected
+  <div style={{ fontSize: '12px', marginTop: '15px', color: '#6b7280' }}>
+    Found {filteredPackages.length} packages | {selectedPackages.length} selected for comparison
   </div>
-</div>
-       
+</div>       
       {/* Compare Button */}
       {selectedPackages.length >= 2 && (
         <button 
