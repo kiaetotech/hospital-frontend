@@ -8,12 +8,10 @@ import { useNavigate } from 'react-router-dom';
 const HealthPackagesTab = () => {
   const navigate = useNavigate();
   
-  // Package state
   const [packages, setPackages] = useState([]);
   const [filteredPackages, setFilteredPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -22,20 +20,16 @@ const HealthPackagesTab = () => {
   const [maxDistance, setMaxDistance] = useState('');
   const [packageType, setPackageType] = useState('');
   
-  // Comparison states
   const [selectedPackages, setSelectedPackages] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   
-  // Location states
   const [userLocation, setUserLocation] = useState(null);
   const [useLocation, setUseLocation] = useState(false);
   
-  // UI states
   const [expandedPackages, setExpandedPackages] = useState({});
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showNearby, setShowNearby] = useState(false);
   
-  // Booking modal states
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [bookingForm, setBookingForm] = useState({
@@ -51,7 +45,6 @@ const HealthPackagesTab = () => {
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
-  // ========== LOAD PACKAGES ==========
   useEffect(() => {
     loadPackages();
   }, [packageType]);
@@ -69,7 +62,7 @@ const HealthPackagesTab = () => {
     applyFilters();
   }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation]);
 
-  // Clear selected package when leaving comparison view
+  // CRITICAL FIX: Clear booking states when leaving comparison view
   useEffect(() => {
     if (!showCompare) {
       setSelectedPackage(null);
@@ -94,7 +87,6 @@ const HealthPackagesTab = () => {
     }
   };
 
-  // ========== DISTANCE CALCULATION ==========
   const getDistance = (pkg) => {
     if (pkg.distance_km) return pkg.distance_km;
     if (pkg.distance) return pkg.distance;
@@ -118,7 +110,6 @@ const HealthPackagesTab = () => {
     return (idNum % 15) + 1;
   };
 
-  // ========== FILTER FUNCTIONS ==========
   const applyFilters = () => {
     let filtered = [...packages];
     if (searchTerm) {
@@ -151,7 +142,6 @@ const HealthPackagesTab = () => {
     setFilteredPackages(packages);
   };
 
-  // ========== COMPARISON FUNCTIONS ==========
   const toggleSelect = (pkg) => {
     if (selectedPackages.find(p => p._id === pkg._id)) {
       setSelectedPackages(selectedPackages.filter(p => p._id !== pkg._id));
@@ -181,7 +171,6 @@ const HealthPackagesTab = () => {
     setPackageType(type);
   };
 
-  // ========== BOOKING FUNCTIONS ==========
   const openBookingModal = (pkg) => {
     setSelectedPackage(pkg);
     setShowBookingModal(true);
@@ -243,7 +232,7 @@ const HealthPackagesTab = () => {
                     {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                   </th>
                 ))}
-              </table>
+              </tr>
             </thead>
             <tbody>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Price</td>
@@ -263,7 +252,7 @@ const HealthPackagesTab = () => {
               </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Report Time</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.report_time_hours} hours</td>)}
-              <tr>
+              </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Tests</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.tests_included_text?.split(',').length || 0} tests</td>)}
               </tr>
@@ -289,18 +278,12 @@ const HealthPackagesTab = () => {
 
       <PackageTypeFilter selectedType={packageType} onSelectType={handleTypeSelect} />
 
-      <button onClick={() => setShowSuggestions(!showSuggestions)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>
-        🤖 Smart Suggestions
-      </button>
-
-      <button onClick={() => setShowNearby(!showNearby)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px', marginLeft: '10px' }}>
-        📍 Nearby Packages
-      </button>
+      <button onClick={() => setShowSuggestions(!showSuggestions)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>🤖 Smart Suggestions</button>
+      <button onClick={() => setShowNearby(!showNearby)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px', marginLeft: '10px' }}>📍 Nearby Packages</button>
 
       {showSuggestions && <SmartSuggestions onSelectPackage={openBookingModal} />}
       {showNearby && <NearbyPackages onSelectPackage={openBookingModal} />}
 
-      {/* Search and Filters */}
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
           <input type="text" placeholder="🔍 Search packages..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
@@ -355,10 +338,7 @@ const HealthPackagesTab = () => {
             <h2>Book {selectedPackage.package_name}</h2>
             <form onSubmit={handleBookingSubmit}>
               <div style={{ marginBottom: '15px' }}><label>Full Name *</label><input type="text" name="patient_name" required value={bookingForm.patient_name} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-              <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
-                <div style={{ flex: 1 }}><label>Age *</label><input type="number" name="patient_age" required value={bookingForm.patient_age} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-                <div style={{ flex: 1 }}><label>Gender *</label><select name="patient_gender" value={bookingForm.patient_gender} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
-              </div>
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}><div style={{ flex: 1 }}><label>Age *</label><input type="number" name="patient_age" required value={bookingForm.patient_age} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div><div style={{ flex: 1 }}><label>Gender *</label><select name="patient_gender" value={bookingForm.patient_gender} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div></div>
               <div style={{ marginBottom: '15px' }}><label>Phone Number *</label><input type="tel" name="patient_phone" required value={bookingForm.patient_phone} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
               <div style={{ marginBottom: '15px' }}><label>Email</label><input type="email" name="patient_email" value={bookingForm.patient_email} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
               <div style={{ marginBottom: '15px' }}><label>Appointment Date *</label><input type="date" name="appointment_date" required value={bookingForm.appointment_date} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
