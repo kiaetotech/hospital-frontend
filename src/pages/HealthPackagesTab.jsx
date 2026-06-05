@@ -24,10 +24,23 @@ const HealthPackagesTab = () => {
   const [packageType, setPackageType] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showNearby, setShowNearby] = useState(false);
+  
+  // Booking modal states
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [bookingForm, setBookingForm] = useState({
+    patient_name: '',
+    patient_age: '',
+    patient_gender: 'male',
+    patient_phone: '',
+    patient_email: '',
+    appointment_date: '',
+    home_collection_requested: false,
+    home_address: ''
+  });
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
-  // Load packages when packageType changes
   useEffect(() => {
     loadPackages();
   }, [packageType]);
@@ -49,15 +62,10 @@ const HealthPackagesTab = () => {
     try {
       setLoading(true);
       let url = `${API_URL}/health-packages`;
-      
       if (packageType) {
         url = `${API_URL}/health-packages/by-type/${packageType}`;
       }
-      
-      console.log('Loading from URL:', url);
       const res = await axios.get(url);
-      console.log('Loaded packages:', res.data.packages?.length || 0);
-      
       setPackages(res.data.packages || []);
       setFilteredPackages(res.data.packages || []);
     } catch (error) {
@@ -87,7 +95,6 @@ const HealthPackagesTab = () => {
 
   const applyFilters = () => {
     let filtered = [...packages];
-    
     if (searchTerm) {
       filtered = filtered.filter(p => 
         p.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,8 +150,37 @@ const HealthPackagesTab = () => {
   };
 
   const handleTypeSelect = (type) => {
-    console.log('Type selected:', type);
     setPackageType(type);
+  };
+
+  // Booking functions
+  const openBookingModal = (pkg) => {
+    setSelectedPackage(pkg);
+    setShowBookingModal(true);
+  };
+
+  const handleBookingChange = (e) => {
+    setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
+  };
+
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`${API_URL}/health-packages/${selectedPackage._id}/book`, bookingForm);
+      alert(`Booking successful! Reference: ${res.data.booking_reference}`);
+      setShowBookingModal(false);
+      setBookingForm({
+        patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
+        patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
+      });
+    } catch (err) {
+      alert('Booking failed. Please try again.');
+    }
+  };
+
+  const closeBookingModal = () => {
+    setShowBookingModal(false);
+    setSelectedPackage(null);
   };
 
   if (showCompare) {
@@ -155,12 +191,7 @@ const HealthPackagesTab = () => {
         <h3>Compare Packages</h3>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
           <thead>
-            <tr>
-              <th>Feature</th>
-              {sortedPackages.map((p, idx) => (
-                <th key={idx}>{p.package_name}</th>
-              ))}
-            </tr>
+            <tr><th>Feature</th>{sortedPackages.map((p, idx) => (<th key={idx}>{p.package_name}</th>))}</tr>
           </thead>
           <tbody>
             <tr><td>Price</td>{sortedPackages.map((p, i) => <td key={i}>₹{p.discounted_price}</td>)}</tr>
@@ -169,7 +200,7 @@ const HealthPackagesTab = () => {
             <tr><td>Distance</td>{sortedPackages.map((p, i) => <td key={i}>{getDistance(p)} km</td>)}</tr>
             <tr><td>Home Collection</td>{sortedPackages.map((p, i) => <td key={i}>{p.home_collection_available ? 'Yes' : 'No'}</td>)}</tr>
             <tr><td>Report Time</td>{sortedPackages.map((p, i) => <td key={i}>{p.report_time_hours} hrs</td>)}</tr>
-            <tr><td>Action</td>{sortedPackages.map((p, i) => <td key={i}><button onClick={() => alert(`Booking ${p.package_name}`)}>Book</button></td>)}</tr>
+            <tr><td>Action</td>{sortedPackages.map((p, i) => <td key={i}><button onClick={() => openBookingModal(p)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book</button></td>)}</tr>
           </tbody>
         </table>
       </div>
@@ -179,20 +210,14 @@ const HealthPackagesTab = () => {
   return (
     <div>
       <h2>🏥 Health Packages</h2>
-      <p>Select packages to compare prices, features, and more. Current package type filter: {packageType || 'All'}</p>
+      <p>Select packages to compare prices, features, and more. Current filter: {packageType || 'All'}</p>
 
       <PackageTypeFilter selectedType={packageType} onSelectType={handleTypeSelect} />
+      <button onClick={() => setShowSuggestions(!showSuggestions)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>🤖 Smart Suggestions</button>
+      <button onClick={() => setShowNearby(!showNearby)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px', marginLeft: '10px' }}>📍 Nearby Packages</button>
 
-      <button onClick={() => setShowSuggestions(!showSuggestions)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>
-        🤖 Smart Suggestions
-      </button>
-
-      <button onClick={() => setShowNearby(!showNearby)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px', marginLeft: '10px' }}>
-        📍 Nearby Packages
-      </button>
-
-      {showSuggestions && <SmartSuggestions onSelectPackage={(pkg) => alert(`Selected: ${pkg.package_name}`)} />}
-      {showNearby && <NearbyPackages onSelectPackage={(pkg) => alert(`Selected: ${pkg.package_name}`)} />}
+      {showSuggestions && <SmartSuggestions onSelectPackage={(pkg) => openBookingModal(pkg)} />}
+      {showNearby && <NearbyPackages onSelectPackage={(pkg) => openBookingModal(pkg)} />}
 
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
@@ -200,31 +225,19 @@ const HealthPackagesTab = () => {
           <button onClick={resetFilters} style={{ backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset</button>
           <button onClick={() => setUseLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 My Location</button>
         </div>
-
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div><label style={{ fontSize: '12px' }}>💰 Min Price</label><input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
           <div><label style={{ fontSize: '12px' }}>💰 Max Price</label><input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-          <div><label style={{ fontSize: '12px' }}>⭐ Min Rating</label>
-            <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
-              <option value="">Any</option><option value="4">4★ & above</option><option value="4.5">4.5★ & above</option><option value="4.8">4.8★ & above</option>
-            </select>
-          </div>
+          <div><label style={{ fontSize: '12px' }}>⭐ Min Rating</label><select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}><option value="">Any</option><option value="4">4★ & above</option><option value="4.5">4.5★ & above</option><option value="4.8">4.8★ & above</option></select></div>
           <div><label style={{ fontSize: '12px' }}>📏 Max Distance</label><input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
           <div><label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> 🏠 Home Collection</label></div>
         </div>
-        
-        <div style={{ fontSize: '12px', marginTop: '15px' }}>Found {filteredPackages.length} packages | {selectedPackages.length} selected | Filter: {packageType || 'All'}</div>
+        <div style={{ fontSize: '12px', marginTop: '15px' }}>Found {filteredPackages.length} packages | {selectedPackages.length} selected</div>
       </div>
 
-      {selectedPackages.length >= 2 && (
-        <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000 }}>Compare ({selectedPackages.length})</button>
-      )}
+      {selectedPackages.length >= 2 && <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000 }}>Compare ({selectedPackages.length})</button>}
 
-      {loading ? (
-        <div>Loading packages...</div>
-      ) : filteredPackages.length === 0 ? (
-        <div>No packages found</div>
-      ) : (
+      {loading ? <div>Loading packages...</div> : filteredPackages.length === 0 ? <div>No packages found</div> : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '20px' }}>
           {filteredPackages.map(pkg => {
             const testsList = pkg.tests_included_text ? pkg.tests_included_text.split(',').map(t => t.trim()) : [];
@@ -243,11 +256,37 @@ const HealthPackagesTab = () => {
                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                   <label><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} /> Compare</label>
                   <button onClick={() => navigate(`/package-detail/${pkg._id}`)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>View Details</button>
-                  <button onClick={() => alert(`Booking ${pkg.package_name}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
+                  <button onClick={() => openBookingModal(pkg)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Booking Modal */}
+      {showBookingModal && selectedPackage && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' }}>
+            <h2>Book {selectedPackage.package_name}</h2>
+            <form onSubmit={handleBookingSubmit}>
+              <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px' }}>Full Name *</label><input type="text" name="patient_name" required value={bookingForm.patient_name} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{ display: 'block', marginBottom: '5px' }}>Age *</label><input type="number" name="patient_age" required value={bookingForm.patient_age} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
+                <div style={{ flex: 1 }}><label style={{ display: 'block', marginBottom: '5px' }}>Gender *</label><select name="patient_gender" value={bookingForm.patient_gender} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+              </div>
+              <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px' }}>Phone Number *</label><input type="tel" name="patient_phone" required value={bookingForm.patient_phone} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
+              <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px' }}>Email</label><input type="email" name="patient_email" value={bookingForm.patient_email} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
+              <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px' }}>Appointment Date *</label><input type="date" name="appointment_date" required value={bookingForm.appointment_date} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
+              {selectedPackage.home_collection_available && (
+                <>
+                  <div style={{ marginBottom: '15px' }}><label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><input type="checkbox" name="home_collection_requested" checked={bookingForm.home_collection_requested} onChange={(e) => setBookingForm({...bookingForm, home_collection_requested: e.target.checked})} /> Request Home Collection</label></div>
+                  {bookingForm.home_collection_requested && <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px' }}>Home Address</label><textarea name="home_address" rows="3" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}></textarea></div>}
+                </>
+              )}
+              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}><button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }}>Confirm Booking</button><button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }}>Cancel</button></div>
+            </form>
+          </div>
         </div>
       )}
     </div>
