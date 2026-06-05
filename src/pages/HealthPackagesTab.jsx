@@ -8,7 +8,6 @@ const HealthPackagesTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [minRating, setMinRating] = useState('');
   const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPackages, setSelectedPackages] = useState([]);
@@ -31,6 +30,7 @@ const HealthPackagesTab = () => {
   const loadPackages = async () => {
     try {
       const res = await axios.get(`${API_URL}/health-packages`);
+      console.log('Packages loaded:', res.data.packages);
       setPackages(res.data.packages || []);
       setFilteredPackages(res.data.packages || []);
     } catch (error) {
@@ -51,7 +51,6 @@ const HealthPackagesTab = () => {
     }
     if (minPrice) filtered = filtered.filter(p => p.discounted_price >= parseFloat(minPrice));
     if (maxPrice) filtered = filtered.filter(p => p.discounted_price <= parseFloat(maxPrice));
-    if (minRating) filtered = filtered.filter(p => (p.provider_id?.rating || 0) >= parseFloat(minRating));
     if (homeCollectionOnly) filtered = filtered.filter(p => p.home_collection_available === true);
     
     setFilteredPackages(filtered);
@@ -61,7 +60,6 @@ const HealthPackagesTab = () => {
     setSearchTerm('');
     setMinPrice('');
     setMaxPrice('');
-    setMinRating('');
     setHomeCollectionOnly(false);
     setFilteredPackages(packages);
   };
@@ -121,7 +119,7 @@ const HealthPackagesTab = () => {
               </tr>
             </thead>
             <tbody>
-              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Provider</td>{selectedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.provider_id?.provider_name}</td>)}</tr>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Provider</td>{selectedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.provider_id?.provider_name || 'N/A'}</td>)}</tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Price</td>{selectedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}><strong>₹{p.discounted_price}</strong> <span style={{ textDecoration: 'line-through' }}>₹{p.mrp}</span></td>)}</tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Rating</td>{selectedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>⭐ {p.provider_id?.rating || 4.5}</td>)}</tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Distance</td>{selectedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{getDistance(p)} km</td>)}</tr>
@@ -136,6 +134,10 @@ const HealthPackagesTab = () => {
     );
   }
 
+  useEffect(() => {
+    applyFilters();
+  }, [searchTerm, minPrice, maxPrice, homeCollectionOnly]);
+
   return (
     <div>
       <h2>🏥 Health Packages</h2>
@@ -144,7 +146,7 @@ const HealthPackagesTab = () => {
       {/* Search and Filters */}
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-          <input type="text" placeholder="🔍 Search packages..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); applyFilters(); }} style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+          <input type="text" placeholder="🔍 Search packages..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
           <button onClick={() => setShowFilters(!showFilters)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{showFilters ? 'Hide Filters ▲' : 'Show Filters ▼'}</button>
           <button onClick={resetFilters} style={{ backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset</button>
           <button onClick={() => setUseLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 My Location</button>
@@ -152,16 +154,10 @@ const HealthPackagesTab = () => {
 
         {showFilters && (
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #e5e7eb' }}>
-            <input type="number" placeholder="Min Price" value={minPrice} onChange={(e) => { setMinPrice(e.target.value); applyFilters(); }} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-            <input type="number" placeholder="Max Price" value={maxPrice} onChange={(e) => { setMaxPrice(e.target.value); applyFilters(); }} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-            <select value={minRating} onChange={(e) => { setMinRating(e.target.value); applyFilters(); }} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
-              <option value="">⭐ Rating (Any)</option>
-              <option value="4">4★ & above</option>
-              <option value="4.5">4.5★ & above</option>
-              <option value="4.8">4.8★ & above</option>
-            </select>
+            <input type="number" placeholder="Min Price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+            <input type="number" placeholder="Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
             <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => { setHomeCollectionOnly(e.target.checked); applyFilters(); }} />
+              <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
               🏠 Home Collection Only
             </label>
           </div>
@@ -178,7 +174,7 @@ const HealthPackagesTab = () => {
 
       {/* Packages Grid */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>
+        <div style={{ textAlign: 'center', padding: '40px' }}>Loading packages...</div>
       ) : filteredPackages.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>No packages found</div>
       ) : (
@@ -196,16 +192,23 @@ const HealthPackagesTab = () => {
                     {pkg.is_popular && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>🔥 Popular</span>}
                     <h3>{pkg.package_name}</h3>
                   </div>
-                  <label><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} /> Compare</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} />
+                    Compare
+                  </label>
                 </div>
                 <p style={{ color: '#6b7280', fontSize: '13px' }}>{pkg.package_description?.substring(0, 100)}...</p>
-                <p>🏥 {pkg.provider_id?.provider_name}</p>
-                <div><span style={{ textDecoration: 'line-through' }}>₹{pkg.mrp}</span> <strong style={{ fontSize: '24px', color: '#10b981' }}>₹{pkg.discounted_price}</strong> ({pkg.discount_percentage}% OFF)</div>
+                <p style={{ margin: '5px 0' }}>🏥 {pkg.provider_id?.provider_name || 'N/A'}</p>
+                <div style={{ margin: '10px 0' }}>
+                  <span style={{ textDecoration: 'line-through', color: '#9ca3af' }}>₹{pkg.mrp}</span>
+                  <strong style={{ fontSize: '24px', color: '#10b981', marginLeft: '10px' }}>₹{pkg.discounted_price}</strong>
+                </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '12px', color: '#6b7280', margin: '10px 0' }}>
                   <span>⭐ {pkg.provider_id?.rating || 4.5}</span>
                   <span>📏 {distance} km</span>
                   {pkg.home_collection_available && <span>🏠 Home Collection</span>}
                   <span>⏱️ {pkg.report_time_hours} hours</span>
+                  <span>👤 {pkg.gender}</span>
                 </div>
                 <details>
                   <summary style={{ cursor: 'pointer', color: '#3b82f6' }}>📋 Tests ({testsList.length})</summary>
@@ -213,7 +216,7 @@ const HealthPackagesTab = () => {
                     {testsList.map((t, i) => <li key={i}>{t}</li>)}
                   </ul>
                 </details>
-                <button onClick={() => alert(`Booking ${pkg.package_name}`)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '15px' }}>Book Now</button>
+                <button onClick={() => alert(`Booking ${pkg.package_name}\nProvider: ${pkg.provider_id?.provider_name}\nPrice: ₹${pkg.discounted_price}`)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '15px' }}>Book Now</button>
               </div>
             );
           })}
