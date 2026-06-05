@@ -3,8 +3,10 @@ import axios from 'axios';
 import PackageTypeFilter from '../components/PackageTypeFilter';
 import SmartSuggestions from '../components/SmartSuggestions';
 import NearbyPackages from '../components/NearbyPackages';
+import { useNavigate } from 'react-router-dom';
 
 const HealthPackagesTab = () => {
+  const navigate = useNavigate();
   const [packages, setPackages] = useState([]);
   const [filteredPackages, setFilteredPackages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,6 @@ const HealthPackagesTab = () => {
       setLoading(true);
       let url = `${API_URL}/health-packages`;
       
-      // If a package type is selected, use the by-type endpoint
       if (packageType) {
         url = `${API_URL}/health-packages/by-type/${packageType}`;
       }
@@ -180,15 +181,12 @@ const HealthPackagesTab = () => {
       <h2>🏥 Health Packages</h2>
       <p>Select packages to compare prices, features, and more. Current package type filter: {packageType || 'All'}</p>
 
-      {/* Package Type Filter */}
       <PackageTypeFilter selectedType={packageType} onSelectType={handleTypeSelect} />
 
-      {/* Smart Suggestions Button */}
       <button onClick={() => setShowSuggestions(!showSuggestions)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>
         🤖 Smart Suggestions
       </button>
 
-      {/* Nearby Packages Button */}
       <button onClick={() => setShowNearby(!showNearby)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px', marginLeft: '10px' }}>
         📍 Nearby Packages
       </button>
@@ -196,7 +194,6 @@ const HealthPackagesTab = () => {
       {showSuggestions && <SmartSuggestions onSelectPackage={(pkg) => alert(`Selected: ${pkg.package_name}`)} />}
       {showNearby && <NearbyPackages onSelectPackage={(pkg) => alert(`Selected: ${pkg.package_name}`)} />}
 
-      {/* Search and Filters */}
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
           <input type="text" placeholder="🔍 Search packages..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
@@ -243,7 +240,11 @@ const HealthPackagesTab = () => {
                 <div><span style={{ textDecoration: 'line-through' }}>₹{pkg.mrp}</span> <strong style={{ fontSize: '24px', color: '#10b981' }}>₹{pkg.discounted_price}</strong></div>
                 <div style={{ display: 'flex', gap: '10px', fontSize: '12px' }}><span>⭐ {pkg.provider_id?.rating}</span><span>📏 {distance} km</span>{pkg.home_collection_available && <span>🏠 Home</span>}<span>⏱️ {pkg.report_time_hours}h</span></div>
                 <details open={isExpanded}><summary onClick={(e) => { e.preventDefault(); toggleExpand(pkg._id); }} style={{ cursor: 'pointer', color: '#3b82f6' }}>📋 Tests ({testsList.length})</summary><ul>{testsList.map((t, i) => <li key={i}>{t}</li>)}</ul></details>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}><label><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} /> Compare</label><button onClick={() => alert(`Booking ${pkg.package_name}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book</button></div>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <label><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} /> Compare</label>
+                  <button onClick={() => navigate(`/package-detail/${pkg._id}`)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>View Details</button>
+                  <button onClick={() => alert(`Booking ${pkg.package_name}`)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
+                </div>
               </div>
             );
           })}

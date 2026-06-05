@@ -22,6 +22,7 @@ import DiagnosticsCustomPackage from './pages/DiagnosticsCustomPackage';
 import Diagnostics from './pages/Diagnostics';
 import HealthPackages from './pages/HealthPackages';
 import HealthPackagesPage from './pages/HealthPackagesPage';
+import PackageDetail from './pages/PackageDetail';
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
 	<Route path="/diagnostics" element={<Diagnostics />} />
 	<Route path="/health-packages" element={<HealthPackages />} />
 	<Route path="/health-packages" element={<HealthPackagesPage />} />
+        <Route path="/package-detail/:id" element={<PackageDetail />} />
 
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
