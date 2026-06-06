@@ -134,7 +134,7 @@ const HealthPackagesTab = () => {
     if (maxDistance) {
       filtered = filtered.filter(p => {
         const distance = parseFloat(getDistance(p));
-        return distance <= parseFloat(maxDistance));
+        return distance <= parseFloat(maxDistance);
       });
     }
     setFilteredPackages(filtered);
@@ -245,10 +245,10 @@ const HealthPackagesTab = () => {
               </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Rating</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>⭐ {p.provider_id?.rating || 4.5}</td>)}
-              <tr>
+              </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Distance</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{getDistance(p)} km</td>)}
-              </tr>
+              <tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Home Collection</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.home_collection_available ? '✅ Yes' : '❌ No'}</td>)}
               </tr>
