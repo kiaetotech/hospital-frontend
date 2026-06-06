@@ -227,10 +227,6 @@ const HealthPackagesTab = () => {
     var sortedPackages = [...selectedPackages];
     sortedPackages.sort(function(a, b) { return a.discounted_price - b.discounted_price; });
     
-    // Create a local copy of state setters to ensure they work
-    const localSetSelectedPackage = setSelectedPackage;
-    const localSetShowBookingModal = setShowBookingModal;
-    
     return React.createElement('div', null,
       React.createElement('button', { onClick: function() { setShowCompare(false); }, style: { marginBottom: '20px', cursor: 'pointer' } }, '← Back to Packages'),
       React.createElement('h3', null, 'Compare Packages'),
@@ -294,14 +290,11 @@ const HealthPackagesTab = () => {
             React.createElement('tr', null,
               React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Action'),
               sortedPackages.map(function(p, i) {
-                var packageName = p.package_name;
-                var packageId = p._id;
                 return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd', textAlign: 'center' } },
                   React.createElement('button', {
-                    onClick: function() {
-                      alert('Booking: ' + packageName);
-                      localSetSelectedPackage(p);
-                      localSetShowBookingModal(true);
+                    onClick: function() { 
+                      setSelectedPackage(p);
+                      setShowBookingModal(true);
                     },
                     style: { backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }
                   }, 'Book Now')
@@ -381,10 +374,6 @@ const HealthPackagesTab = () => {
           );
         })
       )
-    ),
-    // Debug div - shows state
-    React.createElement('div', { style: { backgroundColor: 'yellow', padding: '10px', margin: '10px', border: '1px solid black', position: 'fixed', bottom: '10px', left: '10px', zIndex: 9999, fontSize: '12px' } },
-      'DEBUG: showBookingModal = ', String(showBookingModal), ', selectedPackage = ', selectedPackage ? selectedPackage.package_name : 'null'
     ),
     showBookingModal && selectedPackage && React.createElement('div', { style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
       React.createElement('div', { style: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' } },
