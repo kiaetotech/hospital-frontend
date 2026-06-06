@@ -29,9 +29,20 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
   const [comparing, setComparing] = useState(false);
   const [providers, setProviders] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
+  const [useMyLocation, setUseMyLocation] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedSubCategories, setExpandedSubCategories] = useState({});
   const [visibleTests, setVisibleTests] = useState({});
+  
+  // Search and Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [minRating, setMinRating] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
+  const [maxDistance, setMaxDistance] = useState('');
+  const [directSearchResults, setDirectSearchResults] = useState([]);
+  const [showDirectResults, setShowDirectResults] = useState(false);
   
   // Booking modal states
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -49,20 +60,44 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
+  // Get user location
   useEffect(() => {
-    if (navigator.geolocation) {
+    if (useMyLocation && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        () => {}
+        () => alert('Unable to get location')
       );
     }
+  }, [useMyLocation]);
+
+  // Search effect - direct results
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setShowDirectResults(false);
+      setDirectSearchResults([]);
+      return;
+    }
+    const lowerSearch = searchTerm.toLowerCase();
+    const results = [];
+    testCategories.forEach(category => {
+      category.tests.forEach(test => {
+        if (test.toLowerCase().includes(lowerSearch)) {
+          results.push({ testName: test, category: category.name, icon: category.icon, color: category.color });
+        }
+      });
+    });
+    setDirectSearchResults(results);
+    setShowDirectResults(true);
+  }, [searchTerm]);
+
+  useEffect(() => {
     setLoading(false);
   }, []);
 
   useEffect(() => {
     if (preselectedTests && preselectedTests.length > 0) {
       setSelectedTests(preselectedTests);
-      handleCompare(preselectedTests);
+      handleCompareByName(preselectedTests);
     }
   }, [preselectedTests]);
 
@@ -72,7 +107,6 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
       newSelected = selectedTests.filter(t => t !== testName);
       setSelectedTests(newSelected);
       if (newSelected.length >= 2) {
-        // Need to get test IDs for comparison
         handleCompareByName(newSelected);
       } else {
         setProviders([]);
@@ -90,7 +124,6 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
     if (testNames.length < 2) return;
     setComparing(true);
     try {
-      // First get test IDs from names
       const testsRes = await axios.get(`${API_URL}/diagnostics/tests`);
       const allTestsData = testsRes.data?.data || [];
       
@@ -106,32 +139,6 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
         return;
       }
       
-      const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { 
-        testIds,
-        lat: userLocation?.lat,
-        lng: userLocation?.lng
-      });
-      if (res.data.providers) {
-        const sorted = [...res.data.providers].sort((a, b) => {
-          const totalA = testNames.reduce((s, name) => s + (a.individual_prices[name] || 0), 0);
-          const totalB = testNames.reduce((s, name) => s + (b.individual_prices[name] || 0), 0);
-          return totalA - totalB;
-        });
-        setProviders(sorted);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setComparing(false);
-    }
-  };
-
-  const handleCompare = async (tests) => {
-    if (tests.length < 2) return;
-    setComparing(true);
-    try {
-      const testIds = tests.map(t => t._id);
-      const testNames = tests.map(t => t.test_name);
       const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { 
         testIds,
         lat: userLocation?.lat,
@@ -200,63 +207,127 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
     }));
   };
 
+  const resetFilters = () => {
+    setSearchTerm('');
+    setCityFilter('');
+    setMinRating('');
+    setMaxPrice('');
+    setHomeCollectionOnly(false);
+    setMaxDistance('');
+    setUseMyLocation(false);
+  };
+
+  // Get filtered categories for main view
+  const getFilteredCategories = () => {
+    if (!searchTerm || showDirectResults) return testCategories;
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    return testCategories.map(category => ({
+      ...category,
+      tests: category.tests.filter(test => test.toLowerCase().includes(lowerSearch))
+    })).filter(cat => cat.tests.length > 0);
+  };
+
+  const filteredCategories = getFilteredCategories();
+
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <button onClick={() => navigate('/diagnostics-list')}>← Back</button>
       <h1>Build Custom Package</h1>
-      <p>Select 2 or more tests from the categories below to compare prices across labs.</p>
-      
-      {/* Categories View - Same as Lab Tests */}
-      <div>
-        {testCategories.map(category => {
-          const visibleCount = visibleTests[category.code] || 10;
-          const hasMore = visibleCount < category.tests.length;
-          const displayedTests = category.tests.slice(0, visibleCount);
-          
-          return (
-            <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
-              <div 
-                onClick={() => toggleCategory(category.code)} 
-                style={{ backgroundColor: category.color, color: 'white', padding: '12px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}
-              >
-                <span>{category.icon} {category.name} ({category.tests.length} tests)</span>
-                <span>{expandedCategories[category.code] ? '▼' : '▶'}</span>
+      <p>Select 2 or more tests from below to compare prices across labs.</p>
+
+      {/* Search and Filter Bar - Same as Lab Tests */}
+      <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+          <input 
+            type="text" 
+            placeholder="🔍 Search any test (e.g., MRI Brain, CBC, X-ray)..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            style={{ flex: 2, padding: '12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px' }} 
+          />
+          <input 
+            type="text" 
+            placeholder="📍 City (e.g., Mumbai, Delhi)" 
+            value={cityFilter} 
+            onChange={(e) => setCityFilter(e.target.value)} 
+            style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} 
+          />
+          <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
+            <option value="">⭐ Rating (Any)</option>
+            <option value="4">4★ & above</option>
+            <option value="4.5">4.5★ & above</option>
+            <option value="4.8">4.8★ & above</option>
+          </select>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input 
+            type="number" 
+            placeholder="💰 Max Price (₹)" 
+            value={maxPrice} 
+            onChange={(e) => setMaxPrice(e.target.value)} 
+            style={{ width: '130px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} 
+          />
+          <input 
+            type="number" 
+            placeholder="📏 Max Distance (km)" 
+            value={maxDistance} 
+            onChange={(e) => setMaxDistance(e.target.value)} 
+            style={{ width: '140px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} 
+          />
+          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 10px', borderRadius: '4px', height: '42px' }}>
+            <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
+            🏠 Home Collection Only
+          </label>
+          <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 Use My Location</button>
+          <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset Filters</button>
+        </div>
+        
+        {userLocation && <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>📍 Location detected</p>}
+        {searchTerm && <p style={{ fontSize: '12px', marginTop: '10px' }}>Found {directSearchResults.length} tests matching "{searchTerm}"</p>}
+      </div>
+
+      {/* Direct Search Results */}
+      {showDirectResults && searchTerm && (
+        <div style={{ marginBottom: '20px' }}>
+          <h3>🔍 Search Results ({directSearchResults.length})</h3>
+          {directSearchResults.map((result, idx) => (
+            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'white', border: `1px solid ${result.color}`, borderRadius: '8px', marginBottom: '8px' }}>
+              <div><strong>{result.testName}</strong> <span style={{ fontSize: '12px', color: '#6b7280' }}>{result.icon} {result.category}</span></div>
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" checked={selectedTests.includes(result.testName)} onChange={() => toggleTest(result.testName)} />
+                  Select
+                </label>
               </div>
-              
-              {expandedCategories[category.code] && (
-                <div style={{ backgroundColor: '#f9fafb', padding: '10px' }}>
-                  {category.subcategories ? (
-                    // If subcategories exist
-                    category.subcategories.map(sub => (
-                      <div key={sub.name} style={{ marginBottom: '10px' }}>
-                        <div 
-                          onClick={() => toggleSubCategory(category.code, sub.name)} 
-                          style={{ padding: '8px', backgroundColor: '#f3f4f6', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderRadius: '4px' }}
-                        >
-                          <span>📂 {sub.name} ({sub.tests.length} tests)</span>
-                          <span>{expandedSubCategories[`${category.code}_${sub.name}`] ? '▼' : '▶'}</span>
-                        </div>
-                        
-                        {expandedSubCategories[`${category.code}_${sub.name}`] && (
-                          <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                            {sub.tests.map(test => (
-                              <label key={test} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }}>
-                                <input 
-                                  type="checkbox" 
-                                  checked={selectedTests.includes(test)} 
-                                  onChange={() => toggleTest(test)} 
-                                />
-                                {test}
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    // Direct tests display
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Categories View */}
+      {!searchTerm && (
+        <div>
+          {filteredCategories.map(category => {
+            const visibleCount = visibleTests[category.code] || 10;
+            const hasMore = visibleCount < category.tests.length;
+            const displayedTests = category.tests.slice(0, visibleCount);
+            
+            return (
+              <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
+                <div 
+                  onClick={() => toggleCategory(category.code)} 
+                  style={{ backgroundColor: category.color, color: 'white', padding: '12px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}
+                >
+                  <span>{category.icon} {category.name} ({category.tests.length} tests)</span>
+                  <span>{expandedCategories[category.code] ? '▼' : '▶'}</span>
+                </div>
+                
+                {expandedCategories[category.code] && (
+                  <div style={{ backgroundColor: '#f9fafb', padding: '10px' }}>
                     <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                       {displayedTests.map(test => (
                         <label key={test} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }}>
@@ -269,21 +340,20 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
                         </label>
                       ))}
                     </div>
-                  )}
-                  
-                  {hasMore && (
-                    <div style={{ padding: '8px', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
-                      <button onClick={() => showMoreTests(category.code)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                        Show More... ({category.tests.length - visibleCount} more)
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                    {hasMore && (
+                      <div style={{ padding: '8px', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
+                        <button onClick={() => showMoreTests(category.code)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                          Show More... ({category.tests.length - visibleCount} more)
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
       
       {comparing && <p style={{ marginTop: '20px' }}>Comparing...</p>}
       
@@ -302,7 +372,7 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
                   <th style={{ border: '1px solid #ddd', padding: '8px' }}>Rating</th>
                   <th style={{ border: '1px solid #ddd', padding: '8px' }}>Distance</th>
                   <th style={{ border: '1px solid #ddd', padding: '8px' }}>Action</th>
-                </tr>
+                </table>
               </thead>
               <tbody>
                 {providers.map((provider, idx) => {
