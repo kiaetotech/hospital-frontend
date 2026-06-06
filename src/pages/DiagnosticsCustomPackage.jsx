@@ -2,99 +2,247 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// Complete 16 categories with subcategories (same as Lab Tests)
+// ============================================
+// COMPLETE 16 MAIN CATEGORIES WITH ALL SUBCATEGORIES AND TESTS
+// ============================================
+
 const testCategories = [
-  { code: 'MRI', name: '🧠 MRI (Magnetic Resonance Imaging)', icon: '🧠', color: '#8e44ad', subcategories: [
-    { name: 'Brain', tests: ['MRI Brain', 'MRI Orbit / IAC'] },
-    { name: 'Spine', tests: ['MRI Spine (cervical, thoracic, lumbar)'] },
-    { name: 'Joints', tests: ['MRI Joints (shoulder, knee, hip, wrist, ankle)'] },
-    { name: 'Abdomen', tests: ['MRI Abdomen / MRCP', 'MRI Pelvis'] },
-    { name: 'Cardiac', tests: ['MRI Cardiac', 'MRI Angiography (MRA)', 'MR Venography (MRV)'] },
-    { name: 'Other', tests: ['MRI Breast', 'MRI Soft tissue'] }
-  ] },
-  { code: 'CT', name: '📷 CT (Computed Tomography)', icon: '📷', color: '#3498db', subcategories: [
-    { name: 'Head', tests: ['CT Head', 'CT Facial bones / Sinus', 'CT Temporal bone'] },
-    { name: 'Chest', tests: ['CT Chest', 'CT Angiography (CTA)'] },
-    { name: 'Abdomen', tests: ['CT Abdomen + Pelvis', 'CT Urogram', 'CT Virtual colonoscopy'] },
-    { name: 'Spine', tests: ['CT Spine'] },
-    { name: 'Other', tests: ['CT Perfusion', 'CT Guided biopsy'] }
-  ] },
-  { code: 'XR', name: '🦴 X-ray (Radiography)', icon: '🦴', color: '#e67e22', subcategories: [
-    { name: 'Chest', tests: ['Chest X-ray (CXR)'] },
-    { name: 'Spine', tests: ['X-ray Spine'] },
-    { name: 'Limbs', tests: ['X-ray Limbs', 'X-ray Legs', 'X-ray Joints'] },
-    { name: 'Pelvis', tests: ['X-ray Pelvis / Hip'] },
-    { name: 'Skull', tests: ['X-ray Skull', 'X-ray Sinus', 'X-ray Dental (OPG)'] },
-    { name: 'Abdomen', tests: ['X-ray Abdomen (KUB)'] },
-    { name: 'Other', tests: ['X-ray Mammogram', 'X-ray Barium studies', 'X-ray DEXA'] }
-  ] },
-  { code: 'USG', name: '🔊 Ultrasound (Sonography)', icon: '🔊', color: '#1abc9c', subcategories: [
-    { name: 'Abdomen', tests: ['USG Abdomen', 'USG KUB'] },
-    { name: 'Pelvis', tests: ['USG Pelvis', 'USG Transvaginal', 'USG Transrectal'] },
-    { name: 'Thyroid', tests: ['USG Thyroid / Neck'] },
-    { name: 'Breast', tests: ['USG Breast'] },
-    { name: 'Vascular', tests: ['USG Vascular Doppler', 'USG Renal Doppler', 'USG Hepatobiliary Doppler'] },
-    { name: 'Other', tests: ['USG Scrotum', 'USG Musculoskeletal', 'USG Neonatal brain', 'USG Guided procedures', 'ECHO (Echocardiography)', 'Obstetric USG'] }
-  ] },
-  { code: 'HEM', name: '🩸 Hematology', icon: '🩸', color: '#e74c3c', subcategories: [
-    { name: 'CBC', tests: ['Complete Blood Count (CBC)', 'Hemoglobin (Hb)', 'Hematocrit (HCT)', 'RBC count', 'WBC count', 'Platelet count'] },
-    { name: 'Coagulation', tests: ['Coagulation profile (PT, INR, aPTT)', 'Bleeding time', 'Clotting time', 'D-Dimer', 'Fibrinogen'] },
-    { name: 'Other', tests: ['Peripheral smear', 'ESR', 'CRP', 'Hb electrophoresis', 'Reticulocyte count', 'Blood grouping + Rh typing'] }
-  ] },
-  { code: 'BIO', name: '🧪 Biochemistry', icon: '🧪', color: '#f39c12', subcategories: [
-    { name: 'Diabetes', tests: ['Blood glucose (Fasting, PP, Random)', 'HbA1c'] },
-    { name: 'Liver', tests: ['Liver Function Test (LFT)'] },
-    { name: 'Kidney', tests: ['Renal Function Test (RFT)'] },
-    { name: 'Lipids', tests: ['Lipid profile'] },
-    { name: 'Cardiac', tests: ['Cardiac enzymes (CK-MB, Troponin, LDH)'] },
-    { name: 'Other', tests: ['Electrolytes', 'Iron studies', 'Vitamin B12', 'Vitamin D', 'Blood gas (ABG / VBG)'] }
-  ] },
-  { code: 'SER', name: '🦠 Serology / Immunology', icon: '🦠', color: '#9b59b6', subcategories: [
-    { name: 'Infectious', tests: ['HIV', 'HBsAg', 'Hepatitis C', 'Syphilis', 'Dengue', 'Malaria', 'Typhoid'] },
-    { name: 'Autoimmune', tests: ['Rheumatoid factor (RF)', 'Anti-CCP', 'ANA', 'Anti-dsDNA', 'ANCA'] },
-    { name: 'Tumor Markers', tests: ['AFP', 'CEA', 'CA-125', 'CA 19-9', 'PSA'] }
-  ] },
-  { code: 'HOR', name: '⚖️ Hormones / Endocrine', icon: '⚖️', color: '#16a085', subcategories: [
-    { name: 'Thyroid', tests: ['Thyroid profile (TSH, Free T3, Free T4)'] },
-    { name: 'Reproductive', tests: ['LH, FSH', 'Estradiol (E2)', 'Progesterone', 'Testosterone', 'Prolactin'] },
-    { name: 'Other', tests: ['Cortisol', 'Insulin', 'C-peptide', 'Parathyroid hormone (PTH)'] }
-  ] },
-  { code: 'URN', name: '💧 Urine Tests', icon: '💧', color: '#2980b9', subcategories: [
-    { name: 'Routine', tests: ['Urinalysis (routine & microscopy)'] },
-    { name: 'Culture', tests: ['Urine culture & sensitivity'] },
-    { name: 'Chemistry', tests: ['Urine protein', 'Urine microalbumin', 'Urine electrolytes', 'Urine osmolality'] },
-    { name: 'Other', tests: ['Urine pregnancy test (β-hCG)', 'Urine drug screen'] }
-  ] },
-  { code: 'STL', name: '🧫 Stool Tests', icon: '🧫', color: '#27ae60', subcategories: [
-    { name: 'Routine', tests: ['Stool routine & microscopy'] },
-    { name: 'Blood', tests: ['Occult blood (FOBT / FIT)'] },
-    { name: 'Culture', tests: ['Stool culture & sensitivity'] },
-    { name: 'Other', tests: ['Stool antigen tests', 'Calprotectin'] }
-  ] },
-  { code: 'ECG', name: '❤️ ECG / Cardiac Electrophysiology', icon: '❤️', color: '#e74c3c', subcategories: [
-    { name: 'ECG', tests: ['ECG (12-lead, resting)', 'Stress ECG (Treadmill test - TMT)'] },
-    { name: 'Monitoring', tests: ['Holter monitoring (24/48-hour)', 'Event recorder'] }
-  ] },
-  { code: 'EEG', name: '🧠 EEG / Neurophysiology', icon: '🧠', color: '#9b59b6', subcategories: [
-    { name: 'EEG', tests: ['Routine EEG', 'Sleep-deprived EEG', 'Video-EEG monitoring'] },
-    { name: 'Nerve', tests: ['Electromyography (EMG)', 'Nerve conduction studies (NCS)'] }
-  ] },
-  { code: 'PFT', name: '🫁 Pulmonary Function Tests', icon: '🫁', color: '#1abc9c', subcategories: [
-    { name: 'Spirometry', tests: ['Spirometry', 'Bronchodilator reversibility test'] },
-    { name: 'Other', tests: ['Lung volumes', 'Diffusing capacity (DLCO)', '6-minute walk test'] }
-  ] },
-  { code: 'END', name: '🔬 Endoscopy', icon: '🔬', color: '#2c3e50', subcategories: [
-    { name: 'Upper GI', tests: ['Upper GI endoscopy (EGD)', 'ERCP', 'Capsule endoscopy'] },
-    { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy'] },
-    { name: 'Other', tests: ['Bronchoscopy', 'Cystoscopy', 'Hysteroscopy'] }
-  ] },
-  { code: 'NUC', name: '⚛️ Nuclear Medicine / PET', icon: '⚛️', color: '#16a085', subcategories: [
-    { name: 'PET', tests: ['PET-CT (whole body, cardiac, brain)'] },
-    { name: 'Scan', tests: ['Bone scan', 'Thyroid scan', 'Renal scan', 'V/Q scan', 'HIDA scan'] }
-  ] },
-  { code: 'SPL', name: '⭐ Special Tests', icon: '⭐', color: '#7f8c8d', subcategories: [
-    { name: 'Special', tests: ['Sweat chloride test', 'Genetic testing', 'HLA typing', 'Paternity testing', 'CSF analysis', 'Biopsy'] }
-  ] }
+  // 1. MRI
+  {
+    code: 'MRI',
+    name: '🧠 MRI (Magnetic Resonance Imaging)',
+    icon: '🧠',
+    color: '#8e44ad',
+    subcategories: [
+      { name: 'Brain MRI', tests: ['MRI Brain with contrast', 'MRI Brain without contrast', 'MRI Orbit / IAC', 'MRI Pituitary'] },
+      { name: 'Spine MRI', tests: ['MRI Cervical Spine', 'MRI Thoracic Spine', 'MRI Lumbar Spine', 'MRI Whole Spine'] },
+      { name: 'Joints MRI', tests: ['MRI Shoulder', 'MRI Knee', 'MRI Hip', 'MRI Wrist', 'MRI Ankle', 'MRI Elbow'] },
+      { name: 'Abdomen MRI', tests: ['MRI Abdomen', 'MRI MRCP', 'MRI Pelvis', 'MRI Enterography'] },
+      { name: 'Cardiac MRI', tests: ['MRI Cardiac', 'MRI Angiography (MRA)', 'MR Venography (MRV)'] },
+      { name: 'Other MRI', tests: ['MRI Breast', 'MRI Soft tissue', 'MRI Prostate'] }
+    ]
+  },
+  // 2. CT
+  {
+    code: 'CT',
+    name: '📷 CT (Computed Tomography)',
+    icon: '📷',
+    color: '#3498db',
+    subcategories: [
+      { name: 'Head CT', tests: ['CT Head', 'CT Facial bones', 'CT Sinus', 'CT Temporal bone', 'CT Orbit'] },
+      { name: 'Chest CT', tests: ['CT Chest', 'CT High Resolution', 'CT Pulmonary Angiography'] },
+      { name: 'Abdomen CT', tests: ['CT Abdomen', 'CT Pelvis', 'CT Abdomen + Pelvis', 'CT Urogram', 'CT Virtual colonoscopy'] },
+      { name: 'Spine CT', tests: ['CT Cervical Spine', 'CT Thoracic Spine', 'CT Lumbar Spine'] },
+      { name: 'Angiography CT', tests: ['CT Angiography Head', 'CT Angiography Neck', 'CT Angiography Coronary', 'CT Angiography Peripheral'] },
+      { name: 'Other CT', tests: ['CT Guided biopsy', 'CT Perfusion', 'CT KUB'] }
+    ]
+  },
+  // 3. X-ray
+  {
+    code: 'XR',
+    name: '🦴 X-ray (Radiography)',
+    icon: '🦴',
+    color: '#e67e22',
+    subcategories: [
+      { name: 'Chest X-ray', tests: ['Chest X-ray PA', 'Chest X-ray AP', 'Chest X-ray Lateral'] },
+      { name: 'Spine X-ray', tests: ['X-ray Cervical Spine', 'X-ray Thoracic Spine', 'X-ray Lumbar Spine', 'X-ray Sacrum/Coccyx'] },
+      { name: 'Upper Limb X-ray', tests: ['X-ray Shoulder', 'X-ray Arm', 'X-ray Elbow', 'X-ray Forearm', 'X-ray Wrist', 'X-ray Hand', 'X-ray Fingers'] },
+      { name: 'Lower Limb X-ray', tests: ['X-ray Hip', 'X-ray Thigh', 'X-ray Knee', 'X-ray Leg', 'X-ray Ankle', 'X-ray Foot', 'X-ray Toes'] },
+      { name: 'Pelvis X-ray', tests: ['X-ray Pelvis', 'X-ray SI Joints'] },
+      { name: 'Skull X-ray', tests: ['X-ray Skull', 'X-ray Sinus', 'X-ray Facial bones', 'X-ray Mandible', 'X-ray Dental (OPG)'] },
+      { name: 'Abdomen X-ray', tests: ['X-ray Abdomen (KUB)'] },
+      { name: 'Other X-ray', tests: ['X-ray Mammogram', 'X-ray DEXA', 'X-ray Barium swallow', 'X-ray Barium meal', 'X-ray Barium enema'] }
+    ]
+  },
+  // 4. Ultrasound
+  {
+    code: 'USG',
+    name: '🔊 Ultrasound (Sonography)',
+    icon: '🔊',
+    color: '#1abc9c',
+    subcategories: [
+      { name: 'Abdomen USG', tests: ['USG Abdomen', 'USG KUB', 'USG Hepatobiliary', 'USG Renal', 'USG Pancreas', 'USG Spleen'] },
+      { name: 'Pelvis USG', tests: ['USG Pelvis', 'USG Transabdominal', 'USG Transvaginal', 'USG Transrectal'] },
+      { name: 'Thyroid USG', tests: ['USG Thyroid', 'USG Neck'] },
+      { name: 'Breast USG', tests: ['USG Breast', 'USG Breast with Doppler'] },
+      { name: 'Scrotum USG', tests: ['USG Scrotum', 'USG Testis'] },
+      { name: 'Musculoskeletal USG', tests: ['USG Joint', 'USG Tendon', 'USG Muscle', 'USG Ligament'] },
+      { name: 'Vascular USG', tests: ['Carotid Doppler', 'Arterial Doppler', 'Venous Doppler', 'Renal Doppler', 'Hepatobiliary Doppler', 'Color Doppler'] },
+      { name: 'Obstetric USG', tests: ['Obstetric USG Dating', 'Obstetric USG Anomaly', 'Obstetric USG Growth', 'Obstetric USG Doppler', 'TVS Early Pregnancy'] },
+      { name: 'Other USG', tests: ['ECHO (Echocardiography)', 'USG Neonatal brain', 'USG Guided procedures'] }
+    ]
+  },
+  // 5. Hematology
+  {
+    code: 'HEM',
+    name: '🩸 Hematology',
+    icon: '🩸',
+    color: '#e74c3c',
+    subcategories: [
+      { name: 'CBC', tests: ['Complete Blood Count (CBC)', 'Hemoglobin (Hb)', 'Hematocrit (HCT)', 'RBC count', 'WBC count', 'Platelet count'] },
+      { name: 'Differential', tests: ['Differential Count (DLC)', 'Peripheral smear', 'Malaria smear', 'Filariasis smear'] },
+      { name: 'Coagulation', tests: ['PT/INR', 'aPTT', 'Bleeding time', 'Clotting time', 'D-Dimer', 'Fibrinogen'] },
+      { name: 'Inflammation', tests: ['ESR', 'CRP', 'hs-CRP', 'Procalcitonin'] },
+      { name: 'Special', tests: ['Hb electrophoresis', 'Reticulocyte count', 'Blood grouping', 'Rh typing', 'Cross matching'] }
+    ]
+  },
+  // 6. Biochemistry
+  {
+    code: 'BIO',
+    name: '🧪 Biochemistry',
+    icon: '🧪',
+    color: '#f39c12',
+    subcategories: [
+      { name: 'Diabetes', tests: ['Glucose Fasting', 'Glucose Postprandial', 'Glucose Random', 'HbA1c', 'Insulin', 'C-peptide'] },
+      { name: 'Liver', tests: ['Liver Function Test (LFT)', 'Bilirubin Total', 'Bilirubin Direct', 'ALT', 'AST', 'ALP', 'GGT', 'Total Protein', 'Albumin', 'Globulin'] },
+      { name: 'Kidney', tests: ['Renal Function Test (RFT)', 'Urea', 'Creatinine', 'Uric acid', 'BUN'] },
+      { name: 'Lipids', tests: ['Lipid profile', 'Total Cholesterol', 'Triglycerides', 'HDL', 'LDL', 'VLDL'] },
+      { name: 'Electrolytes', tests: ['Sodium', 'Potassium', 'Chloride', 'Calcium', 'Magnesium', 'Phosphorus'] },
+      { name: 'Cardiac', tests: ['Troponin I', 'Troponin T', 'CK-MB', 'LDH', 'SGOT/AST'] },
+      { name: 'Pancreas', tests: ['Amylase', 'Lipase'] },
+      { name: 'Iron Studies', tests: ['Serum Iron', 'TIBC', 'Ferritin', 'Transferrin Saturation'] },
+      { name: 'Vitamins', tests: ['Vitamin B12', 'Vitamin D', 'Folate', 'Homocysteine'] },
+      { name: 'Other', tests: ['Blood Gas (ABG)', 'Lactate', 'Ammonia', 'Osmolality'] }
+    ]
+  },
+  // 7. Serology / Immunology
+  {
+    code: 'SER',
+    name: '🦠 Serology / Immunology',
+    icon: '🦠',
+    color: '#9b59b6',
+    subcategories: [
+      { name: 'Infectious Diseases', tests: ['HIV ELISA', 'HIV Western Blot', 'HIV PCR', 'HBsAg', 'Anti-HBs', 'Anti-HBc', 'Hepatitis C Antibody', 'Hepatitis C PCR', 'Hepatitis A IgM', 'Hepatitis E IgM'] },
+      { name: 'Sexually Transmitted', tests: ['Syphilis (VDRL)', 'Syphilis (TPHA)', 'Chlamydia PCR', 'Gonorrhea PCR', 'Herpes PCR'] },
+      { name: 'Tropical Diseases', tests: ['Dengue NS1', 'Dengue IgM/IgG', 'Chikungunya IgM/IgG', 'Malaria Antigen', 'Malaria Smear', 'Typhoid (Widal)', 'Typhidot', 'Leptospira IgM'] },
+      { name: 'Autoimmune', tests: ['Rheumatoid Factor (RF)', 'Anti-CCP', 'ANA', 'Anti-dsDNA', 'ANCA', 'Anti-phospholipid', 'Complement C3', 'Complement C4'] },
+      { name: 'Tumor Markers', tests: ['AFP', 'CEA', 'CA-125', 'CA 19-9', 'CA 15-3', 'PSA Total', 'PSA Free', 'β-hCG', 'Calcitonin', 'Thyroglobulin'] },
+      { name: 'Allergy', tests: ['Total IgE', 'RAST Test', 'Allergy Panel'] },
+      { name: 'Other', tests: ['Serum Protein Electrophoresis', 'Immunofixation', 'Quantitative Immunoglobulins'] }
+    ]
+  },
+  // 8. Hormones / Endocrine
+  {
+    code: 'HOR',
+    name: '⚖️ Hormones / Endocrine',
+    icon: '⚖️',
+    color: '#16a085',
+    subcategories: [
+      { name: 'Thyroid', tests: ['TSH', 'Free T3', 'Free T4', 'Total T3', 'Total T4', 'Anti-TPO', 'Anti-Tg'] },
+      { name: 'Adrenal', tests: ['Cortisol Morning', 'Cortisol Evening', 'ACTH', 'Aldosterone', 'Renin'] },
+      { name: 'Reproductive Female', tests: ['LH', 'FSH', 'Estradiol (E2)', 'Progesterone', 'Prolactin', 'AMH'] },
+      { name: 'Reproductive Male', tests: ['Testosterone Total', 'Testosterone Free', 'DHEA-S', 'Androstenedione'] },
+      { name: 'Metabolic', tests: ['Insulin', 'C-peptide', 'PTH', 'Vitamin D', 'Growth Hormone', 'IGF-1'] }
+    ]
+  },
+  // 9. Urine Tests
+  {
+    code: 'URN',
+    name: '💧 Urine Tests',
+    icon: '💧',
+    color: '#2980b9',
+    subcategories: [
+      { name: 'Routine', tests: ['Urinalysis', 'Urine Routine & Microscopy', 'Urine Glucose', 'Urine Ketones', 'Urine pH', 'Urine Specific Gravity'] },
+      { name: 'Culture', tests: ['Urine Culture & Sensitivity', 'Urine AFB', 'Urine PCR'] },
+      { name: 'Chemistry', tests: ['Urine Protein', 'Urine Microalbumin', 'Urine Creatinine', 'Urine Urea', 'Urine Uric Acid', 'Urine Calcium', 'Urine Electrolytes'] },
+      { name: 'Hormones', tests: ['Urine Pregnancy Test', 'Urine Cortisol', 'Urine Catecholamines', 'Urine Metanephrines', 'Urine 5-HIAA'] },
+      { name: 'Special', tests: ['Urine Bence Jones Protein', 'Urine Porphobilinogen', 'Urine Drug Screen'] }
+    ]
+  },
+  // 10. Stool Tests
+  {
+    code: 'STL',
+    name: '🧫 Stool Tests',
+    icon: '🧫',
+    color: '#27ae60',
+    subcategories: [
+      { name: 'Routine', tests: ['Stool Routine', 'Stool Microscopy', 'Stool pH'] },
+      { name: 'Occult Blood', tests: ['FOBT', 'FIT'] },
+      { name: 'Culture', tests: ['Stool Culture & Sensitivity', 'Stool PCR for Pathogens'] },
+      { name: 'Parasites', tests: ['Ova/Cyst Examination', 'Giardia Antigen', 'Cryptosporidium Antigen'] },
+      { name: 'Special', tests: ['Calprotectin', 'Stool Fat', 'Stool Elastase', 'Stool Reducing Substances'] }
+    ]
+  },
+  // 11. ECG / Cardiac
+  {
+    code: 'ECG',
+    name: '❤️ ECG / Cardiac Electrophysiology',
+    icon: '❤️',
+    color: '#e74c3c',
+    subcategories: [
+      { name: 'ECG', tests: ['ECG 12-lead Resting', 'ECG Exercise Stress', 'Signal Averaged ECG'] },
+      { name: 'Monitoring', tests: ['Holter Monitoring 24h', 'Holter Monitoring 48h', 'Event Recorder', 'Tilt Table Test'] }
+    ]
+  },
+  // 12. EEG / Neurophysiology
+  {
+    code: 'EEG',
+    name: '🧠 EEG / Neurophysiology',
+    icon: '🧠',
+    color: '#9b59b6',
+    subcategories: [
+      { name: 'EEG', tests: ['Routine EEG', 'Sleep Deprived EEG', 'Video EEG Monitoring', 'Ambulatory EEG'] },
+      { name: 'Nerve Studies', tests: ['Electromyography (EMG)', 'Nerve Conduction Studies (NCS)', 'Repetitive Nerve Stimulation', 'Evoked Potentials (VEP)', 'Evoked Potentials (BAER)', 'Evoked Potentials (SSEP)'] }
+    ]
+  },
+  // 13. Pulmonary Function Tests
+  {
+    code: 'PFT',
+    name: '🫁 Pulmonary Function Tests',
+    icon: '🫁',
+    color: '#1abc9c',
+    subcategories: [
+      { name: 'Spirometry', tests: ['Spirometry', 'Bronchodilator Reversibility', 'Methacholine Challenge'] },
+      { name: 'Lung Volumes', tests: ['Lung Volumes', 'Diffusing Capacity (DLCO)', 'Residual Volume'] },
+      { name: 'Other', tests: ['6 Minute Walk Test', 'FeNO', 'Maximal Respiratory Pressures', 'Nocturnal Oximetry'] }
+    ]
+  },
+  // 14. Endoscopy
+  {
+    code: 'END',
+    name: '🔬 Endoscopy',
+    icon: '🔬',
+    color: '#2c3e50',
+    subcategories: [
+      { name: 'Upper GI', tests: ['EGD (Upper GI Endoscopy)', 'ERCP', 'Capsule Endoscopy', 'Enteroscopy', 'EUS'] },
+      { name: 'Lower GI', tests: ['Colonoscopy', 'Sigmoidoscopy', 'Anoscopy'] },
+      { name: 'Respiratory', tests: ['Bronchoscopy', 'EBUS'] },
+      { name: 'Urology', tests: ['Cystoscopy', 'Ureteroscopy'] },
+      { name: 'GYN', tests: ['Hysteroscopy', 'Colposcopy'] },
+      { name: 'Other', tests: ['Laparoscopy', 'Arthroscopy', 'Mediastinoscopy'] }
+    ]
+  },
+  // 15. Nuclear Medicine / PET
+  {
+    code: 'NUC',
+    name: '⚛️ Nuclear Medicine / PET',
+    icon: '⚛️',
+    color: '#16a085',
+    subcategories: [
+      { name: 'PET', tests: ['PET-CT Whole Body', 'PET-CT Cardiac', 'PET-CT Brain'] },
+      { name: 'Bone', tests: ['Whole Body Bone Scan', '3 Phase Bone Scan'] },
+      { name: 'Thyroid', tests: ['Thyroid Uptake', 'Thyroid Scan'] },
+      { name: 'Renal', tests: ['DTPA Scan', 'MAG3 Scan', 'DMSA Scan'] },
+      { name: 'Cardiac', tests: ['Myocardial Perfusion Scan (MIBI)', 'MUGA Scan'] },
+      { name: 'Lung', tests: ['V/Q Scan'] },
+      { name: 'GI', tests: ['HIDA Scan', 'Gastric Emptying Scan', 'Meckel Scan'] },
+      { name: 'Other', tests: ['Octreotide Scan', 'MIBG Scan', 'Parathyroid Scan', 'Sentinel Lymph Node Scan', 'Gallium Scan'] }
+    ]
+  },
+  // 16. Special Tests
+  {
+    code: 'SPL',
+    name: '⭐ Special Tests',
+    icon: '⭐',
+    color: '#7f8c8d',
+    subcategories: [
+      { name: 'Genetic', tests: ['Karyotype', 'FISH', 'Chromosomal Microarray', 'Single Gene Sequencing', 'NGS Panel', 'Whole Exome Sequencing', 'NIPT'] },
+      { name: 'HLA', tests: ['HLA Typing', 'HLA B27', 'HLA DQ2/DQ8'] },
+      { name: 'Body Fluids', tests: ['CSF Analysis', 'Synovial Fluid Analysis', 'Ascitic Fluid Analysis', 'Pleural Fluid Analysis', 'Pericardial Fluid Analysis', 'Amniotic Fluid Analysis'] },
+      { name: 'Biopsy', tests: ['FNAC', 'Core Needle Biopsy', 'Excisional Biopsy', 'Histopathology', 'IHC', 'Frozen Section'] },
+      { name: 'Other', tests: ['Sweat Chloride Test', 'Newborn Screening', 'Paternity Testing', 'Toxicology Screen', 'Heavy Metals', 'Therapeutic Drug Monitoring', 'Skin Biopsy', 'Muscle Biopsy', 'Nerve Biopsy', 'Bone Marrow Biopsy', 'Pap Smear', 'Semen Analysis'] }
+    ]
+  }
 ];
 
 const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
@@ -107,7 +255,6 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedSubCategories, setExpandedSubCategories] = useState({});
   
-  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [minRating, setMinRating] = useState('');
@@ -118,7 +265,6 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
   const [directSearchResults, setDirectSearchResults] = useState([]);
   const [showDirectResults, setShowDirectResults] = useState(false);
   
-  // Booking modal
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [bookingForm, setBookingForm] = useState({
@@ -148,7 +294,6 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
     }
   }, [preselectedTests]);
 
-  // Search effect
   useEffect(() => {
     if (!searchTerm.trim()) {
       setShowDirectResults(false);
@@ -372,7 +517,7 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
                   <th>Provider</th>
                   {selectedTests.map((test, idx) => <th key={idx}>{test.name}</th>)}
                   <th>Total</th><th>Rating</th><th>Distance</th><th>Action</th>
-                </table>
+                </tr>
               </thead>
               <tbody>
                 {providers.map((provider, idx) => {
