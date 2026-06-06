@@ -8,12 +8,9 @@ import { useNavigate } from 'react-router-dom';
 const HealthPackagesTab = () => {
   const navigate = useNavigate();
   
-  // Package state
   const [packages, setPackages] = useState([]);
   const [filteredPackages, setFilteredPackages] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -21,21 +18,13 @@ const HealthPackagesTab = () => {
   const [minRating, setMinRating] = useState('');
   const [maxDistance, setMaxDistance] = useState('');
   const [packageType, setPackageType] = useState('');
-  
-  // Comparison states
   const [selectedPackages, setSelectedPackages] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
-  
-  // Location states
   const [userLocation, setUserLocation] = useState(null);
   const [useLocation, setUseLocation] = useState(false);
-  
-  // UI states
   const [expandedPackages, setExpandedPackages] = useState({});
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showNearby, setShowNearby] = useState(false);
-  
-  // Booking modal states
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [bookingForm, setBookingForm] = useState({
@@ -51,7 +40,6 @@ const HealthPackagesTab = () => {
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
-  // ========== LOAD PACKAGES ==========
   useEffect(() => {
     loadPackages();
   }, [packageType]);
@@ -69,7 +57,6 @@ const HealthPackagesTab = () => {
     applyFilters();
   }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation]);
 
-  // Clear booking modal when leaving comparison view
   useEffect(() => {
     if (!showCompare) {
       setShowBookingModal(false);
@@ -94,12 +81,11 @@ const HealthPackagesTab = () => {
     }
   };
 
-  // ========== DISTANCE CALCULATION ==========
   const getDistance = (pkg) => {
     if (pkg.distance_km) return pkg.distance_km;
     if (pkg.distance) return pkg.distance;
     
-    if (userLocation && pkg.provider_id?.location?.lat) {
+    if (userLocation && pkg.provider_id && pkg.provider_id.location && pkg.provider_id.location.lat) {
       const lat1 = userLocation.lat;
       const lon1 = userLocation.lng;
       const lat2 = pkg.provider_id.location.lat;
@@ -114,26 +100,33 @@ const HealthPackagesTab = () => {
       return (R * c).toFixed(1);
     }
     
-    const idNum = parseInt(pkg._id?.slice(-4) || '1000', 16) || 1000;
+    const idNum = parseInt(pkg._id ? pkg._id.slice(-4) : '1000', 16) || 1000;
     return (idNum % 15) + 1;
   };
 
-  // ========== FILTER FUNCTIONS ==========
   const applyFilters = () => {
     let filtered = [...packages];
     if (searchTerm) {
-      filtered = filtered.filter(p => 
-        p.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.package_description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(function(p) {
+        return (p.package_name && p.package_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+               (p.package_description && p.package_description.toLowerCase().includes(searchTerm.toLowerCase()));
+      });
     }
-    if (minPrice) filtered = filtered.filter(p => p.discounted_price >= parseFloat(minPrice));
-    if (maxPrice) filtered = filtered.filter(p => p.discounted_price <= parseFloat(maxPrice));
-    if (homeCollectionOnly) filtered = filtered.filter(p => p.home_collection_available === true);
-    if (minRating) filtered = filtered.filter(p => (p.provider_id?.rating || 0) >= parseFloat(minRating));
+    if (minPrice) {
+      filtered = filtered.filter(function(p) { return p.discounted_price >= parseFloat(minPrice); });
+    }
+    if (maxPrice) {
+      filtered = filtered.filter(function(p) { return p.discounted_price <= parseFloat(maxPrice); });
+    }
+    if (homeCollectionOnly) {
+      filtered = filtered.filter(function(p) { return p.home_collection_available === true; });
+    }
+    if (minRating) {
+      filtered = filtered.filter(function(p) { return (p.provider_id && p.provider_id.rating) ? p.provider_id.rating >= parseFloat(minRating) : 0 >= parseFloat(minRating); });
+    }
     if (maxDistance) {
-      filtered = filtered.filter(p => {
-        const distance = parseFloat(getDistance(p));
+      filtered = filtered.filter(function(p) {
+        var distance = parseFloat(getDistance(p));
         return distance <= parseFloat(maxDistance);
       });
     }
@@ -151,10 +144,22 @@ const HealthPackagesTab = () => {
     setFilteredPackages(packages);
   };
 
-  // ========== COMPARISON FUNCTIONS ==========
   const toggleSelect = (pkg) => {
-    if (selectedPackages.find(p => p._id === pkg._id)) {
-      setSelectedPackages(selectedPackages.filter(p => p._id !== pkg._id));
+    var found = false;
+    for (var i = 0; i < selectedPackages.length; i++) {
+      if (selectedPackages[i]._id === pkg._id) {
+        found = true;
+        break;
+      }
+    }
+    if (found) {
+      var newSelected = [];
+      for (var j = 0; j < selectedPackages.length; j++) {
+        if (selectedPackages[j]._id !== pkg._id) {
+          newSelected.push(selectedPackages[j]);
+        }
+      }
+      setSelectedPackages(newSelected);
     } else if (selectedPackages.length < 4) {
       setSelectedPackages([...selectedPackages, pkg]);
     } else {
@@ -171,19 +176,20 @@ const HealthPackagesTab = () => {
   };
 
   const toggleExpand = (packageId) => {
-    setExpandedPackages(prev => ({
-      ...prev,
-      [packageId]: !prev[packageId]
-    }));
+    var current = expandedPackages[packageId] || false;
+    var newState = {};
+    newState[packageId] = !current;
+    setExpandedPackages(Object.assign({}, expandedPackages, newState));
   };
 
   const handleTypeSelect = (type) => {
     setPackageType(type);
   };
 
-  // ========== BOOKING FUNCTIONS ==========
   const handleBookingChange = (e) => {
-    setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
+    var newForm = Object.assign({}, bookingForm);
+    newForm[e.target.name] = e.target.value;
+    setBookingForm(newForm);
   };
 
   const handleBookingSubmit = async (e) => {
@@ -193,8 +199,8 @@ const HealthPackagesTab = () => {
       return;
     }
     try {
-      const res = await axios.post(`${API_URL}/health-packages/${selectedPackage._id}/book`, bookingForm);
-      alert(`Booking successful! Reference: ${res.data.booking_reference}`);
+      const res = await axios.post(API_URL + '/health-packages/' + selectedPackage._id + '/book', bookingForm);
+      alert('Booking successful! Reference: ' + res.data.booking_reference);
       setShowBookingModal(false);
       setSelectedPackage(null);
       setBookingForm({
@@ -216,163 +222,188 @@ const HealthPackagesTab = () => {
     });
   };
 
-  // ========== COMPARISON VIEW WITH WORKING BOOK BUTTON ==========
+  // Comparison View
   if (showCompare) {
-    const sortedPackages = [...selectedPackages].sort((a, b) => a.discounted_price - b.discounted_price);
+    var sortedPackages = [...selectedPackages];
+    sortedPackages.sort(function(a, b) { return a.discounted_price - b.discounted_price; });
     
-    // Local booking handler for comparison table
-    const handleCompareBooking = (pkg) => {
-      console.log('Button clicked for:', pkg.package_name);
-      console.log('Package ID:', pkg._id);
+    var handleCompareBooking = function(pkg) {
       setSelectedPackage(pkg);
       setShowBookingModal(true);
-      alert('Opening booking form for: ' + pkg.package_name);
     };
     
-    return (
-      <div>
-        <button onClick={() => setShowCompare(false)} style={{ marginBottom: '20px', cursor: 'pointer' }}>← Back to Packages</button>
-        <h3>Compare Packages</h3>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f3f4f6' }}>
-                <th style={{ padding: '12px', border: '1px solid #ddd' }}>Feature</th>
-                {sortedPackages.map((p, idx) => (
-                  <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
-                    {p.package_name}
-                    {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Price</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}><strong>₹{p.discounted_price}</strong> <span style={{ textDecoration: 'line-through' }}>₹{p.mrp}</span></td>)}
-              </tr>
-              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Provider</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.provider_id?.provider_name || 'N/A'}</td>)}
-              </tr>
-              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Rating</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>⭐ {p.provider_id?.rating || 4.5}</td>)}
-              </tr>
-              <td><td style={{ padding: '10px', border: '1px solid #ddd' }}>Distance</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{getDistance(p)} km</td>)}
-              </tr>
-              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Home Collection</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.home_collection_available ? '✅ Yes' : '❌ No'}</td>)}
-              </tr>
-              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Report Time</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.report_time_hours} hours</td>)}
-              </tr>
-              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Tests</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.tests_included_text?.split(',').length || 0} tests</td>)}
-              </tr>
-              <tr>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>Action</td>
-                {sortedPackages.map((p, i) => (
-                  <td key={i} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                    <button 
-                      onClick={() => handleCompareBooking(p)}
-                      style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                    >
-                      Book Now
-                    </button>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    return React.createElement('div', null,
+      React.createElement('button', { onClick: function() { setShowCompare(false); }, style: { marginBottom: '20px', cursor: 'pointer' } }, '← Back to Packages'),
+      React.createElement('h3', null, 'Compare Packages'),
+      React.createElement('div', { style: { overflowX: 'auto' } },
+        React.createElement('table', { style: { width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' } },
+          React.createElement('thead', null,
+            React.createElement('tr', { style: { backgroundColor: '#f3f4f6' } },
+              React.createElement('th', { style: { padding: '12px', border: '1px solid #ddd' } }, 'Feature'),
+              sortedPackages.map(function(p, idx) {
+                return React.createElement('th', { key: idx, style: { padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' } },
+                  p.package_name,
+                  idx === 0 ? React.createElement('span', { style: { display: 'block', fontSize: '11px', color: '#10b981' } }, '⭐ Cheapest') : null
+                );
+              })
+            )
+          ),
+          React.createElement('tbody', null,
+            React.createElement('tr', null,
+              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Price'),
+              sortedPackages.map(function(p, i) {
+                return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd' } }, React.createElement('strong', null, '₹', p.discounted_price));
+              })
+            ),
+            React.createElement('tr', null,
+              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Provider'),
+              sortedPackages.map(function(p, i) {
+                return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd' } }, p.provider_id ? p.provider_id.provider_name : 'N/A');
+              })
+            ),
+            React.createElement('tr', null,
+              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Rating'),
+              sortedPackages.map(function(p, i) {
+                return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd' } }, '⭐ ', p.provider_id ? p.provider_id.rating : 4.5);
+              })
+            ),
+            React.createElement('tr', null,
+              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Distance'),
+              sortedPackages.map(function(p, i) {
+                return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd' } }, getDistance(p), ' km');
+              })
+            ),
+            React.createElement('tr', null,
+              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Home Collection'),
+              sortedPackages.map(function(p, i) {
+                return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd' } }, p.home_collection_available ? '✅ Yes' : '❌ No');
+              })
+            ),
+            React.createElement('tr', null,
+              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Report Time'),
+              sortedPackages.map(function(p, i) {
+                return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd' } }, p.report_time_hours, ' hours');
+              })
+            ),
+            React.createElement('tr', null,
+              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Tests'),
+              sortedPackages.map(function(p, i) {
+                var testCount = p.tests_included_text ? p.tests_included_text.split(',').length : 0;
+                return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd' } }, testCount, ' tests');
+              })
+            ),
+            React.createElement('tr', null,
+              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Action'),
+              sortedPackages.map(function(p, i) {
+                return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd', textAlign: 'center' } },
+                  React.createElement('button', {
+                    onClick: function() { handleCompareBooking(p); },
+                    style: { backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }
+                  }, 'Book Now')
+                );
+              })
+            )
+          )
+        )
+      )
     );
   }
 
-  // ========== MAIN RETURN ==========
-  return (
-    <div>
-      <h2>🏥 Health Packages</h2>
-      <p>Select packages to compare prices, features, and more. Current filter: {packageType || 'All'}</p>
-
-      <PackageTypeFilter selectedType={packageType} onSelectType={handleTypeSelect} />
-
-      <button onClick={() => setShowSuggestions(!showSuggestions)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>🤖 Smart Suggestions</button>
-      <button onClick={() => setShowNearby(!showNearby)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px', marginLeft: '10px' }}>📍 Nearby Packages</button>
-
-      {showSuggestions && <SmartSuggestions onSelectPackage={(pkg) => { setSelectedPackage(pkg); setShowBookingModal(true); }} />}
-      {showNearby && <NearbyPackages onSelectPackage={(pkg) => { setSelectedPackage(pkg); setShowBookingModal(true); }} />}
-
-      <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
-          <input type="text" placeholder="🔍 Search packages..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
-          <button onClick={resetFilters} style={{ backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset</button>
-          <button onClick={() => setUseLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 My Location</button>
-        </div>
-
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div><label style={{ fontSize: '12px' }}>💰 Min Price</label><input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-          <div><label style={{ fontSize: '12px' }}>💰 Max Price</label><input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-          <div><label style={{ fontSize: '12px' }}>⭐ Min Rating</label><select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}><option value="">Any</option><option value="4">4★ & above</option><option value="4.5">4.5★ & above</option><option value="4.8">4.8★ & above</option></select></div>
-          <div><label style={{ fontSize: '12px' }}>📏 Max Distance</label><input type="number" placeholder="Max km" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-          <div><label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> 🏠 Home Collection</label></div>
-        </div>
-        
-        <div style={{ fontSize: '12px', marginTop: '15px' }}>Found {filteredPackages.length} packages | {selectedPackages.length} selected</div>
-      </div>
-
-      {selectedPackages.length >= 2 && <button onClick={handleCompare} style={{ position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000 }}>Compare ({selectedPackages.length})</button>}
-
-      {loading ? <div>Loading packages...</div> : filteredPackages.length === 0 ? <div>No packages found</div> : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '20px' }}>
-          {filteredPackages.map(pkg => {
-            const testsList = pkg.tests_included_text ? pkg.tests_included_text.split(',').map(t => t.trim()) : [];
-            const isSelected = selectedPackages.some(p => p._id === pkg._id);
-            const distance = getDistance(pkg);
-            const isExpanded = expandedPackages[pkg._id] || false;
-            return (
-              <div key={pkg._id} style={{ border: `1px solid ${isSelected ? '#10b981' : '#ddd'}`, borderRadius: '12px', padding: '20px', backgroundColor: isSelected ? '#f0fdf4' : 'white' }}>
-                {pkg.is_popular && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>🔥 Popular</span>}
-                <h3>{pkg.package_name}</h3>
-                <p>{pkg.package_description?.substring(0, 100)}...</p>
-                <p>🏥 {pkg.provider_id?.provider_name}</p>
-                <div><span style={{ textDecoration: 'line-through' }}>₹{pkg.mrp}</span> <strong style={{ fontSize: '24px', color: '#10b981' }}>₹{pkg.discounted_price}</strong></div>
-                <div style={{ display: 'flex', gap: '10px', fontSize: '12px' }}><span>⭐ {pkg.provider_id?.rating}</span><span>📏 {distance} km</span>{pkg.home_collection_available && <span>🏠 Home</span>}<span>⏱️ {pkg.report_time_hours}h</span></div>
-                <details open={isExpanded}><summary onClick={(e) => { e.preventDefault(); toggleExpand(pkg._id); }} style={{ cursor: 'pointer', color: '#3b82f6' }}>📋 Tests ({testsList.length})</summary><ul>{testsList.map((t, i) => <li key={i}>{t}</li>)}</ul></details>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  <label><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} /> Compare</label>
-                  <button onClick={() => navigate(`/package-detail/${pkg._id}`)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>View Details</button>
-                  <button onClick={() => { setSelectedPackage(pkg); setShowBookingModal(true); }} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Booking Modal */}
-      {showBookingModal && selectedPackage && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' }}>
-            <h2>Book {selectedPackage.package_name}</h2>
-            <form onSubmit={handleBookingSubmit}>
-              <div><label>Full Name *</label><input type="text" name="patient_name" required value={bookingForm.patient_name} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-              <div><label>Age *</label><input type="number" name="patient_age" required value={bookingForm.patient_age} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-              <div><label>Gender *</label><select name="patient_gender" value={bookingForm.patient_gender} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px' }}><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
-              <div><label>Phone Number *</label><input type="tel" name="patient_phone" required value={bookingForm.patient_phone} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-              <div><label>Email</label><input type="email" name="patient_email" value={bookingForm.patient_email} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-              <div><label>Appointment Date *</label><input type="date" name="appointment_date" required value={bookingForm.appointment_date} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>
-              {selectedPackage.home_collection_available && (
-                <>
-                  <div><label><input type="checkbox" name="home_collection_requested" checked={bookingForm.home_collection_requested} onChange={(e) => setBookingForm({...bookingForm, home_collection_requested: e.target.checked})} /> Request Home Collection</label></div>
-                  {bookingForm.home_collection_requested && <div><label>Home Address</label><textarea name="home_address" rows="3" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} /></div>}
-                </>
-              )}
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}><button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Confirm Booking</button><button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button></div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+  // Main Return
+  return React.createElement('div', null,
+    React.createElement('h2', null, '🏥 Health Packages'),
+    React.createElement('p', null, 'Select packages to compare prices, features, and more. Current filter: ', packageType || 'All'),
+    React.createElement(PackageTypeFilter, { selectedType: packageType, onSelectType: handleTypeSelect }),
+    React.createElement('button', { onClick: function() { setShowSuggestions(!showSuggestions); }, style: { backgroundColor: '#8b5cf6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' } }, '🤖 Smart Suggestions'),
+    React.createElement('button', { onClick: function() { setShowNearby(!showNearby); }, style: { backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px', marginLeft: '10px' } }, '📍 Nearby Packages'),
+    showSuggestions && React.createElement(SmartSuggestions, { onSelectPackage: function(pkg) { setSelectedPackage(pkg); setShowBookingModal(true); } }),
+    showNearby && React.createElement(NearbyPackages, { onSelectPackage: function(pkg) { setSelectedPackage(pkg); setShowBookingModal(true); } }),
+    React.createElement('div', { style: { backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' } },
+      React.createElement('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' } },
+        React.createElement('input', { type: 'text', placeholder: '🔍 Search packages...', value: searchTerm, onChange: function(e) { setSearchTerm(e.target.value); }, style: { flex: 2, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } }),
+        React.createElement('button', { onClick: resetFilters, style: { backgroundColor: '#ef4444', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' } }, 'Reset'),
+        React.createElement('button', { onClick: function() { setUseLocation(true); }, style: { backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' } }, '📍 My Location')
+      ),
+      React.createElement('div', { style: { display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' } },
+        React.createElement('div', null, React.createElement('label', { style: { fontSize: '12px' } }, '💰 Min Price'), React.createElement('input', { type: 'number', placeholder: 'Min', value: minPrice, onChange: function(e) { setMinPrice(e.target.value); }, style: { width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' } })),
+        React.createElement('div', null, React.createElement('label', { style: { fontSize: '12px' } }, '💰 Max Price'), React.createElement('input', { type: 'number', placeholder: 'Max', value: maxPrice, onChange: function(e) { setMaxPrice(e.target.value); }, style: { width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' } })),
+        React.createElement('div', null, React.createElement('label', { style: { fontSize: '12px' } }, '⭐ Min Rating'), React.createElement('select', { value: minRating, onChange: function(e) { setMinRating(e.target.value); }, style: { width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' } },
+          React.createElement('option', { value: '' }, 'Any'),
+          React.createElement('option', { value: '4' }, '4★ & above'),
+          React.createElement('option', { value: '4.5' }, '4.5★ & above'),
+          React.createElement('option', { value: '4.8' }, '4.8★ & above')
+        )),
+        React.createElement('div', null, React.createElement('label', { style: { fontSize: '12px' } }, '📏 Max Distance'), React.createElement('input', { type: 'number', placeholder: 'Max km', value: maxDistance, onChange: function(e) { setMaxDistance(e.target.value); }, style: { width: '100px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' } })),
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center' } }, React.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: '5px' } }, React.createElement('input', { type: 'checkbox', checked: homeCollectionOnly, onChange: function(e) { setHomeCollectionOnly(e.target.checked); } }), ' 🏠 Home Collection'))
+      ),
+      React.createElement('div', { style: { fontSize: '12px', marginTop: '15px' } }, 'Found ', filteredPackages.length, ' packages | ', selectedPackages.length, ' selected')
+    ),
+    selectedPackages.length >= 2 && React.createElement('button', { onClick: handleCompare, style: { position: 'fixed', bottom: 20, right: 20, backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: 50, cursor: 'pointer', zIndex: 1000 } }, 'Compare (', selectedPackages.length, ')'),
+    loading ? React.createElement('div', null, 'Loading packages...') : (filteredPackages.length === 0 ? React.createElement('div', null, 'No packages found') :
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '20px' } },
+        filteredPackages.map(function(pkg) {
+          var testsList = pkg.tests_included_text ? pkg.tests_included_text.split(',').map(function(t) { return t.trim(); }) : [];
+          var isSelected = false;
+          for (var s = 0; s < selectedPackages.length; s++) {
+            if (selectedPackages[s]._id === pkg._id) {
+              isSelected = true;
+              break;
+            }
+          }
+          var distance = getDistance(pkg);
+          var isExpanded = expandedPackages[pkg._id] || false;
+          return React.createElement('div', { key: pkg._id, style: { border: '1px solid ' + (isSelected ? '#10b981' : '#ddd'), borderRadius: '12px', padding: '20px', backgroundColor: isSelected ? '#f0fdf4' : 'white' } },
+            pkg.is_popular && React.createElement('span', { style: { backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-block', marginBottom: '10px' } }, '🔥 Popular'),
+            React.createElement('h3', null, pkg.package_name),
+            React.createElement('p', { style: { color: '#6b7280' } }, pkg.package_description ? pkg.package_description.substring(0, 100) : '', '...'),
+            React.createElement('p', null, '🏥 ', pkg.provider_id ? pkg.provider_id.provider_name : 'N/A'),
+            React.createElement('div', null, React.createElement('span', { style: { textDecoration: 'line-through' } }, '₹', pkg.mrp), React.createElement('strong', { style: { fontSize: '24px', color: '#10b981', marginLeft: '10px' } }, '₹', pkg.discounted_price)),
+            React.createElement('div', { style: { display: 'flex', gap: '10px', fontSize: '12px' } },
+              React.createElement('span', null, '⭐ ', pkg.provider_id ? pkg.provider_id.rating : 4.5),
+              React.createElement('span', null, '📏 ', distance, ' km'),
+              pkg.home_collection_available && React.createElement('span', null, '🏠 Home'),
+              React.createElement('span', null, '⏱️ ', pkg.report_time_hours, 'h')
+            ),
+            React.createElement('details', { open: isExpanded },
+              React.createElement('summary', { onClick: function(e) { e.preventDefault(); toggleExpand(pkg._id); }, style: { cursor: 'pointer', color: '#3b82f6' } }, '📋 Tests (', testsList.length, ')'),
+              React.createElement('ul', null, testsList.map(function(t, i) { return React.createElement('li', { key: i }, t); }))
+            ),
+            React.createElement('div', { style: { display: 'flex', gap: '10px', marginTop: '10px' } },
+              React.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: '5px' } }, React.createElement('input', { type: 'checkbox', checked: isSelected, onChange: function() { toggleSelect(pkg); } }), ' Compare'),
+              React.createElement('button', { onClick: function() { navigate('/package-detail/' + pkg._id); }, style: { backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' } }, 'View Details'),
+              React.createElement('button', { onClick: function() { setSelectedPackage(pkg); setShowBookingModal(true); }, style: { backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' } }, 'Book Now')
+            )
+          );
+        })
+      )
+    ),
+    showBookingModal && selectedPackage && React.createElement('div', { style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+      React.createElement('div', { style: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' } },
+        React.createElement('h2', null, 'Book ', selectedPackage.package_name),
+        React.createElement('form', { onSubmit: handleBookingSubmit },
+          React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Full Name *'), React.createElement('input', { type: 'text', name: 'patient_name', required: true, value: bookingForm.patient_name, onChange: handleBookingChange, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+          React.createElement('div', { style: { display: 'flex', gap: '15px', marginBottom: '15px' } },
+            React.createElement('div', { style: { flex: 1 } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Age *'), React.createElement('input', { type: 'number', name: 'patient_age', required: true, value: bookingForm.patient_age, onChange: handleBookingChange, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+            React.createElement('div', { style: { flex: 1 } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Gender *'), React.createElement('select', { name: 'patient_gender', value: bookingForm.patient_gender, onChange: handleBookingChange, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } },
+              React.createElement('option', { value: 'male' }, 'Male'),
+              React.createElement('option', { value: 'female' }, 'Female'),
+              React.createElement('option', { value: 'other' }, 'Other')
+            ))
+          ),
+          React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Phone Number *'), React.createElement('input', { type: 'tel', name: 'patient_phone', required: true, value: bookingForm.patient_phone, onChange: handleBookingChange, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+          React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Email'), React.createElement('input', { type: 'email', name: 'patient_email', value: bookingForm.patient_email, onChange: handleBookingChange, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+          React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Appointment Date *'), React.createElement('input', { type: 'date', name: 'appointment_date', required: true, value: bookingForm.appointment_date, onChange: handleBookingChange, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+          selectedPackage.home_collection_available && React.createElement('div', null,
+            React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, React.createElement('input', { type: 'checkbox', name: 'home_collection_requested', checked: bookingForm.home_collection_requested, onChange: function(e) { setBookingForm(Object.assign({}, bookingForm, { home_collection_requested: e.target.checked })); } }), ' Request Home Collection')),
+            bookingForm.home_collection_requested && React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Home Address'), React.createElement('textarea', { name: 'home_address', rows: 3, value: bookingForm.home_address, onChange: handleBookingChange, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } }))
+          ),
+          React.createElement('div', { style: { marginTop: '20px', display: 'flex', gap: '10px' } },
+            React.createElement('button', { type: 'submit', style: { flex: 1, backgroundColor: '#10b981', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' } }, 'Confirm Booking'),
+            React.createElement('button', { type: 'button', onClick: closeBookingModal, style: { flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' } }, 'Cancel')
+          )
+        )
+      )
+    )
   );
 };
 
