@@ -69,6 +69,14 @@ const HealthPackagesTab = () => {
     applyFilters();
   }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation]);
 
+  // ========== FIX: Clear booking modal when leaving comparison view ==========
+  useEffect(() => {
+    if (!showCompare) {
+      setShowBookingModal(false);
+      setSelectedPackage(null);
+    }
+  }, [showCompare]);
+
   const loadPackages = async () => {
     try {
       setLoading(true);
