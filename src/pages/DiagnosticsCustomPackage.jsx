@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// ============================================
-// COMPLETE 16 MAIN CATEGORIES WITH ALL SUBCATEGORIES AND TESTS
-// ============================================
-
+// Complete 16 categories with subcategories
 const testCategories = [
-  // 1. MRI
   {
     code: 'MRI',
     name: '🧠 MRI (Magnetic Resonance Imaging)',
@@ -22,7 +18,6 @@ const testCategories = [
       { name: 'Other MRI', tests: ['MRI Breast', 'MRI Soft tissue', 'MRI Prostate'] }
     ]
   },
-  // 2. CT
   {
     code: 'CT',
     name: '📷 CT (Computed Tomography)',
@@ -37,7 +32,6 @@ const testCategories = [
       { name: 'Other CT', tests: ['CT Guided biopsy', 'CT Perfusion', 'CT KUB'] }
     ]
   },
-  // 3. X-ray
   {
     code: 'XR',
     name: '🦴 X-ray (Radiography)',
@@ -54,7 +48,6 @@ const testCategories = [
       { name: 'Other X-ray', tests: ['X-ray Mammogram', 'X-ray DEXA', 'X-ray Barium swallow', 'X-ray Barium meal', 'X-ray Barium enema'] }
     ]
   },
-  // 4. Ultrasound
   {
     code: 'USG',
     name: '🔊 Ultrasound (Sonography)',
@@ -72,7 +65,6 @@ const testCategories = [
       { name: 'Other USG', tests: ['ECHO (Echocardiography)', 'USG Neonatal brain', 'USG Guided procedures'] }
     ]
   },
-  // 5. Hematology
   {
     code: 'HEM',
     name: '🩸 Hematology',
@@ -86,7 +78,6 @@ const testCategories = [
       { name: 'Special', tests: ['Hb electrophoresis', 'Reticulocyte count', 'Blood grouping', 'Rh typing', 'Cross matching'] }
     ]
   },
-  // 6. Biochemistry
   {
     code: 'BIO',
     name: '🧪 Biochemistry',
@@ -105,7 +96,6 @@ const testCategories = [
       { name: 'Other', tests: ['Blood Gas (ABG)', 'Lactate', 'Ammonia', 'Osmolality'] }
     ]
   },
-  // 7. Serology / Immunology
   {
     code: 'SER',
     name: '🦠 Serology / Immunology',
@@ -121,7 +111,6 @@ const testCategories = [
       { name: 'Other', tests: ['Serum Protein Electrophoresis', 'Immunofixation', 'Quantitative Immunoglobulins'] }
     ]
   },
-  // 8. Hormones / Endocrine
   {
     code: 'HOR',
     name: '⚖️ Hormones / Endocrine',
@@ -135,7 +124,6 @@ const testCategories = [
       { name: 'Metabolic', tests: ['Insulin', 'C-peptide', 'PTH', 'Vitamin D', 'Growth Hormone', 'IGF-1'] }
     ]
   },
-  // 9. Urine Tests
   {
     code: 'URN',
     name: '💧 Urine Tests',
@@ -149,7 +137,6 @@ const testCategories = [
       { name: 'Special', tests: ['Urine Bence Jones Protein', 'Urine Porphobilinogen', 'Urine Drug Screen'] }
     ]
   },
-  // 10. Stool Tests
   {
     code: 'STL',
     name: '🧫 Stool Tests',
@@ -163,7 +150,6 @@ const testCategories = [
       { name: 'Special', tests: ['Calprotectin', 'Stool Fat', 'Stool Elastase', 'Stool Reducing Substances'] }
     ]
   },
-  // 11. ECG / Cardiac
   {
     code: 'ECG',
     name: '❤️ ECG / Cardiac Electrophysiology',
@@ -174,7 +160,6 @@ const testCategories = [
       { name: 'Monitoring', tests: ['Holter Monitoring 24h', 'Holter Monitoring 48h', 'Event Recorder', 'Tilt Table Test'] }
     ]
   },
-  // 12. EEG / Neurophysiology
   {
     code: 'EEG',
     name: '🧠 EEG / Neurophysiology',
@@ -185,7 +170,6 @@ const testCategories = [
       { name: 'Nerve Studies', tests: ['Electromyography (EMG)', 'Nerve Conduction Studies (NCS)', 'Repetitive Nerve Stimulation', 'Evoked Potentials (VEP)', 'Evoked Potentials (BAER)', 'Evoked Potentials (SSEP)'] }
     ]
   },
-  // 13. Pulmonary Function Tests
   {
     code: 'PFT',
     name: '🫁 Pulmonary Function Tests',
@@ -197,7 +181,6 @@ const testCategories = [
       { name: 'Other', tests: ['6 Minute Walk Test', 'FeNO', 'Maximal Respiratory Pressures', 'Nocturnal Oximetry'] }
     ]
   },
-  // 14. Endoscopy
   {
     code: 'END',
     name: '🔬 Endoscopy',
@@ -212,7 +195,6 @@ const testCategories = [
       { name: 'Other', tests: ['Laparoscopy', 'Arthroscopy', 'Mediastinoscopy'] }
     ]
   },
-  // 15. Nuclear Medicine / PET
   {
     code: 'NUC',
     name: '⚛️ Nuclear Medicine / PET',
@@ -229,7 +211,6 @@ const testCategories = [
       { name: 'Other', tests: ['Octreotide Scan', 'MIBG Scan', 'Parathyroid Scan', 'Sentinel Lymph Node Scan', 'Gallium Scan'] }
     ]
   },
-  // 16. Special Tests
   {
     code: 'SPL',
     name: '⭐ Special Tests',
@@ -274,6 +255,7 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
+  // Get user location
   useEffect(() => {
     if (useMyLocation && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -294,6 +276,7 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
     }
   }, [preselectedTests]);
 
+  // Search effect
   useEffect(() => {
     if (!searchTerm.trim()) {
       setShowDirectResults(false);
@@ -317,7 +300,9 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
 
   const toggleTest = (testName) => {
     let newSelected;
-    if (selectedTests.find(t => t.name === testName)) {
+    const exists = selectedTests.some(t => t.name === testName);
+    
+    if (exists) {
       newSelected = selectedTests.filter(t => t.name !== testName);
       setSelectedTests(newSelected);
       if (newSelected.length >= 2) {
@@ -335,7 +320,10 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
   };
 
   const handleCompareByName = async (testNames) => {
-    if (testNames.length < 2) return;
+    if (testNames.length < 2) {
+      alert('Please select at least 2 tests to compare');
+      return;
+    }
     setComparing(true);
     try {
       const testsRes = await axios.get(`${API_URL}/diagnostics/tests`);
@@ -347,23 +335,30 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
         if (found) testIds.push(found._id);
       });
       
-      if (testIds.length < 2) return;
+      if (testIds.length < 2) {
+        alert('Could not find test IDs for selected tests');
+        setComparing(false);
+        return;
+      }
       
       const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { 
         testIds,
         lat: userLocation?.lat,
         lng: userLocation?.lng
       });
-      if (res.data.providers) {
+      if (res.data.providers && res.data.providers.length > 0) {
         const sorted = [...res.data.providers].sort((a, b) => {
           const totalA = testNames.reduce((s, name) => s + (a.individual_prices[name] || 0), 0);
           const totalB = testNames.reduce((s, name) => s + (b.individual_prices[name] || 0), 0);
           return totalA - totalB;
         });
         setProviders(sorted);
+      } else {
+        alert('No providers found for the selected tests');
       }
     } catch (error) {
       console.error(error);
+      alert('Error comparing tests');
     } finally {
       setComparing(false);
     }
@@ -435,6 +430,20 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
       <h1>Build Custom Package</h1>
       <p>Select 2 or more tests from the categories below to compare prices across labs.</p>
 
+      {/* Selected Tests Counter */}
+      <div style={{ backgroundColor: '#e0e7ff', padding: '10px', borderRadius: '8px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <strong>Selected Tests: {selectedTests.length}</strong>
+        {selectedTests.length >= 2 && (
+          <button 
+            onClick={() => handleCompareByName(selectedTests.map(t => t.name))} 
+            disabled={comparing}
+            style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            {comparing ? 'Comparing...' : `Compare ${selectedTests.length} Tests`}
+          </button>
+        )}
+      </div>
+
       {/* Search and Filter Bar */}
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
@@ -505,10 +514,10 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
         </div>
       )}
       
-      {comparing && <p>Comparing...</p>}
+      {comparing && <p style={{ marginTop: '20px' }}>Comparing...</p>}
       
       {providers.length > 0 && selectedTests.length >= 2 && (
-        <div>
+        <div style={{ marginTop: '20px' }}>
           <h2>Comparison Results - Cheapest Provider First</h2>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
@@ -537,6 +546,19 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Floating Compare Button */}
+      {selectedTests.length >= 2 && (
+        <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}>
+          <button 
+            onClick={() => handleCompareByName(selectedTests.map(t => t.name))}
+            disabled={comparing}
+            style={{ backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: '50px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+          >
+            {comparing ? 'Comparing...' : `Compare ${selectedTests.length} Tests`}
+          </button>
         </div>
       )}
 
