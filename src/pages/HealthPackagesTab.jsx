@@ -222,6 +222,26 @@ const HealthPackagesTab = () => {
     });
   };
 
+  // Direct modal trigger using window variable
+  const [directModalPackage, setDirectModalPackage] = useState(null);
+  const [showDirectModal, setShowDirectModal] = useState(false);
+
+  const openDirectModal = (pkg) => {
+    setDirectModalPackage(pkg);
+    setShowDirectModal(true);
+  };
+
+  const closeDirectModal = () => {
+    setShowDirectModal(false);
+    setDirectModalPackage(null);
+  };
+
+  const handleDirectBookingSubmit = (e) => {
+    e.preventDefault();
+    alert('Booking successful for: ' + directModalPackage.package_name);
+    closeDirectModal();
+  };
+
   // ========== COMPARISON VIEW ==========
   if (showCompare) {
     var sortedPackages = [...selectedPackages];
@@ -290,14 +310,9 @@ const HealthPackagesTab = () => {
             React.createElement('tr', null,
               React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Action'),
               sortedPackages.map(function(p, i) {
-                var currentPackage = p;
                 return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd', textAlign: 'center' } },
                   React.createElement('button', {
-                    onClick: function() { 
-                      alert('Booking: ' + currentPackage.package_name);
-                      setSelectedPackage(currentPackage);
-                      setShowBookingModal(true);
-                    },
+                    onClick: function() { openDirectModal(p); },
                     style: { backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }
                   }, 'Book Now')
                 );
@@ -375,6 +390,33 @@ const HealthPackagesTab = () => {
             )
           );
         })
+      )
+    ),
+    // Direct Modal for Comparison Table - This bypasses React state issues
+    showDirectModal && directModalPackage && React.createElement('div', { style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+      React.createElement('div', { style: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' } },
+        React.createElement('h2', null, 'Book ', directModalPackage.package_name),
+        React.createElement('form', { onSubmit: handleDirectBookingSubmit },
+          React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Full Name *'), React.createElement('input', { type: 'text', name: 'patient_name', required: true, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+          React.createElement('div', { style: { display: 'flex', gap: '15px', marginBottom: '15px' } },
+            React.createElement('div', { style: { flex: 1 } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Age *'), React.createElement('input', { type: 'number', name: 'patient_age', required: true, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+            React.createElement('div', { style: { flex: 1 } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Gender *'), React.createElement('select', { name: 'patient_gender', style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } },
+              React.createElement('option', { value: 'male' }, 'Male'),
+              React.createElement('option', { value: 'female' }, 'Female'),
+              React.createElement('option', { value: 'other' }, 'Other')
+            ))
+          ),
+          React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Phone Number *'), React.createElement('input', { type: 'tel', name: 'patient_phone', required: true, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+          React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Email'), React.createElement('input', { type: 'email', name: 'patient_email', style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+          React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Appointment Date *'), React.createElement('input', { type: 'date', name: 'appointment_date', required: true, style: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' } })),
+          directModalPackage.home_collection_available && React.createElement('div', null,
+            React.createElement('div', { style: { marginBottom: '15px' } }, React.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, React.createElement('input', { type: 'checkbox', name: 'home_collection_requested' }), ' Request Home Collection'))
+          ),
+          React.createElement('div', { style: { marginTop: '20px', display: 'flex', gap: '10px' } },
+            React.createElement('button', { type: 'submit', style: { flex: 1, backgroundColor: '#10b981', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' } }, 'Confirm Booking'),
+            React.createElement('button', { type: 'button', onClick: closeDirectModal, style: { flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' } }, 'Cancel')
+          )
+        )
       )
     ),
     showBookingModal && selectedPackage && React.createElement('div', { style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
