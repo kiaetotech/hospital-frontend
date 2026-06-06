@@ -290,10 +290,12 @@ const HealthPackagesTab = () => {
             React.createElement('tr', null,
               React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Action'),
               sortedPackages.map(function(p, i) {
+                var currentPackage = p;
                 return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd', textAlign: 'center' } },
                   React.createElement('button', {
                     onClick: function() { 
-                      setSelectedPackage(p);
+                      alert('Booking: ' + currentPackage.package_name);
+                      setSelectedPackage(currentPackage);
                       setShowBookingModal(true);
                     },
                     style: { backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }
