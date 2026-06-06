@@ -2,14 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// Same test categories as Lab Tests
+const testCategories = [
+  { code: 'MRI', name: '🧠 MRI (Magnetic Resonance Imaging)', icon: '🧠', color: '#8e44ad', tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen / MRCP', 'MRI Pelvis', 'MRI Cardiac', 'MRI Angiography (MRA)', 'MRI Breast', 'MRI Orbit / IAC', 'MRI Soft tissue', 'MR Venography (MRV)'] },
+  { code: 'CT', name: '📷 CT (Computed Tomography)', icon: '📷', color: '#3498db', tests: ['CT Head', 'CT Chest', 'CT Abdomen + Pelvis', 'CT Angiography (CTA)', 'CT Spine', 'CT Facial bones / Sinus', 'CT Temporal bone', 'CT Urogram', 'CT Virtual colonoscopy', 'CT Perfusion', 'CT Guided biopsy'] },
+  { code: 'XR', name: '🦴 X-ray (Radiography)', icon: '🦴', color: '#e67e22', tests: ['Chest X-ray', 'X-ray Spine', 'X-ray Limbs', 'X-ray Legs', 'X-ray Pelvis / Hip', 'X-ray Shoulder', 'X-ray Skull', 'X-ray Sinus', 'X-ray Abdomen (KUB)', 'X-ray Joints', 'X-ray Dental (OPG)', 'X-ray Mammogram', 'X-ray Barium studies', 'X-ray DEXA'] },
+  { code: 'USG', name: '🔊 Ultrasound (Sonography)', icon: '🔊', color: '#1abc9c', tests: ['USG Abdomen', 'USG Pelvis', 'USG Transvaginal', 'USG Transrectal', 'USG Thyroid', 'USG Breast', 'USG Scrotum', 'USG Musculoskeletal', 'USG Vascular Doppler', 'USG Lower limb (DVT)', 'USG Upper limb', 'USG Renal Doppler', 'USG Hepatobiliary Doppler', 'USG Neonatal brain', 'USG KUB', 'USG Guided procedures', 'ECHO (Echocardiography)', 'Obstetric USG'] },
+  { code: 'HEM', name: '🩸 Hematology', icon: '🩸', color: '#e74c3c', tests: ['Complete Blood Count (CBC)', 'Hemoglobin (Hb)', 'Hematocrit (HCT)', 'RBC count', 'WBC count (TLC, DLC)', 'Platelet count', 'Peripheral smear', 'ESR', 'CRP', 'Coagulation profile (PT, INR, aPTT)', 'Bleeding time', 'Clotting time', 'D-Dimer', 'Fibrinogen', 'Hb electrophoresis', 'Reticulocyte count', 'Blood grouping + Rh typing'] },
+  { code: 'BIO', name: '🧪 Biochemistry', icon: '🧪', color: '#f39c12', tests: ['Blood glucose (Fasting, PP, Random)', 'HbA1c', 'Liver Function Test (LFT)', 'Renal Function Test (RFT)', 'Electrolytes (Na, K, Cl, Ca, Mg, P)', 'Lipid profile', 'Cardiac enzymes (CK-MB, Troponin, LDH)', 'Pancreatic enzymes (Amylase, Lipase)', 'Iron studies (Serum iron, TIBC, Ferritin)', 'Vitamin B12', 'Vitamin D', 'Folate', 'Homocysteine', 'Ammonia', 'Lactate', 'Blood gas (ABG / VBG)'] },
+  { code: 'SER', name: '🦠 Serology / Immunology', icon: '🦠', color: '#9b59b6', tests: ['HIV (1+2)', 'HBsAg (Hepatitis B)', 'Anti-HBs, Anti-HBc', 'Hepatitis C antibody', 'Hepatitis A IgM', 'Hepatitis E IgM', 'Syphilis (VDRL, TPHA)', 'Dengue (NS1 antigen, IgM, IgG)', 'Chikungunya IgM/IgG', 'Malaria (rapid antigen, smear)', 'Typhoid (Widal, Typhidot)', 'Rheumatoid factor (RF)', 'Anti-CCP (ACPA)', 'ANA + ENA profile', 'Anti-dsDNA', 'ANCA (c-ANCA, p-ANCA)', 'Anti-phospholipid antibodies', 'Complement C3, C4', 'Serum protein electrophoresis (SPEP)', 'Quantitative immunoglobulins', 'Total IgE', 'RAST test', 'hs-CRP', 'Procalcitonin', 'Tumor markers (AFP, CEA, CA-125, CA 19-9, CA 15-3, PSA)'] },
+  { code: 'HOR', name: '⚖️ Hormones / Endocrine', icon: '⚖️', color: '#16a085', tests: ['Thyroid profile (TSH, Free T3, Free T4)', 'Cortisol (morning/evening)', 'ACTH', 'Prolactin', 'LH, FSH', 'Estradiol (E2)', 'Progesterone', 'Testosterone (total/free)', 'DHEA-S', 'Aldosterone / Renin ratio', 'Metanephrines', 'Parathyroid hormone (PTH)', 'Insulin, C-peptide', 'Growth hormone (GH) + IGF-1', 'Anti-Mullerian hormone (AMH)'] },
+  { code: 'URN', name: '💧 Urine Tests', icon: '💧', color: '#2980b9', tests: ['Urinalysis (routine & microscopy)', 'Urine glucose, ketones', 'Urine protein (spot, 24-hour)', 'Urine microalbumin / creatinine ratio', 'Urine culture & sensitivity', 'Urine Gram stain', 'Urine pregnancy test (β-hCG)', 'Urine electrolytes (Na, K, Cl)', 'Urine osmolality', 'Urine creatinine', 'Urine urea nitrogen', 'Urine calcium (24-hour)', 'Urine uric acid', 'Urine porphobilinogen', 'Urine catecholamines / metanephrines', 'Urine cortisol (free)', 'Urine 5-HIAA', 'Urine drug screen', 'Urine Bence Jones protein'] },
+  { code: 'STL', name: '🧫 Stool Tests', icon: '🧫', color: '#27ae60', tests: ['Stool routine & microscopy', 'Occult blood (FOBT / FIT)', 'Stool culture & sensitivity', 'Stool for ova, cyst, parasite', 'Stool antigen tests (Giardia, Cryptosporidium, H.pylori)', 'Stool PCR for pathogens', 'Calprotectin', 'Stool reducing substances', 'Stool fat (quantitative/qualitative)', 'Stool elastase', 'Stool pH'] },
+  { code: 'ECG', name: '❤️ ECG / Cardiac Electrophysiology', icon: '❤️', color: '#e74c3c', tests: ['ECG (12-lead, resting)', 'Stress ECG (Treadmill test - TMT)', 'Holter monitoring (24/48-hour)', 'Event recorder', 'Signal-averaged ECG'] },
+  { code: 'EEG', name: '🧠 EEG / Neurophysiology', icon: '🧠', color: '#9b59b6', tests: ['Routine EEG', 'Sleep-deprived EEG', 'Video-EEG monitoring', 'Ambulatory EEG', 'Evoked potentials (VEP, BAER, SSEP)', 'Electromyography (EMG)', 'Nerve conduction studies (NCS)', 'Repetitive nerve stimulation'] },
+  { code: 'PFT', name: '🫁 Pulmonary Function Tests', icon: '🫁', color: '#1abc9c', tests: ['Spirometry (FEV1, FVC, FEV1/FVC)', 'Bronchodilator reversibility test', 'Lung volumes (plethysmography)', 'Diffusing capacity (DLCO)', '6-minute walk test', 'Fractional exhaled nitric oxide (FeNO)', 'Methacholine challenge test', 'Maximal respiratory pressures (MIP/MEP)', 'Nocturnal oximetry'] },
+  { code: 'END', name: '🔬 Endoscopy', icon: '🔬', color: '#2c3e50', tests: ['Upper GI endoscopy (EGD)', 'Colonoscopy', 'Sigmoidoscopy', 'Bronchoscopy', 'Cystoscopy', 'Hysteroscopy', 'Laparoscopy', 'Arthroscopy', 'ERCP', 'Capsule endoscopy', 'Enteroscopy', 'EUS'] },
+  { code: 'NUC', name: '⚛️ Nuclear Medicine / PET', icon: '⚛️', color: '#16a085', tests: ['PET-CT (whole body, cardiac, brain)', 'Bone scan (Tc-99m)', 'Thyroid scan (I-123, Tc-99m)', 'Renal scan (DTPA, MAG3, DMSA)', 'V/Q scan (lung)', 'HIDA scan (gallbladder)', 'Myocardial perfusion scan (MIBI, Thallium)', 'Parathyroid scan (Sestamibi)', 'Octreotide scan', 'MIBG scan', 'Gallium scan', 'White cell scan', 'Gastric emptying scan', 'Meckel\'s scan'] },
+  { code: 'SPL', name: '⭐ Special Tests', icon: '⭐', color: '#7f8c8d', tests: ['Sweat chloride test', 'Genetic testing (DNA/RNA sequencing)', 'Karyotype / FISH / Microarray', 'Single gene sequencing', 'NGS panel / Whole exome', 'NIPT', 'HLA typing', 'Paternity testing', 'CSF analysis', 'Synovial fluid analysis', 'Peritoneal fluid analysis', 'Pleural fluid analysis', 'Amniotic fluid analysis', 'Skin biopsy', 'Muscle biopsy', 'Nerve biopsy', 'Bone marrow aspirate & biopsy', 'Fine needle aspiration cytology (FNAC)', 'Pap smear', 'Semen analysis'] }
+];
+
 const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
   const navigate = useNavigate();
-  const [allTests, setAllTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [comparing, setComparing] = useState(false);
   const [providers, setProviders] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [expandedSubCategories, setExpandedSubCategories] = useState({});
+  const [visibleTests, setVisibleTests] = useState({});
   
   // Booking modal states
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -34,7 +56,7 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
         () => {}
       );
     }
-    loadTests();
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -44,36 +66,46 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
     }
   }, [preselectedTests]);
 
-  const loadTests = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/diagnostics/tests`);
-      if (res.data?.data) setAllTests(res.data.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleTest = (test) => {
+  const toggleTest = (testName) => {
     let newSelected;
-    if (selectedTests.find(t => t._id === test._id)) {
-      newSelected = selectedTests.filter(t => t._id !== test._id);
+    if (selectedTests.includes(testName)) {
+      newSelected = selectedTests.filter(t => t !== testName);
       setSelectedTests(newSelected);
-      if (newSelected.length >= 2) handleCompare(newSelected);
-      else setProviders([]);
+      if (newSelected.length >= 2) {
+        // Need to get test IDs for comparison
+        handleCompareByName(newSelected);
+      } else {
+        setProviders([]);
+      }
     } else {
-      newSelected = [...selectedTests, test];
+      newSelected = [...selectedTests, testName];
       setSelectedTests(newSelected);
-      if (newSelected.length >= 2) handleCompare(newSelected);
+      if (newSelected.length >= 2) {
+        handleCompareByName(newSelected);
+      }
     }
   };
 
-  const handleCompare = async (tests) => {
-    if (tests.length < 2) return;
+  const handleCompareByName = async (testNames) => {
+    if (testNames.length < 2) return;
     setComparing(true);
     try {
-      const testIds = tests.map(t => t._id);
+      // First get test IDs from names
+      const testsRes = await axios.get(`${API_URL}/diagnostics/tests`);
+      const allTestsData = testsRes.data?.data || [];
+      
+      const testIds = [];
+      testNames.forEach(name => {
+        const found = allTestsData.find(t => t.test_name === name);
+        if (found) testIds.push(found._id);
+      });
+      
+      if (testIds.length < 2) {
+        alert('Could not find test IDs for selected tests');
+        setComparing(false);
+        return;
+      }
+      
       const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { 
         testIds,
         lat: userLocation?.lat,
@@ -81,8 +113,8 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
       });
       if (res.data.providers) {
         const sorted = [...res.data.providers].sort((a, b) => {
-          const totalA = tests.reduce((s, t) => s + (a.individual_prices[t._id] || 0), 0);
-          const totalB = tests.reduce((s, t) => s + (b.individual_prices[t._id] || 0), 0);
+          const totalA = testNames.reduce((s, name) => s + (a.individual_prices[name] || 0), 0);
+          const totalB = testNames.reduce((s, name) => s + (b.individual_prices[name] || 0), 0);
           return totalA - totalB;
         });
         setProviders(sorted);
@@ -94,7 +126,32 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
     }
   };
 
-  // Booking functions
+  const handleCompare = async (tests) => {
+    if (tests.length < 2) return;
+    setComparing(true);
+    try {
+      const testIds = tests.map(t => t._id);
+      const testNames = tests.map(t => t.test_name);
+      const res = await axios.post(`${API_URL}/diagnostics/compare-package`, { 
+        testIds,
+        lat: userLocation?.lat,
+        lng: userLocation?.lng
+      });
+      if (res.data.providers) {
+        const sorted = [...res.data.providers].sort((a, b) => {
+          const totalA = testNames.reduce((s, name) => s + (a.individual_prices[name] || 0), 0);
+          const totalB = testNames.reduce((s, name) => s + (b.individual_prices[name] || 0), 0);
+          return totalA - totalB;
+        });
+        setProviders(sorted);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setComparing(false);
+    }
+  };
+
   const openBookingModal = (provider) => {
     setSelectedProvider(provider);
     setShowBookingModal(true);
@@ -111,32 +168,15 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
       return;
     }
     
-    const total = selectedTests.reduce((sum, test) => sum + (selectedProvider.individual_prices[test._id] || 0), 0);
+    const total = selectedTests.reduce((sum, testName) => sum + (selectedProvider.individual_prices[testName] || 0), 0);
     
-    try {
-      // First create a booking record
-      const bookingData = {
-        ...bookingForm,
-        package_name: `Custom Package (${selectedTests.map(t => t.test_name).join(', ')})`,
-        provider_name: selectedProvider.provider_name,
-        total_amount: total,
-        tests: selectedTests.map(t => ({ id: t._id, name: t.test_name, price: selectedProvider.individual_prices[t._id] }))
-      };
-      
-      // Here you would call your booking API
-      // const res = await axios.post(`${API_URL}/bookings/custom`, bookingData);
-      
-      alert(`Booking successful!\nProvider: ${selectedProvider.provider_name}\nTotal: ₹${total}\nReference: CUST${Date.now()}`);
-      setShowBookingModal(false);
-      setSelectedProvider(null);
-      setBookingForm({
-        patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
-        patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
-      });
-    } catch (err) {
-      console.error('Booking error:', err);
-      alert('Booking failed. Please try again.');
-    }
+    alert(`Booking successful!\nProvider: ${selectedProvider.provider_name}\nTests: ${selectedTests.join(', ')}\nTotal: ₹${total}\nReference: CUST${Date.now()}`);
+    setShowBookingModal(false);
+    setSelectedProvider(null);
+    setBookingForm({
+      patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
+      patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
+    });
   };
 
   const closeBookingModal = () => {
@@ -144,39 +184,119 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
     setSelectedProvider(null);
   };
 
-  const filteredTests = allTests.filter(test =>
-    test.test_name?.toLowerCase().includes('')
-  );
+  const toggleCategory = (code) => {
+    setExpandedCategories(prev => ({ ...prev, [code]: !prev[code] }));
+  };
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading tests...</div>;
+  const toggleSubCategory = (mainCode, subName) => {
+    const key = `${mainCode}_${subName}`;
+    setExpandedSubCategories(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const showMoreTests = (categoryCode) => {
+    setVisibleTests(prev => ({
+      ...prev,
+      [categoryCode]: (prev[categoryCode] || 10) + 10
+    }));
+  };
+
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <button onClick={() => navigate('/diagnostics-list')}>← Back</button>
       <h1>Build Custom Package</h1>
-      <p>Select 2 or more tests to compare prices.</p>
+      <p>Select 2 or more tests from the categories below to compare prices across labs.</p>
       
-      <div style={{ marginBottom: '1rem', maxHeight: '400px', overflowY: 'auto', border: '1px solid #ddd', padding: '10px', borderRadius: '8px' }}>
-        {filteredTests.map(test => (
-          <label key={test._id} style={{ display: 'block', padding: '0.5rem', cursor: 'pointer' }}>
-            <input type="checkbox" checked={!!selectedTests.find(t => t._id === test._id)} onChange={() => toggleTest(test)} />
-            {test.test_name}
-          </label>
-        ))}
+      {/* Categories View - Same as Lab Tests */}
+      <div>
+        {testCategories.map(category => {
+          const visibleCount = visibleTests[category.code] || 10;
+          const hasMore = visibleCount < category.tests.length;
+          const displayedTests = category.tests.slice(0, visibleCount);
+          
+          return (
+            <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
+              <div 
+                onClick={() => toggleCategory(category.code)} 
+                style={{ backgroundColor: category.color, color: 'white', padding: '12px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}
+              >
+                <span>{category.icon} {category.name} ({category.tests.length} tests)</span>
+                <span>{expandedCategories[category.code] ? '▼' : '▶'}</span>
+              </div>
+              
+              {expandedCategories[category.code] && (
+                <div style={{ backgroundColor: '#f9fafb', padding: '10px' }}>
+                  {category.subcategories ? (
+                    // If subcategories exist
+                    category.subcategories.map(sub => (
+                      <div key={sub.name} style={{ marginBottom: '10px' }}>
+                        <div 
+                          onClick={() => toggleSubCategory(category.code, sub.name)} 
+                          style={{ padding: '8px', backgroundColor: '#f3f4f6', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderRadius: '4px' }}
+                        >
+                          <span>📂 {sub.name} ({sub.tests.length} tests)</span>
+                          <span>{expandedSubCategories[`${category.code}_${sub.name}`] ? '▼' : '▶'}</span>
+                        </div>
+                        
+                        {expandedSubCategories[`${category.code}_${sub.name}`] && (
+                          <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                            {sub.tests.map(test => (
+                              <label key={test} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedTests.includes(test)} 
+                                  onChange={() => toggleTest(test)} 
+                                />
+                                {test}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    // Direct tests display
+                    <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                      {displayedTests.map(test => (
+                        <label key={test} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedTests.includes(test)} 
+                            onChange={() => toggleTest(test)} 
+                          />
+                          {test}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {hasMore && (
+                    <div style={{ padding: '8px', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
+                      <button onClick={() => showMoreTests(category.code)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        Show More... ({category.tests.length - visibleCount} more)
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       
-      {comparing && <p>Comparing...</p>}
+      {comparing && <p style={{ marginTop: '20px' }}>Comparing...</p>}
       
       {providers.length > 0 && selectedTests.length >= 2 && (
-        <div>
-          <h2>Results - Cheapest Provider First</h2>
+        <div style={{ marginTop: '20px' }}>
+          <h2>Comparison Results - Cheapest Provider First</h2>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f3f4f6' }}>
                   <th style={{ border: '1px solid #ddd', padding: '8px' }}>Provider</th>
-                  {selectedTests.map(test => (
-                    <th key={test._id} style={{ border: '1px solid #ddd', padding: '8px' }}>{test.test_name}</th>
+                  {selectedTests.map((test, idx) => (
+                    <th key={idx} style={{ border: '1px solid #ddd', padding: '8px' }}>{test}</th>
                   ))}
                   <th style={{ border: '1px solid #ddd', padding: '8px' }}>Total</th>
                   <th style={{ border: '1px solid #ddd', padding: '8px' }}>Rating</th>
@@ -186,13 +306,13 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
               </thead>
               <tbody>
                 {providers.map((provider, idx) => {
-                  const total = selectedTests.reduce((sum, test) => sum + (provider.individual_prices[test._id] || 0), 0);
+                  const total = selectedTests.reduce((sum, test) => sum + (provider.individual_prices[test] || 0), 0);
                   return (
                     <tr key={idx}>
                       <td style={{ border: '1px solid #ddd', padding: '8px' }}>{provider.provider_name} {idx === 0 && '⭐'}</td>
-                      {selectedTests.map(test => (
-                        <td key={test._id} style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>
-                          ₹{provider.individual_prices[test._id] || 'N/A'}
+                      {selectedTests.map((test, i) => (
+                        <td key={i} style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>
+                          ₹{provider.individual_prices[test] || 'N/A'}
                         </td>
                       ))}
                       <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}><strong>₹{total}</strong></td>
@@ -218,8 +338,8 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' }}>
             <h2>Book Custom Package</h2>
             <p><strong>Provider:</strong> {selectedProvider.provider_name}</p>
-            <p><strong>Tests:</strong> {selectedTests.map(t => t.test_name).join(', ')}</p>
-            <p><strong>Total Amount:</strong> ₹{selectedTests.reduce((sum, test) => sum + (selectedProvider.individual_prices[test._id] || 0), 0)}</p>
+            <p><strong>Tests:</strong> {selectedTests.join(', ')}</p>
+            <p><strong>Total Amount:</strong> ₹{selectedTests.reduce((sum, test) => sum + (selectedProvider.individual_prices[test] || 0), 0)}</p>
             
             <form onSubmit={handleBookingSubmit}>
               <div style={{ marginBottom: '15px' }}>
