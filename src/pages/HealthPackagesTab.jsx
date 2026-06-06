@@ -222,15 +222,10 @@ const HealthPackagesTab = () => {
     });
   };
 
-  // Comparison View
+  // ========== COMPARISON VIEW ==========
   if (showCompare) {
     var sortedPackages = [...selectedPackages];
     sortedPackages.sort(function(a, b) { return a.discounted_price - b.discounted_price; });
-    
-    var handleCompareBooking = function(pkg) {
-      setSelectedPackage(pkg);
-      setShowBookingModal(true);
-    };
     
     return React.createElement('div', null,
       React.createElement('button', { onClick: function() { setShowCompare(false); }, style: { marginBottom: '20px', cursor: 'pointer' } }, '← Back to Packages'),
@@ -295,9 +290,14 @@ const HealthPackagesTab = () => {
             React.createElement('tr', null,
               React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Action'),
               sortedPackages.map(function(p, i) {
+                var currentPackage = p;
                 return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd', textAlign: 'center' } },
                   React.createElement('button', {
-                    onClick: function() { handleCompareBooking(p); },
+                    onClick: function() { 
+                      alert('Booking: ' + currentPackage.package_name);
+                      setSelectedPackage(currentPackage);
+                      setShowBookingModal(true);
+                    },
                     style: { backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }
                   }, 'Book Now')
                 );
@@ -309,7 +309,7 @@ const HealthPackagesTab = () => {
     );
   }
 
-  // Main Return
+  // ========== MAIN RETURN ==========
   return React.createElement('div', null,
     React.createElement('h2', null, '🏥 Health Packages'),
     React.createElement('p', null, 'Select packages to compare prices, features, and more. Current filter: ', packageType || 'All'),
