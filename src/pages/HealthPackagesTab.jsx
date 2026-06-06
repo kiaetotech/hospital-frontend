@@ -238,7 +238,7 @@ const HealthPackagesTab = () => {
             </thead>
             <tbody>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Price</td>
-                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}><strong>₹{p.discounted_price}</strong> <span style={{ textDecoration: 'line-through' }}>₹{p.mrp}</span></td>)}
+                {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}><strong>₹{p.discounted_price}</strong> <span style={{ textDecoration: 'line-through' }}>₹{p.mrp}</span><tr>)}
               </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Provider</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.provider_id?.provider_name || 'N/A'}</td>)}
@@ -255,7 +255,7 @@ const HealthPackagesTab = () => {
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Report Time</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.report_time_hours} hours</td>)}
               </tr>
-              <td><td style={{ padding: '10px', border: '1px solid #ddd' }}>Tests</td>
+              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Tests</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.tests_included_text?.split(',').length || 0} tests</td>)}
               </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Action</td>
@@ -263,6 +263,7 @@ const HealthPackagesTab = () => {
                   <td key={i} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                     <button 
                       onClick={() => {
+                        alert('Booking: ' + p.package_name);
                         setSelectedPackage(p);
                         setShowBookingModal(true);
                       }} 
@@ -300,10 +301,12 @@ const HealthPackagesTab = () => {
       </button>
 
       {showSuggestions && <SmartSuggestions onSelectPackage={(pkg) => {
+        alert('Booking: ' + pkg.package_name);
         setSelectedPackage(pkg);
         setShowBookingModal(true);
       }} />}
       {showNearby && <NearbyPackages onSelectPackage={(pkg) => {
+        alert('Booking: ' + pkg.package_name);
         setSelectedPackage(pkg);
         setShowBookingModal(true);
       }} />}
@@ -393,6 +396,7 @@ const HealthPackagesTab = () => {
                   </label>
                   <button onClick={() => navigate(`/package-detail/${pkg._id}`)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>View Details</button>
                   <button onClick={() => {
+                    alert('Booking: ' + pkg.package_name);
                     setSelectedPackage(pkg);
                     setShowBookingModal(true);
                   }} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
