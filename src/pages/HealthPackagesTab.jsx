@@ -222,8 +222,11 @@ const HealthPackagesTab = () => {
     
     // Local booking handler for comparison table
     const handleCompareBooking = (pkg) => {
+      console.log('Button clicked for:', pkg.package_name);
+      console.log('Package ID:', pkg._id);
       setSelectedPackage(pkg);
       setShowBookingModal(true);
+      alert('Opening booking form for: ' + pkg.package_name);
     };
     
     return (
