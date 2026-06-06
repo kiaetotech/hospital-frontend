@@ -288,26 +288,24 @@ const HealthPackagesTab = () => {
               })
             ),
             React.createElement('tr', null,
-              React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Action'),
-              sortedPackages.map(function(p, i) {
-                var currentPackage = p;
+  	      React.createElement('td', { style: { padding: '10px', border: '1px solid #ddd' } }, 'Action'),
+ 	      sortedPackages.map(function(p, i) {
+   		var currentPackage = p;
                 return React.createElement('td', { key: i, style: { padding: '10px', border: '1px solid #ddd', textAlign: 'center' } },
-                  React.createElement('button', {
-                    onClick: function() { 
-                      alert('Booking: ' + currentPackage.package_name);
-                      setSelectedPackage(currentPackage);
-                      setShowBookingModal(true);
-                    },
-                    style: { backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }
-                  }, 'Book Now')
-                );
-              })
-            )
-          )
-        )
-      )
+            React.createElement('button', {
+              onClick: function() { 
+                alert('Booking: ' + currentPackage.package_name);
+                console.log('Setting selectedPackage:', currentPackage);
+                setSelectedPackage(currentPackage);
+                console.log('Setting showBookingModal to true');
+                setShowBookingModal(true);
+               console.log('Current showBookingModal state should be true');
+        },
+        style: { backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }
+      }, 'Book Now')
     );
-  }
+  })
+)
 
   // ========== MAIN RETURN ==========
   return React.createElement('div', null,
