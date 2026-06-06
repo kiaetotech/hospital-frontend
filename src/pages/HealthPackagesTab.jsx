@@ -377,6 +377,10 @@ const HealthPackagesTab = () => {
         })
       )
     ),
+    // DEBUG DIV - Shows current modal state
+    React.createElement('div', { style: { backgroundColor: 'yellow', padding: '10px', margin: '10px', border: '1px solid black', position: 'fixed', bottom: '10px', left: '10px', zIndex: 9999 } },
+      'DEBUG: showBookingModal = ', String(showBookingModal), ', selectedPackage = ', selectedPackage ? selectedPackage.package_name : 'null'
+    ),
     showBookingModal && selectedPackage && React.createElement('div', { style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
       React.createElement('div', { style: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' } },
         React.createElement('h2', null, 'Book ', selectedPackage.package_name),
