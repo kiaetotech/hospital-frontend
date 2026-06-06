@@ -69,7 +69,7 @@ const HealthPackagesTab = () => {
     applyFilters();
   }, [searchTerm, minPrice, maxPrice, minRating, maxDistance, homeCollectionOnly, packages, userLocation]);
 
-  // ========== FIX: Clear booking modal when leaving comparison view ==========
+  // Clear booking modal when leaving comparison view
   useEffect(() => {
     if (!showCompare) {
       setShowBookingModal(false);
@@ -94,13 +94,11 @@ const HealthPackagesTab = () => {
     }
   };
 
-  // ========== DISTANCE CALCULATION - FIXED (NO RANDOM) ==========
+  // ========== DISTANCE CALCULATION ==========
   const getDistance = (pkg) => {
-    // If package has stored distance
     if (pkg.distance_km) return pkg.distance_km;
     if (pkg.distance) return pkg.distance;
     
-    // Calculate real distance if user location available
     if (userLocation && pkg.provider_id?.location?.lat) {
       const lat1 = userLocation.lat;
       const lon1 = userLocation.lng;
@@ -116,7 +114,6 @@ const HealthPackagesTab = () => {
       return (R * c).toFixed(1);
     }
     
-    // Consistent fallback (based on package ID, not random)
     const idNum = parseInt(pkg._id?.slice(-4) || '1000', 16) || 1000;
     return (idNum % 15) + 1;
   };
@@ -185,17 +182,16 @@ const HealthPackagesTab = () => {
   };
 
   // ========== BOOKING FUNCTIONS ==========
-  const openBookingModal = (pkg) => {
-    setSelectedPackage(pkg);
-    setShowBookingModal(true);
-  };
-
   const handleBookingChange = (e) => {
     setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
   };
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
+    if (!selectedPackage) {
+      alert('No package selected');
+      return;
+    }
     try {
       const res = await axios.post(`${API_URL}/health-packages/${selectedPackage._id}/book`, bookingForm);
       alert(`Booking successful! Reference: ${res.data.booking_reference}`);
@@ -206,6 +202,7 @@ const HealthPackagesTab = () => {
         patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
       });
     } catch (err) {
+      console.error('Booking error:', err);
       alert('Booking failed. Please try again.');
     }
   };
@@ -258,13 +255,21 @@ const HealthPackagesTab = () => {
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Report Time</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.report_time_hours} hours</td>)}
               </tr>
-              <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Tests</td>
+              <td><td style={{ padding: '10px', border: '1px solid #ddd' }}>Tests</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.tests_included_text?.split(',').length || 0} tests</td>)}
               </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Action</td>
                 {sortedPackages.map((p, i) => (
                   <td key={i} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                    <button onClick={() => openBookingModal(p)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
+                    <button 
+                      onClick={() => {
+                        setSelectedPackage(p);
+                        setShowBookingModal(true);
+                      }} 
+                      style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                    >
+                      Book Now
+                    </button>
                   </td>
                 ))}
               </tr>
@@ -294,8 +299,14 @@ const HealthPackagesTab = () => {
         📍 Nearby Packages
       </button>
 
-      {showSuggestions && <SmartSuggestions onSelectPackage={openBookingModal} />}
-      {showNearby && <NearbyPackages onSelectPackage={openBookingModal} />}
+      {showSuggestions && <SmartSuggestions onSelectPackage={(pkg) => {
+        setSelectedPackage(pkg);
+        setShowBookingModal(true);
+      }} />}
+      {showNearby && <NearbyPackages onSelectPackage={(pkg) => {
+        setSelectedPackage(pkg);
+        setShowBookingModal(true);
+      }} />}
 
       {/* Search and Filters */}
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
@@ -381,7 +392,10 @@ const HealthPackagesTab = () => {
                     <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(pkg)} /> Compare
                   </label>
                   <button onClick={() => navigate(`/package-detail/${pkg._id}`)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>View Details</button>
-                  <button onClick={() => openBookingModal(pkg)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
+                  <button onClick={() => {
+                    setSelectedPackage(pkg);
+                    setShowBookingModal(true);
+                  }} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Book Now</button>
                 </div>
               </div>
             );
