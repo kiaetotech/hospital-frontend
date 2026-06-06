@@ -239,7 +239,7 @@ const HealthPackagesTab = () => {
             <tbody>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Price</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}><strong>₹{p.discounted_price}</strong> <span style={{ textDecoration: 'line-through' }}>₹{p.mrp}</span></td>)}
-              </tr>
+              <tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Provider</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.provider_id?.provider_name || 'N/A'}</td>)}
               </tr>
@@ -248,7 +248,7 @@ const HealthPackagesTab = () => {
               </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Distance</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{getDistance(p)} km</td>)}
-              <tr>
+              </tr>
               <tr><td style={{ padding: '10px', border: '1px solid #ddd' }}>Home Collection</td>
                 {sortedPackages.map((p, i) => <td key={i} style={{ padding: '10px', border: '1px solid #ddd' }}>{p.home_collection_available ? '✅ Yes' : '❌ No'}</td>)}
               </tr>
@@ -263,6 +263,7 @@ const HealthPackagesTab = () => {
                   <td key={i} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                     <button 
                       onClick={() => {
+                        alert('Booking: ' + p.package_name);
                         setSelectedPackage(p);
                         setShowBookingModal(true);
                       }} 
