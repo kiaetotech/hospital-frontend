@@ -216,9 +216,10 @@ const Diagnostics = () => {
   const [useMyLocation, setUseMyLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   
-  // Pagination per category - always expanded
+  // Pagination per category
   const [currentPage, setCurrentPage] = useState({});
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(12); // Show 12 tests per page (grid)
+  const [testsPerRow, setTestsPerRow] = useState(3); // 3 tests per row
   
   // Booking Modal States
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -385,11 +386,17 @@ const Diagnostics = () => {
                 <option value="4.5">4.5★ & above</option>
                 <option value="4.8">4.8★ & above</option>
               </select>
+              <select value={testsPerRow} onChange={(e) => setTestsPerRow(parseInt(e.target.value))} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }}>
+                <option value="2">2 tests per row</option>
+                <option value="3">3 tests per row</option>
+                <option value="4">4 tests per row</option>
+                <option value="6">6 tests per row</option>
+              </select>
               <select value={itemsPerPage} onChange={(e) => setItemsPerPage(parseInt(e.target.value))} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }}>
-                <option value="5">Show 5 per page</option>
-                <option value="10">Show 10 per page</option>
-                <option value="20">Show 20 per page</option>
-                <option value="50">Show 50 per page</option>
+                <option value="6">Show 6 per page</option>
+                <option value="12">Show 12 per page</option>
+                <option value="18">Show 18 per page</option>
+                <option value="24">Show 24 per page</option>
               </select>
             </div>
             
@@ -407,7 +414,7 @@ const Diagnostics = () => {
             {searchTerm && <p style={{ fontSize: '13px', marginTop: '10px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests matching "{searchTerm}"</p>}
           </div>
 
-          {/* All 16 Main Categories - Always Expanded, No Arrow */}
+          {/* All 16 Main Categories - Grid Layout */}
           <div>
             {filteredCategories.map(category => {
               const totalTests = category.tests.length;
@@ -415,9 +422,15 @@ const Diagnostics = () => {
               const currentPageNum = currentPage[category.code] || 1;
               const paginatedTests = getPaginatedTests(category.tests, category.code);
               
+              // Split tests into rows based on testsPerRow
+              const rows = [];
+              for (let i = 0; i < paginatedTests.length; i += testsPerRow) {
+                rows.push(paginatedTests.slice(i, i + testsPerRow));
+              }
+              
               return (
                 <div key={category.code} style={{ marginBottom: '25px', border: `2px solid ${category.color}`, borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                  {/* Main Category Header - No collapse arrow, just title */}
+                  {/* Main Category Header */}
                   <div style={{ 
                     backgroundColor: category.color, 
                     color: 'white', 
@@ -435,62 +448,109 @@ const Diagnostics = () => {
                         {totalTests} tests
                       </span>
                     </div>
-                    {/* No arrow button - categories always expanded */}
                     <div style={{ fontSize: '14px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '20px' }}>
                       Page {currentPageNum} of {totalPages}
                     </div>
                   </div>
                   
-                  {/* Category Content - Always visible */}
+                  {/* Tests Grid - Always visible */}
                   <div style={{ padding: '15px' }}>
-                    {/* Tests Table */}
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                            <th style={{ padding: '12px', textAlign: 'left', width: '50%' }}>Test Name</th>
-                            <th style={{ padding: '12px', textAlign: 'center', width: '15%' }}>Select</th>
-                            <th style={{ padding: '12px', textAlign: 'center', width: '15%' }}>Book</th>
-                            <th style={{ padding: '12px', textAlign: 'center', width: '20%' }}>Compare</th>
-                           </tr>
-                        </thead>
-                        <tbody>
-                          {paginatedTests.map((test, idx) => (
-                            <tr key={test} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: idx % 2 === 0 ? 'white' : '#f9fafb' }}>
-                              <td style={{ padding: '12px', fontWeight: '500' }}>{test}</td>
-                              <td style={{ padding: '12px', textAlign: 'center' }}>
+                    {rows.map((row, rowIndex) => (
+                      <div key={rowIndex} style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: `repeat(${testsPerRow}, 1fr)`, 
+                        gap: '12px',
+                        marginBottom: rowIndex === rows.length - 1 ? '0' : '12px'
+                      }}>
+                        {row.map(test => (
+                          <div key={test} style={{
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '10px',
+                            padding: '12px',
+                            backgroundColor: selectedTests.includes(test) ? '#f0fdf4' : 'white',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                          }}>
+                            {/* Test Name */}
+                            <div style={{ 
+                              fontWeight: '600', 
+                              fontSize: '14px', 
+                              marginBottom: '10px',
+                              color: '#1f2937',
+                              borderBottom: '1px solid #e5e7eb',
+                              paddingBottom: '8px'
+                            }}>
+                              {test}
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {/* Select Checkbox */}
+                              <label style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '8px', 
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                padding: '4px 0'
+                              }}>
                                 <input 
                                   type="checkbox" 
                                   checked={selectedTests.includes(test)} 
                                   onChange={() => toggleTest(test)} 
-                                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                                 />
-                              </td>
-                              <td style={{ padding: '12px', textAlign: 'center' }}>
-                                <button 
-                                  onClick={() => handleDirectBook(test)} 
-                                  style={{ backgroundColor: '#10b981', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
-                                >
-                                  Book Now
-                                </button>
-                              </td>
-                              <td style={{ padding: '12px', textAlign: 'center' }}>
-                                <button 
-                                  onClick={() => handleSingleCompare(test)} 
-                                  style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
-                                >
-                                  Compare Price
-                                </button>
-                              </td>
-                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                                <span style={{ color: '#4b5563' }}>Select for Compare</span>
+                              </label>
+                              
+                              {/* Book Button */}
+                              <button 
+                                onClick={() => handleDirectBook(test)} 
+                                style={{ 
+                                  backgroundColor: '#10b981', 
+                                  color: 'white', 
+                                  padding: '6px 12px', 
+                                  border: 'none', 
+                                  borderRadius: '6px', 
+                                  cursor: 'pointer', 
+                                  fontWeight: '500',
+                                  fontSize: '13px',
+                                  width: '100%'
+                                }}
+                              >
+                                📅 Book Now
+                              </button>
+                              
+                              {/* Compare Button */}
+                              <button 
+                                onClick={() => handleSingleCompare(test)} 
+                                style={{ 
+                                  backgroundColor: '#3b82f6', 
+                                  color: 'white', 
+                                  padding: '6px 12px', 
+                                  border: 'none', 
+                                  borderRadius: '6px', 
+                                  cursor: 'pointer', 
+                                  fontWeight: '500',
+                                  fontSize: '13px',
+                                  width: '100%'
+                                }}
+                              >
+                                📊 Compare Price
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        {/* Fill empty cells in last row */}
+                        {row.length < testsPerRow && Array(testsPerRow - row.length).fill(null).map((_, idx) => (
+                          <div key={`empty-${idx}`} style={{ visibility: 'hidden' }} />
+                        ))}
+                      </div>
+                    ))}
                     
-                    {/* Pagination Controls - Only show if more than 1 page */}
+                    {/* Pagination Controls */}
                     {totalPages > 1 && (
-                      <div style={{ padding: '15px', backgroundColor: '#f9fafb', marginTop: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <div style={{ padding: '15px', backgroundColor: '#f9fafb', marginTop: '20px', borderRadius: '8px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <button 
                           onClick={() => goToPage(category.code, 1, totalPages)}
                           disabled={currentPageNum === 1}
@@ -501,7 +561,8 @@ const Diagnostics = () => {
                             border: 'none', 
                             borderRadius: '6px', 
                             cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
-                            fontWeight: '500'
+                            fontWeight: '500',
+                            fontSize: '13px'
                           }}
                         >
                           ⏮ First
@@ -516,12 +577,13 @@ const Diagnostics = () => {
                             border: 'none', 
                             borderRadius: '6px', 
                             cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
-                            fontWeight: '500'
+                            fontWeight: '500',
+                            fontSize: '13px'
                           }}
                         >
                           ◀ Previous
                         </button>
-                        <span style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', borderRadius: '6px', fontWeight: 'bold' }}>
+                        <span style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', borderRadius: '6px', fontWeight: 'bold', fontSize: '13px' }}>
                           Page {currentPageNum} / {totalPages}
                         </span>
                         <button 
@@ -534,7 +596,8 @@ const Diagnostics = () => {
                             border: 'none', 
                             borderRadius: '6px', 
                             cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
-                            fontWeight: '500'
+                            fontWeight: '500',
+                            fontSize: '13px'
                           }}
                         >
                           Next ▶
@@ -549,7 +612,8 @@ const Diagnostics = () => {
                             border: 'none', 
                             borderRadius: '6px', 
                             cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
-                            fontWeight: '500'
+                            fontWeight: '500',
+                            fontSize: '13px'
                           }}
                         >
                           Last ⏭
@@ -599,7 +663,7 @@ const Diagnostics = () => {
       {activeTab === 'packages' && <HealthPackagesTab />}
       {activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* Booking Modal */}
+      {/* Booking Modal - Same as before */}
       {showBookingModal && bookingProvider && (
         <div style={{ 
           position: 'fixed', 
