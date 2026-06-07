@@ -3,7 +3,7 @@ import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import HealthPackagesTab from './HealthPackagesTab';
 
-// All 16 Main Categories with their Sub-Category Tests
+// All 16 Main Categories with their Tests
 const testCategories = [
   { 
     code: 'MRI', 
@@ -146,7 +146,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
 
   return (
     <div>
-      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to All Tests</button>
+      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Lab Tests</button>
       <h2>📊 Price Comparison for Selected Tests</h2>
       <div style={{ overflowX: 'auto', marginTop: '20px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
@@ -215,9 +215,8 @@ const Diagnostics = () => {
   const [maxDistance, setMaxDistance] = useState('');
   const [useMyLocation, setUseMyLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
-  const [expandedCategories, setExpandedCategories] = useState({});
   
-  // Pagination per category
+  // Pagination per category - always expanded
   const [currentPage, setCurrentPage] = useState({});
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
@@ -314,12 +313,8 @@ const Diagnostics = () => {
     setSearchTerm('');
   };
 
-  const toggleCategory = (categoryCode) => {
-    setExpandedCategories(prev => ({ ...prev, [categoryCode]: !prev[categoryCode] }));
-  };
-
   // Filter tests based on search
-  const getFilteredTests = () => {
+  const getFilteredCategories = () => {
     if (!searchTerm.trim()) return testCategories;
     
     const lowerSearch = searchTerm.toLowerCase();
@@ -354,18 +349,18 @@ const Diagnostics = () => {
     return <ComparisonResults selectedTests={selectedTests} onBack={() => setShowComparison(false)} onBookNow={openBookingModal} />;
   }
 
-  const filteredCategories = getFilteredTests();
+  const filteredCategories = getFilteredCategories();
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
   const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ fontSize: '32px', marginBottom: '10px' }}>🔬 Diagnostics Lab Tests</h1>
+      <h1 style={{ fontSize: '32px', marginBottom: '10px' }}>🔬 Diagnostics</h1>
       <p style={{ color: '#6b7280', marginBottom: '20px' }}>Browse all tests, compare prices, and book with best providers</p>
       
       {/* Tab Navigation */}
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px', display: 'flex', flexWrap: 'wrap' }}>
-        <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 All Lab Tests (16 Categories)</button>
+        <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 Lab Tests</button>
         <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>🏥 Health Packages</button>
         <button onClick={() => setActiveTab('custom')} style={activeTab === 'custom' ? activeTabStyle : tabStyle}>✨ Build Custom Package</button>
       </div>
@@ -412,32 +407,27 @@ const Diagnostics = () => {
             {searchTerm && <p style={{ fontSize: '13px', marginTop: '10px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests matching "{searchTerm}"</p>}
           </div>
 
-          {/* All 16 Main Categories - Each as a Collapsible Box */}
+          {/* All 16 Main Categories - Always Expanded, No Arrow */}
           <div>
             {filteredCategories.map(category => {
-              const isExpanded = expandedCategories[category.code];
               const totalTests = category.tests.length;
               const totalPages = getTotalPages(totalTests);
               const currentPageNum = currentPage[category.code] || 1;
               const paginatedTests = getPaginatedTests(category.tests, category.code);
               
               return (
-                <div key={category.code} style={{ marginBottom: '20px', border: `2px solid ${category.color}`, borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                  {/* Main Category Header - Click to Expand/Collapse */}
-                  <div 
-                    onClick={() => toggleCategory(category.code)} 
-                    style={{ 
-                      backgroundColor: category.color, 
-                      color: 'white', 
-                      padding: '16px 20px', 
-                      cursor: 'pointer', 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      fontWeight: 'bold',
-                      fontSize: '18px'
-                    }}
-                  >
+                <div key={category.code} style={{ marginBottom: '25px', border: `2px solid ${category.color}`, borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  {/* Main Category Header - No collapse arrow, just title */}
+                  <div style={{ 
+                    backgroundColor: category.color, 
+                    color: 'white', 
+                    padding: '16px 20px', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '18px'
+                  }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '24px' }}>{category.icon}</span>
                       <span>{category.name}</span>
@@ -445,132 +435,133 @@ const Diagnostics = () => {
                         {totalTests} tests
                       </span>
                     </div>
-                    <span style={{ fontSize: '24px' }}>{isExpanded ? '▼' : '▶'}</span>
+                    {/* No arrow button - categories always expanded */}
+                    <div style={{ fontSize: '14px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '20px' }}>
+                      Page {currentPageNum} of {totalPages}
+                    </div>
                   </div>
                   
-                  {/* Category Content - Shows when expanded */}
-                  {isExpanded && (
-                    <div style={{ padding: '15px' }}>
-                      {/* Tests Table */}
-                      <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                          <thead>
-                            <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                              <th style={{ padding: '12px', textAlign: 'left', width: '50%' }}>Test Name</th>
-                              <th style={{ padding: '12px', textAlign: 'center', width: '15%' }}>Select</th>
-                              <th style={{ padding: '12px', textAlign: 'center', width: '15%' }}>Book</th>
-                              <th style={{ padding: '12px', textAlign: 'center', width: '20%' }}>Compare</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {paginatedTests.map((test, idx) => (
-                              <tr key={test} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: idx % 2 === 0 ? 'white' : '#f9fafb' }}>
-                                <td style={{ padding: '12px', fontWeight: '500' }}>{test}</td>
-                                <td style={{ padding: '12px', textAlign: 'center' }}>
-                                  <input 
-                                    type="checkbox" 
-                                    checked={selectedTests.includes(test)} 
-                                    onChange={() => toggleTest(test)} 
-                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                                  />
-                                </td>
-                                <td style={{ padding: '12px', textAlign: 'center' }}>
-                                  <button 
-                                    onClick={() => handleDirectBook(test)} 
-                                    style={{ backgroundColor: '#10b981', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
-                                  >
-                                    Book Now
-                                  </button>
-                                </td>
-                                <td style={{ padding: '12px', textAlign: 'center' }}>
-                                  <button 
-                                    onClick={() => handleSingleCompare(test)} 
-                                    style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
-                                  >
-                                    Compare Price
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      
-                      {/* Pagination Controls */}
-                      {totalPages > 1 && (
-                        <div style={{ padding: '15px', backgroundColor: '#f9fafb', marginTop: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <button 
-                            onClick={() => goToPage(category.code, 1, totalPages)}
-                            disabled={currentPageNum === 1}
-                            style={{ 
-                              padding: '8px 14px', 
-                              backgroundColor: currentPageNum === 1 ? '#e5e7eb' : '#3b82f6', 
-                              color: currentPageNum === 1 ? '#9ca3af' : 'white', 
-                              border: 'none', 
-                              borderRadius: '6px', 
-                              cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
-                              fontWeight: '500'
-                            }}
-                          >
-                            ⏮ First
-                          </button>
-                          <button 
-                            onClick={() => goToPage(category.code, currentPageNum - 1, totalPages)}
-                            disabled={currentPageNum === 1}
-                            style={{ 
-                              padding: '8px 14px', 
-                              backgroundColor: currentPageNum === 1 ? '#e5e7eb' : '#3b82f6', 
-                              color: currentPageNum === 1 ? '#9ca3af' : 'white', 
-                              border: 'none', 
-                              borderRadius: '6px', 
-                              cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
-                              fontWeight: '500'
-                            }}
-                          >
-                            ◀ Previous
-                          </button>
-                          <span style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', borderRadius: '6px', fontWeight: 'bold' }}>
-                            Page {currentPageNum} / {totalPages}
-                          </span>
-                          <button 
-                            onClick={() => goToPage(category.code, currentPageNum + 1, totalPages)}
-                            disabled={currentPageNum === totalPages}
-                            style={{ 
-                              padding: '8px 14px', 
-                              backgroundColor: currentPageNum === totalPages ? '#e5e7eb' : '#3b82f6', 
-                              color: currentPageNum === totalPages ? '#9ca3af' : 'white', 
-                              border: 'none', 
-                              borderRadius: '6px', 
-                              cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
-                              fontWeight: '500'
-                            }}
-                          >
-                            Next ▶
-                          </button>
-                          <button 
-                            onClick={() => goToPage(category.code, totalPages, totalPages)}
-                            disabled={currentPageNum === totalPages}
-                            style={{ 
-                              padding: '8px 14px', 
-                              backgroundColor: currentPageNum === totalPages ? '#e5e7eb' : '#3b82f6', 
-                              color: currentPageNum === totalPages ? '#9ca3af' : 'white', 
-                              border: 'none', 
-                              borderRadius: '6px', 
-                              cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
-                              fontWeight: '500'
-                            }}
-                          >
-                            Last ⏭
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* Showing info */}
-                      <div style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', marginTop: '10px' }}>
-                        Showing {((currentPageNum - 1) * itemsPerPage) + 1} to {Math.min(currentPageNum * itemsPerPage, totalTests)} of {totalTests} tests
-                      </div>
+                  {/* Category Content - Always visible */}
+                  <div style={{ padding: '15px' }}>
+                    {/* Tests Table */}
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
+                            <th style={{ padding: '12px', textAlign: 'left', width: '50%' }}>Test Name</th>
+                            <th style={{ padding: '12px', textAlign: 'center', width: '15%' }}>Select</th>
+                            <th style={{ padding: '12px', textAlign: 'center', width: '15%' }}>Book</th>
+                            <th style={{ padding: '12px', textAlign: 'center', width: '20%' }}>Compare</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedTests.map((test, idx) => (
+                            <tr key={test} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: idx % 2 === 0 ? 'white' : '#f9fafb' }}>
+                              <td style={{ padding: '12px', fontWeight: '500' }}>{test}</td>
+                              <td style={{ padding: '12px', textAlign: 'center' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedTests.includes(test)} 
+                                  onChange={() => toggleTest(test)} 
+                                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                />
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center' }}>
+                                <button 
+                                  onClick={() => handleDirectBook(test)} 
+                                  style={{ backgroundColor: '#10b981', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
+                                >
+                                  Book Now
+                                </button>
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center' }}>
+                                <button 
+                                  onClick={() => handleSingleCompare(test)} 
+                                  style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
+                                >
+                                  Compare Price
+                                </button>
+                              </td>
+                             </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  )}
+                    
+                    {/* Pagination Controls - Only show if more than 1 page */}
+                    {totalPages > 1 && (
+                      <div style={{ padding: '15px', backgroundColor: '#f9fafb', marginTop: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <button 
+                          onClick={() => goToPage(category.code, 1, totalPages)}
+                          disabled={currentPageNum === 1}
+                          style={{ 
+                            padding: '8px 14px', 
+                            backgroundColor: currentPageNum === 1 ? '#e5e7eb' : '#3b82f6', 
+                            color: currentPageNum === 1 ? '#9ca3af' : 'white', 
+                            border: 'none', 
+                            borderRadius: '6px', 
+                            cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          ⏮ First
+                        </button>
+                        <button 
+                          onClick={() => goToPage(category.code, currentPageNum - 1, totalPages)}
+                          disabled={currentPageNum === 1}
+                          style={{ 
+                            padding: '8px 14px', 
+                            backgroundColor: currentPageNum === 1 ? '#e5e7eb' : '#3b82f6', 
+                            color: currentPageNum === 1 ? '#9ca3af' : 'white', 
+                            border: 'none', 
+                            borderRadius: '6px', 
+                            cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          ◀ Previous
+                        </button>
+                        <span style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', borderRadius: '6px', fontWeight: 'bold' }}>
+                          Page {currentPageNum} / {totalPages}
+                        </span>
+                        <button 
+                          onClick={() => goToPage(category.code, currentPageNum + 1, totalPages)}
+                          disabled={currentPageNum === totalPages}
+                          style={{ 
+                            padding: '8px 14px', 
+                            backgroundColor: currentPageNum === totalPages ? '#e5e7eb' : '#3b82f6', 
+                            color: currentPageNum === totalPages ? '#9ca3af' : 'white', 
+                            border: 'none', 
+                            borderRadius: '6px', 
+                            cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Next ▶
+                        </button>
+                        <button 
+                          onClick={() => goToPage(category.code, totalPages, totalPages)}
+                          disabled={currentPageNum === totalPages}
+                          style={{ 
+                            padding: '8px 14px', 
+                            backgroundColor: currentPageNum === totalPages ? '#e5e7eb' : '#3b82f6', 
+                            color: currentPageNum === totalPages ? '#9ca3af' : 'white', 
+                            border: 'none', 
+                            borderRadius: '6px', 
+                            cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Last ⏭
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Showing info */}
+                    <div style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', marginTop: '10px' }}>
+                      Showing {((currentPageNum - 1) * itemsPerPage) + 1} to {Math.min(currentPageNum * itemsPerPage, totalTests)} of {totalTests} tests
+                    </div>
+                  </div>
                 </div>
               );
             })}
