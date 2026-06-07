@@ -97,8 +97,9 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
                     onClick={() => {
-                      console.log('Calling onBookNow with:', p, selectedTests);
-                      onBookNow(p, selectedTests);
+                      alert('Booking: ' + p.provider_name);
+                      // Directly call the parent function
+                      window.parent.openBookingModal(p, selectedTests);
                     }} 
                     style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                   >
