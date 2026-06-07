@@ -198,8 +198,9 @@ const Diagnostics = () => {
     setShowComparison(true);
   };
 
-  const openBookingModal = (provider, tests) => {
-    console.log('openBookingModal called');
+  // Make openBookingModal available globally
+  window.openBookingModal = (provider, tests) => {
+    console.log('window function called');
     setBookingProvider(provider);
     setBookingTests(tests);
     setShowBookingModal(true);
