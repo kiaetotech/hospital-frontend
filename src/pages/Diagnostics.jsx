@@ -62,7 +62,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
                   {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                 </th>
               ))}
-            </tr>
+            </td>
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
@@ -96,15 +96,15 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
-                   onClick={() => {
-                     alert('Booking: ' + p.provider_name);
-                     onBookNow(p, selectedTests);
-                   }} 
-                   style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    onClick={() => {
+                      console.log('Calling onBookNow with:', p, selectedTests);
+                      onBookNow(p, selectedTests);
+                    }} 
+                    style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                   >
-                   Book
-                 </button>
-               </td>
+                    Book
+                  </button>
+                </td>
               ))}
             </tr>
           </tbody>
@@ -198,6 +198,7 @@ const Diagnostics = () => {
   };
 
   const openBookingModal = (provider, tests) => {
+    console.log('openBookingModal called');
     setBookingProvider(provider);
     setBookingTests(tests);
     setShowBookingModal(true);
