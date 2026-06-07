@@ -25,14 +25,21 @@ const testCategories = [
 const ComparisonResults = ({ selectedTests, onBack }) => {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [bookingForm, setBookingForm] = useState({
+    patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
+    patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
+  });
+  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
 
   useEffect(() => {
     const mockProviders = [
-      { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
-      { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
+      { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {}, _id: '1' },
+      { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {}, _id: '2' },
+      { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, report_time_hours: 48, total_price: 0, individual_prices: {}, _id: '3' },
+      { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {}, _id: '4' },
+      { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, report_time_hours: 12, total_price: 0, individual_prices: {}, _id: '5' }
     ];
     selectedTests.forEach(test => {
       mockProviders.forEach(provider => {
@@ -44,6 +51,29 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
     setProviders(mockProviders.sort((a, b) => a.total_price - b.total_price));
     setLoading(false);
   }, [selectedTests]);
+
+  const openBookingModal = (provider) => {
+    setSelectedProvider(provider);
+    setShowBookingModal(true);
+  };
+
+  const handleBookingChange = (e) => {
+    setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
+  };
+
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedProvider) return;
+    const total = selectedTests.reduce((sum, test) => sum + (selectedProvider.individual_prices[test] || 0), 0);
+    alert(`Booking successful!\nProvider: ${selectedProvider.provider_name}\nTests: ${selectedTests.join(', ')}\nTotal: ₹${total}\nReference: LAB${Date.now()}`);
+    setShowBookingModal(false);
+    setSelectedProvider(null);
+  };
+
+  const closeBookingModal = () => {
+    setShowBookingModal(false);
+    setSelectedProvider(null);
+  };
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
 
@@ -95,13 +125,34 @@ const ComparisonResults = ({ selectedTests, onBack }) => {
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <button onClick={() => alert(`Booking ${p.provider_name}\nTotal: ₹${p.total_price}`)} style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button>
+                  <button onClick={() => openBookingModal(p)} style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button>
                 </td>
               ))}
             </tr>
           </tbody>
         </table>
       </div>
+
+      {/* Booking Modal */}
+      {showBookingModal && selectedProvider && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%' }}>
+            <h2>Book Lab Tests</h2>
+            <p><strong>Provider:</strong> {selectedProvider.provider_name}</p>
+            <p><strong>Tests:</strong> {selectedTests.join(', ')}</p>
+            <p><strong>Total:</strong> ₹{selectedTests.reduce((sum, test) => sum + (selectedProvider.individual_prices[test] || 0), 0)}</p>
+            <form onSubmit={handleBookingSubmit}>
+              <div><label>Full Name *</label><input type="text" name="patient_name" required onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px' }} /></div>
+              <div><label>Phone *</label><input type="tel" name="patient_phone" required onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px' }} /></div>
+              <div><label>Date *</label><input type="date" name="appointment_date" required onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px' }} /></div>
+              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Confirm</button>
+                <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -167,6 +218,11 @@ const Diagnostics = () => {
   };
 
   const handleSingleCompare = (testName) => {
+    setSelectedTests([testName]);
+    setShowComparison(true);
+  };
+
+  const handleSingleBook = (testName) => {
     setSelectedTests([testName]);
     setShowComparison(true);
   };
@@ -245,6 +301,7 @@ const Diagnostics = () => {
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <label><input type="checkbox" checked={selectedTests.includes(result.testName)} onChange={() => toggleTest(result.testName)} /> Select</label>
                     <button onClick={() => handleSingleCompare(result.testName)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '5px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Compare</button>
+                    <button onClick={() => handleSingleBook(result.testName)} style={{ backgroundColor: '#10b981', color: 'white', padding: '5px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button>
                   </div>
                 </div>
               ))}
@@ -267,10 +324,11 @@ const Diagnostics = () => {
                     <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px', backgroundColor: '#f9fafb', maxHeight: '400px', overflowY: 'auto' }}>
                       {displayedTests.map(test => (
                         <div key={test} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
                             <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} /> {test}
                           </label>
                           <button onClick={() => handleSingleCompare(test)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Compare</button>
+                          <button onClick={() => handleSingleBook(test)} style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Book</button>
                         </div>
                       ))}
                     </div>

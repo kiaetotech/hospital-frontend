@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// Complete 16 categories with subcategories
+// Complete 16 categories with subcategories (same as Lab Tests)
 const testCategories = [
   {
     code: 'MRI',
@@ -236,6 +236,7 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedSubCategories, setExpandedSubCategories] = useState({});
   
+  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [minRating, setMinRating] = useState('');
@@ -246,11 +247,18 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
   const [directSearchResults, setDirectSearchResults] = useState([]);
   const [showDirectResults, setShowDirectResults] = useState(false);
   
+  // Booking modal states
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [bookingForm, setBookingForm] = useState({
-    patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
-    patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
+    patient_name: '',
+    patient_age: '',
+    patient_gender: 'male',
+    patient_phone: '',
+    patient_email: '',
+    appointment_date: '',
+    home_collection_requested: false,
+    home_address: ''
   });
 
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
@@ -375,11 +383,36 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedProvider) return;
+    if (!selectedProvider) {
+      alert('No provider selected');
+      return;
+    }
     const total = selectedTests.reduce((sum, test) => sum + (selectedProvider.individual_prices[test.name] || 0), 0);
-    alert(`Booking successful!\nProvider: ${selectedProvider.provider_name}\nTotal: ₹${total}`);
-    setShowBookingModal(false);
-    setSelectedProvider(null);
+    try {
+      // Create booking record
+      const bookingData = {
+        ...bookingForm,
+        provider_name: selectedProvider.provider_name,
+        tests: selectedTests.map(t => t.name),
+        total_amount: total,
+        package_name: `Custom Package (${selectedTests.length} tests)`
+      };
+      
+      // Here you would call your booking API
+      // const res = await axios.post(`${API_URL}/bookings/custom`, bookingData);
+      
+      alert(`Booking Successful!\n\nProvider: ${selectedProvider.provider_name}\nTests: ${selectedTests.map(t => t.name).join(', ')}\nTotal: ₹${total}\nReference: CUST${Date.now()}\n\nWe will contact you shortly.`);
+      
+      setShowBookingModal(false);
+      setSelectedProvider(null);
+      setBookingForm({
+        patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
+        patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
+      });
+    } catch (err) {
+      console.error('Booking error:', err);
+      alert('Booking failed. Please try again.');
+    }
   };
 
   const closeBookingModal = () => {
@@ -427,119 +460,195 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <button onClick={() => navigate('/diagnostics-list')}>← Back</button>
-      <h1>Build Custom Package</h1>
-      <p>Select 2 or more tests from the categories below to compare prices across labs.</p>
+      <h1>✨ Build Custom Package</h1>
+      <p>Select 2 or more tests to compare prices across different labs. Cheapest provider appears first.</p>
 
-      {/* Selected Tests Counter */}
-      <div style={{ backgroundColor: '#e0e7ff', padding: '10px', borderRadius: '8px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <strong>Selected Tests: {selectedTests.length}</strong>
+      {/* Selected Tests Counter and Compare Button */}
+      <div style={{ backgroundColor: '#e0e7ff', padding: '12px 15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <strong>✅ Selected Tests:</strong> {selectedTests.length}
+          {selectedTests.length > 0 && (
+            <span style={{ marginLeft: '10px', fontSize: '12px', color: '#4b5563' }}>
+              ({selectedTests.map(t => t.name).join(', ')})
+            </span>
+          )}
+        </div>
         {selectedTests.length >= 2 && (
           <button 
             onClick={() => handleCompareByName(selectedTests.map(t => t.name))} 
             disabled={comparing}
-            style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+            style={{ backgroundColor: '#10b981', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            {comparing ? 'Comparing...' : `Compare ${selectedTests.length} Tests`}
+            {comparing ? '⏳ Comparing...' : `🔬 Compare ${selectedTests.length} Tests`}
           </button>
         )}
       </div>
 
-      {/* Search and Filter Bar */}
+      {/* Search and Filter Bar - Same as Lab Tests */}
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-          <input type="text" placeholder="🔍 Search any test..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 2, padding: '12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px' }} />
-          <input type="text" placeholder="📍 City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+          <input 
+            type="text" 
+            placeholder="🔍 Search any test (e.g., MRI Brain, CBC, X-ray)..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            style={{ flex: 2, padding: '12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px' }} 
+          />
+          <input 
+            type="text" 
+            placeholder="📍 City (e.g., Mumbai, Delhi)" 
+            value={cityFilter} 
+            onChange={(e) => setCityFilter(e.target.value)} 
+            style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} 
+          />
           <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
-            <option value="">⭐ Rating</option><option value="4">4★ & above</option><option value="4.5">4.5★ & above</option><option value="4.8">4.8★ & above</option>
+            <option value="">⭐ Rating (Any)</option>
+            <option value="4">4★ & above</option>
+            <option value="4.5">4.5★ & above</option>
+            <option value="4.8">4.8★ & above</option>
           </select>
         </div>
+        
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="number" placeholder="💰 Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '130px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
-          <input type="number" placeholder="📏 Max Distance" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '140px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+          <input 
+            type="number" 
+            placeholder="💰 Max Price (₹)" 
+            value={maxPrice} 
+            onChange={(e) => setMaxPrice(e.target.value)} 
+            style={{ width: '130px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} 
+          />
+          <input 
+            type="number" 
+            placeholder="📏 Max Distance (km)" 
+            value={maxDistance} 
+            onChange={(e) => setMaxDistance(e.target.value)} 
+            style={{ width: '140px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} 
+          />
           <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 10px', borderRadius: '4px', height: '42px' }}>
-            <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> 🏠 Home Collection
+            <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} />
+            🏠 Home Collection Only
           </label>
-          <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 My Location</button>
-          <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset</button>
+          <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>📍 Use My Location</button>
+          <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset Filters</button>
         </div>
-        {userLocation && <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>📍 Location detected</p>}
-        {searchTerm && <p style={{ fontSize: '12px', marginTop: '10px' }}>Found {directSearchResults.length} tests</p>}
+        
+        {userLocation && <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>📍 Location detected: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}</p>}
+        {searchTerm && <p style={{ fontSize: '12px', marginTop: '10px' }}>Found {directSearchResults.length} tests matching "{searchTerm}"</p>}
       </div>
 
-      {/* Search Results */}
+      {/* Direct Search Results */}
       {showDirectResults && searchTerm && (
         <div style={{ marginBottom: '20px' }}>
           <h3>🔍 Search Results ({directSearchResults.length})</h3>
           {directSearchResults.map((result, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'white', border: `1px solid ${result.color}`, borderRadius: '8px', marginBottom: '8px' }}>
               <div><strong>{result.testName}</strong> <span style={{ fontSize: '12px', color: '#6b7280' }}>{result.icon} {result.category}</span></div>
-              <div><label><input type="checkbox" checked={selectedTests.some(t => t.name === result.testName)} onChange={() => toggleTest(result.testName)} /> Select</label></div>
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" checked={selectedTests.some(t => t.name === result.testName)} onChange={() => toggleTest(result.testName)} />
+                  Select
+                </label>
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Categories View */}
+      {/* Categories View - Same as Lab Tests */}
       {!searchTerm && (
         <div>
-          {testCategories.map(category => (
-            <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
-              <div onClick={() => toggleCategory(category.code)} style={{ backgroundColor: category.color, color: 'white', padding: '12px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-                <span>{category.icon} {category.name}</span>
-                <span>{expandedCategories[category.code] ? '▼' : '▶'}</span>
-              </div>
-              {expandedCategories[category.code] && (
-                <div style={{ backgroundColor: '#f9fafb', padding: '10px' }}>
-                  {category.subcategories.map(sub => (
-                    <div key={sub.name} style={{ marginBottom: '10px' }}>
-                      <div onClick={() => toggleSubCategory(category.code, sub.name)} style={{ padding: '8px', backgroundColor: '#f3f4f6', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderRadius: '4px', borderLeft: `4px solid ${category.color}` }}>
-                        <span>📂 {sub.name} ({sub.tests.length} tests)</span>
-                        <span>{expandedSubCategories[`${category.code}_${sub.name}`] ? '▼' : '▶'}</span>
-                      </div>
-                      {expandedSubCategories[`${category.code}_${sub.name}`] && (
-                        <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                          {sub.tests.map(test => (
-                            <label key={test} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }}>
-                              <input type="checkbox" checked={selectedTests.some(t => t.name === test)} onChange={() => toggleTest(test)} /> {test}
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+          {testCategories.map(category => {
+            return (
+              <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '8px', overflow: 'hidden' }}>
+                <div 
+                  onClick={() => toggleCategory(category.code)} 
+                  style={{ backgroundColor: category.color, color: 'white', padding: '12px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}
+                >
+                  <span>{category.icon} {category.name}</span>
+                  <span>{expandedCategories[category.code] ? '▼' : '▶'}</span>
                 </div>
-              )}
-            </div>
-          ))}
+                
+                {expandedCategories[category.code] && (
+                  <div style={{ backgroundColor: '#f9fafb', padding: '10px' }}>
+                    {category.subcategories.map(sub => (
+                      <div key={sub.name} style={{ marginBottom: '10px' }}>
+                        <div 
+                          onClick={() => toggleSubCategory(category.code, sub.name)} 
+                          style={{ padding: '8px', backgroundColor: '#f3f4f6', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderRadius: '4px', borderLeft: `4px solid ${category.color}` }}
+                        >
+                          <span>📂 {sub.name} ({sub.tests.length} tests)</span>
+                          <span>{expandedSubCategories[`${category.code}_${sub.name}`] ? '▼' : '▶'}</span>
+                        </div>
+                        
+                        {expandedSubCategories[`${category.code}_${sub.name}`] && (
+                          <div style={{ padding: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                            {sub.tests.map(test => (
+                              <label key={test} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedTests.some(t => t.name === test)} 
+                                  onChange={() => toggleTest(test)} 
+                                />
+                                {test}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
       
-      {comparing && <p style={{ marginTop: '20px' }}>Comparing...</p>}
+      {comparing && <p style={{ marginTop: '20px', textAlign: 'center' }}>⏳ Comparing prices across labs...</p>}
       
+      {/* Comparison Results Table */}
       {providers.length > 0 && selectedTests.length >= 2 && (
         <div style={{ marginTop: '20px' }}>
-          <h2>Comparison Results - Cheapest Provider First</h2>
+          <h2>📊 Comparison Results - Cheapest Provider First</h2>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f3f4f6' }}>
-                  <th>Provider</th>
-                  {selectedTests.map((test, idx) => <th key={idx}>{test.name}</th>)}
-                  <th>Total</th><th>Rating</th><th>Distance</th><th>Action</th>
-                </tr>
+                  <th style={{ border: '1px solid #ddd', padding: '12px' }}>Provider</th>
+                  {selectedTests.map((test, idx) => (
+                    <th key={idx} style={{ border: '1px solid #ddd', padding: '12px' }}>{test.name}</th>
+                  ))}
+                  <th style={{ border: '1px solid #ddd', padding: '12px' }}>Total</th>
+                  <th style={{ border: '1px solid #ddd', padding: '12px' }}>Rating</th>
+                  <th style={{ border: '1px solid #ddd', padding: '12px' }}>Distance</th>
+                  <th style={{ border: '1px solid #ddd', padding: '12px' }}>Home Coll.</th>
+                  <th style={{ border: '1px solid #ddd', padding: '12px' }}>Action</th>
+                </table>
               </thead>
               <tbody>
                 {providers.map((provider, idx) => {
                   const total = selectedTests.reduce((sum, test) => sum + (provider.individual_prices[test.name] || 0), 0);
                   const distance = getDistance(provider);
                   return (
-                    <tr key={idx}>
-                      <td>{provider.provider_name} {idx === 0 && '⭐'}</td>
-                      {selectedTests.map((test, i) => <td key={i}>₹{provider.individual_prices[test.name] || 'N/A'}</td>)}
-                      <td><strong>₹{total}</strong></td>
-                      <td>⭐ {provider.rating || 4.5}</td>
-                      <td>{distance} km</td>
-                      <td><button onClick={() => openBookingModal(provider)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button></td>
+                    <tr key={idx} style={{ backgroundColor: idx === 0 ? '#d1fae5' : 'white' }}>
+                      <td style={{ border: '1px solid #ddd', padding: '10px', fontWeight: 'bold' }}>{provider.provider_name} {idx === 0 && '⭐'}</td>
+                      {selectedTests.map((test, i) => (
+                        <td key={i} style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'center' }}>
+                          ₹{provider.individual_prices[test.name] || 'N/A'}
+                        </td>
+                      ))}
+                      <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'center', fontWeight: 'bold', color: '#10b981' }}>₹{total}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'center' }}>⭐ {provider.rating || 4.5}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'center' }}>{distance} km</td>
+                      <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'center' }}>{provider.home_collection_available ? '✅ Yes' : '❌ No'}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'center' }}>
+                        <button 
+                          onClick={() => openBookingModal(provider)} 
+                          style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                          Book Now
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -550,14 +659,13 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
       )}
 
       {/* Floating Compare Button */}
-      {selectedTests.length >= 2 && (
+      {selectedTests.length >= 2 && !comparing && (
         <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}>
           <button 
             onClick={() => handleCompareByName(selectedTests.map(t => t.name))}
-            disabled={comparing}
             style={{ backgroundColor: '#10b981', color: 'white', padding: '15px 30px', border: 'none', borderRadius: '50px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
           >
-            {comparing ? 'Comparing...' : `Compare ${selectedTests.length} Tests`}
+            🔬 Compare {selectedTests.length} Tests
           </button>
         </div>
       )}
@@ -565,17 +673,62 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
       {/* Booking Modal */}
       {showBookingModal && selectedProvider && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%' }}>
-            <h2>Book Custom Package</h2>
-            <p><strong>Provider:</strong> {selectedProvider.provider_name}</p>
-            <p><strong>Total:</strong> ₹{selectedTests.reduce((sum, test) => sum + (selectedProvider.individual_prices[test.name] || 0), 0)}</p>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' }}>
+            <h2>📋 Book Custom Package</h2>
+            <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '8px', marginBottom: '15px' }}>
+              <p><strong>🏥 Provider:</strong> {selectedProvider.provider_name}</p>
+              <p><strong>🧪 Tests:</strong> {selectedTests.map(t => t.name).join(', ')}</p>
+              <p><strong>💰 Total Amount:</strong> ₹{selectedTests.reduce((sum, test) => sum + (selectedProvider.individual_prices[test.name] || 0), 0)}</p>
+            </div>
+            
             <form onSubmit={handleBookingSubmit}>
-              <div><label>Full Name *</label><input type="text" name="patient_name" required onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px' }} /></div>
-              <div><label>Phone *</label><input type="tel" name="patient_phone" required onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px' }} /></div>
-              <div><label>Date *</label><input type="date" name="appointment_date" required onChange={handleBookingChange} style={{ width: '100%', padding: '8px', marginBottom: '10px' }} /></div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Full Name *</label>
+                <input type="text" name="patient_name" required value={bookingForm.patient_name} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Age *</label>
+                  <input type="number" name="patient_age" required value={bookingForm.patient_age} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Gender *</label>
+                  <select name="patient_gender" value={bookingForm.patient_gender} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Phone Number *</label>
+                <input type="tel" name="patient_phone" required value={bookingForm.patient_phone} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Email</label>
+                <input type="email" name="patient_email" value={bookingForm.patient_email} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Appointment Date *</label>
+                <input type="date" name="appointment_date" required value={bookingForm.appointment_date} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+              </div>
+              {selectedProvider.home_collection_available && (
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input type="checkbox" name="home_collection_requested" checked={bookingForm.home_collection_requested} onChange={(e) => setBookingForm({...bookingForm, home_collection_requested: e.target.checked})} />
+                    🏠 Request Home Collection
+                  </label>
+                </div>
+              )}
+              {bookingForm.home_collection_requested && (
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Home Address</label>
+                  <textarea name="home_address" rows="3" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
+                </div>
+              )}
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Confirm</button>
-                <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>Confirm Booking</button>
+                <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }}>Cancel</button>
               </div>
             </form>
           </div>
