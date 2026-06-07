@@ -62,7 +62,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
                   {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                 </th>
               ))}
-            </td>
+            </tr>
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
@@ -95,16 +95,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <button 
-                    onClick={() => {
-                      alert('Booking: ' + p.provider_name);
-                      // Directly call the parent function
-                      window.parent.openBookingModal(p, selectedTests);
-                    }} 
-                    style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Book
-                  </button>
+                  <button onClick={() => onBookNow(p, selectedTests)} style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button>
                 </td>
               ))}
             </tr>
@@ -198,9 +189,7 @@ const Diagnostics = () => {
     setShowComparison(true);
   };
 
-  // Make openBookingModal available globally
-  window.openBookingModal = (provider, tests) => {
-    console.log('window function called');
+  const openBookingModal = (provider, tests) => {
     setBookingProvider(provider);
     setBookingTests(tests);
     setShowBookingModal(true);
