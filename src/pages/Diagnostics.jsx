@@ -188,11 +188,25 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
     setLoading(false);
   }, [selectedTests]);
 
+  // Handle book button click
+  const handleBookClick = (provider, tests) => {
+    console.log("Book button clicked in comparison table", provider, tests);
+    onBookNow(provider, tests);
+  };
+
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
 
   return (
     <div>
-      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Lab Tests</button>
+      <button 
+        onClick={() => {
+          console.log("Back button clicked - only going back");
+          onBack();
+        }} 
+        style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}
+      >
+        ← Back to Lab Tests
+      </button>
       <h2>📊 Price Comparison for Selected Tests</h2>
       <div style={{ overflowX: 'auto', marginTop: '20px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
@@ -205,7 +219,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
                   {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                 </th>
               ))}
-            </tr>
+            </table>
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
@@ -228,18 +242,22 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
               <tr key={test}>
                 <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
                 {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test]}</td>))}
-              </tr>
+               </tr>
             ))}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
-            </tr>
-            <tr>
+             </tr>
+             <tr>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
-                    onClick={() => onBookNow(p, selectedTests)} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log("Book Now clicked for provider:", p.provider_name);
+                      handleBookClick(p, selectedTests);
+                    }} 
                     style={{ 
                       backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', 
                       color: 'white', 
@@ -254,9 +272,9 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
                   </button>
                 </td>
               ))}
-            </tr>
+             </tr>
           </tbody>
-        </table>
+         </table>
       </div>
     </div>
   );
