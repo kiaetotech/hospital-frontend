@@ -125,12 +125,58 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
 
   useEffect(() => {
     const mockProviders = [
-      { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
-      { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
+      { 
+        provider_name: 'ABC Diagnostics', 
+        rating: 4.5, 
+        distance: '2.5 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 24, 
+        total_price: 0, 
+        individual_prices: {} 
+      },
+      { 
+        provider_name: 'HealthCare Diagnostics', 
+        rating: 4.7, 
+        distance: '3.8 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 24, 
+        total_price: 0, 
+        individual_prices: {} 
+      },
+      { 
+        provider_name: 'Metropolis Healthcare', 
+        rating: 4.6, 
+        distance: '5.2 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 48, 
+        total_price: 0, 
+        individual_prices: {} 
+      },
+      { 
+        provider_name: 'Dr Lal PathLabs', 
+        rating: 4.8, 
+        distance: '1.2 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 24, 
+        total_price: 0, 
+        individual_prices: {} 
+      },
+      { 
+        provider_name: 'Apollo Diagnostic', 
+        rating: 4.9, 
+        distance: '4.0 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 12, 
+        total_price: 0, 
+        individual_prices: {} 
+      }
     ];
+    
     selectedTests.forEach(test => {
       mockProviders.forEach(provider => {
         const price = Math.floor(Math.random() * 500) + 100;
@@ -177,7 +223,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
-             </tr>
+            </tr>
             {selectedTests.map(test => (
               <tr key={test}>
                 <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
@@ -187,12 +233,28 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
-             </tr>
+            </tr>
             <tr>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <button onClick={() => onBookNow(p, selectedTests)} style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book Now</button>
+                  <button 
+                    onClick={() => {
+                      console.log("Booking clicked for:", p, selectedTests);
+                      onBookNow(p, selectedTests);
+                    }} 
+                    style={{ 
+                      backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', 
+                      color: 'white', 
+                      padding: '8px 16px', 
+                      border: 'none', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Book Now
+                  </button>
                 </td>
               ))}
             </tr>
