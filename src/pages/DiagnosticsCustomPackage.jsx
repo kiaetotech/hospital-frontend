@@ -623,7 +623,7 @@ const DiagnosticsCustomPackage = ({ preselectedTests = [] }) => {
                   <th style={{ border: '1px solid #ddd', padding: '12px' }}>Distance</th>
                   <th style={{ border: '1px solid #ddd', padding: '12px' }}>Home Coll.</th>
                   <th style={{ border: '1px solid #ddd', padding: '12px' }}>Action</th>
-                </table>
+                </tr>
               </thead>
               <tbody>
                 {providers.map((provider, idx) => {
