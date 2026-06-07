@@ -195,6 +195,16 @@ const Diagnostics = () => {
     setShowBookingModal(true);
   };
 
+  const handleDirectBook = (testName) => {
+    const mockProvider = {
+      provider_name: 'ABC Diagnostics',
+      rating: 4.5,
+      individual_prices: { [testName]: Math.floor(Math.random() * 300) + 100 },
+      home_collection_available: true
+    };
+    openBookingModal(mockProvider, [testName]);
+  };
+
   const handleBookingChange = (e) => {
     setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
   };
@@ -215,16 +225,6 @@ const Diagnostics = () => {
   const closeBookingModal = () => {
     setShowBookingModal(false);
     setBookingProvider(null);
-  };
-
-  const handleDirectBook = (testName) => {
-    const mockProvider = {
-      provider_name: 'ABC Diagnostics',
-      rating: 4.5,
-      individual_prices: { [testName]: Math.floor(Math.random() * 300) + 100 },
-      home_collection_available: true
-    };
-    openBookingModal(mockProvider, [testName]);
   };
 
   const resetFilters = () => {
