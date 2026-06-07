@@ -7,28 +7,28 @@ import HealthPackagesTab from './HealthPackagesTab';
 const testCategories = [
   { 
     code: 'MRI', 
-    name: '🧠 MRI (Magnetic Resonance Imaging)', 
+    name: '🧠 MRI', 
     icon: '🧠', 
     color: '#8e44ad',
     tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen / MRCP', 'MRI Pelvis', 'MRI Cardiac', 'MRI Angiography (MRA)', 'MRI Breast', 'MRI Orbit / IAC', 'MRI Soft tissue', 'MR Venography (MRV)']
   },
   { 
     code: 'CT', 
-    name: '📷 CT (Computed Tomography)', 
+    name: '📷 CT', 
     icon: '📷', 
     color: '#3498db',
     tests: ['CT Head', 'CT Chest', 'CT Abdomen + Pelvis', 'CT Angiography (CTA)', 'CT Spine', 'CT Facial bones / Sinus', 'CT Temporal bone', 'CT Urogram', 'CT Virtual colonoscopy', 'CT Perfusion', 'CT Guided biopsy']
   },
   { 
     code: 'XR', 
-    name: '🦴 X-ray (Radiography)', 
+    name: '🦴 X-ray', 
     icon: '🦴', 
     color: '#e67e22',
     tests: ['Chest X-ray', 'X-ray Spine', 'X-ray Limbs', 'X-ray Legs', 'X-ray Pelvis / Hip', 'X-ray Shoulder', 'X-ray Skull', 'X-ray Sinus', 'X-ray Abdomen (KUB)', 'X-ray Joints', 'X-ray Dental (OPG)', 'X-ray Mammogram', 'X-ray Barium studies', 'X-ray DEXA']
   },
   { 
     code: 'USG', 
-    name: '🔊 Ultrasound (Sonography)', 
+    name: '🔊 Ultrasound', 
     icon: '🔊', 
     color: '#1abc9c',
     tests: ['USG Abdomen', 'USG Pelvis', 'USG Transvaginal', 'USG Transrectal', 'USG Thyroid', 'USG Breast', 'USG Scrotum', 'USG Musculoskeletal', 'USG Vascular Doppler', 'USG Lower limb (DVT)', 'USG Upper limb', 'USG Renal Doppler', 'USG Hepatobiliary Doppler', 'USG Neonatal brain', 'USG KUB', 'USG Guided procedures', 'ECHO (Echocardiography)', 'Obstetric USG']
@@ -49,49 +49,49 @@ const testCategories = [
   },
   { 
     code: 'SER', 
-    name: '🦠 Serology / Immunology', 
+    name: '🦠 Serology', 
     icon: '🦠', 
     color: '#9b59b6',
     tests: ['HIV (1+2)', 'HBsAg (Hepatitis B)', 'Anti-HBs, Anti-HBc', 'Hepatitis C antibody', 'Hepatitis A IgM', 'Hepatitis E IgM', 'Syphilis (VDRL, TPHA)', 'Dengue (NS1 antigen, IgM, IgG)', 'Chikungunya IgM/IgG', 'Malaria (rapid antigen, smear)', 'Typhoid (Widal, Typhidot)', 'Rheumatoid factor (RF)', 'Anti-CCP (ACPA)', 'ANA + ENA profile', 'Anti-dsDNA', 'ANCA (c-ANCA, p-ANCA)', 'Anti-phospholipid antibodies', 'Complement C3, C4', 'Serum protein electrophoresis (SPEP)', 'Quantitative immunoglobulins', 'Total IgE', 'RAST test', 'hs-CRP', 'Procalcitonin', 'Tumor markers (AFP, CEA, CA-125, CA 19-9, CA 15-3, PSA)']
   },
   { 
     code: 'HOR', 
-    name: '⚖️ Hormones / Endocrine', 
+    name: '⚖️ Hormones', 
     icon: '⚖️', 
     color: '#16a085',
     tests: ['Thyroid profile (TSH, Free T3, Free T4)', 'Cortisol (morning/evening)', 'ACTH', 'Prolactin', 'LH, FSH', 'Estradiol (E2)', 'Progesterone', 'Testosterone (total/free)', 'DHEA-S', 'Aldosterone / Renin ratio', 'Metanephrines', 'Parathyroid hormone (PTH)', 'Insulin, C-peptide', 'Growth hormone (GH) + IGF-1', 'Anti-Mullerian hormone (AMH)']
   },
   { 
     code: 'URN', 
-    name: '💧 Urine Tests', 
+    name: '💧 Urine', 
     icon: '💧', 
     color: '#2980b9',
     tests: ['Urinalysis (routine & microscopy)', 'Urine glucose, ketones', 'Urine protein (spot, 24-hour)', 'Urine microalbumin / creatinine ratio', 'Urine culture & sensitivity', 'Urine Gram stain', 'Urine pregnancy test (β-hCG)', 'Urine electrolytes (Na, K, Cl)', 'Urine osmolality', 'Urine creatinine', 'Urine urea nitrogen', 'Urine calcium (24-hour)', 'Urine uric acid', 'Urine porphobilinogen', 'Urine catecholamines / metanephrines', 'Urine cortisol (free)', 'Urine 5-HIAA', 'Urine drug screen', 'Urine Bence Jones protein']
   },
   { 
     code: 'STL', 
-    name: '🧫 Stool Tests', 
+    name: '🧫 Stool', 
     icon: '🧫', 
     color: '#27ae60',
     tests: ['Stool routine & microscopy', 'Occult blood (FOBT / FIT)', 'Stool culture & sensitivity', 'Stool for ova, cyst, parasite', 'Stool antigen tests (Giardia, Cryptosporidium, H.pylori)', 'Stool PCR for pathogens', 'Calprotectin', 'Stool reducing substances', 'Stool fat (quantitative/qualitative)', 'Stool elastase', 'Stool pH']
   },
   { 
     code: 'ECG', 
-    name: '❤️ ECG / Cardiac Electrophysiology', 
+    name: '❤️ ECG', 
     icon: '❤️', 
     color: '#e74c3c',
     tests: ['ECG (12-lead, resting)', 'Stress ECG (Treadmill test - TMT)', 'Holter monitoring (24/48-hour)', 'Event recorder', 'Signal-averaged ECG']
   },
   { 
     code: 'EEG', 
-    name: '🧠 EEG / Neurophysiology', 
+    name: '🧠 EEG', 
     icon: '🧠', 
     color: '#9b59b6',
     tests: ['Routine EEG', 'Sleep-deprived EEG', 'Video-EEG monitoring', 'Ambulatory EEG', 'Evoked potentials (VEP, BAER, SSEP)', 'Electromyography (EMG)', 'Nerve conduction studies (NCS)', 'Repetitive nerve stimulation']
   },
   { 
     code: 'PFT', 
-    name: '🫁 Pulmonary Function Tests', 
+    name: '🫁 PFT', 
     icon: '🫁', 
     color: '#1abc9c',
     tests: ['Spirometry (FEV1, FVC, FEV1/FVC)', 'Bronchodilator reversibility test', 'Lung volumes (plethysmography)', 'Diffusing capacity (DLCO)', '6-minute walk test', 'Fractional exhaled nitric oxide (FeNO)', 'Methacholine challenge test', 'Maximal respiratory pressures (MIP/MEP)', 'Nocturnal oximetry']
@@ -105,14 +105,14 @@ const testCategories = [
   },
   { 
     code: 'NUC', 
-    name: '⚛️ Nuclear Medicine / PET', 
+    name: '⚛️ Nuclear', 
     icon: '⚛️', 
     color: '#16a085',
     tests: ['PET-CT (whole body, cardiac, brain)', 'Bone scan (Tc-99m)', 'Thyroid scan (I-123, Tc-99m)', 'Renal scan (DTPA, MAG3, DMSA)', 'V/Q scan (lung)', 'HIDA scan (gallbladder)', 'Myocardial perfusion scan (MIBI, Thallium)', 'Parathyroid scan (Sestamibi)', 'Octreotide scan', 'MIBG scan', 'Gallium scan', 'White cell scan', 'Gastric emptying scan', 'Meckel\'s scan']
   },
   { 
     code: 'SPL', 
-    name: '⭐ Special Tests', 
+    name: '⭐ Special', 
     icon: '⭐', 
     color: '#7f8c8d',
     tests: ['Sweat chloride test', 'Genetic testing (DNA/RNA sequencing)', 'Karyotype / FISH / Microarray', 'Single gene sequencing', 'NGS panel / Whole exome', 'NIPT', 'HLA typing', 'Paternity testing', 'CSF analysis', 'Synovial fluid analysis', 'Peritoneal fluid analysis', 'Pleural fluid analysis', 'Amniotic fluid analysis', 'Skin biopsy', 'Muscle biopsy', 'Nerve biopsy', 'Bone marrow aspirate & biopsy', 'Fine needle aspiration cytology (FNAC)', 'Pap smear', 'Semen analysis']
@@ -218,8 +218,8 @@ const Diagnostics = () => {
   
   // Pagination per category
   const [currentPage, setCurrentPage] = useState({});
-  const [itemsPerPage, setItemsPerPage] = useState(12); // Show 12 tests per page (grid)
-  const [testsPerRow, setTestsPerRow] = useState(3); // 3 tests per row
+  const [testsPerPage, setTestsPerPage] = useState(20); // Show 20 tests per page
+  const [testsPerRow, setTestsPerRow] = useState(2); // 2 tests per row (compact)
   
   // Booking Modal States
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -331,13 +331,13 @@ const Diagnostics = () => {
   // Pagination functions
   const getPaginatedTests = (tests, categoryCode) => {
     const page = currentPage[categoryCode] || 1;
-    const start = (page - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
+    const start = (page - 1) * testsPerPage;
+    const end = start + testsPerPage;
     return tests.slice(start, end);
   };
 
   const getTotalPages = (totalTests) => {
-    return Math.ceil(totalTests / itemsPerPage);
+    return Math.ceil(totalTests / testsPerPage);
   };
 
   const goToPage = (categoryCode, pageNum, totalPages) => {
@@ -356,8 +356,8 @@ const Diagnostics = () => {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ fontSize: '32px', marginBottom: '10px' }}>🔬 Diagnostics</h1>
-      <p style={{ color: '#6b7280', marginBottom: '20px' }}>Browse all tests, compare prices, and book with best providers</p>
+      <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>🔬 Diagnostics</h1>
+      <p style={{ color: '#6b7280', marginBottom: '20px', fontSize: '14px' }}>Browse all tests, compare prices, and book with best providers</p>
       
       {/* Tab Navigation */}
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px', display: 'flex', flexWrap: 'wrap' }}>
@@ -369,52 +369,52 @@ const Diagnostics = () => {
       {activeTab === 'labtests' && (
         <div>
           {/* Search and Filter Bar */}
-          <div style={{ backgroundColor: '#f3f4f6', padding: '20px', borderRadius: '12px', marginBottom: '25px' }}>
+          <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
             <input 
               type="text" 
               placeholder="🔍 Search any test or category..." 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
-              style={{ width: '100%', padding: '14px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '16px', marginBottom: '15px' }} 
+              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} 
             />
             
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-              <input type="text" placeholder="📍 City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
-              <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }}>
-                <option value="">⭐ Min Rating</option>
-                <option value="4">4★ & above</option>
-                <option value="4.5">4.5★ & above</option>
-                <option value="4.8">4.8★ & above</option>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              <input type="text" placeholder="📍 City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
+                <option value="">⭐ Rating</option>
+                <option value="4">4★+</option>
+                <option value="4.5">4.5★+</option>
+                <option value="4.8">4.8★+</option>
               </select>
-              <select value={testsPerRow} onChange={(e) => setTestsPerRow(parseInt(e.target.value))} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }}>
-                <option value="2">2 tests per row</option>
-                <option value="3">3 tests per row</option>
-                <option value="4">4 tests per row</option>
-                <option value="6">6 tests per row</option>
+              <select value={testsPerRow} onChange={(e) => setTestsPerRow(parseInt(e.target.value))} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
+                <option value="1">1 test/row</option>
+                <option value="2">2 tests/row</option>
+                <option value="3">3 tests/row</option>
+                <option value="4">4 tests/row</option>
               </select>
-              <select value={itemsPerPage} onChange={(e) => setItemsPerPage(parseInt(e.target.value))} style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }}>
-                <option value="6">Show 6 per page</option>
-                <option value="12">Show 12 per page</option>
-                <option value="18">Show 18 per page</option>
-                <option value="24">Show 24 per page</option>
+              <select value={testsPerPage} onChange={(e) => setTestsPerPage(parseInt(e.target.value))} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
+                <option value="10">10/page</option>
+                <option value="20">20/page</option>
+                <option value="30">30/page</option>
+                <option value="50">50/page</option>
               </select>
             </div>
             
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <input type="number" placeholder="💰 Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '130px', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
-              <input type="number" placeholder="📏 Max Distance (km)" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '150px', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 10px', borderRadius: '6px', height: '42px' }}>
-                <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> 🏠 Home Collection Only
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <input type="number" placeholder="💰 Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '110px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              <input type="number" placeholder="📏 Max Distance" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '120px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 8px', borderRadius: '6px', height: '34px', fontSize: '13px' }}>
+                <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> 🏠 Home
               </label>
-              <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>📍 Use My Location</button>
-              <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Reset All Filters</button>
+              <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>📍 My Location</button>
+              <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Reset</button>
             </div>
             
-            {userLocation && <p style={{ fontSize: '12px', marginTop: '10px', color: '#10b981' }}>📍 Location detected: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}</p>}
-            {searchTerm && <p style={{ fontSize: '13px', marginTop: '10px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests matching "{searchTerm}"</p>}
+            {userLocation && <p style={{ fontSize: '11px', marginTop: '8px', color: '#10b981' }}>📍 Location detected</p>}
+            {searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests</p>}
           </div>
 
-          {/* All 16 Main Categories - Grid Layout */}
+          {/* All 16 Main Categories - Compact Grid Layout */}
           <div>
             {filteredCategories.map(category => {
               const totalTests = category.tests.length;
@@ -422,126 +422,121 @@ const Diagnostics = () => {
               const currentPageNum = currentPage[category.code] || 1;
               const paginatedTests = getPaginatedTests(category.tests, category.code);
               
-              // Split tests into rows based on testsPerRow
+              // Split tests into rows
               const rows = [];
               for (let i = 0; i < paginatedTests.length; i += testsPerRow) {
                 rows.push(paginatedTests.slice(i, i + testsPerRow));
               }
               
               return (
-                <div key={category.code} style={{ marginBottom: '25px', border: `2px solid ${category.color}`, borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                  {/* Main Category Header */}
+                <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '10px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                  {/* Category Header - Compact */}
                   <div style={{ 
                     backgroundColor: category.color, 
                     color: 'white', 
-                    padding: '16px 20px', 
+                    padding: '10px 15px', 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
                     fontWeight: 'bold',
-                    fontSize: '18px'
+                    fontSize: '15px'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '24px' }}>{category.icon}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '20px' }}>{category.icon}</span>
                       <span>{category.name}</span>
-                      <span style={{ fontSize: '14px', backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '20px' }}>
-                        {totalTests} tests
+                      <span style={{ fontSize: '11px', backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '12px' }}>
+                        {totalTests}
                       </span>
                     </div>
-                    <div style={{ fontSize: '14px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '20px' }}>
-                      Page {currentPageNum} of {totalPages}
-                    </div>
+                    {totalPages > 1 && (
+                      <div style={{ fontSize: '12px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '12px' }}>
+                        Pg {currentPageNum}/{totalPages}
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Tests Grid - Always visible */}
-                  <div style={{ padding: '15px' }}>
+                  {/* Tests Grid - One line per test with inline actions */}
+                  <div style={{ padding: '12px' }}>
                     {rows.map((row, rowIndex) => (
                       <div key={rowIndex} style={{ 
                         display: 'grid', 
                         gridTemplateColumns: `repeat(${testsPerRow}, 1fr)`, 
-                        gap: '12px',
-                        marginBottom: rowIndex === rows.length - 1 ? '0' : '12px'
+                        gap: '10px',
+                        marginBottom: rowIndex === rows.length - 1 ? '0' : '10px'
                       }}>
                         {row.map(test => (
                           <div key={test} style={{
                             border: '1px solid #e5e7eb',
-                            borderRadius: '10px',
-                            padding: '12px',
+                            borderRadius: '8px',
+                            padding: '8px 10px',
                             backgroundColor: selectedTests.includes(test) ? '#f0fdf4' : 'white',
-                            transition: 'all 0.2s ease',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px'
                           }}>
                             {/* Test Name */}
-                            <div style={{ 
-                              fontWeight: '600', 
-                              fontSize: '14px', 
-                              marginBottom: '10px',
+                            <span style={{ 
+                              fontWeight: '500', 
+                              fontSize: '13px',
                               color: '#1f2937',
-                              borderBottom: '1px solid #e5e7eb',
-                              paddingBottom: '8px'
-                            }}>
+                              flex: '1',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }} title={test}>
                               {test}
-                            </div>
+                            </span>
                             
-                            {/* Action Buttons */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              {/* Select Checkbox */}
-                              <label style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '8px', 
-                                cursor: 'pointer',
-                                fontSize: '13px',
-                                padding: '4px 0'
-                              }}>
-                                <input 
-                                  type="checkbox" 
-                                  checked={selectedTests.includes(test)} 
-                                  onChange={() => toggleTest(test)} 
-                                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                                />
-                                <span style={{ color: '#4b5563' }}>Select for Compare</span>
-                              </label>
-                              
-                              {/* Book Button */}
-                              <button 
-                                onClick={() => handleDirectBook(test)} 
-                                style={{ 
-                                  backgroundColor: '#10b981', 
-                                  color: 'white', 
-                                  padding: '6px 12px', 
-                                  border: 'none', 
-                                  borderRadius: '6px', 
-                                  cursor: 'pointer', 
-                                  fontWeight: '500',
-                                  fontSize: '13px',
-                                  width: '100%'
-                                }}
-                              >
-                                📅 Book Now
-                              </button>
-                              
-                              {/* Compare Button */}
-                              <button 
-                                onClick={() => handleSingleCompare(test)} 
-                                style={{ 
-                                  backgroundColor: '#3b82f6', 
-                                  color: 'white', 
-                                  padding: '6px 12px', 
-                                  border: 'none', 
-                                  borderRadius: '6px', 
-                                  cursor: 'pointer', 
-                                  fontWeight: '500',
-                                  fontSize: '13px',
-                                  width: '100%'
-                                }}
-                              >
-                                📊 Compare Price
-                              </button>
-                            </div>
+                            {/* Select Checkbox - No text */}
+                            <input 
+                              type="checkbox" 
+                              checked={selectedTests.includes(test)} 
+                              onChange={() => toggleTest(test)} 
+                              style={{ width: '16px', height: '16px', cursor: 'pointer', margin: '0' }}
+                              title="Select for comparison"
+                            />
+                            
+                            {/* Book Button - Small */}
+                            <button 
+                              onClick={() => handleDirectBook(test)} 
+                              style={{ 
+                                backgroundColor: '#10b981', 
+                                color: 'white', 
+                                padding: '4px 10px', 
+                                border: 'none', 
+                                borderRadius: '5px', 
+                                cursor: 'pointer', 
+                                fontSize: '11px',
+                                fontWeight: '500',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title="Book this test"
+                            >
+                              📅 Book
+                            </button>
+                            
+                            {/* Compare Button - Small */}
+                            <button 
+                              onClick={() => handleSingleCompare(test)} 
+                              style={{ 
+                                backgroundColor: '#3b82f6', 
+                                color: 'white', 
+                                padding: '4px 10px', 
+                                border: 'none', 
+                                borderRadius: '5px', 
+                                cursor: 'pointer', 
+                                fontSize: '11px',
+                                fontWeight: '500',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title="Compare price across labs"
+                            >
+                              📊 Compare
+                            </button>
                           </div>
                         ))}
-                        {/* Fill empty cells in last row */}
+                        {/* Fill empty cells */}
                         {row.length < testsPerRow && Array(testsPerRow - row.length).fill(null).map((_, idx) => (
                           <div key={`empty-${idx}`} style={{ visibility: 'hidden' }} />
                         ))}
@@ -550,19 +545,18 @@ const Diagnostics = () => {
                     
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
-                      <div style={{ padding: '15px', backgroundColor: '#f9fafb', marginTop: '20px', borderRadius: '8px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <div style={{ padding: '10px', backgroundColor: '#f9fafb', marginTop: '12px', borderRadius: '6px', display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <button 
                           onClick={() => goToPage(category.code, 1, totalPages)}
                           disabled={currentPageNum === 1}
                           style={{ 
-                            padding: '8px 14px', 
+                            padding: '4px 10px', 
                             backgroundColor: currentPageNum === 1 ? '#e5e7eb' : '#3b82f6', 
                             color: currentPageNum === 1 ? '#9ca3af' : 'white', 
                             border: 'none', 
-                            borderRadius: '6px', 
+                            borderRadius: '4px', 
                             cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
-                            fontWeight: '500',
-                            fontSize: '13px'
+                            fontSize: '11px'
                           }}
                         >
                           ⏮ First
@@ -571,33 +565,31 @@ const Diagnostics = () => {
                           onClick={() => goToPage(category.code, currentPageNum - 1, totalPages)}
                           disabled={currentPageNum === 1}
                           style={{ 
-                            padding: '8px 14px', 
+                            padding: '4px 10px', 
                             backgroundColor: currentPageNum === 1 ? '#e5e7eb' : '#3b82f6', 
                             color: currentPageNum === 1 ? '#9ca3af' : 'white', 
                             border: 'none', 
-                            borderRadius: '6px', 
+                            borderRadius: '4px', 
                             cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
-                            fontWeight: '500',
-                            fontSize: '13px'
+                            fontSize: '11px'
                           }}
                         >
-                          ◀ Previous
+                          ◀ Prev
                         </button>
-                        <span style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', borderRadius: '6px', fontWeight: 'bold', fontSize: '13px' }}>
-                          Page {currentPageNum} / {totalPages}
+                        <span style={{ padding: '4px 10px', backgroundColor: '#10b981', color: 'white', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                          {currentPageNum} / {totalPages}
                         </span>
                         <button 
                           onClick={() => goToPage(category.code, currentPageNum + 1, totalPages)}
                           disabled={currentPageNum === totalPages}
                           style={{ 
-                            padding: '8px 14px', 
+                            padding: '4px 10px', 
                             backgroundColor: currentPageNum === totalPages ? '#e5e7eb' : '#3b82f6', 
                             color: currentPageNum === totalPages ? '#9ca3af' : 'white', 
                             border: 'none', 
-                            borderRadius: '6px', 
+                            borderRadius: '4px', 
                             cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
-                            fontWeight: '500',
-                            fontSize: '13px'
+                            fontSize: '11px'
                           }}
                         >
                           Next ▶
@@ -606,25 +598,19 @@ const Diagnostics = () => {
                           onClick={() => goToPage(category.code, totalPages, totalPages)}
                           disabled={currentPageNum === totalPages}
                           style={{ 
-                            padding: '8px 14px', 
+                            padding: '4px 10px', 
                             backgroundColor: currentPageNum === totalPages ? '#e5e7eb' : '#3b82f6', 
                             color: currentPageNum === totalPages ? '#9ca3af' : 'white', 
                             border: 'none', 
-                            borderRadius: '6px', 
+                            borderRadius: '4px', 
                             cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
-                            fontWeight: '500',
-                            fontSize: '13px'
+                            fontSize: '11px'
                           }}
                         >
                           Last ⏭
                         </button>
                       </div>
                     )}
-                    
-                    {/* Showing info */}
-                    <div style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', marginTop: '10px' }}>
-                      Showing {((currentPageNum - 1) * itemsPerPage) + 1} to {Math.min(currentPageNum * itemsPerPage, totalTests)} of {totalTests} tests
-                    </div>
                   </div>
                 </div>
               );
@@ -637,24 +623,24 @@ const Diagnostics = () => {
               onClick={handleCompare} 
               style={{ 
                 position: 'fixed', 
-                bottom: '30px', 
-                right: '30px', 
+                bottom: '20px', 
+                right: '20px', 
                 backgroundColor: '#10b981', 
                 color: 'white', 
-                padding: '14px 28px', 
+                padding: '10px 20px', 
                 border: 'none', 
-                borderRadius: '50px', 
+                borderRadius: '40px', 
                 cursor: 'pointer', 
                 zIndex: 1000, 
-                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-                fontSize: '16px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+                fontSize: '14px',
                 fontWeight: 'bold',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '6px'
               }}
             >
-              📊 Compare Selected ({selectedTests.length} Tests)
+              📊 Compare ({selectedTests.length})
             </button>
           )}
         </div>
@@ -663,7 +649,7 @@ const Diagnostics = () => {
       {activeTab === 'packages' && <HealthPackagesTab />}
       {activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* Booking Modal - Same as before */}
+      {/* Booking Modal */}
       {showBookingModal && bookingProvider && (
         <div style={{ 
           position: 'fixed', 
@@ -677,30 +663,29 @@ const Diagnostics = () => {
           alignItems: 'center', 
           justifyContent: 'center' 
         }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '550px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
-            <h2 style={{ marginBottom: '15px' }}>📋 Book Lab Test{bookingTests.length > 1 ? 's' : ''}</h2>
-            <div style={{ backgroundColor: '#f0fdf4', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '500px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
+            <h2 style={{ marginBottom: '15px', fontSize: '20px' }}>📋 Book Test</h2>
+            <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px' }}>
               <p><strong>🏥 Provider:</strong> {bookingProvider.provider_name}</p>
-              <p><strong>🧪 Test{bookingTests.length > 1 ? 's' : ''}:</strong> {bookingTests.join(', ')}</p>
-              <p><strong>💰 Total Amount:</strong> ₹{bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0)}</p>
+              <p><strong>🧪 Test:</strong> {bookingTests.join(', ')}</p>
+              <p><strong>💰 Total:</strong> ₹{bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0)}</p>
               <p><strong>⭐ Rating:</strong> {bookingProvider.rating} ★</p>
-              {bookingProvider.home_collection_available && <p><strong>🏠 Home Collection Available</strong></p>}
             </div>
 
             <form onSubmit={handleBookingSubmit}>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Full Name *</label>
-                <input type="text" name="patient_name" required value={bookingForm.patient_name} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Full Name *</label>
+                <input type="text" name="patient_name" required value={bookingForm.patient_name} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               </div>
 
-              <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Age *</label>
-                  <input type="number" name="patient_age" required value={bookingForm.patient_age} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Age *</label>
+                  <input type="number" name="patient_age" required value={bookingForm.patient_age} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Gender *</label>
-                  <select name="patient_gender" value={bookingForm.patient_gender} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Gender *</label>
+                  <select name="patient_gender" value={bookingForm.patient_gender} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
@@ -708,41 +693,41 @@ const Diagnostics = () => {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Phone Number *</label>
-                <input type="tel" name="patient_phone" required value={bookingForm.patient_phone} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Phone *</label>
+                <input type="tel" name="patient_phone" required value={bookingForm.patient_phone} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Email</label>
-                <input type="email" name="patient_email" value={bookingForm.patient_email} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Email</label>
+                <input type="email" name="patient_email" value={bookingForm.patient_email} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Appointment Date *</label>
-                <input type="date" name="appointment_date" required value={bookingForm.appointment_date} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Date *</label>
+                <input type="date" name="appointment_date" required value={bookingForm.appointment_date} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               </div>
 
               {bookingProvider.home_collection_available && (
                 <>
-                  <div style={{ marginBottom: '15px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
                       <input type="checkbox" name="home_collection_requested" checked={bookingForm.home_collection_requested} onChange={(e) => setBookingForm({...bookingForm, home_collection_requested: e.target.checked})} />
                       🏠 Request Home Collection
                     </label>
                   </div>
                   {bookingForm.home_collection_requested && (
-                    <div style={{ marginBottom: '15px' }}>
-                      <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Home Address</label>
-                      <textarea name="home_address" rows="2" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px' }} />
+                    <div style={{ marginBottom: '12px' }}>
+                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Home Address</label>
+                      <textarea name="home_address" rows="2" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
                     </div>
                   )}
                 </>
               )}
 
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>Confirm Booking</button>
-                <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }}>Cancel</button>
+              <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>Confirm</button>
+                <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
               </div>
             </form>
           </div>
