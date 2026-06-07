@@ -130,7 +130,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
         rating: 4.5, 
         distance: '2.5 km', 
         home_collection: true,
-        home_collection_available: true,  // Added this
+        home_collection_available: true,
         report_time_hours: 24, 
         total_price: 0, 
         individual_prices: {} 
@@ -140,7 +140,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
         rating: 4.7, 
         distance: '3.8 km', 
         home_collection: true,
-        home_collection_available: true,  // Added this
+        home_collection_available: true,
         report_time_hours: 24, 
         total_price: 0, 
         individual_prices: {} 
@@ -150,7 +150,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
         rating: 4.6, 
         distance: '5.2 km', 
         home_collection: true,
-        home_collection_available: true,  // Added this
+        home_collection_available: true,
         report_time_hours: 48, 
         total_price: 0, 
         individual_prices: {} 
@@ -160,7 +160,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
         rating: 4.8, 
         distance: '1.2 km', 
         home_collection: true,
-        home_collection_available: true,  // Added this
+        home_collection_available: true,
         report_time_hours: 24, 
         total_price: 0, 
         individual_prices: {} 
@@ -170,7 +170,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
         rating: 4.9, 
         distance: '4.0 km', 
         home_collection: true,
-        home_collection_available: true,  // Added this
+        home_collection_available: true,
         report_time_hours: 12, 
         total_price: 0, 
         individual_prices: {} 
@@ -240,7 +240,8 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
                     onClick={() => {
-                      console.log("Booking clicked for:", p, selectedTests);
+                      console.log("Book button clicked for provider:", p);
+                      console.log("Selected tests:", selectedTests);
                       onBookNow(p, selectedTests);
                     }} 
                     style={{ 
@@ -278,11 +279,9 @@ const Diagnostics = () => {
   const [useMyLocation, setUseMyLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   
-  // Show more tests per category
   const [visibleTestCount, setVisibleTestCount] = useState({});
   const [testsPerRow, setTestsPerRow] = useState(4);
   
-  // Booking Modal States
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingTests, setBookingTests] = useState([]);
@@ -328,6 +327,7 @@ const Diagnostics = () => {
   };
 
   const openBookingModal = (provider, tests) => {
+    console.log("openBookingModal called with:", provider, tests);
     setBookingProvider(provider);
     setBookingTests(tests);
     setShowBookingModal(true);
@@ -375,7 +375,6 @@ const Diagnostics = () => {
     setSearchTerm('');
   };
 
-  // Filter tests based on search
   const getFilteredCategories = () => {
     if (!searchTerm.trim()) return testCategories;
     
@@ -389,19 +388,16 @@ const Diagnostics = () => {
     })).filter(category => category.tests.length > 0);
   };
 
-  // Show more tests for a category
   const showMoreTests = (categoryCode, currentCount, totalTests) => {
     const increment = testsPerRow * 2;
     const newCount = Math.min(currentCount + increment, totalTests);
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: newCount }));
   };
 
-  // Show all tests for a category
   const showAllTests = (categoryCode, totalTests) => {
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: totalTests }));
   };
 
-  // Show less tests (collapse)
   const showLessTests = (categoryCode, initialCount) => {
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: initialCount }));
   };
@@ -414,7 +410,6 @@ const Diagnostics = () => {
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
   const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
   
-  // Default number of tests to show initially (2 rows of 4 = 8 tests)
   const DEFAULT_VISIBLE_TESTS = 8;
 
   return (
@@ -422,7 +417,6 @@ const Diagnostics = () => {
       <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>🔬 Diagnostics</h1>
       <p style={{ color: '#6b7280', marginBottom: '20px', fontSize: '14px' }}>Browse all tests, compare prices, and book with best providers</p>
       
-      {/* Tab Navigation */}
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px', display: 'flex', flexWrap: 'wrap' }}>
         <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 Lab Tests</button>
         <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>🏥 Health Packages</button>
@@ -431,7 +425,6 @@ const Diagnostics = () => {
 
       {activeTab === 'labtests' && (
         <div>
-          {/* Search and Filter Bar */}
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
             <input 
               type="text" 
@@ -471,7 +464,6 @@ const Diagnostics = () => {
             {searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests</p>}
           </div>
 
-          {/* All 16 Main Categories */}
           <div>
             {filteredCategories.map(category => {
               const totalTests = category.tests.length;
@@ -480,7 +472,6 @@ const Diagnostics = () => {
               const remainingTests = totalTests - visibleCount;
               const hasMore = remainingTests > 0;
               
-              // Split visible tests into rows
               const rows = [];
               for (let i = 0; i < visibleTests.length; i += testsPerRow) {
                 rows.push(visibleTests.slice(i, i + testsPerRow));
@@ -488,7 +479,6 @@ const Diagnostics = () => {
               
               return (
                 <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '10px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                  {/* Category Header */}
                   <div style={{ 
                     backgroundColor: category.color, 
                     color: 'white', 
@@ -513,7 +503,6 @@ const Diagnostics = () => {
                     )}
                   </div>
                   
-                  {/* Tests Grid */}
                   <div style={{ padding: '12px' }}>
                     {rows.map((row, rowIndex) => (
                       <div key={rowIndex} style={{ 
@@ -596,7 +585,6 @@ const Diagnostics = () => {
                       </div>
                     ))}
                     
-                    {/* Show More / Show Less Button */}
                     {hasMore && (
                       <div style={{ 
                         marginTop: '15px', 
@@ -668,7 +656,6 @@ const Diagnostics = () => {
             })}
           </div>
 
-          {/* Floating Compare Button */}
           {selectedTests.length >= 2 && (
             <button 
               onClick={handleCompare} 
@@ -700,7 +687,6 @@ const Diagnostics = () => {
       {activeTab === 'packages' && <HealthPackagesTab />}
       {activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* Booking Modal */}
       {showBookingModal && bookingProvider && (
         <div style={{ 
           position: 'fixed', 
@@ -721,6 +707,7 @@ const Diagnostics = () => {
               <p><strong>🧪 Test:</strong> {bookingTests.join(', ')}</p>
               <p><strong>💰 Total:</strong> ₹{bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0)}</p>
               <p><strong>⭐ Rating:</strong> {bookingProvider.rating} ★</p>
+              {bookingProvider.home_collection_available && <p><strong>🏠 Home Collection Available</strong></p>}
             </div>
 
             <form onSubmit={handleBookingSubmit}>
