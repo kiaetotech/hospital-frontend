@@ -239,11 +239,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
-                    onClick={() => {
-                      console.log("Book button clicked for provider:", p);
-                      console.log("Selected tests:", selectedTests);
-                      onBookNow(p, selectedTests);
-                    }} 
+                    onClick={() => onBookNow(p, selectedTests)} 
                     style={{ 
                       backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', 
                       color: 'white', 
@@ -326,8 +322,8 @@ const Diagnostics = () => {
     setShowComparison(true);
   };
 
+  // THIS IS THE KEY FUNCTION - opens booking modal
   const openBookingModal = (provider, tests) => {
-    console.log("openBookingModal called with:", provider, tests);
     setBookingProvider(provider);
     setBookingTests(tests);
     setShowBookingModal(true);
@@ -687,6 +683,7 @@ const Diagnostics = () => {
       {activeTab === 'packages' && <HealthPackagesTab />}
       {activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
+      {/* Booking Modal */}
       {showBookingModal && bookingProvider && (
         <div style={{ 
           position: 'fixed', 
