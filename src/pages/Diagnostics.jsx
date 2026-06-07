@@ -3,7 +3,7 @@ import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import HealthPackagesTab from './HealthPackagesTab';
 
-// All 16 Main Categories with their Tests
+// All 16 Main Categories with their Tests (same as before)
 const testCategories = [
   { 
     code: 'MRI', 
@@ -177,7 +177,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
-             </tr>
+            </tr>
             {selectedTests.map(test => (
               <tr key={test}>
                 <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
@@ -187,7 +187,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
-             </tr>
+            </tr>
             <tr>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
@@ -216,11 +216,9 @@ const Diagnostics = () => {
   const [useMyLocation, setUseMyLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   
-  // Show more tests per category
   const [visibleTestCount, setVisibleTestCount] = useState({});
-  const [testsPerRow, setTestsPerRow] = useState(4);
+  const [testsPerRow, setTestsPerRow] = useState(3); // Changed to 3 for better fit
   
-  // Booking Modal States
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingTests, setBookingTests] = useState([]);
@@ -313,7 +311,6 @@ const Diagnostics = () => {
     setSearchTerm('');
   };
 
-  // Filter tests based on search
   const getFilteredCategories = () => {
     if (!searchTerm.trim()) return testCategories;
     
@@ -327,19 +324,16 @@ const Diagnostics = () => {
     })).filter(category => category.tests.length > 0);
   };
 
-  // Show more tests for a category
   const showMoreTests = (categoryCode, currentCount, totalTests) => {
     const increment = testsPerRow * 2;
     const newCount = Math.min(currentCount + increment, totalTests);
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: newCount }));
   };
 
-  // Show all tests for a category
   const showAllTests = (categoryCode, totalTests) => {
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: totalTests }));
   };
 
-  // Show less tests (collapse)
   const showLessTests = (categoryCode, initialCount) => {
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: initialCount }));
   };
@@ -352,15 +346,13 @@ const Diagnostics = () => {
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
   const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
   
-  // Default number of tests to show initially (2 rows of 4 = 8 tests)
-  const DEFAULT_VISIBLE_TESTS = 8;
+  const DEFAULT_VISIBLE_TESTS = 6; // Reduced to 6 for better initial view
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px' }}>
       <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>🔬 Diagnostics</h1>
       <p style={{ color: '#6b7280', marginBottom: '20px', fontSize: '14px' }}>Browse all tests, compare prices, and book with best providers</p>
       
-      {/* Tab Navigation */}
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px', display: 'flex', flexWrap: 'wrap' }}>
         <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 Lab Tests</button>
         <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>🏥 Health Packages</button>
@@ -369,7 +361,6 @@ const Diagnostics = () => {
 
       {activeTab === 'labtests' && (
         <div>
-          {/* Search and Filter Bar */}
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
             <input 
               type="text" 
@@ -391,7 +382,6 @@ const Diagnostics = () => {
                 <option value="2">2 tests/row</option>
                 <option value="3">3 tests/row</option>
                 <option value="4">4 tests/row</option>
-                <option value="5">5 tests/row</option>
               </select>
             </div>
             
@@ -409,7 +399,6 @@ const Diagnostics = () => {
             {searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests</p>}
           </div>
 
-          {/* All 16 Main Categories */}
           <div>
             {filteredCategories.map(category => {
               const totalTests = category.tests.length;
@@ -418,15 +407,8 @@ const Diagnostics = () => {
               const remainingTests = totalTests - visibleCount;
               const hasMore = remainingTests > 0;
               
-              // Split visible tests into rows
-              const rows = [];
-              for (let i = 0; i < visibleTests.length; i += testsPerRow) {
-                rows.push(visibleTests.slice(i, i + testsPerRow));
-              }
-              
               return (
                 <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '10px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                  {/* Category Header */}
                   <div style={{ 
                     backgroundColor: category.color, 
                     color: 'white', 
@@ -451,43 +433,43 @@ const Diagnostics = () => {
                     )}
                   </div>
                   
-                  {/* Tests Grid */}
                   <div style={{ padding: '12px' }}>
-                    {rows.map((row, rowIndex) => (
-                      <div key={rowIndex} style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: `repeat(${testsPerRow}, 1fr)`, 
-                        gap: '10px',
-                        marginBottom: rowIndex === rows.length - 1 ? '0' : '10px'
-                      }}>
-                        {row.map(test => (
-                          <div key={test} style={{
-                            border: '1px solid #e5e7eb',
-                            borderRadius: '8px',
-                            padding: '8px 10px',
-                            backgroundColor: selectedTests.includes(test) ? '#f0fdf4' : 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '8px'
+                    {/* Responsive grid with proper wrapping */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`,
+                      gap: '12px'
+                    }}>
+                      {visibleTests.map(test => (
+                        <div key={test} style={{
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          backgroundColor: selectedTests.includes(test) ? '#f0fdf4' : 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '10px',
+                          flexWrap: 'wrap'
+                        }}>
+                          <span style={{ 
+                            fontWeight: '500', 
+                            fontSize: '13px',
+                            color: '#1f2937',
+                            flex: '2',
+                            minWidth: '150px',
+                            wordBreak: 'break-word',
+                            lineHeight: '1.4'
                           }}>
-                            <span style={{ 
-                              fontWeight: '500', 
-                              fontSize: '13px',
-                              color: '#1f2937',
-                              flex: 1,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }} title={test}>
-                              {test}
-                            </span>
-                            
+                            {test}
+                          </span>
+                          
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <input 
                               type="checkbox" 
                               checked={selectedTests.includes(test)} 
                               onChange={() => toggleTest(test)} 
-                              style={{ width: '16px', height: '16px', cursor: 'pointer', margin: '0' }}
+                              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                               title="Select for comparison"
                             />
                             
@@ -496,7 +478,7 @@ const Diagnostics = () => {
                               style={{ 
                                 backgroundColor: '#10b981', 
                                 color: 'white', 
-                                padding: '4px 10px', 
+                                padding: '5px 12px', 
                                 border: 'none', 
                                 borderRadius: '5px', 
                                 cursor: 'pointer', 
@@ -514,7 +496,7 @@ const Diagnostics = () => {
                               style={{ 
                                 backgroundColor: '#3b82f6', 
                                 color: 'white', 
-                                padding: '4px 10px', 
+                                padding: '5px 12px', 
                                 border: 'none', 
                                 borderRadius: '5px', 
                                 cursor: 'pointer', 
@@ -527,14 +509,10 @@ const Diagnostics = () => {
                               📊 Compare
                             </button>
                           </div>
-                        ))}
-                        {row.length < testsPerRow && Array(testsPerRow - row.length).fill(null).map((_, idx) => (
-                          <div key={`empty-${idx}`} style={{ visibility: 'hidden' }} />
-                        ))}
-                      </div>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                     
-                    {/* Show More / Show Less Button */}
                     {hasMore && (
                       <div style={{ 
                         marginTop: '15px', 
@@ -606,7 +584,6 @@ const Diagnostics = () => {
             })}
           </div>
 
-          {/* Floating Compare Button */}
           {selectedTests.length >= 2 && (
             <button 
               onClick={handleCompare} 
@@ -638,7 +615,6 @@ const Diagnostics = () => {
       {activeTab === 'packages' && <HealthPackagesTab />}
       {activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* Booking Modal */}
       {showBookingModal && bookingProvider && (
         <div style={{ 
           position: 'fixed', 
