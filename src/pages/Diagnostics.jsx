@@ -216,10 +216,9 @@ const Diagnostics = () => {
   const [useMyLocation, setUseMyLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   
-  // Pagination per category
-  const [currentPage, setCurrentPage] = useState({});
-  const [testsPerPage, setTestsPerPage] = useState(20); // Show 20 tests per page
-  const [testsPerRow, setTestsPerRow] = useState(2); // 2 tests per row (compact)
+  // Show more tests per category
+  const [visibleTestCount, setVisibleTestCount] = useState({});
+  const [testsPerRow, setTestsPerRow] = useState(4); // 4 tests per row default
   
   // Booking Modal States
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -328,22 +327,21 @@ const Diagnostics = () => {
     })).filter(category => category.tests.length > 0);
   };
 
-  // Pagination functions
-  const getPaginatedTests = (tests, categoryCode) => {
-    const page = currentPage[categoryCode] || 1;
-    const start = (page - 1) * testsPerPage;
-    const end = start + testsPerPage;
-    return tests.slice(start, end);
+  // Show more tests for a category
+  const showMoreTests = (categoryCode, currentCount, totalTests) => {
+    const increment = testsPerRow * 2; // Add 2 rows worth of tests
+    const newCount = Math.min(currentCount + increment, totalTests);
+    setVisibleTestCount(prev => ({ ...prev, [categoryCode]: newCount }));
   };
 
-  const getTotalPages = (totalTests) => {
-    return Math.ceil(totalTests / testsPerPage);
+  // Show all tests for a category
+  const showAllTests = (categoryCode, totalTests) => {
+    setVisibleTestCount(prev => ({ ...prev, [categoryCode]: totalTests }));
   };
 
-  const goToPage = (categoryCode, pageNum, totalPages) => {
-    if (pageNum >= 1 && pageNum <= totalPages) {
-      setCurrentPage(prev => ({ ...prev, [categoryCode]: pageNum }));
-    }
+  // Show less tests (collapse)
+  const showLessTests = (categoryCode, initialCount) => {
+    setVisibleTestCount(prev => ({ ...prev, [categoryCode]: initialCount }));
   };
 
   if (showComparison) {
@@ -353,6 +351,9 @@ const Diagnostics = () => {
   const filteredCategories = getFilteredCategories();
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
   const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
+  
+  // Default number of tests to show initially (2 rows of 4 = 8 tests)
+  const DEFAULT_VISIBLE_TESTS = 8;
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px' }}>
@@ -387,16 +388,10 @@ const Diagnostics = () => {
                 <option value="4.8">4.8★+</option>
               </select>
               <select value={testsPerRow} onChange={(e) => setTestsPerRow(parseInt(e.target.value))} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
-                <option value="1">1 test/row</option>
                 <option value="2">2 tests/row</option>
                 <option value="3">3 tests/row</option>
                 <option value="4">4 tests/row</option>
-              </select>
-              <select value={testsPerPage} onChange={(e) => setTestsPerPage(parseInt(e.target.value))} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
-                <option value="10">10/page</option>
-                <option value="20">20/page</option>
-                <option value="30">30/page</option>
-                <option value="50">50/page</option>
+                <option value="5">5 tests/row</option>
               </select>
             </div>
             
@@ -414,23 +409,24 @@ const Diagnostics = () => {
             {searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests</p>}
           </div>
 
-          {/* All 16 Main Categories - Compact Grid Layout */}
+          {/* All 16 Main Categories - Smart Layout with Show More */}
           <div>
             {filteredCategories.map(category => {
               const totalTests = category.tests.length;
-              const totalPages = getTotalPages(totalTests);
-              const currentPageNum = currentPage[category.code] || 1;
-              const paginatedTests = getPaginatedTests(category.tests, category.code);
+              const visibleCount = visibleTestCount[category.code] || Math.min(DEFAULT_VISIBLE_TESTS, totalTests);
+              const visibleTests = category.tests.slice(0, visibleCount);
+              const remainingTests = totalTests - visibleCount;
+              const hasMore = remainingTests > 0;
               
-              // Split tests into rows
+              // Split visible tests into rows
               const rows = [];
-              for (let i = 0; i < paginatedTests.length; i += testsPerRow) {
-                rows.push(paginatedTests.slice(i, i + testsPerRow));
+              for (let i = 0; i < visibleTests.length; i += testsPerRow) {
+                rows.push(visibleTests.slice(i, i + testsPerRow));
               }
               
               return (
                 <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '10px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                  {/* Category Header - Compact */}
+                  {/* Category Header */}
                   <div style={{ 
                     backgroundColor: category.color, 
                     color: 'white', 
@@ -445,17 +441,17 @@ const Diagnostics = () => {
                       <span style={{ fontSize: '20px' }}>{category.icon}</span>
                       <span>{category.name}</span>
                       <span style={{ fontSize: '11px', backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '12px' }}>
-                        {totalTests}
+                        {totalTests} tests
                       </span>
                     </div>
-                    {totalPages > 1 && (
-                      <div style={{ fontSize: '12px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '12px' }}>
-                        Pg {currentPageNum}/{totalPages}
+                    {visibleCount < totalTests && (
+                      <div style={{ fontSize: '11px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '12px' }}>
+                        Showing {visibleCount}/{totalTests}
                       </div>
                     )}
                   </div>
                   
-                  {/* Tests Grid - One line per test with inline actions */}
+                  {/* Tests Grid */}
                   <div style={{ padding: '12px' }}>
                     {rows.map((row, rowIndex) => (
                       <div key={rowIndex} style={{ 
@@ -473,7 +469,8 @@ const Diagnostics = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            gap: '8px'
+                            gap: '8px',
+                            transition: 'all 0.2s ease'
                           }}>
                             {/* Test Name */}
                             <span style={{ 
@@ -488,7 +485,7 @@ const Diagnostics = () => {
                               {test}
                             </span>
                             
-                            {/* Select Checkbox - No text */}
+                            {/* Select Checkbox */}
                             <input 
                               type="checkbox" 
                               checked={selectedTests.includes(test)} 
@@ -497,7 +494,7 @@ const Diagnostics = () => {
                               title="Select for comparison"
                             />
                             
-                            {/* Book Button - Small */}
+                            {/* Book Button */}
                             <button 
                               onClick={() => handleDirectBook(test)} 
                               style={{ 
@@ -516,7 +513,7 @@ const Diagnostics = () => {
                               📅 Book
                             </button>
                             
-                            {/* Compare Button - Small */}
+                            {/* Compare Button */}
                             <button 
                               onClick={() => handleSingleCompare(test)} 
                               style={{ 
@@ -536,78 +533,79 @@ const Diagnostics = () => {
                             </button>
                           </div>
                         ))}
-                        {/* Fill empty cells */}
+                        {/* Fill empty cells in last row */}
                         {row.length < testsPerRow && Array(testsPerRow - row.length).fill(null).map((_, idx) => (
                           <div key={`empty-${idx}`} style={{ visibility: 'hidden' }} />
                         ))}
                       </div>
                     ))}
                     
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                      <div style={{ padding: '10px', backgroundColor: '#f9fafb', marginTop: '12px', borderRadius: '6px', display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <button 
-                          onClick={() => goToPage(category.code, 1, totalPages)}
-                          disabled={currentPageNum === 1}
-                          style={{ 
-                            padding: '4px 10px', 
-                            backgroundColor: currentPageNum === 1 ? '#e5e7eb' : '#3b82f6', 
-                            color: currentPageNum === 1 ? '#9ca3af' : 'white', 
-                            border: 'none', 
-                            borderRadius: '4px', 
-                            cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
+                    {/* Show More / Show Less Button */}
+                    {hasMore && (
+                      <div style={{ 
+                        marginTop: '15px', 
+                        padding: '12px', 
+                        backgroundColor: '#f9fafb', 
+                        borderRadius: '8px', 
+                        textAlign: 'center',
+                        border: '1px dashed #d1d5db'
+                      }}>
+                        <div style={{ marginBottom: '8px', fontSize: '13px', color: '#6b7280' }}>
+                          {remainingTests} more test{remainingTests > 1 ? 's' : ''} available in this category
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => showMoreTests(category.code, visibleCount, totalTests)}
+                            style={{
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              padding: '6px 16px',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: '500'
+                            }}
+                          >
+                            + Show More ({Math.min(testsPerRow * 2, remainingTests)} more)
+                          </button>
+                          <button
+                            onClick={() => showAllTests(category.code, totalTests)}
+                            style={{
+                              backgroundColor: '#10b981',
+                              color: 'white',
+                              padding: '6px 16px',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: '500'
+                            }}
+                          >
+                            Show All {totalTests} Tests
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {visibleCount === totalTests && totalTests > DEFAULT_VISIBLE_TESTS && (
+                      <div style={{ 
+                        marginTop: '12px', 
+                        textAlign: 'center'
+                      }}>
+                        <button
+                          onClick={() => showLessTests(category.code, DEFAULT_VISIBLE_TESTS)}
+                          style={{
+                            backgroundColor: '#6b7280',
+                            color: 'white',
+                            padding: '4px 12px',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
                             fontSize: '11px'
                           }}
                         >
-                          ⏮ First
-                        </button>
-                        <button 
-                          onClick={() => goToPage(category.code, currentPageNum - 1, totalPages)}
-                          disabled={currentPageNum === 1}
-                          style={{ 
-                            padding: '4px 10px', 
-                            backgroundColor: currentPageNum === 1 ? '#e5e7eb' : '#3b82f6', 
-                            color: currentPageNum === 1 ? '#9ca3af' : 'white', 
-                            border: 'none', 
-                            borderRadius: '4px', 
-                            cursor: currentPageNum === 1 ? 'not-allowed' : 'pointer',
-                            fontSize: '11px'
-                          }}
-                        >
-                          ◀ Prev
-                        </button>
-                        <span style={{ padding: '4px 10px', backgroundColor: '#10b981', color: 'white', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
-                          {currentPageNum} / {totalPages}
-                        </span>
-                        <button 
-                          onClick={() => goToPage(category.code, currentPageNum + 1, totalPages)}
-                          disabled={currentPageNum === totalPages}
-                          style={{ 
-                            padding: '4px 10px', 
-                            backgroundColor: currentPageNum === totalPages ? '#e5e7eb' : '#3b82f6', 
-                            color: currentPageNum === totalPages ? '#9ca3af' : 'white', 
-                            border: 'none', 
-                            borderRadius: '4px', 
-                            cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
-                            fontSize: '11px'
-                          }}
-                        >
-                          Next ▶
-                        </button>
-                        <button 
-                          onClick={() => goToPage(category.code, totalPages, totalPages)}
-                          disabled={currentPageNum === totalPages}
-                          style={{ 
-                            padding: '4px 10px', 
-                            backgroundColor: currentPageNum === totalPages ? '#e5e7eb' : '#3b82f6', 
-                            color: currentPageNum === totalPages ? '#9ca3af' : 'white', 
-                            border: 'none', 
-                            borderRadius: '4px', 
-                            cursor: currentPageNum === totalPages ? 'not-allowed' : 'pointer',
-                            fontSize: '11px'
-                          }}
-                        >
-                          Last ⏭
+                          Show Less
                         </button>
                       </div>
                     )}
@@ -627,7 +625,7 @@ const Diagnostics = () => {
                 right: '20px', 
                 backgroundColor: '#10b981', 
                 color: 'white', 
-                padding: '10px 20px', 
+                padding: '10px 20px, 
                 border: 'none', 
                 borderRadius: '40px', 
                 cursor: 'pointer', 
