@@ -177,7 +177,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
-            </tr>
+             </tr>
             {selectedTests.map(test => (
               <tr key={test}>
                 <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
@@ -187,7 +187,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
-            </tr>
+             </tr>
             <tr>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
@@ -218,7 +218,7 @@ const Diagnostics = () => {
   
   // Show more tests per category
   const [visibleTestCount, setVisibleTestCount] = useState({});
-  const [testsPerRow, setTestsPerRow] = useState(4); // 4 tests per row default
+  const [testsPerRow, setTestsPerRow] = useState(4);
   
   // Booking Modal States
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -329,7 +329,7 @@ const Diagnostics = () => {
 
   // Show more tests for a category
   const showMoreTests = (categoryCode, currentCount, totalTests) => {
-    const increment = testsPerRow * 2; // Add 2 rows worth of tests
+    const increment = testsPerRow * 2;
     const newCount = Math.min(currentCount + increment, totalTests);
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: newCount }));
   };
@@ -409,7 +409,7 @@ const Diagnostics = () => {
             {searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests</p>}
           </div>
 
-          {/* All 16 Main Categories - Smart Layout with Show More */}
+          {/* All 16 Main Categories */}
           <div>
             {filteredCategories.map(category => {
               const totalTests = category.tests.length;
@@ -469,15 +469,13 @@ const Diagnostics = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            gap: '8px',
-                            transition: 'all 0.2s ease'
+                            gap: '8px'
                           }}>
-                            {/* Test Name */}
                             <span style={{ 
                               fontWeight: '500', 
                               fontSize: '13px',
                               color: '#1f2937',
-                              flex: '1',
+                              flex: 1,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis'
@@ -485,7 +483,6 @@ const Diagnostics = () => {
                               {test}
                             </span>
                             
-                            {/* Select Checkbox */}
                             <input 
                               type="checkbox" 
                               checked={selectedTests.includes(test)} 
@@ -494,7 +491,6 @@ const Diagnostics = () => {
                               title="Select for comparison"
                             />
                             
-                            {/* Book Button */}
                             <button 
                               onClick={() => handleDirectBook(test)} 
                               style={{ 
@@ -513,7 +509,6 @@ const Diagnostics = () => {
                               📅 Book
                             </button>
                             
-                            {/* Compare Button */}
                             <button 
                               onClick={() => handleSingleCompare(test)} 
                               style={{ 
@@ -533,7 +528,6 @@ const Diagnostics = () => {
                             </button>
                           </div>
                         ))}
-                        {/* Fill empty cells in last row */}
                         {row.length < testsPerRow && Array(testsPerRow - row.length).fill(null).map((_, idx) => (
                           <div key={`empty-${idx}`} style={{ visibility: 'hidden' }} />
                         ))}
@@ -589,10 +583,7 @@ const Diagnostics = () => {
                     )}
                     
                     {visibleCount === totalTests && totalTests > DEFAULT_VISIBLE_TESTS && (
-                      <div style={{ 
-                        marginTop: '12px', 
-                        textAlign: 'center'
-                      }}>
+                      <div style={{ marginTop: '12px', textAlign: 'center' }}>
                         <button
                           onClick={() => showLessTests(category.code, DEFAULT_VISIBLE_TESTS)}
                           style={{
@@ -625,7 +616,7 @@ const Diagnostics = () => {
                 right: '20px', 
                 backgroundColor: '#10b981', 
                 color: 'white', 
-                padding: '10px 20px, 
+                padding: '10px 20px', 
                 border: 'none', 
                 borderRadius: '40px', 
                 cursor: 'pointer', 
