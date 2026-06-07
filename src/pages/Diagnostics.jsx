@@ -95,8 +95,16 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <button onClick={() => onBookNow(p, selectedTests)} style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Book</button>
-                </td>
+                  <button 
+                   onClick={() => {
+                     alert('Booking: ' + p.provider_name);
+                     onBookNow(p, selectedTests);
+                   }} 
+                   style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                   Book
+                 </button>
+               </td>
               ))}
             </tr>
           </tbody>
