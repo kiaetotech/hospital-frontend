@@ -3,7 +3,7 @@ import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import HealthPackagesTab from './HealthPackagesTab';
 
-// All 16 Main Categories with their Tests
+// All 16 Main Categories with their Tests (YOUR EXISTING CODE - UNCHANGED)
 const testCategories = [
   { 
     code: 'MRI', 
@@ -226,6 +226,11 @@ const Diagnostics = () => {
   const [visibleTestCount, setVisibleTestCount] = useState({});
   const [testsPerRow, setTestsPerRow] = useState(4);
   
+  // NEW STATE FOR EXCEL SEARCH
+  const [excelSearchResults, setExcelSearchResults] = useState([]);
+  const [showExcelResults, setShowExcelResults] = useState(false);
+  const [excelSearchLoading, setExcelSearchLoading] = useState(false);
+  
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingTests, setBookingTests] = useState([]);
@@ -239,6 +244,30 @@ const Diagnostics = () => {
     home_collection_requested: false,
     home_address: ''
   });
+
+  // NEW: Excel Search API call
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setExcelSearchResults([]);
+      setShowExcelResults(false);
+      return;
+    }
+    
+    const delayDebounce = setTimeout(async () => {
+      try {
+        setExcelSearchLoading(true);
+        const response = await axios.get(`https://hospital-backend-production-8de3.up.railway.app/api/tests/search?q=${searchTerm}`);
+        setExcelSearchResults(response.data);
+        setShowExcelResults(true);
+      } catch (error) {
+        console.error('Excel search error:', error);
+      } finally {
+        setExcelSearchLoading(false);
+      }
+    }, 500);
+    
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (useMyLocation && navigator.geolocation) {
@@ -325,6 +354,10 @@ const Diagnostics = () => {
   };
 
   const getFilteredCategories = () => {
+    // If showing Excel results, don't show categories
+    if (showExcelResults && searchTerm && excelSearchResults.length > 0) {
+      return [];
+    }
     if (!searchTerm.trim()) return testCategories;
     const lowerSearch = searchTerm.toLowerCase();
     return testCategories.map(category => ({
@@ -357,6 +390,16 @@ const Diagnostics = () => {
       <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>🔬 Diagnostics</h1>
       <p style={{ color: '#6b7280', marginBottom: '20px', fontSize: '14px' }}>Browse all tests, compare prices, and book with best providers</p>
       
+      {/* NEW: Excel Tests Badge */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
+        <span style={{ backgroundColor: '#e5e7eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>
+          📋 {testCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} Base Tests
+        </span>
+        <span style={{ backgroundColor: '#d1fae5', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>
+          📊 + Unlimited Excel Tests
+        </span>
+      </div>
+      
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px', display: 'flex', flexWrap: 'wrap' }}>
         <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 Lab Tests</button>
         <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>🏥 Health Packages</button>
@@ -374,7 +417,78 @@ const Diagnostics = () => {
       {!showComparison && activeTab === 'labtests' && (
         <div>
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-            <input type="text" placeholder="🔍 Search any test or category..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} />
+            <input type="text" placeholder="🔍 Search any test or category (including 5000+ Excel tests)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} />
+            
+            {/* NEW: Excel Search Results Section */}
+            {showExcelResults && searchTerm && (
+              <div style={{ 
+                marginTop: '10px', 
+                backgroundColor: 'white', 
+                border: '1px solid #10b981', 
+                borderRadius: '8px', 
+                maxHeight: '350px', 
+                overflowY: 'auto',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                {excelSearchLoading ? (
+                  <div style={{ padding: '20px', textAlign: 'center' }}>Searching Excel database...</div>
+                ) : excelSearchResults.length > 0 ? (
+                  <>
+                    <div style={{ padding: '10px', backgroundColor: '#f0fdf4', borderBottom: '1px solid #10b981' }}>
+                      <strong>📋 Excel Uploaded Tests ({excelSearchResults.length})</strong>
+                      <span style={{ fontSize: '12px', marginLeft: '10px', color: '#666' }}>From agency price lists</span>
+                    </div>
+                    {excelSearchResults.map(test => (
+                      <div key={test._id} style={{ 
+                        padding: '12px 15px', 
+                        borderBottom: '1px solid #eee', 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '10px'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <strong>{test.testName}</strong>
+                          <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                            {test.category} {test.subCategory && `› ${test.subCategory}`}
+                          </div>
+                          {test.description && (
+                            <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>{test.description.substring(0, 60)}...</div>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
+                            <input type="checkbox" checked={selectedTests.includes(test.testName)} onChange={() => toggleTest(test.testName)} />
+                            Select
+                          </label>
+                          <button 
+                            onClick={() => handleDirectBook(test.testName)} 
+                            style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            Book
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setSelectedTests([test.testName]);
+                              handleCompare();
+                            }} 
+                            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '4px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            Compare
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
+                    No Excel tests found matching "{searchTerm}"
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
               <input type="text" placeholder="📍 City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
@@ -400,7 +514,7 @@ const Diagnostics = () => {
               <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Reset</button>
             </div>
             {userLocation && <p style={{ fontSize: '11px', marginTop: '8px', color: '#10b981' }}>📍 Location detected</p>}
-            {searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests</p>}
+            {!showExcelResults && searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests in categories</p>}
           </div>
 
           <div>
