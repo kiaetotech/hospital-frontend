@@ -144,11 +144,27 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
     setLoading(false);
   }, [selectedTests]);
 
+  // Separate handler functions to avoid any confusion
+  const handleBackClick = () => {
+    console.log("Back button clicked - ONLY going back");
+    onBack();
+  };
+
+  const handleBookClick = (provider, tests) => {
+    console.log("Book button clicked for provider:", provider.provider_name);
+    onBookNow(provider, tests);
+  };
+
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
 
   return (
     <div>
-      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Lab Tests</button>
+      <button 
+        onClick={handleBackClick}
+        style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}
+      >
+        ← Back to Lab Tests
+      </button>
       <h2>📊 Price Comparison for Selected Tests</h2>
       <div style={{ overflowX: 'auto', marginTop: '20px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
@@ -167,42 +183,50 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⭐ Rating</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
-            </tr>
+             </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
-            </tr>
+             </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? '✅ Yes' : '❌ No'}</td>))}
-            </tr>
+             </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
-            </tr>
+             </tr>
             {selectedTests.map(test => (
               <tr key={test}>
                 <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
                 {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test]}</td>))}
-              </tr>
+               </tr>
             ))}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
-            </tr>
+             </tr>
             <tr>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
-                    onClick={() => onBookNow(p, selectedTests)} 
-                    style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                    onClick={() => handleBookClick(p, selectedTests)} 
+                    style={{ 
+                      backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', 
+                      color: 'white', 
+                      padding: '8px 16px', 
+                      border: 'none', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer', 
+                      fontWeight: 'bold' 
+                    }}
                   >
                     Book Now
                   </button>
                 </td>
               ))}
-            </tr>
+             </tr>
           </tbody>
         </table>
       </div>
@@ -345,8 +369,18 @@ const Diagnostics = () => {
   };
 
   if (showComparison) {
-    return <ComparisonResults selectedTests={selectedTests} onBack={() => setShowComparison(false)} onBookNow={openBookingModal} />;
-  }
+  return <ComparisonResults 
+    selectedTests={selectedTests} 
+    onBack={() => {
+      console.log("onBack called - closing comparison");
+      setShowComparison(false);
+    }} 
+    onBookNow={(provider, tests) => {
+      console.log("onBookNow called from comparison table");
+      openBookingModal(provider, tests);
+    }} 
+  />;
+}
 
   const filteredCategories = getFilteredCategories();
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
