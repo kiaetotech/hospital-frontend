@@ -124,61 +124,14 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Create mock providers with proper structure
     const mockProviders = [
-      { 
-        provider_name: 'ABC Diagnostics', 
-        rating: 4.5, 
-        distance: '2.5 km', 
-        home_collection: true, 
-        home_collection_available: true,
-        report_time_hours: 24, 
-        total_price: 0, 
-        individual_prices: {} 
-      },
-      { 
-        provider_name: 'HealthCare Diagnostics', 
-        rating: 4.7, 
-        distance: '3.8 km', 
-        home_collection: true, 
-        home_collection_available: true,
-        report_time_hours: 24, 
-        total_price: 0, 
-        individual_prices: {} 
-      },
-      { 
-        provider_name: 'Metropolis Healthcare', 
-        rating: 4.6, 
-        distance: '5.2 km', 
-        home_collection: true, 
-        home_collection_available: true,
-        report_time_hours: 48, 
-        total_price: 0, 
-        individual_prices: {} 
-      },
-      { 
-        provider_name: 'Dr Lal PathLabs', 
-        rating: 4.8, 
-        distance: '1.2 km', 
-        home_collection: true, 
-        home_collection_available: true,
-        report_time_hours: 24, 
-        total_price: 0, 
-        individual_prices: {} 
-      },
-      { 
-        provider_name: 'Apollo Diagnostic', 
-        rating: 4.9, 
-        distance: '4.0 km', 
-        home_collection: true, 
-        home_collection_available: true,
-        report_time_hours: 12, 
-        total_price: 0, 
-        individual_prices: {} 
-      }
+      { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+      { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+      { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, home_collection_available: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
+      { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+      { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, home_collection_available: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
     ];
     
-    // Generate random prices for each test and provider
     selectedTests.forEach(test => {
       mockProviders.forEach(provider => {
         const price = Math.floor(Math.random() * 500) + 100;
@@ -191,25 +144,11 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
     setLoading(false);
   }, [selectedTests]);
 
-  const handleBookClick = (provider, tests) => {
-    console.log("Book clicked - Provider:", provider);
-    console.log("Book clicked - Tests:", tests);
-    onBookNow(provider, tests);
-  };
-
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
 
   return (
     <div>
-      <button 
-        onClick={() => {
-          console.log("Back button clicked");
-          onBack();
-        }} 
-        style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}
-      >
-        ← Back to Lab Tests
-      </button>
+      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Lab Tests</button>
       <h2>📊 Price Comparison for Selected Tests</h2>
       <div style={{ overflowX: 'auto', marginTop: '20px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
@@ -256,19 +195,8 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
-                    onClick={() => {
-                      console.log("Book Now clicked for:", p.provider_name);
-                      handleBookClick(p, selectedTests);
-                    }} 
-                    style={{ 
-                      backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', 
-                      color: 'white', 
-                      padding: '8px 16px', 
-                      border: 'none', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer', 
-                      fontWeight: 'bold' 
-                    }}
+                    onClick={() => onBookNow(p, selectedTests)} 
+                    style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
                   >
                     Book Now
                   </button>
