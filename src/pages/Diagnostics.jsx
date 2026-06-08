@@ -125,11 +125,56 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
 
   useEffect(() => {
     const mockProviders = [
-      { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, home_collection_available: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
-      { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, home_collection_available: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
+      { 
+        provider_name: 'ABC Diagnostics', 
+        rating: 4.5, 
+        distance: '2.5 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 24, 
+        total_price: 0, 
+        individual_prices: {} 
+      },
+      { 
+        provider_name: 'HealthCare Diagnostics', 
+        rating: 4.7, 
+        distance: '3.8 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 24, 
+        total_price: 0, 
+        individual_prices: {} 
+      },
+      { 
+        provider_name: 'Metropolis Healthcare', 
+        rating: 4.6, 
+        distance: '5.2 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 48, 
+        total_price: 0, 
+        individual_prices: {} 
+      },
+      { 
+        provider_name: 'Dr Lal PathLabs', 
+        rating: 4.8, 
+        distance: '1.2 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 24, 
+        total_price: 0, 
+        individual_prices: {} 
+      },
+      { 
+        provider_name: 'Apollo Diagnostic', 
+        rating: 4.9, 
+        distance: '4.0 km', 
+        home_collection: true,
+        home_collection_available: true,  // Added this
+        report_time_hours: 12, 
+        total_price: 0, 
+        individual_prices: {} 
+      }
     ];
     
     selectedTests.forEach(test => {
@@ -139,32 +184,15 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
         provider.total_price += price;
       });
     });
-    
     setProviders(mockProviders.sort((a, b) => a.total_price - b.total_price));
     setLoading(false);
   }, [selectedTests]);
-
-  // Separate handler functions to avoid any confusion
-  const handleBackClick = () => {
-    console.log("Back button clicked - ONLY going back");
-    onBack();
-  };
-
-  const handleBookClick = (provider, tests) => {
-    console.log("Book button clicked for provider:", provider.provider_name);
-    onBookNow(provider, tests);
-  };
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
 
   return (
     <div>
-      <button 
-        onClick={handleBackClick}
-        style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}
-      >
-        ← Back to Lab Tests
-      </button>
+      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Lab Tests</button>
       <h2>📊 Price Comparison for Selected Tests</h2>
       <div style={{ overflowX: 'auto', marginTop: '20px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
@@ -183,50 +211,53 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⭐ Rating</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
-             </tr>
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
-             </tr>
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? '✅ Yes' : '❌ No'}</td>))}
-             </tr>
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
-             </tr>
+            </tr>
             {selectedTests.map(test => (
               <tr key={test}>
                 <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
                 {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test]}</td>))}
-               </tr>
+              </tr>
             ))}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
-             </tr>
+            </tr>
             <tr>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
-                    onClick={() => handleBookClick(p, selectedTests)} 
+                    onClick={() => {
+                      console.log("Booking clicked for:", p, selectedTests);
+                      onBookNow(p, selectedTests);
+                    }} 
                     style={{ 
                       backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', 
                       color: 'white', 
                       padding: '8px 16px', 
                       border: 'none', 
                       borderRadius: '4px', 
-                      cursor: 'pointer', 
-                      fontWeight: 'bold' 
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
                     }}
                   >
                     Book Now
                   </button>
                 </td>
               ))}
-             </tr>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -247,9 +278,11 @@ const Diagnostics = () => {
   const [useMyLocation, setUseMyLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   
+  // Show more tests per category
   const [visibleTestCount, setVisibleTestCount] = useState({});
   const [testsPerRow, setTestsPerRow] = useState(4);
   
+  // Booking Modal States
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingTests, setBookingTests] = useState([]);
@@ -294,10 +327,7 @@ const Diagnostics = () => {
     setShowComparison(true);
   };
 
-  // THIS FUNCTION OPENS THE BOOKING MODAL
   const openBookingModal = (provider, tests) => {
-    console.log("openBookingModal called with provider:", provider);
-    console.log("openBookingModal called with tests:", tests);
     setBookingProvider(provider);
     setBookingTests(tests);
     setShowBookingModal(true);
@@ -345,46 +375,46 @@ const Diagnostics = () => {
     setSearchTerm('');
   };
 
+  // Filter tests based on search
   const getFilteredCategories = () => {
     if (!searchTerm.trim()) return testCategories;
+    
     const lowerSearch = searchTerm.toLowerCase();
     return testCategories.map(category => ({
       ...category,
-      tests: category.tests.filter(test => test.toLowerCase().includes(lowerSearch) || category.name.toLowerCase().includes(lowerSearch))
+      tests: category.tests.filter(test => 
+        test.toLowerCase().includes(lowerSearch) || 
+        category.name.toLowerCase().includes(lowerSearch)
+      )
     })).filter(category => category.tests.length > 0);
   };
 
+  // Show more tests for a category
   const showMoreTests = (categoryCode, currentCount, totalTests) => {
     const increment = testsPerRow * 2;
     const newCount = Math.min(currentCount + increment, totalTests);
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: newCount }));
   };
 
+  // Show all tests for a category
   const showAllTests = (categoryCode, totalTests) => {
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: totalTests }));
   };
 
+  // Show less tests (collapse)
   const showLessTests = (categoryCode, initialCount) => {
     setVisibleTestCount(prev => ({ ...prev, [categoryCode]: initialCount }));
   };
 
   if (showComparison) {
-  return <ComparisonResults 
-    selectedTests={selectedTests} 
-    onBack={() => {
-      console.log("onBack called - closing comparison");
-      setShowComparison(false);
-    }} 
-    onBookNow={(provider, tests) => {
-      console.log("onBookNow called from comparison table");
-      openBookingModal(provider, tests);
-    }} 
-  />;
-}
+    return <ComparisonResults selectedTests={selectedTests} onBack={() => setShowComparison(false)} onBookNow={openBookingModal} />;
+  }
 
   const filteredCategories = getFilteredCategories();
   const tabStyle = { padding: '10px 20px', fontSize: '16px', cursor: 'pointer', border: 'none', backgroundColor: 'transparent', fontWeight: 'bold', marginRight: '10px' };
   const activeTabStyle = { ...tabStyle, borderBottom: '3px solid #10b981', color: '#10b981' };
+  
+  // Default number of tests to show initially (2 rows of 4 = 8 tests)
   const DEFAULT_VISIBLE_TESTS = 8;
 
   return (
@@ -392,6 +422,7 @@ const Diagnostics = () => {
       <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>🔬 Diagnostics</h1>
       <p style={{ color: '#6b7280', marginBottom: '20px', fontSize: '14px' }}>Browse all tests, compare prices, and book with best providers</p>
       
+      {/* Tab Navigation */}
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px', display: 'flex', flexWrap: 'wrap' }}>
         <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 Lab Tests</button>
         <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>🏥 Health Packages</button>
@@ -400,17 +431,32 @@ const Diagnostics = () => {
 
       {activeTab === 'labtests' && (
         <div>
+          {/* Search and Filter Bar */}
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-            <input type="text" placeholder="🔍 Search any test or category..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} />
+            <input 
+              type="text" 
+              placeholder="🔍 Search any test or category..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} 
+            />
+            
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
               <input type="text" placeholder="📍 City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
-                <option value="">⭐ Rating</option><option value="4">4★+</option><option value="4.5">4.5★+</option><option value="4.8">4.8★+</option>
+                <option value="">⭐ Rating</option>
+                <option value="4">4★+</option>
+                <option value="4.5">4.5★+</option>
+                <option value="4.8">4.8★+</option>
               </select>
               <select value={testsPerRow} onChange={(e) => setTestsPerRow(parseInt(e.target.value))} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
-                <option value="2">2 tests/row</option><option value="3">3 tests/row</option><option value="4">4 tests/row</option><option value="5">5 tests/row</option>
+                <option value="2">2 tests/row</option>
+                <option value="3">3 tests/row</option>
+                <option value="4">4 tests/row</option>
+                <option value="5">5 tests/row</option>
               </select>
             </div>
+            
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <input type="number" placeholder="💰 Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '110px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               <input type="number" placeholder="📏 Max Distance" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '120px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
@@ -420,10 +466,12 @@ const Diagnostics = () => {
               <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>📍 My Location</button>
               <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Reset</button>
             </div>
+            
             {userLocation && <p style={{ fontSize: '11px', marginTop: '8px', color: '#10b981' }}>📍 Location detected</p>}
             {searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests</p>}
           </div>
 
+          {/* All 16 Main Categories */}
           <div>
             {filteredCategories.map(category => {
               const totalTests = category.tests.length;
@@ -431,46 +479,187 @@ const Diagnostics = () => {
               const visibleTests = category.tests.slice(0, visibleCount);
               const remainingTests = totalTests - visibleCount;
               const hasMore = remainingTests > 0;
+              
+              // Split visible tests into rows
               const rows = [];
               for (let i = 0; i < visibleTests.length; i += testsPerRow) {
                 rows.push(visibleTests.slice(i, i + testsPerRow));
               }
+              
               return (
                 <div key={category.code} style={{ marginBottom: '20px', border: `1px solid ${category.color}`, borderRadius: '10px', overflow: 'hidden', backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                  <div style={{ backgroundColor: category.color, color: 'white', padding: '10px 15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold', fontSize: '15px' }}>
+                  {/* Category Header */}
+                  <div style={{ 
+                    backgroundColor: category.color, 
+                    color: 'white', 
+                    padding: '10px 15px', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '15px'
+                  }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '20px' }}>{category.icon}</span>
                       <span>{category.name}</span>
-                      <span style={{ fontSize: '11px', backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '12px' }}>{totalTests} tests</span>
+                      <span style={{ fontSize: '11px', backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '12px' }}>
+                        {totalTests} tests
+                      </span>
                     </div>
-                    {visibleCount < totalTests && <div style={{ fontSize: '11px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '12px' }}>Showing {visibleCount}/{totalTests}</div>}
+                    {visibleCount < totalTests && (
+                      <div style={{ fontSize: '11px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '12px' }}>
+                        Showing {visibleCount}/{totalTests}
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Tests Grid */}
                   <div style={{ padding: '12px' }}>
                     {rows.map((row, rowIndex) => (
-                      <div key={rowIndex} style={{ display: 'grid', gridTemplateColumns: `repeat(${testsPerRow}, 1fr)`, gap: '10px', marginBottom: rowIndex === rows.length - 1 ? '0' : '10px' }}>
+                      <div key={rowIndex} style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: `repeat(${testsPerRow}, 1fr)`, 
+                        gap: '10px',
+                        marginBottom: rowIndex === rows.length - 1 ? '0' : '10px'
+                      }}>
                         {row.map(test => (
-                          <div key={test} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 10px', backgroundColor: selectedTests.includes(test) ? '#f0fdf4' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                            <span style={{ fontWeight: '500', fontSize: '13px', color: '#1f2937', flex: 1 }}>{test}</span>
-                            <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} style={{ width: '16px', height: '16px', cursor: 'pointer', margin: '0' }} />
-                            <button onClick={() => handleDirectBook(test)} style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>📅 Book</button>
-                            <button onClick={() => handleSingleCompare(test)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>📊 Compare</button>
+                          <div key={test} style={{
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            padding: '8px 10px',
+                            backgroundColor: selectedTests.includes(test) ? '#f0fdf4' : 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px'
+                          }}>
+                            <span style={{ 
+                              fontWeight: '500', 
+                              fontSize: '13px',
+                              color: '#1f2937',
+                              flex: 1,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }} title={test}>
+                              {test}
+                            </span>
+                            
+                            <input 
+                              type="checkbox" 
+                              checked={selectedTests.includes(test)} 
+                              onChange={() => toggleTest(test)} 
+                              style={{ width: '16px', height: '16px', cursor: 'pointer', margin: '0' }}
+                              title="Select for comparison"
+                            />
+                            
+                            <button 
+                              onClick={() => handleDirectBook(test)} 
+                              style={{ 
+                                backgroundColor: '#10b981', 
+                                color: 'white', 
+                                padding: '4px 10px', 
+                                border: 'none', 
+                                borderRadius: '5px', 
+                                cursor: 'pointer', 
+                                fontSize: '11px',
+                                fontWeight: '500',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title="Book this test"
+                            >
+                              📅 Book
+                            </button>
+                            
+                            <button 
+                              onClick={() => handleSingleCompare(test)} 
+                              style={{ 
+                                backgroundColor: '#3b82f6', 
+                                color: 'white', 
+                                padding: '4px 10px', 
+                                border: 'none', 
+                                borderRadius: '5px', 
+                                cursor: 'pointer', 
+                                fontSize: '11px',
+                                fontWeight: '500',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title="Compare price across labs"
+                            >
+                              📊 Compare
+                            </button>
                           </div>
                         ))}
-                        {row.length < testsPerRow && Array(testsPerRow - row.length).fill(null).map((_, idx) => <div key={`empty-${idx}`} style={{ visibility: 'hidden' }} />)}
+                        {row.length < testsPerRow && Array(testsPerRow - row.length).fill(null).map((_, idx) => (
+                          <div key={`empty-${idx}`} style={{ visibility: 'hidden' }} />
+                        ))}
                       </div>
                     ))}
+                    
+                    {/* Show More / Show Less Button */}
                     {hasMore && (
-                      <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#f9fafb', borderRadius: '8px', textAlign: 'center', border: '1px dashed #d1d5db' }}>
-                        <div style={{ marginBottom: '8px', fontSize: '13px', color: '#6b7280' }}>{remainingTests} more test{remainingTests > 1 ? 's' : ''} available in this category</div>
+                      <div style={{ 
+                        marginTop: '15px', 
+                        padding: '12px', 
+                        backgroundColor: '#f9fafb', 
+                        borderRadius: '8px', 
+                        textAlign: 'center',
+                        border: '1px dashed #d1d5db'
+                      }}>
+                        <div style={{ marginBottom: '8px', fontSize: '13px', color: '#6b7280' }}>
+                          {remainingTests} more test{remainingTests > 1 ? 's' : ''} available in this category
+                        </div>
                         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button onClick={() => showMoreTests(category.code, visibleCount, totalTests)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>+ Show More ({Math.min(testsPerRow * 2, remainingTests)} more)</button>
-                          <button onClick={() => showAllTests(category.code, totalTests)} style={{ backgroundColor: '#10b981', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>Show All {totalTests} Tests</button>
+                          <button
+                            onClick={() => showMoreTests(category.code, visibleCount, totalTests)}
+                            style={{
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              padding: '6px 16px',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: '500'
+                            }}
+                          >
+                            + Show More ({Math.min(testsPerRow * 2, remainingTests)} more)
+                          </button>
+                          <button
+                            onClick={() => showAllTests(category.code, totalTests)}
+                            style={{
+                              backgroundColor: '#10b981',
+                              color: 'white',
+                              padding: '6px 16px',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: '500'
+                            }}
+                          >
+                            Show All {totalTests} Tests
+                          </button>
                         </div>
                       </div>
                     )}
+                    
                     {visibleCount === totalTests && totalTests > DEFAULT_VISIBLE_TESTS && (
                       <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                        <button onClick={() => showLessTests(category.code, DEFAULT_VISIBLE_TESTS)} style={{ backgroundColor: '#6b7280', color: 'white', padding: '4px 12px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' }}>Show Less</button>
+                        <button
+                          onClick={() => showLessTests(category.code, DEFAULT_VISIBLE_TESTS)}
+                          style={{
+                            backgroundColor: '#6b7280',
+                            color: 'white',
+                            padding: '4px 12px',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            fontSize: '11px'
+                          }}
+                        >
+                          Show Less
+                        </button>
                       </div>
                     )}
                   </div>
@@ -479,8 +668,29 @@ const Diagnostics = () => {
             })}
           </div>
 
+          {/* Floating Compare Button */}
           {selectedTests.length >= 2 && (
-            <button onClick={handleCompare} style={{ position: 'fixed', bottom: '20px', right: '20px', backgroundColor: '#10b981', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '40px', cursor: 'pointer', zIndex: 1000, boxShadow: '0 2px 10px rgba(0,0,0,0.15)', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button 
+              onClick={handleCompare} 
+              style={{ 
+                position: 'fixed', 
+                bottom: '20px', 
+                right: '20px', 
+                backgroundColor: '#10b981', 
+                color: 'white', 
+                padding: '10px 20px', 
+                border: 'none', 
+                borderRadius: '40px', 
+                cursor: 'pointer', 
+                zIndex: 1000, 
+                boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
               📊 Compare ({selectedTests.length})
             </button>
           )}
@@ -490,23 +700,35 @@ const Diagnostics = () => {
       {activeTab === 'packages' && <HealthPackagesTab />}
       {activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* BOOKING MODAL - This shows when showBookingModal is true */}
+      {/* Booking Modal */}
       {showBookingModal && bookingProvider && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          backgroundColor: 'rgba(0,0,0,0.5)', 
+          zIndex: 1002, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}>
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '500px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
             <h2 style={{ marginBottom: '15px', fontSize: '20px' }}>📋 Book Test</h2>
             <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px' }}>
               <p><strong>🏥 Provider:</strong> {bookingProvider.provider_name}</p>
-              <p><strong>🧪 Test(s):</strong> {bookingTests.join(', ')}</p>
-              <p><strong>💰 Total Amount:</strong> ₹{bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0)}</p>
+              <p><strong>🧪 Test:</strong> {bookingTests.join(', ')}</p>
+              <p><strong>💰 Total:</strong> ₹{bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0)}</p>
               <p><strong>⭐ Rating:</strong> {bookingProvider.rating} ★</p>
-              {bookingProvider.home_collection_available && <p><strong>🏠 Home Collection Available</strong></p>}
             </div>
+
             <form onSubmit={handleBookingSubmit}>
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Full Name *</label>
                 <input type="text" name="patient_name" required value={bookingForm.patient_name} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               </div>
+
               <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Age *</label>
@@ -521,18 +743,22 @@ const Diagnostics = () => {
                   </select>
                 </div>
               </div>
+
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Phone Number *</label>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Phone *</label>
                 <input type="tel" name="patient_phone" required value={bookingForm.patient_phone} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               </div>
+
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Email</label>
                 <input type="email" name="patient_email" value={bookingForm.patient_email} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               </div>
+
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Appointment Date *</label>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Date *</label>
                 <input type="date" name="appointment_date" required value={bookingForm.appointment_date} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               </div>
+
               {bookingProvider.home_collection_available && (
                 <>
                   <div style={{ marginBottom: '12px' }}>
@@ -549,8 +775,9 @@ const Diagnostics = () => {
                   )}
                 </>
               )}
+
               <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>Confirm Booking</button>
+                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>Confirm</button>
                 <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
               </div>
             </form>
