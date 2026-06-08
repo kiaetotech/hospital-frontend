@@ -24,6 +24,8 @@ import HealthPackages from './pages/HealthPackages';
 import HealthPackagesPage from './pages/HealthPackagesPage';
 import PackageDetail from './pages/PackageDetail';
 import SimpleCompareTest from './pages/SimpleCompareTest';
+import ProviderDashboard from './pages/ProviderDashboard';
+import AdminPanel from './pages/AdminPanel';
 
 function App() {
   return (
@@ -61,6 +63,8 @@ function App() {
 	<Route path="/health-packages" element={<HealthPackagesPage />} />
         <Route path="/package-detail/:id" element={<PackageDetail />} />
         <Route path="/test-compare" element={<SimpleCompareTest />} />
+	<Route path="/provider-dashboard" element={<ProviderDashboard />} />
+	<Route path="/admin-panel" element={<AdminPanel />} />
 
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
