@@ -124,24 +124,51 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const mockProviders = [
-      { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, home_collection_available: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
-      { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-      { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, home_collection_available: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
-    ];
+    const fetchRealPrices = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/tests/compare', {
+          testNames: selectedTests,
+          city: 'All'
+        });
+        
+        const providers = response.data.map(provider => ({
+          provider_name: provider.providerName,
+          rating: provider.rating,
+          distance: 'Online',
+          home_collection: provider.homeCollectionAvailable,
+          home_collection_available: provider.homeCollectionAvailable,
+          report_time_hours: provider.reportTimeHours,
+          total_price: provider.totalPrice,
+          individual_prices: Object.fromEntries(
+            Object.entries(provider.prices).map(([test, data]) => [test, data.discountedPrice || data.price])
+          )
+        }));
+        
+        setProviders(providers);
+      } catch (error) {
+        console.error('Error fetching prices:', error);
+        // Fallback mock data
+        const mockProviders = [
+          { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+          { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+          { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, home_collection_available: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
+          { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+          { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, home_collection_available: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
+        ];
+        selectedTests.forEach(test => {
+          mockProviders.forEach(provider => {
+            const price = Math.floor(Math.random() * 500) + 100;
+            provider.individual_prices[test] = price;
+            provider.total_price += price;
+          });
+        });
+        setProviders(mockProviders.sort((a, b) => a.total_price - b.total_price));
+      }
+      setLoading(false);
+    };
     
-    selectedTests.forEach(test => {
-      mockProviders.forEach(provider => {
-        const price = Math.floor(Math.random() * 500) + 100;
-        provider.individual_prices[test] = price;
-        provider.total_price += price;
-      });
-    });
-    
-    setProviders(mockProviders.sort((a, b) => a.total_price - b.total_price));
-    setLoading(false);
+    fetchRealPrices();
   }, [selectedTests]);
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
@@ -167,10 +194,6 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⭐ Rating</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
-            </tr>
-            <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
             </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection</td>
