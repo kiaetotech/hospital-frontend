@@ -93,11 +93,13 @@ const ProviderDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('providerToken');
-    setIsLoggedIn(false);
-    setProvider(null);
-    setMyPrices([]);
-  };
+  localStorage.removeItem('providerToken');
+  setIsLoggedIn(false);
+  setProvider(null);
+  setMyPrices([]);
+  setMessage(''); // Clear success message on logout
+  setActiveTab('login'); // Reset to login tab
+};
 
   const handlePriceUpload = async (e) => {
     e.preventDefault();

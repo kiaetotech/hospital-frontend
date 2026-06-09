@@ -119,7 +119,7 @@ const testCategories = [
   }
 ];
 
-const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
+const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -127,15 +127,20 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
     const fetchRealPrices = async () => {
       setLoading(true);
       try {
-        const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/tests/compare', {
+        const requestBody = {
           testNames: selectedTests,
-          city: 'All'
-        });
+          city: filters?.city || 'All',
+          minRating: filters?.minRating || '',
+          maxPrice: filters?.maxPrice || '',
+          homeCollectionOnly: filters?.homeCollectionOnly || false
+        };
+        
+        const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/tests/compare', requestBody);
         
         const providers = response.data.map(provider => ({
           provider_name: provider.providerName,
           rating: provider.rating,
-          distance: 'Online',
+          distance: 'Contact for address',
           home_collection: provider.homeCollectionAvailable,
           home_collection_available: provider.homeCollectionAvailable,
           report_time_hours: provider.reportTimeHours,
@@ -148,30 +153,30 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
         setProviders(providers);
       } catch (error) {
         console.error('Error fetching prices:', error);
-        // Fallback mock data
-        const mockProviders = [
-          { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-          { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-          { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, home_collection_available: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
-          { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
-          { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, home_collection_available: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
-        ];
-        selectedTests.forEach(test => {
-          mockProviders.forEach(provider => {
-            const price = Math.floor(Math.random() * 500) + 100;
-            provider.individual_prices[test] = price;
-            provider.total_price += price;
-          });
-        });
-        setProviders(mockProviders.sort((a, b) => a.total_price - b.total_price));
+        setProviders([]);
       }
       setLoading(false);
     };
     
-    fetchRealPrices();
-  }, [selectedTests]);
+    if (selectedTests.length > 0) {
+      fetchRealPrices();
+    }
+  }, [selectedTests, filters]);
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
+
+  if (providers.length === 0) {
+    return (
+      <div>
+        <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Lab Tests</button>
+        <h2>📊 Price Comparison for Selected Tests</h2>
+        <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#f9fafb', borderRadius: '10px' }}>
+          <p>No providers found matching your criteria.</p>
+          <p style={{ fontSize: '14px', color: '#6b7280' }}>Try adjusting your filters or select different tests.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -433,7 +438,13 @@ const Diagnostics = () => {
         <ComparisonResults 
           selectedTests={selectedTests} 
           onBack={() => setShowComparison(false)} 
-          onBookNow={openBookingModal} 
+          onBookNow={openBookingModal}
+	  filters={{
+            city: cityFilter,
+            minRating: minRating,
+            maxPrice: maxPrice,
+            homeCollectionOnly: homeCollectionOnly
+          }} 
         />
       )}
 
