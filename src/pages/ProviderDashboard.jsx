@@ -17,7 +17,9 @@ const ProviderDashboard = () => {
     email: '',
     password: '',
     phone: '',
-    city: ''
+    city: '',
+    address: '',
+    pincode: ''
   });
   
   const [profileForm, setProfileForm] = useState({
@@ -33,6 +35,7 @@ const ProviderDashboard = () => {
   // Geocoding function
   const geocodeAddress = async (address, city) => {
     try {
+      if (!address || !city) return null;
       const fullAddress = `${address}, ${city}, India`;
       const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fullAddress)}&format=json&limit=1`);
       const data = await response.json();
@@ -111,11 +114,25 @@ const ProviderDashboard = () => {
     setLoading(true);
     setMessage('');
     try {
-      const response = await axios.post(`${API_URL}/provider-auth/register`, registerData);
+      // Geocode address to get coordinates
+      const location = await geocodeAddress(registerData.address, registerData.city);
+      
+      const response = await axios.post(`${API_URL}/provider-auth/register`, {
+        providerName: registerData.providerName,
+        email: registerData.email,
+        password: registerData.password,
+        phone: registerData.phone,
+        city: registerData.city,
+        address: registerData.address,
+        pincode: registerData.pincode,
+        latitude: location?.lat || null,
+        longitude: location?.lon || null
+      });
+      
       localStorage.setItem('providerToken', response.data.token);
       setProvider(response.data.provider);
       setIsLoggedIn(true);
-      setMessage('✅ Registration successful!');
+      setMessage(location ? '✅ Registration successful! Location detected.' : '✅ Registration successful! Please update your address for distance calculation.');
     } catch (error) {
       setMessage(`❌ Registration failed: ${error.response?.data?.error || error.message}`);
     }
@@ -236,7 +253,12 @@ const ProviderDashboard = () => {
             <input type="email" placeholder="Email" value={registerData.email} onChange={(e) => setRegisterData({...registerData, email: e.target.value})} required style={{ width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '5px' }} />
             <input type="password" placeholder="Password" value={registerData.password} onChange={(e) => setRegisterData({...registerData, password: e.target.value})} required style={{ width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '5px' }} />
             <input type="tel" placeholder="Phone" value={registerData.phone} onChange={(e) => setRegisterData({...registerData, phone: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '5px' }} />
-            <input type="text" placeholder="City" value={registerData.city} onChange={(e) => setRegisterData({...registerData, city: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '5px' }} />
+            <input type="text" placeholder="City" value={registerData.city} onChange={(e) => setRegisterData({...registerData, city: e.target.value})} required style={{ width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '5px' }} />
+            <input type="text" placeholder="Street Address" value={registerData.address} onChange={(e) => setRegisterData({...registerData, address: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '5px' }} />
+            <input type="text" placeholder="Pincode" value={registerData.pincode} onChange={(e) => setRegisterData({...registerData, pincode: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '5px' }} />
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '10px' }}>
+              📍 Your address helps patients find labs near them.
+            </p>
             <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>{loading ? 'Registering...' : 'Register'}</button>
           </form>
         )}
@@ -299,6 +321,11 @@ const ProviderDashboard = () => {
           {provider?.latitude && provider?.longitude && (
             <p style={{ fontSize: '12px', color: '#10b981', marginTop: '10px' }}>✅ Location coordinates saved! Patients can find you.</p>
           )}
+          {(!provider?.latitude || !provider?.longitude) && provider?.address && (
+            <p style={{ fontSize: '12px', color: '#f59e0b', marginTop: '10px' }}>
+              ⚠️ Location not geocoded. Click "Update Address" to fix.
+            </p>
+          )}
         </div>
       </div>
       
@@ -325,7 +352,7 @@ const ProviderDashboard = () => {
                     <td style={{ padding: '8px', border: '1px solid #ddd' }}>₹{price.discountedPrice}</td>
                     <td style={{ padding: '8px', border: '1px solid #ddd' }}>{price.homeCollectionAvailable ? '✅ Yes' : '❌ No'}</td>
                     <td style={{ padding: '8px', border: '1px solid #ddd' }}>{price.city}</td>
-                   </tr>
+                  </tr>
                 ))
               ) : (
                 <tr>
@@ -333,7 +360,7 @@ const ProviderDashboard = () => {
                 </tr>
               )}
             </tbody>
-           </table>
+          </table>
         </div>
       </div>
       
