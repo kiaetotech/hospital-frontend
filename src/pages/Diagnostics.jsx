@@ -3,116 +3,116 @@ import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import HealthPackagesTab from './HealthPackagesTab';
 
-// All 16 Main Categories with their Tests (KEEP AS IS - UNCHANGED)
+// All 16 Main Categories with their Tests
 const testCategories = [
   { 
     code: 'MRI', 
-    name: '🧠 MRI', 
+    name: 'MRI', 
     icon: '🧠', 
     color: '#8e44ad',
     tests: ['MRI Brain', 'MRI Spine', 'MRI Joints', 'MRI Abdomen / MRCP', 'MRI Pelvis', 'MRI Cardiac', 'MRI Angiography (MRA)', 'MRI Breast', 'MRI Orbit / IAC', 'MRI Soft tissue', 'MR Venography (MRV)']
   },
   { 
     code: 'CT', 
-    name: '📷 CT', 
+    name: 'CT', 
     icon: '📷', 
     color: '#3498db',
     tests: ['CT Head', 'CT Chest', 'CT Abdomen + Pelvis', 'CT Angiography (CTA)', 'CT Spine', 'CT Facial bones / Sinus', 'CT Temporal bone', 'CT Urogram', 'CT Virtual colonoscopy', 'CT Perfusion', 'CT Guided biopsy']
   },
   { 
     code: 'XR', 
-    name: '🦴 X-ray', 
+    name: 'X-ray', 
     icon: '🦴', 
     color: '#e67e22',
     tests: ['Chest X-ray', 'X-ray Spine', 'X-ray Limbs', 'X-ray Legs', 'X-ray Pelvis / Hip', 'X-ray Shoulder', 'X-ray Skull', 'X-ray Sinus', 'X-ray Abdomen (KUB)', 'X-ray Joints', 'X-ray Dental (OPG)', 'X-ray Mammogram', 'X-ray Barium studies', 'X-ray DEXA']
   },
   { 
     code: 'USG', 
-    name: '🔊 Ultrasound', 
+    name: 'Ultrasound', 
     icon: '🔊', 
     color: '#1abc9c',
     tests: ['USG Abdomen', 'USG Pelvis', 'USG Transvaginal', 'USG Transrectal', 'USG Thyroid', 'USG Breast', 'USG Scrotum', 'USG Musculoskeletal', 'USG Vascular Doppler', 'USG Lower limb (DVT)', 'USG Upper limb', 'USG Renal Doppler', 'USG Hepatobiliary Doppler', 'USG Neonatal brain', 'USG KUB', 'USG Guided procedures', 'ECHO (Echocardiography)', 'Obstetric USG']
   },
   { 
     code: 'HEM', 
-    name: '🩸 Hematology', 
+    name: 'Hematology', 
     icon: '🩸', 
     color: '#e74c3c',
     tests: ['Complete Blood Count (CBC)', 'Hemoglobin (Hb)', 'Hematocrit (HCT)', 'RBC count', 'WBC count (TLC, DLC)', 'Platelet count', 'Peripheral smear', 'ESR', 'CRP', 'Coagulation profile (PT, INR, aPTT)', 'Bleeding time', 'Clotting time', 'D-Dimer', 'Fibrinogen', 'Hb electrophoresis', 'Reticulocyte count', 'Blood grouping + Rh typing']
   },
   { 
     code: 'BIO', 
-    name: '🧪 Biochemistry', 
+    name: 'Biochemistry', 
     icon: '🧪', 
     color: '#f39c12',
     tests: ['Blood glucose (Fasting, PP, Random)', 'HbA1c', 'Liver Function Test (LFT)', 'Renal Function Test (RFT)', 'Electrolytes (Na, K, Cl, Ca, Mg, P)', 'Lipid profile', 'Cardiac enzymes (CK-MB, Troponin, LDH)', 'Pancreatic enzymes (Amylase, Lipase)', 'Iron studies (Serum iron, TIBC, Ferritin)', 'Vitamin B12', 'Vitamin D', 'Folate', 'Homocysteine', 'Ammonia', 'Lactate', 'Blood gas (ABG / VBG)']
   },
   { 
     code: 'SER', 
-    name: '🦠 Serology', 
+    name: 'Serology', 
     icon: '🦠', 
     color: '#9b59b6',
     tests: ['HIV (1+2)', 'HBsAg (Hepatitis B)', 'Anti-HBs, Anti-HBc', 'Hepatitis C antibody', 'Hepatitis A IgM', 'Hepatitis E IgM', 'Syphilis (VDRL, TPHA)', 'Dengue (NS1 antigen, IgM, IgG)', 'Chikungunya IgM/IgG', 'Malaria (rapid antigen, smear)', 'Typhoid (Widal, Typhidot)', 'Rheumatoid factor (RF)', 'Anti-CCP (ACPA)', 'ANA + ENA profile', 'Anti-dsDNA', 'ANCA (c-ANCA, p-ANCA)', 'Anti-phospholipid antibodies', 'Complement C3, C4', 'Serum protein electrophoresis (SPEP)', 'Quantitative immunoglobulins', 'Total IgE', 'RAST test', 'hs-CRP', 'Procalcitonin', 'Tumor markers (AFP, CEA, CA-125, CA 19-9, CA 15-3, PSA)']
   },
   { 
     code: 'HOR', 
-    name: '⚖️ Hormones', 
+    name: 'Hormones', 
     icon: '⚖️', 
     color: '#16a085',
     tests: ['Thyroid profile (TSH, Free T3, Free T4)', 'Cortisol (morning/evening)', 'ACTH', 'Prolactin', 'LH, FSH', 'Estradiol (E2)', 'Progesterone', 'Testosterone (total/free)', 'DHEA-S', 'Aldosterone / Renin ratio', 'Metanephrines', 'Parathyroid hormone (PTH)', 'Insulin, C-peptide', 'Growth hormone (GH) + IGF-1', 'Anti-Mullerian hormone (AMH)']
   },
   { 
     code: 'URN', 
-    name: '💧 Urine', 
+    name: 'Urine', 
     icon: '💧', 
     color: '#2980b9',
     tests: ['Urinalysis (routine & microscopy)', 'Urine glucose, ketones', 'Urine protein (spot, 24-hour)', 'Urine microalbumin / creatinine ratio', 'Urine culture & sensitivity', 'Urine Gram stain', 'Urine pregnancy test (β-hCG)', 'Urine electrolytes (Na, K, Cl)', 'Urine osmolality', 'Urine creatinine', 'Urine urea nitrogen', 'Urine calcium (24-hour)', 'Urine uric acid', 'Urine porphobilinogen', 'Urine catecholamines / metanephrines', 'Urine cortisol (free)', 'Urine 5-HIAA', 'Urine drug screen', 'Urine Bence Jones protein']
   },
   { 
     code: 'STL', 
-    name: '🧫 Stool', 
+    name: 'Stool', 
     icon: '🧫', 
     color: '#27ae60',
     tests: ['Stool routine & microscopy', 'Occult blood (FOBT / FIT)', 'Stool culture & sensitivity', 'Stool for ova, cyst, parasite', 'Stool antigen tests (Giardia, Cryptosporidium, H.pylori)', 'Stool PCR for pathogens', 'Calprotectin', 'Stool reducing substances', 'Stool fat (quantitative/qualitative)', 'Stool elastase', 'Stool pH']
   },
   { 
     code: 'ECG', 
-    name: '❤️ ECG', 
+    name: 'ECG', 
     icon: '❤️', 
     color: '#e74c3c',
     tests: ['ECG (12-lead, resting)', 'Stress ECG (Treadmill test - TMT)', 'Holter monitoring (24/48-hour)', 'Event recorder', 'Signal-averaged ECG']
   },
   { 
     code: 'EEG', 
-    name: '🧠 EEG', 
+    name: 'EEG', 
     icon: '🧠', 
     color: '#9b59b6',
     tests: ['Routine EEG', 'Sleep-deprived EEG', 'Video-EEG monitoring', 'Ambulatory EEG', 'Evoked potentials (VEP, BAER, SSEP)', 'Electromyography (EMG)', 'Nerve conduction studies (NCS)', 'Repetitive nerve stimulation']
   },
   { 
     code: 'PFT', 
-    name: '🫁 PFT', 
+    name: 'PFT', 
     icon: '🫁', 
     color: '#1abc9c',
     tests: ['Spirometry (FEV1, FVC, FEV1/FVC)', 'Bronchodilator reversibility test', 'Lung volumes (plethysmography)', 'Diffusing capacity (DLCO)', '6-minute walk test', 'Fractional exhaled nitric oxide (FeNO)', 'Methacholine challenge test', 'Maximal respiratory pressures (MIP/MEP)', 'Nocturnal oximetry']
   },
   { 
     code: 'END', 
-    name: '🔬 Endoscopy', 
+    name: 'Endoscopy', 
     icon: '🔬', 
     color: '#2c3e50',
     tests: ['Upper GI endoscopy (EGD)', 'Colonoscopy', 'Sigmoidoscopy', 'Bronchoscopy', 'Cystoscopy', 'Hysteroscopy', 'Laparoscopy', 'Arthroscopy', 'ERCP', 'Capsule endoscopy', 'Enteroscopy', 'EUS']
   },
   { 
     code: 'NUC', 
-    name: '⚛️ Nuclear', 
+    name: 'Nuclear', 
     icon: '⚛️', 
     color: '#16a085',
     tests: ['PET-CT (whole body, cardiac, brain)', 'Bone scan (Tc-99m)', 'Thyroid scan (I-123, Tc-99m)', 'Renal scan (DTPA, MAG3, DMSA)', 'V/Q scan (lung)', 'HIDA scan (gallbladder)', 'Myocardial perfusion scan (MIBI, Thallium)', 'Parathyroid scan (Sestamibi)', 'Octreotide scan', 'MIBG scan', 'Gallium scan', 'White cell scan', 'Gastric emptying scan', 'Meckel\'s scan']
   },
   { 
     code: 'SPL', 
-    name: '⭐ Special', 
+    name: 'Special', 
     icon: '⭐', 
     color: '#7f8c8d',
     tests: ['Sweat chloride test', 'Genetic testing (DNA/RNA sequencing)', 'Karyotype / FISH / Microarray', 'Single gene sequencing', 'NGS panel / Whole exome', 'NIPT', 'HLA typing', 'Paternity testing', 'CSF analysis', 'Synovial fluid analysis', 'Peritoneal fluid analysis', 'Pleural fluid analysis', 'Amniotic fluid analysis', 'Skin biopsy', 'Muscle biopsy', 'Nerve biopsy', 'Bone marrow aspirate & biopsy', 'Fine needle aspiration cytology (FNAC)', 'Pap smear', 'Semen analysis']
@@ -172,8 +172,8 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
   if (providers.length === 0) {
     return (
       <div>
-        <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Lab Tests</button>
-        <h2>📊 Price Comparison for Selected Tests</h2>
+        <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>Back to Lab Tests</button>
+        <h2>Price Comparison for Selected Tests</h2>
         <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#f9fafb', borderRadius: '10px' }}>
           <p>No providers found matching your criteria.</p>
           <p style={{ fontSize: '14px', color: '#6b7280' }}>Try adjusting your filters or select different tests.</p>
@@ -184,8 +184,8 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
 
   return (
     <div>
-      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Lab Tests</button>
-      <h2>📊 Price Comparison for Selected Tests</h2>
+      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>Back to Lab Tests</button>
+      <h2>Price Comparison for Selected Tests</h2>
       <div style={{ overflowX: 'auto', marginTop: '20px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
           <thead>
@@ -194,40 +194,40 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
               {providers.map((p, idx) => (
                 <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
                   {p.provider_name}
-                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
+                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>Cheapest</span>}
                 </th>
               ))}
             </table>
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⭐ Rating</td>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Rating</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
             </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance</td>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Distance</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
             </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? '✅ Yes' : '❌ No'}</td>))}
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Home Collection</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? 'Yes' : 'No'}</td>))}
             </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Report Time</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
             </tr>
             {selectedTests.map(test => (
               <tr key={test}>
                 <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
-                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test]}</td>))}
+                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.individual_prices[test]}</td>))}
               </tr>
             ))}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total Price</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.total_price}</td>))}
             </tr>
             <tr>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
@@ -281,7 +281,6 @@ const Diagnostics = () => {
     home_address: ''
   });
 
-  // NEW STATE FOR RATING MODAL
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [completedBooking, setCompletedBooking] = useState(null);
   const [selectedRating, setSelectedRating] = useState(0);
@@ -408,9 +407,8 @@ const Diagnostics = () => {
       });
       
       if (response.data.success) {
-        alert(`✅ Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\n🧪 Tests: ${bookingTests.join(', ')}\n🏥 Lab: ${bookingProvider.provider_name}\n💰 Total: ₹${total}\n👤 Name: ${bookingForm.patient_name}\n📞 Phone: ${bookingForm.patient_phone}\n📅 Date: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
+        alert(`Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\nTests: ${bookingTests.join(', ')}\nLab: ${bookingProvider.provider_name}\nTotal: Rs.${total}\nName: ${bookingForm.patient_name}\nPhone: ${bookingForm.patient_phone}\nDate: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
         
-        // Show rating modal after booking
         setCompletedBooking({ ...bookingProvider, bookingId: response.data.bookingId });
         setShowRatingModal(true);
         
@@ -431,7 +429,6 @@ const Diagnostics = () => {
     setBookingProvider(null);
   };
 
-  // NEW FUNCTION: Submit rating
   const submitRating = async () => {
     if (selectedRating === 0) {
       alert('Please select a rating');
@@ -502,22 +499,22 @@ const Diagnostics = () => {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>🔬 Diagnostics</h1>
+      <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>Diagnostics</h1>
       <p style={{ color: '#6b7280', marginBottom: '20px', fontSize: '14px' }}>Browse all tests, compare prices, and book with best providers</p>
       
       <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
         <span style={{ backgroundColor: '#e5e7eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>
-          📋 {testCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} Base Tests
+          Base Tests: {testCategories.reduce((sum, cat) => sum + cat.tests.length, 0)}
         </span>
         <span style={{ backgroundColor: '#d1fae5', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>
-          📊 + Unlimited Excel Tests
+          Plus Unlimited Excel Tests
         </span>
       </div>
       
       <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '20px', display: 'flex', flexWrap: 'wrap' }}>
-        <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>📋 Lab Tests</button>
-        <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>🏥 Health Packages</button>
-        <button onClick={() => setActiveTab('custom')} style={activeTab === 'custom' ? activeTabStyle : tabStyle}>✨ Build Custom Package</button>
+        <button onClick={() => { setActiveTab('labtests'); setShowComparison(false); }} style={activeTab === 'labtests' ? activeTabStyle : tabStyle}>Lab Tests</button>
+        <button onClick={() => setActiveTab('packages')} style={activeTab === 'packages' ? activeTabStyle : tabStyle}>Health Packages</button>
+        <button onClick={() => setActiveTab('custom')} style={activeTab === 'custom' ? activeTabStyle : tabStyle}>Build Custom Package</button>
       </div>
 
       {showComparison && (
@@ -540,7 +537,7 @@ const Diagnostics = () => {
       {!showComparison && activeTab === 'labtests' && (
         <div>
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-            <input type="text" placeholder="🔍 Search any test or category (including 5000+ Excel tests)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} />
+            <input type="text" placeholder="Search any test or category (including 5000+ Excel tests)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} />
             
             {showExcelResults && searchTerm && (
               <div style={{ 
@@ -557,7 +554,7 @@ const Diagnostics = () => {
                 ) : excelSearchResults.length > 0 ? (
                   <>
                     <div style={{ padding: '10px', backgroundColor: '#f0fdf4', borderBottom: '1px solid #10b981' }}>
-                      <strong>📋 Excel Uploaded Tests ({excelSearchResults.length})</strong>
+                      <strong>Excel Uploaded Tests ({excelSearchResults.length})</strong>
                       <span style={{ fontSize: '12px', marginLeft: '10px', color: '#666' }}>From agency price lists</span>
                     </div>
                     {excelSearchResults.map(test => (
@@ -573,7 +570,7 @@ const Diagnostics = () => {
                         <div style={{ flex: 1 }}>
                           <strong>{test.testName}</strong>
                           <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                            {test.category} {test.subCategory && `› ${test.subCategory}`}
+                            {test.category} {test.subCategory && ` > ${test.subCategory}`}
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -609,9 +606,9 @@ const Diagnostics = () => {
             )}
             
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-              <input type="text" placeholder="📍 City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              <input type="text" placeholder="City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               <select value={minRating} onChange={(e) => setMinRating(e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
-                <option value="">⭐ Rating</option>
+                <option value="">Rating</option>
                 <option value="4">4★+</option>
                 <option value="4.5">4.5★+</option>
                 <option value="4.8">4.8★+</option>
@@ -624,17 +621,17 @@ const Diagnostics = () => {
               </select>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <input type="number" placeholder="💰 Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '110px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
-              <input type="number" placeholder="📏 Max Distance (km)" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '140px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              <input type="number" placeholder="Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '110px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              <input type="number" placeholder="Max Distance (km)" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '140px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 8px', borderRadius: '6px', height: '34px', fontSize: '13px' }}>
-                <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> 🏠 Home
+                <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> Home Collection
               </label>
               <button onClick={getUserLocation} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
-                {locationLoading ? 'Detecting...' : '📍 Use My Location'}
+                {locationLoading ? 'Detecting...' : 'Use My Location'}
               </button>
               <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Reset</button>
             </div>
-            {userLocation && <p style={{ fontSize: '11px', marginTop: '8px', color: '#10b981' }}>📍 Location detected! Distance filter active.</p>}
+            {userLocation && <p style={{ fontSize: '11px', marginTop: '8px', color: '#10b981' }}>Location detected! Distance filter active.</p>}
             {!showExcelResults && searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests in categories</p>}
           </div>
 
@@ -666,8 +663,8 @@ const Diagnostics = () => {
                           <div key={test} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 10px', backgroundColor: selectedTests.includes(test) ? '#f0fdf4' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                             <span style={{ fontWeight: '500', fontSize: '13px', color: '#1f2937', flex: 1 }}>{test}</span>
                             <input type="checkbox" checked={selectedTests.includes(test)} onChange={() => toggleTest(test)} style={{ width: '16px', height: '16px', cursor: 'pointer', margin: '0' }} />
-                            <button onClick={() => handleDirectBook(test)} style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>📅 Book</button>
-                            <button onClick={() => handleSingleCompare(test)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>📊 Compare</button>
+                            <button onClick={() => handleDirectBook(test)} style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>Book</button>
+                            <button onClick={() => handleSingleCompare(test)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '4px 10px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>Compare</button>
                           </div>
                         ))}
                         {row.length < testsPerRow && Array(testsPerRow - row.length).fill(null).map((_, idx) => <div key={`empty-${idx}`} style={{ visibility: 'hidden' }} />)}
@@ -677,7 +674,7 @@ const Diagnostics = () => {
                       <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#f9fafb', borderRadius: '8px', textAlign: 'center', border: '1px dashed #d1d5db' }}>
                         <div style={{ marginBottom: '8px', fontSize: '13px', color: '#6b7280' }}>{remainingTests} more test{remainingTests > 1 ? 's' : ''} available in this category</div>
                         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button onClick={() => showMoreTests(category.code, visibleCount, totalTests)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>+ Show More ({Math.min(testsPerRow * 2, remainingTests)} more)</button>
+                          <button onClick={() => showMoreTests(category.code, visibleCount, totalTests)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>Show More ({Math.min(testsPerRow * 2, remainingTests)} more)</button>
                           <button onClick={() => showAllTests(category.code, totalTests)} style={{ backgroundColor: '#10b981', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>Show All {totalTests} Tests</button>
                         </div>
                       </div>
@@ -695,7 +692,7 @@ const Diagnostics = () => {
 
           {selectedTests.length >= 2 && (
             <button onClick={handleCompare} style={{ position: 'fixed', bottom: '20px', right: '20px', backgroundColor: '#10b981', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '40px', cursor: 'pointer', zIndex: 1000, boxShadow: '0 2px 10px rgba(0,0,0,0.15)', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              📊 Compare ({selectedTests.length})
+              Compare ({selectedTests.length})
             </button>
           )}
         </div>
@@ -704,17 +701,16 @@ const Diagnostics = () => {
       {!showComparison && activeTab === 'packages' && <HealthPackagesTab />}
       {!showComparison && activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* BOOKING MODAL */}
       {showBookingModal && bookingProvider && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '500px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
-            <h2 style={{ marginBottom: '15px', fontSize: '20px' }}>📋 Book Test</h2>
+            <h2 style={{ marginBottom: '15px', fontSize: '20px' }}>Book Test</h2>
             <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px' }}>
-              <p><strong>🏥 Provider:</strong> {bookingProvider.provider_name}</p>
-              <p><strong>🧪 Test(s):</strong> {bookingTests.join(', ')}</p>
-              <p><strong>💰 Total Amount:</strong> ₹{bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0)}</p>
-              <p><strong>⭐ Rating:</strong> {bookingProvider.rating} ★</p>
-              {bookingProvider.home_collection_available && <p><strong>🏠 Home Collection Available</strong></p>}
+              <p><strong>Provider:</strong> {bookingProvider.provider_name}</p>
+              <p><strong>Test(s):</strong> {bookingTests.join(', ')}</p>
+              <p><strong>Total Amount:</strong> Rs. {bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0)}</p>
+              <p><strong>Rating:</strong> {bookingProvider.rating} ★</p>
+              {bookingProvider.home_collection_available && <p><strong>Home Collection Available</strong></p>}
             </div>
             <form onSubmit={handleBookingSubmit}>
               <div style={{ marginBottom: '12px' }}>
@@ -752,7 +748,7 @@ const Diagnostics = () => {
                   <div style={{ marginBottom: '12px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
                       <input type="checkbox" name="home_collection_requested" checked={bookingForm.home_collection_requested} onChange={(e) => setBookingForm({...bookingForm, home_collection_requested: e.target.checked})} />
-                      🏠 Request Home Collection
+                      Request Home Collection
                     </label>
                   </div>
                   {bookingForm.home_collection_requested && (
@@ -774,7 +770,6 @@ const Diagnostics = () => {
         </div>
       )}
 
-      {/* NEW: RATING MODAL - Shows after booking completion */}
       {showRatingModal && completedBooking && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1003, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '400px', width: '90%' }}>
@@ -793,8 +788,6 @@ const Diagnostics = () => {
                     color: selectedRating >= star ? '#fbbf24' : '#d1d5db',
                     transition: 'transform 0.2s'
                   }}
-                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                 >
                   ★
                 </button>
