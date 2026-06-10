@@ -197,7 +197,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
                   {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                 </th>
               ))}
-            </td>
+            </tr>
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
