@@ -385,44 +385,52 @@ const Diagnostics = () => {
   };
 
   const handleBookingSubmit = async (e) => {
-    e.preventDefault();
-    setBookingLoading(true);
+  e.preventDefault();
+  setBookingLoading(true);
+  
+  const total = bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0);
+  
+  try {
+    const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/bookings/create', {
+      patientName: bookingForm.patient_name,
+      patientAge: parseInt(bookingForm.patient_age),
+      patientGender: bookingForm.patient_gender,
+      patientPhone: bookingForm.patient_phone,
+      patientEmail: bookingForm.patient_email,
+      tests: bookingTests,
+      providerName: bookingProvider.provider_name,
+      totalAmount: total,
+      appointmentDate: bookingForm.appointment_date,
+      homeCollectionRequested: bookingForm.home_collection_requested,
+      homeAddress: bookingForm.home_address,
+      userId: localStorage.getItem('userId') || 'guest'
+    });
     
-    const total = bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0);
-    
-    try {
-      const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/bookings/create', {
-        patientName: bookingForm.patient_name,
-        patientAge: parseInt(bookingForm.patient_age),
-        patientGender: bookingForm.patient_gender,
-        patientPhone: bookingForm.patient_phone,
-        patientEmail: bookingForm.patient_email,
-        tests: bookingTests,
-        providerName: bookingProvider.provider_name,
-        totalAmount: total,
-        appointmentDate: bookingForm.appointment_date,
-        homeCollectionRequested: bookingForm.home_collection_requested,
-        homeAddress: bookingForm.home_address,
-        userId: localStorage.getItem('userId') || 'guest'
+    if (response.data.success) {
+      alert(`Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\nTests: ${bookingTests.join(', ')}\nLab: ${bookingProvider.provider_name}\nTotal: Rs.${total}\nName: ${bookingForm.patient_name}\nPhone: ${bookingForm.patient_phone}\nDate: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
+      
+      // Store booking info for rating after payment
+      setCompletedBooking({ 
+        ...bookingProvider, 
+        bookingId: response.data.bookingId,
+        providerId: bookingProvider.provider_id 
       });
       
-      if (response.data.success) {
-        alert(`Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\nTests: ${bookingTests.join(', ')}\nLab: ${bookingProvider.provider_name}\nTotal: Rs.${total}\nName: ${bookingForm.patient_name}\nPhone: ${bookingForm.patient_phone}\nDate: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
-        
-        setCompletedBooking({ ...bookingProvider, bookingId: response.data.bookingId });
-        setShowRatingModal(true);
-        
-        setShowBookingModal(false);
-        setBookingProvider(null);
-        setBookingTests([]);
-      }
-    } catch (error) {
-      console.error('Booking error:', error);
-      alert('Booking failed. Please try again.');
+      // Show rating modal only after payment - for now, show after booking
+      // In production, show after payment verification
+      setShowRatingModal(true);
+      
+      setShowBookingModal(false);
+      setBookingProvider(null);
+      setBookingTests([]);
     }
-    
-    setBookingLoading(false);
-  };
+  } catch (error) {
+    console.error('Booking error:', error);
+    alert('Booking failed. Please try again.');
+  }
+  
+  setBookingLoading(false);
+};
 
   const closeBookingModal = () => {
     setShowBookingModal(false);
