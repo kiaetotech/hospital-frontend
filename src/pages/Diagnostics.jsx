@@ -201,33 +201,33 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⭐ Rating<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★<\/td>))}
-            <\/tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⭐ Rating</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}<\/td>))}
-            <\/tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? '✅ Yes' : '❌ No'}<\/td>))}
-            <\/tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? '✅ Yes' : '❌ No'}</td>))}
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours<\/td>))}
-            <\/tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
+            </tr>
             {selectedTests.map(test => (
               <tr key={test}>
-                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}<\/td>
-                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test]}<\/td>))}
-              <\/tr>
+                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
+                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test]}</td>))}
+              </tr>
             ))}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}<\/td>))}
-             <\/tr>
-             <tr>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action<\/td>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
+            </tr>
+            <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
@@ -236,13 +236,13 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
                   >
                     Book Now
                   </button>
-                <\/td>
+                </td>
               ))}
-             <\/tr>
-          <\/tbody>
-        <\/table>
-      <\/div>
-    <\/div>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };
 
@@ -281,6 +281,7 @@ const Diagnostics = () => {
     home_address: ''
   });
 
+  // Get user location
   const getUserLocation = () => {
     setLocationLoading(true);
     if (navigator.geolocation) {
@@ -305,6 +306,7 @@ const Diagnostics = () => {
     }
   };
 
+  // Excel Search API call
   useEffect(() => {
     if (!searchTerm.trim()) {
       setExcelSearchResults([]);
@@ -403,9 +405,6 @@ const Diagnostics = () => {
       
       if (response.data.success) {
         alert(`✅ Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\n🧪 Tests: ${bookingTests.join(', ')}\n🏥 Lab: ${bookingProvider.provider_name}\n💰 Total: ₹${total}\n👤 Name: ${bookingForm.patient_name}\n📞 Phone: ${bookingForm.patient_phone}\n📅 Date: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
-        setShowBookingModal(false);
-        setBookingProvider(null);
-        setBookingTests([]);
       }
     } catch (error) {
       console.error('Booking error:', error);
@@ -413,6 +412,13 @@ const Diagnostics = () => {
     }
     
     setBookingLoading(false);
+    setShowBookingModal(false);
+    setBookingProvider(null);
+    setBookingTests([]);
+    setBookingForm({
+      patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
+      patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
+    });
   };
 
   const closeBookingModal = () => {
@@ -665,7 +671,6 @@ const Diagnostics = () => {
       {!showComparison && activeTab === 'packages' && <HealthPackagesTab />}
       {!showComparison && activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* BOOKING MODAL - Placed at the very end to prevent re-renders */}
       {showBookingModal && bookingProvider && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '500px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
