@@ -19,7 +19,13 @@ const ProviderDashboard = () => {
     phone: '',
     city: ''
   });
-  
+   
+  const [profileData, setProfileData] = useState({
+    address: '',
+    pincode: '',
+    latitude: '',
+    longitude: ''
+  });
   const [priceFile, setPriceFile] = useState(null);
   
   const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
@@ -217,6 +223,52 @@ const ProviderDashboard = () => {
       {message && <p style={{ marginTop: '20px' }}>{message}</p>}
     </div>
   );
+};
+
+const geocodeAddress = async (address, city) => {
+  try {
+    const fullAddress = `${address}, ${city}`;
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fullAddress)}&format=json&limit=1`);
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon)
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return null;
+  }
+};
+
+const updateProfileWithAddress = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  const location = await geocodeAddress(profileData.address, provider.city);
+  
+  if (location) {
+    setProfileData({
+      ...profileData,
+      latitude: location.lat,
+      longitude: location.lon
+    });
+    // Save to backend
+    const token = localStorage.getItem('providerToken');
+    await axios.put(`${API_URL}/provider-auth/profile`, {
+      address: profileData.address,
+      pincode: profileData.pincode,
+      latitude: location.lat,
+      longitude: location.lon
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setMessage('✅ Address updated successfully!');
+  } else {
+    setMessage('❌ Could not find location for this address');
+  }
+  setLoading(false);
 };
 
 export default ProviderDashboard;

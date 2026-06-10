@@ -3,7 +3,7 @@ import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import HealthPackagesTab from './HealthPackagesTab';
 
-// All 16 Main Categories with their Tests (YOUR EXISTING CODE - UNCHANGED)
+// All 16 Main Categories with their Tests
 const testCategories = [
   { 
     code: 'MRI', 
@@ -132,7 +132,10 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
           city: filters?.city || 'All',
           minRating: filters?.minRating || '',
           maxPrice: filters?.maxPrice || '',
-          homeCollectionOnly: filters?.homeCollectionOnly || false
+          homeCollectionOnly: filters?.homeCollectionOnly || false,
+          maxDistance: filters?.maxDistance || '',
+          userLat: filters?.userLat || null,
+          userLng: filters?.userLng || null
         };
         
         const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/tests/compare', requestBody);
@@ -140,7 +143,8 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
         const providers = response.data.map(provider => ({
           provider_name: provider.providerName,
           rating: provider.rating,
-          distance: 'Contact for address',
+          distance: provider.distance || 'Address not available',
+          address: provider.address,
           home_collection: provider.homeCollectionAvailable,
           home_collection_available: provider.homeCollectionAvailable,
           report_time_hours: provider.reportTimeHours,
@@ -201,6 +205,10 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
             </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
+            </tr>
+            <tr style={{ backgroundColor: '#e5e7eb' }}>
               <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection</td>
               {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? '✅ Yes' : '❌ No'}</td>))}
             </tr>
@@ -248,13 +256,12 @@ const Diagnostics = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
   const [maxDistance, setMaxDistance] = useState('');
-  const [useMyLocation, setUseMyLocation] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   
   const [visibleTestCount, setVisibleTestCount] = useState({});
   const [testsPerRow, setTestsPerRow] = useState(4);
   
-  // NEW STATE FOR EXCEL SEARCH
   const [excelSearchResults, setExcelSearchResults] = useState([]);
   const [showExcelResults, setShowExcelResults] = useState(false);
   const [excelSearchLoading, setExcelSearchLoading] = useState(false);
@@ -273,7 +280,31 @@ const Diagnostics = () => {
     home_address: ''
   });
 
-  // NEW: Excel Search API call
+  // Get user location
+  const getUserLocation = () => {
+    setLocationLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setLocationLoading(false);
+          alert('Location detected successfully!');
+        },
+        (error) => {
+          console.error('Location error:', error);
+          alert('Unable to get your location. Please check permissions.');
+          setLocationLoading(false);
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by your browser');
+      setLocationLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!searchTerm.trim()) {
       setExcelSearchResults([]);
@@ -296,15 +327,6 @@ const Diagnostics = () => {
     
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
-
-  useEffect(() => {
-    if (useMyLocation && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        () => alert('Unable to get your location')
-      );
-    }
-  }, [useMyLocation]);
 
   const toggleTest = (testName) => {
     if (selectedTests.includes(testName)) {
@@ -377,12 +399,11 @@ const Diagnostics = () => {
     setMaxPrice('');
     setHomeCollectionOnly(false);
     setMaxDistance('');
-    setUseMyLocation(false);
     setSearchTerm('');
+    setUserLocation(null);
   };
 
   const getFilteredCategories = () => {
-    // If showing Excel results, don't show categories
     if (showExcelResults && searchTerm && excelSearchResults.length > 0) {
       return [];
     }
@@ -418,7 +439,6 @@ const Diagnostics = () => {
       <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>🔬 Diagnostics</h1>
       <p style={{ color: '#6b7280', marginBottom: '20px', fontSize: '14px' }}>Browse all tests, compare prices, and book with best providers</p>
       
-      {/* NEW: Excel Tests Badge */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
         <span style={{ backgroundColor: '#e5e7eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>
           📋 {testCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} Base Tests
@@ -439,11 +459,14 @@ const Diagnostics = () => {
           selectedTests={selectedTests} 
           onBack={() => setShowComparison(false)} 
           onBookNow={openBookingModal}
-	  filters={{
+          filters={{
             city: cityFilter,
             minRating: minRating,
             maxPrice: maxPrice,
-            homeCollectionOnly: homeCollectionOnly
+            homeCollectionOnly: homeCollectionOnly,
+            maxDistance: maxDistance,
+            userLat: userLocation?.lat,
+            userLng: userLocation?.lng
           }} 
         />
       )}
@@ -453,7 +476,6 @@ const Diagnostics = () => {
           <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
             <input type="text" placeholder="🔍 Search any test or category (including 5000+ Excel tests)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} />
             
-            {/* NEW: Excel Search Results Section */}
             {showExcelResults && searchTerm && (
               <div style={{ 
                 marginTop: '10px', 
@@ -487,9 +509,6 @@ const Diagnostics = () => {
                           <div style={{ fontSize: '12px', color: '#6b7280' }}>
                             {test.category} {test.subCategory && `› ${test.subCategory}`}
                           </div>
-                          {test.description && (
-                            <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>{test.description.substring(0, 60)}...</div>
-                          )}
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
@@ -540,14 +559,16 @@ const Diagnostics = () => {
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <input type="number" placeholder="💰 Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: '110px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
-              <input type="number" placeholder="📏 Max Distance" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '120px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              <input type="number" placeholder="📏 Max Distance (km)" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} style={{ width: '140px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
               <label style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: 'white', padding: '0 8px', borderRadius: '6px', height: '34px', fontSize: '13px' }}>
                 <input type="checkbox" checked={homeCollectionOnly} onChange={(e) => setHomeCollectionOnly(e.target.checked)} /> 🏠 Home
               </label>
-              <button onClick={() => setUseMyLocation(true)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>📍 My Location</button>
+              <button onClick={getUserLocation} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                {locationLoading ? 'Detecting...' : '📍 Use My Location'}
+              </button>
               <button onClick={resetFilters} style={{ backgroundColor: '#6b7280', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Reset</button>
             </div>
-            {userLocation && <p style={{ fontSize: '11px', marginTop: '8px', color: '#10b981' }}>📍 Location detected</p>}
+            {userLocation && <p style={{ fontSize: '11px', marginTop: '8px', color: '#10b981' }}>📍 Location detected! Distance filter active.</p>}
             {!showExcelResults && searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests in categories</p>}
           </div>
 
