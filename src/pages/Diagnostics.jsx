@@ -3,7 +3,7 @@ import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import HealthPackagesTab from './HealthPackagesTab';
 
-// All 16 Main Categories with their Tests
+// All 16 Main Categories with their Tests (KEEP AS IS - UNCHANGED)
 const testCategories = [
   { 
     code: 'MRI', 
@@ -197,7 +197,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
                   {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
                 </th>
               ))}
-            </tr>
+            </table>
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
@@ -280,6 +280,12 @@ const Diagnostics = () => {
     home_collection_requested: false,
     home_address: ''
   });
+
+  // NEW STATE FOR RATING MODAL
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [completedBooking, setCompletedBooking] = useState(null);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
 
   const getUserLocation = () => {
     setLocationLoading(true);
@@ -403,6 +409,11 @@ const Diagnostics = () => {
       
       if (response.data.success) {
         alert(`✅ Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\n🧪 Tests: ${bookingTests.join(', ')}\n🏥 Lab: ${bookingProvider.provider_name}\n💰 Total: ₹${total}\n👤 Name: ${bookingForm.patient_name}\n📞 Phone: ${bookingForm.patient_phone}\n📅 Date: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
+        
+        // Show rating modal after booking
+        setCompletedBooking({ ...bookingProvider, bookingId: response.data.bookingId });
+        setShowRatingModal(true);
+        
         setShowBookingModal(false);
         setBookingProvider(null);
         setBookingTests([]);
@@ -418,6 +429,34 @@ const Diagnostics = () => {
   const closeBookingModal = () => {
     setShowBookingModal(false);
     setBookingProvider(null);
+  };
+
+  // NEW FUNCTION: Submit rating
+  const submitRating = async () => {
+    if (selectedRating === 0) {
+      alert('Please select a rating');
+      return;
+    }
+    
+    try {
+      await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/reviews/create', {
+        providerId: completedBooking?.provider_id,
+        providerName: completedBooking?.provider_name,
+        patientName: bookingForm.patient_name,
+        patientPhone: bookingForm.patient_phone,
+        rating: selectedRating,
+        comment: ratingComment,
+        bookingId: completedBooking?.bookingId
+      });
+      
+      alert('Thank you for your feedback!');
+      setShowRatingModal(false);
+      setSelectedRating(0);
+      setRatingComment('');
+    } catch (error) {
+      console.error('Rating error:', error);
+      alert('Failed to submit rating. Please try again.');
+    }
   };
 
   const resetFilters = () => {
@@ -665,7 +704,7 @@ const Diagnostics = () => {
       {!showComparison && activeTab === 'packages' && <HealthPackagesTab />}
       {!showComparison && activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* BOOKING MODAL - Placed at the very end to prevent re-renders */}
+      {/* BOOKING MODAL */}
       {showBookingModal && bookingProvider && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '500px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
@@ -731,6 +770,56 @@ const Diagnostics = () => {
                 <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: RATING MODAL - Shows after booking completion */}
+      {showRatingModal && completedBooking && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1003, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '400px', width: '90%' }}>
+            <h3 style={{ marginBottom: '15px' }}>Rate Your Experience</h3>
+            <p>How was your experience with <strong>{completedBooking.provider_name}</strong>?</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', margin: '15px 0' }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  onClick={() => setSelectedRating(star)}
+                  style={{
+                    fontSize: '35px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: selectedRating >= star ? '#fbbf24' : '#d1d5db',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <textarea
+              placeholder="Share your experience (optional)"
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '5px', minHeight: '80px', fontSize: '14px' }}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={submitRating}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Submit Rating
+              </button>
+              <button
+                onClick={() => setShowRatingModal(false)}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+              >
+                Skip
+              </button>
+            </div>
           </div>
         </div>
       )}
