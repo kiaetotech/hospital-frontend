@@ -269,6 +269,7 @@ const Diagnostics = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingTests, setBookingTests] = useState([]);
+  const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     patient_name: '',
     patient_age: '',
@@ -305,6 +306,7 @@ const Diagnostics = () => {
     }
   };
 
+  // Excel Search API call
   useEffect(() => {
     if (!searchTerm.trim()) {
       setExcelSearchResults([]);
@@ -379,13 +381,44 @@ const Diagnostics = () => {
     setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
   };
 
-  const handleBookingSubmit = (e) => {
+  const handleBookingSubmit = async (e) => {
     e.preventDefault();
+    setBookingLoading(true);
+    
     const total = bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0);
-    alert(`✅ Booking Confirmed!\n\n🧪 Test: ${bookingTests.join(', ')}\n🏥 Provider: ${bookingProvider.provider_name}\n💰 Total: ₹${total}\n👤 Name: ${bookingForm.patient_name}\n📞 Phone: ${bookingForm.patient_phone}\n📅 Date: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
+    
+    try {
+      const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/bookings/create', {
+        patientName: bookingForm.patient_name,
+        patientAge: parseInt(bookingForm.patient_age),
+        patientGender: bookingForm.patient_gender,
+        patientPhone: bookingForm.patient_phone,
+        patientEmail: bookingForm.patient_email,
+        tests: bookingTests,
+        providerName: bookingProvider.provider_name,
+        totalAmount: total,
+        appointmentDate: bookingForm.appointment_date,
+        homeCollectionRequested: bookingForm.home_collection_requested,
+        homeAddress: bookingForm.home_address,
+        userId: localStorage.getItem('userId') || 'guest'
+      });
+      
+      if (response.data.success) {
+        alert(`✅ Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\n🧪 Tests: ${bookingTests.join(', ')}\n🏥 Lab: ${bookingProvider.provider_name}\n💰 Total: ₹${total}\n👤 Name: ${bookingForm.patient_name}\n📞 Phone: ${bookingForm.patient_phone}\n📅 Date: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert('Booking failed. Please try again.');
+    }
+    
+    setBookingLoading(false);
     setShowBookingModal(false);
     setBookingProvider(null);
     setBookingTests([]);
+    setBookingForm({
+      patient_name: '', patient_age: '', patient_gender: 'male', patient_phone: '',
+      patient_email: '', appointment_date: '', home_collection_requested: false, home_address: ''
+    });
   };
 
   const closeBookingModal = () => {
@@ -697,7 +730,9 @@ const Diagnostics = () => {
                 </>
               )}
               <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>Confirm Booking</button>
+                <button type="submit" disabled={bookingLoading} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
+                  {bookingLoading ? 'Processing...' : 'Confirm Booking'}
+                </button>
                 <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
               </div>
             </form>
