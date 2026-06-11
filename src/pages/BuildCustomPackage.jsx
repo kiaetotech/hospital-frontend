@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-// All 16 Main Categories with their Tests (exactly from your working code)
+// All 16 Main Categories with their Tests (KEPT AS IS)
 const testCategories = [
   { 
     code: 'MRI', 
@@ -35,7 +36,7 @@ const testCategories = [
     name: '🩸 Hematology', 
     icon: '🩸', 
     color: '#e74c3c',
-    tests: ['Complete Blood Count (CBC)', 'Hemoglobin (Hb)', 'Hematocrit (HCT)', 'RBC count', 'WBC count (TLC, DLC)', 'Platelet count', 'Peripheral smear', 'ESR', 'CRP', 'Coagulation profile (PT, INR, aPTT)', 'Bleeding time', 'Clotting time', 'D-Dimer', 'Fibrinogen', 'Hb electrophoresis', 'Reticulocyte count', 'Blood grouping + Rh typing']
+    tests: ['Complete Blood Count', 'Hemoglobin (Hb)', 'Hematocrit (HCT)', 'RBC count', 'WBC count (TLC, DLC)', 'Platelet count', 'Peripheral smear', 'ESR', 'CRP', 'Coagulation profile (PT, INR, aPTT)', 'Bleeding time', 'Clotting time', 'D-Dimer', 'Fibrinogen', 'Hb electrophoresis', 'Reticulocyte count', 'Blood grouping + Rh typing']
   },
   { 
     code: 'BIO', 
@@ -105,93 +106,100 @@ const testCategories = [
     name: '⚛️ Nuclear', 
     icon: '⚛️', 
     color: '#16a085',
-    tests: ['PET-CT (whole body, cardiac, brain)', 'Bone scan (Tc-99m)', 'Thyroid scan (I-123, Tc-99m)', 'Renal scan (DTPA, MAG3, DMSA)', 'V/Q scan (lung)', 'HIDA scan (gallbladder)', 'Myocardial perfusion scan (MIBI, Thallium)', 'Parathyroid scan (Sestamibi)', 'Octreotide scan', 'MIBG scan', 'Gallium scan', 'White cell scan', 'Gastric emptying scan', "Meckel's scan"]
+    tests: ['PET-CT (whole body, cardiac, brain)', 'Bone scan (Tc-99m)', 'Thyroid scan (I-123, Tc-99m)', 'Renal scan (DTPA, MAG3, DMSA)', 'V/Q scan (lung)', 'HIDA scan (gallbladder)', 'Myocardial perfusion scan (MIBI, Thallium)', 'Parathyroid scan (Sestamibi)', 'Octreotide scan', 'MIBG scan', 'Gallium scan', 'White cell scan', 'Gastric emptying scan', 'Meckel scan']
   },
   { 
     code: 'SPL', 
     name: '⭐ Special', 
     icon: '⭐', 
     color: '#7f8c8d',
-    tests: ['Sweat chloride test', 'Genetic testing (DNA/RNA sequencing)', 'Karyotype / FISH / Microarray', 'Single gene sequencing', 'NGS panel / Whole exome', 'NIPT', 'HLA typing', 'Paternity testing', 'CSF analysis', 'Synovial fluid analysis', 'Peritoneal fluid analysis', 'Pleural fluid analysis', 'Amniotic fluid analysis', 'Skin biopsy', 'Muscle biopsy', 'Nerve biopsy', 'Bone marrow aspirate & biopsy', 'Fine needle aspiration cytology (FNAC)', 'Pap smear', 'Semen analysis']
+    tests: ['Sweat chloride test', 'Genetic testing (DNA/RNA sequencing)', 'Karyotype / FISH / Microarray', 'Single gene sequencing', 'NGS panel / Whole exome', 'NIPT', 'HLA typing', 'Paternity testing', 'CSF analysis', 'Synovial fluid analysis', 'Peritoneal fluid analysis', 'Pleural fluid analysis', 'Amniotic fluid analysis', 'Skin biopsy', 'Muscle biopsy', 'Nerve biopsy', 'Bone marrow aspirate and biopsy', 'Fine needle aspiration cytology (FNAC)', 'Pap smear', 'Semen analysis']
   }
 ];
 
-// Comparison Component (exactly from your working code)
-const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
+// Updated ComparisonResults with REAL API
+const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const mockProviders = [
-      { 
-        provider_name: 'ABC Diagnostics', 
-        rating: 4.5, 
-        distance: '2.5 km', 
-        home_collection: true,
-        home_collection_available: true,
-        report_time_hours: 24, 
-        total_price: 0, 
-        individual_prices: {} 
-      },
-      { 
-        provider_name: 'HealthCare Diagnostics', 
-        rating: 4.7, 
-        distance: '3.8 km', 
-        home_collection: true,
-        home_collection_available: true,
-        report_time_hours: 24, 
-        total_price: 0, 
-        individual_prices: {} 
-      },
-      { 
-        provider_name: 'Metropolis Healthcare', 
-        rating: 4.6, 
-        distance: '5.2 km', 
-        home_collection: true,
-        home_collection_available: true,
-        report_time_hours: 48, 
-        total_price: 0, 
-        individual_prices: {} 
-      },
-      { 
-        provider_name: 'Dr Lal PathLabs', 
-        rating: 4.8, 
-        distance: '1.2 km', 
-        home_collection: true,
-        home_collection_available: true,
-        report_time_hours: 24, 
-        total_price: 0, 
-        individual_prices: {} 
-      },
-      { 
-        provider_name: 'Apollo Diagnostic', 
-        rating: 4.9, 
-        distance: '4.0 km', 
-        home_collection: true,
-        home_collection_available: true,
-        report_time_hours: 12, 
-        total_price: 0, 
-        individual_prices: {} 
+    const fetchRealPrices = async () => {
+      setLoading(true);
+      try {
+        const requestBody = {
+          testNames: selectedTests,
+          city: filters?.city || 'All',
+          minRating: filters?.minRating || '',
+          maxPrice: filters?.maxPrice || '',
+          homeCollectionOnly: filters?.homeCollectionOnly || false,
+          maxDistance: filters?.maxDistance || '',
+          userLat: filters?.userLat || null,
+          userLng: filters?.userLng || null
+        };
+        
+        const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/tests/compare', requestBody);
+        
+        const providers = response.data.map(provider => ({
+          provider_name: provider.providerName,
+          rating: provider.rating,
+          distance: provider.distance || 'Address not available',
+          address: provider.address,
+          home_collection: provider.homeCollectionAvailable,
+          home_collection_available: provider.homeCollectionAvailable,
+          report_time_hours: provider.reportTimeHours,
+          total_price: provider.totalPrice,
+          individual_prices: Object.fromEntries(
+            Object.entries(provider.prices).map(([test, data]) => [test, data.discountedPrice || data.price])
+          )
+        }));
+        
+        setProviders(providers);
+      } catch (error) {
+        console.error('Error fetching prices:', error);
+        // Fallback to mock data
+        const mockProviders = [
+          { provider_name: 'ABC Diagnostics', rating: 4.5, distance: '2.5 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+          { provider_name: 'HealthCare Diagnostics', rating: 4.7, distance: '3.8 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+          { provider_name: 'Metropolis Healthcare', rating: 4.6, distance: '5.2 km', home_collection: true, home_collection_available: true, report_time_hours: 48, total_price: 0, individual_prices: {} },
+          { provider_name: 'Dr Lal PathLabs', rating: 4.8, distance: '1.2 km', home_collection: true, home_collection_available: true, report_time_hours: 24, total_price: 0, individual_prices: {} },
+          { provider_name: 'Apollo Diagnostic', rating: 4.9, distance: '4.0 km', home_collection: true, home_collection_available: true, report_time_hours: 12, total_price: 0, individual_prices: {} }
+        ];
+        selectedTests.forEach(test => {
+          mockProviders.forEach(provider => {
+            const price = Math.floor(Math.random() * 500) + 100;
+            provider.individual_prices[test] = price;
+            provider.total_price += price;
+          });
+        });
+        setProviders(mockProviders.sort((a, b) => a.total_price - b.total_price));
       }
-    ];
+      setLoading(false);
+    };
     
-    selectedTests.forEach(test => {
-      mockProviders.forEach(provider => {
-        const price = Math.floor(Math.random() * 500) + 100;
-        provider.individual_prices[test] = price;
-        provider.total_price += price;
-      });
-    });
-    setProviders(mockProviders.sort((a, b) => a.total_price - b.total_price));
-    setLoading(false);
-  }, [selectedTests]);
+    if (selectedTests.length > 0) {
+      fetchRealPrices();
+    }
+  }, [selectedTests, filters]);
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading comparison data...</div>;
 
+  if (providers.length === 0) {
+    return (
+      <div>
+        <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>Back to Build Package</button>
+        <h2>Price Comparison for Selected Tests</h2>
+        <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#f9fafb', borderRadius: '10px' }}>
+          <p>No providers found matching your criteria.</p>
+          <p style={{ fontSize: '14px', color: '#6b7280' }}>Try adjusting your filters or select different tests.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>← Back to Build Package</button>
-      <h2>📊 Price Comparison for Selected Tests</h2>
+      <button onClick={onBack} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px 20px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px' }}>Back to Build Package</button>
+      <h2>Price Comparison for Selected Tests</h2>
       <div style={{ overflowX: 'auto', marginTop: '20px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
           <thead>
@@ -200,63 +208,55 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow }) => {
               {providers.map((p, idx) => (
                 <th key={idx} style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: idx === 0 ? '#d1fae5' : '#f3f4f6' }}>
                   {p.provider_name}
-                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>⭐ Cheapest</span>}
+                  {idx === 0 && <span style={{ display: 'block', fontSize: '11px', color: '#10b981' }}>Cheapest</span>}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⭐ Rating</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
-            </tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Rating<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★<\/td>))}
+            <\/tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📏 Distance</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
-            </tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Distance<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}<\/td>))}
+            <\/tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>🏠 Home Collection</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? '✅ Yes' : '❌ No'}</td>))}
-            </tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Home Collection<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? 'Yes' : 'No'}<\/td>))}
+            <\/tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>⏱️ Report Time</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
-            </tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Report Time<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours<\/td>))}
+            <\/tr>
             {selectedTests.map(test => (
               <tr key={test}>
-                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
-                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.individual_prices[test]}</td>))}
-              </tr>
+                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}<\/td>
+                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.individual_prices[test]}<\/td>))}
+              <\/tr>
             ))}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>💰 Total Price</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>₹{p.total_price}</td>))}
-            </tr>
-            <tr>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>📅 Action</td>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total Price<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.total_price}<\/td>))}
+             <\/tr>
+             <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Action<\/td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
                     onClick={() => onBookNow(p, selectedTests)} 
-                    style={{ 
-                      backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', 
-                      color: 'white', 
-                      padding: '8px 16px', 
-                      border: 'none', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer',
-                      fontWeight: 'bold'
-                    }}
+                    style={{ backgroundColor: idx === 0 ? '#10b981' : '#3b82f6', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
                   >
                     Book Now
                   </button>
-                </td>
+                <\/td>
               ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+             <\/tr>
+          <\/tbody>
+        <\/table>
+      <\/div>
+    <\/div>
   );
 };
 
@@ -275,6 +275,17 @@ const BuildCustomPackage = () => {
   const [visibleTestCount, setVisibleTestCount] = useState({});
   const [testsPerRow, setTestsPerRow] = useState(4);
   const [packageName, setPackageName] = useState('');
+  
+  // NEW: Excel Upload States
+  const [showUpload, setShowUpload] = useState(false);
+  const [packageFile, setPackageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
+  
+  // NEW: Excel Search Results for dynamic test search
+  const [excelSearchResults, setExcelSearchResults] = useState([]);
+  const [showExcelResults, setShowExcelResults] = useState(false);
+  const [excelSearchLoading, setExcelSearchLoading] = useState(false);
   
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingProvider, setBookingProvider] = useState(null);
@@ -298,6 +309,30 @@ const BuildCustomPackage = () => {
       );
     }
   }, [useMyLocation]);
+
+  // NEW: Excel Search API call for dynamic test search
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setExcelSearchResults([]);
+      setShowExcelResults(false);
+      return;
+    }
+    
+    const delayDebounce = setTimeout(async () => {
+      try {
+        setExcelSearchLoading(true);
+        const response = await axios.get(`https://hospital-backend-production-8de3.up.railway.app/api/tests/search?q=${searchTerm}`);
+        setExcelSearchResults(response.data);
+        setShowExcelResults(true);
+      } catch (error) {
+        console.error('Excel search error:', error);
+      } finally {
+        setExcelSearchLoading(false);
+      }
+    }, 500);
+    
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm]);
 
   const toggleTest = (testName) => {
     if (selectedTests.includes(testName)) {
@@ -368,7 +403,48 @@ const BuildCustomPackage = () => {
     setSearchTerm('');
   };
 
+  // NEW: Upload packages via Excel
+  const handlePackageUpload = async (e) => {
+    e.preventDefault();
+    if (!packageFile) {
+      setUploadMessage('Please select an Excel file');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', packageFile);
+    
+    setUploading(true);
+    try {
+      const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/custom-packages/upload', formData);
+      setUploadMessage(`✅ ${response.data.message}`);
+      setPackageFile(null);
+      document.getElementById('packageFile').value = '';
+    } catch (error) {
+      setUploadMessage(`❌ Upload failed: ${error.response?.data?.error || error.message}`);
+    }
+    setUploading(false);
+  };
+
+  // NEW: Download Excel template for packages
+  const downloadTemplate = () => {
+    const template = [
+      ['packageName', 'description', 'discountPercent', 'popular', 'test1', 'price1', 'category1', 'test2', 'price2', 'category2', 'test3', 'price3', 'category3'],
+      ['Full Body Checkup', 'Complete health checkup package', 20, 'Yes', 'Complete Blood Count', 299, 'Hematology', 'HbA1c', 499, 'Biochemistry', 'Vitamin D', 1299, 'Nutrition'],
+      ['Vitamin Package', 'Essential vitamins profile', 15, 'No', 'Vitamin D', 1299, 'Nutrition', 'Vitamin B12', 899, 'Nutrition', 'Folate', 599, 'Nutrition'],
+      ['Heart Health Package', 'Cardiac risk assessment', 25, 'Yes', 'Lipid profile', 799, 'Cardiology', 'HbA1c', 499, 'Biochemistry', 'ECG', 299, 'Cardiology']
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Packages');
+    XLSX.writeFile(wb, 'packages_template.xlsx');
+  };
+
   const getFilteredCategories = () => {
+    if (showExcelResults && searchTerm && excelSearchResults.length > 0) {
+      return [];
+    }
     if (!searchTerm.trim()) return testCategories;
     
     const lowerSearch = searchTerm.toLowerCase();
@@ -396,7 +472,20 @@ const BuildCustomPackage = () => {
   };
 
   if (showComparison) {
-    return <ComparisonResults selectedTests={selectedTests} onBack={() => setShowComparison(false)} onBookNow={openBookingModal} />;
+    return <ComparisonResults 
+      selectedTests={selectedTests} 
+      onBack={() => setShowComparison(false)} 
+      onBookNow={openBookingModal}
+      filters={{
+        city: cityFilter,
+        minRating: minRating,
+        maxPrice: maxPrice,
+        homeCollectionOnly: homeCollectionOnly,
+        maxDistance: maxDistance,
+        userLat: userLocation?.lat,
+        userLng: userLocation?.lng
+      }} 
+    />;
   }
 
   const filteredCategories = getFilteredCategories();
@@ -409,18 +498,25 @@ const BuildCustomPackage = () => {
           <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>✨ Build Your Custom Package</h1>
           <p style={{ color: '#6b7280', marginBottom: '20px', fontSize: '14px' }}>Select multiple tests from 16+ categories to create your own health package</p>
         </div>
-        {selectedTests.length > 0 && (
-          <div style={{ backgroundColor: '#f0fdf4', padding: '8px 16px', borderRadius: '8px', textAlign: 'center' }}>
-            <span style={{ fontWeight: 'bold', color: '#10b981' }}>{selectedTests.length} test(s) selected</span>
-            <button 
-              onClick={handleCompare}
-              style={{ marginLeft: '12px', backgroundColor: '#10b981', color: 'white', padding: '4px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-            >
-              Compare Now
-            </button>
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => setShowUpload(!showUpload)} style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+            📤 {showUpload ? 'Hide Upload' : 'Upload Packages'}
+          </button>
+        </div>
       </div>
+
+      {/* NEW: Excel Upload Section */}
+      {showUpload && (
+        <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
+          <h3 style={{ marginBottom: '10px' }}>📤 Upload Health Packages (Excel)</h3>
+          <button onClick={downloadTemplate} style={{ marginBottom: '10px', padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '13px' }}>📥 Download Template</button>
+          <form onSubmit={handlePackageUpload}>
+            <input type="file" id="packageFile" accept=".xlsx, .xls" onChange={(e) => setPackageFile(e.target.files[0])} style={{ marginRight: '10px' }} />
+            <button type="submit" disabled={uploading} style={{ padding: '6px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>{uploading ? 'Uploading...' : 'Upload'}</button>
+          </form>
+          {uploadMessage && <p style={{ marginTop: '10px', fontSize: '13px', color: uploadMessage.includes('✅') ? '#10b981' : '#ef4444' }}>{uploadMessage}</p>}
+        </div>
+      )}
 
       {/* Package Name Input */}
       <div style={{ backgroundColor: '#fef3c7', padding: '12px 15px', borderRadius: '10px', marginBottom: '20px', border: '1px solid #fde68a' }}>
@@ -435,15 +531,82 @@ const BuildCustomPackage = () => {
         {packageName && <span style={{ marginLeft: '10px', fontSize: '12px', color: '#d97706' }}>✓ Package will be saved as "{packageName}"</span>}
       </div>
       
-      {/* Search and Filters - Exactly from your working code */}
+      {/* Search and Filters */}
       <div style={{ backgroundColor: '#f3f4f6', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
         <input 
           type="text" 
-          placeholder="🔍 Search any test or category..." 
+          placeholder="🔍 Search any test or category (including 5000+ Excel tests)..." 
           value={searchTerm} 
           onChange={(e) => setSearchTerm(e.target.value)} 
           style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px', marginBottom: '12px' }} 
         />
+        
+        {/* NEW: Excel Search Results Section */}
+        {showExcelResults && searchTerm && (
+          <div style={{ 
+            marginTop: '10px', 
+            backgroundColor: 'white', 
+            border: '1px solid #10b981', 
+            borderRadius: '8px', 
+            maxHeight: '300px', 
+            overflowY: 'auto',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}>
+            {excelSearchLoading ? (
+              <div style={{ padding: '20px', textAlign: 'center' }}>Searching Excel database...</div>
+            ) : excelSearchResults.length > 0 ? (
+              <>
+                <div style={{ padding: '10px', backgroundColor: '#f0fdf4', borderBottom: '1px solid #10b981' }}>
+                  <strong>📋 Excel Uploaded Tests ({excelSearchResults.length})</strong>
+                  <span style={{ fontSize: '12px', marginLeft: '10px', color: '#666' }}>From agency price lists</span>
+                </div>
+                {excelSearchResults.map(test => (
+                  <div key={test._id} style={{ 
+                    padding: '12px 15px', 
+                    borderBottom: '1px solid #eee', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '10px'
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <strong>{test.testName}</strong>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                        {test.category} {test.subCategory && ` > ${test.subCategory}`}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
+                        <input type="checkbox" checked={selectedTests.includes(test.testName)} onChange={() => toggleTest(test.testName)} />
+                        Select
+                      </label>
+                      <button 
+                        onClick={() => handleDirectBook(test.testName)} 
+                        style={{ backgroundColor: '#10b981', color: 'white', padding: '4px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        Book
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setSelectedTests([test.testName]);
+                          handleCompare();
+                        }} 
+                        style={{ backgroundColor: '#3b82f6', color: 'white', padding: '4px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        Compare
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
+                No Excel tests found matching "{searchTerm}"
+              </div>
+            )}
+          </div>
+        )}
         
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
           <input type="text" placeholder="📍 City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
@@ -472,7 +635,7 @@ const BuildCustomPackage = () => {
         </div>
         
         {userLocation && <p style={{ fontSize: '11px', marginTop: '8px', color: '#10b981' }}>📍 Location detected - showing nearby labs</p>}
-        {searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests in {filteredCategories.length} categories</p>}
+        {!showExcelResults && searchTerm && <p style={{ fontSize: '12px', marginTop: '8px', color: '#6b7280' }}>Found {filteredCategories.reduce((sum, cat) => sum + cat.tests.length, 0)} tests in {filteredCategories.length} categories</p>}
       </div>
 
       {/* Selected Tests Summary Bar */}
@@ -496,7 +659,7 @@ const BuildCustomPackage = () => {
         </div>
       )}
 
-      {/* 16 Categories with Tests - Exactly from your working code */}
+      {/* 16 Categories with Tests */}
       <div>
         {filteredCategories.map(category => {
           const totalTests = category.tests.length;
@@ -689,7 +852,7 @@ const BuildCustomPackage = () => {
         })}
       </div>
 
-      {/* Fixed Compare Button - Exactly from your working code */}
+      {/* Fixed Compare Button */}
       {selectedTests.length >= 2 && (
         <button 
           onClick={handleCompare} 
@@ -716,7 +879,7 @@ const BuildCustomPackage = () => {
         </button>
       )}
 
-      {/* Booking Modal - Exactly from your working code */}
+      {/* Booking Modal */}
       {showBookingModal && bookingProvider && (
         <div style={{ 
           position: 'fixed', 
