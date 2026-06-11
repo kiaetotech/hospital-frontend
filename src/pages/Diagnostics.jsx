@@ -108,14 +108,14 @@ const testCategories = [
     name: 'Nuclear', 
     icon: '⚛️', 
     color: '#16a085',
-    tests: ['PET-CT (whole body, cardiac, brain)', 'Bone scan (Tc-99m)', 'Thyroid scan (I-123, Tc-99m)', 'Renal scan (DTPA, MAG3, DMSA)', 'V/Q scan (lung)', 'HIDA scan (gallbladder)', 'Myocardial perfusion scan (MIBI, Thallium)', 'Parathyroid scan (Sestamibi)', 'Octreotide scan', 'MIBG scan', 'Gallium scan', 'White cell scan', 'Gastric emptying scan', 'Meckel scan']
+    tests: ['PET-CT (whole body, cardiac, brain)', 'Bone scan (Tc-99m)', 'Thyroid scan (I-123, Tc-99m)', 'Renal scan (DTPA, MAG3, DMSA)', 'V/Q scan (lung)', 'HIDA scan (gallbladder)', 'Myocardial perfusion scan (MIBI, Thallium)', 'Parathyroid scan (Sestamibi)', 'Octreotide scan', 'MIBG scan', 'Gallium scan', 'White cell scan', 'Gastric emptying scan', 'Meckel\'s scan']
   },
   { 
     code: 'SPL', 
     name: 'Special', 
     icon: '⭐', 
     color: '#7f8c8d',
-    tests: ['Sweat chloride test', 'Genetic testing (DNA/RNA sequencing)', 'Karyotype / FISH / Microarray', 'Single gene sequencing', 'NGS panel / Whole exome', 'NIPT', 'HLA typing', 'Paternity testing', 'CSF analysis', 'Synovial fluid analysis', 'Peritoneal fluid analysis', 'Pleural fluid analysis', 'Amniotic fluid analysis', 'Skin biopsy', 'Muscle biopsy', 'Nerve biopsy', 'Bone marrow aspirate and biopsy', 'Fine needle aspiration cytology (FNAC)', 'Pap smear', 'Semen analysis']
+    tests: ['Sweat chloride test', 'Genetic testing (DNA/RNA sequencing)', 'Karyotype / FISH / Microarray', 'Single gene sequencing', 'NGS panel / Whole exome', 'NIPT', 'HLA typing', 'Paternity testing', 'CSF analysis', 'Synovial fluid analysis', 'Peritoneal fluid analysis', 'Pleural fluid analysis', 'Amniotic fluid analysis', 'Skin biopsy', 'Muscle biopsy', 'Nerve biopsy', 'Bone marrow aspirate & biopsy', 'Fine needle aspiration cytology (FNAC)', 'Pap smear', 'Semen analysis']
   }
 ];
 
@@ -201,33 +201,33 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Rating</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
-            </tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Rating<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★<\/td>))}
+            <\/tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Distance</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
-            </tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Distance<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}<\/td>))}
+            <\/tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Home Collection</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? 'Yes' : 'No'}</td>))}
-            </tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Home Collection<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? 'Yes' : 'No'}<\/td>))}
+            <\/tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Report Time</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
-            </tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Report Time<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours<\/td>))}
+            <\/tr>
             {selectedTests.map(test => (
               <tr key={test}>
-                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
-                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.individual_prices[test]}</td>))}
-              </tr>
+                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}<\/td>
+                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.individual_prices[test]}<\/td>))}
+              <\/tr>
             ))}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total Price</td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.total_price}</td>))}
-            </tr>
-            <tr>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Action</td>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total Price<\/td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.total_price}<\/td>))}
+             <\/tr>
+             <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Action<\/td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
@@ -236,17 +236,17 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
                   >
                     Book Now
                   </button>
-                </td>
+                <\/td>
               ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+             <\/tr>
+          <\/tbody>
+        <\/table>
+      <\/div>
+    <\/div>
   );
 };
 
-// Separate Booking Modal Component
+// Separate Booking Modal Component - Prevents re-renders when typing
 const BookingModal = ({ show, onClose, provider, tests, onSubmit, loading }) => {
   const [formData, setFormData] = useState({
     patient_name: '',
@@ -806,6 +806,7 @@ const Diagnostics = () => {
       {!showComparison && activeTab === 'packages' && <HealthPackagesTab />}
       {!showComparison && activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
+      {/* Booking Modal - Separate component prevents refresh */}
       <BookingModal 
         show={showBookingModal}
         onClose={closeBookingModal}
@@ -815,6 +816,7 @@ const Diagnostics = () => {
         loading={bookingLoading}
       />
 
+      {/* Rating Modal */}
       <RatingModal 
         show={showRatingModal}
         onClose={closeRatingModal}
