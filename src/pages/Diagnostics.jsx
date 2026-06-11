@@ -201,33 +201,33 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
           </thead>
           <tbody>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Rating<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★<\/td>))}
-            <\/tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Rating</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.rating} ★</td>))}
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Distance<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}<\/td>))}
-            <\/tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Distance</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.distance}</td>))}
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Home Collection<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? 'Yes' : 'No'}<\/td>))}
-            <\/tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Home Collection</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.home_collection ? 'Yes' : 'No'}</td>))}
+            </tr>
             <tr style={{ backgroundColor: '#e5e7eb' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Report Time<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours<\/td>))}
-            <\/tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Report Time</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{p.report_time_hours} hours</td>))}
+            </tr>
             {selectedTests.map(test => (
               <tr key={test}>
-                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}<\/td>
-                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.individual_prices[test]}<\/td>))}
-              <\/tr>
+                <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>{test}</td>
+                {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.individual_prices[test]}</td>))}
+              </tr>
             ))}
             <tr style={{ backgroundColor: '#fef3c7', fontWeight: 'bold' }}>
-              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total Price<\/td>
-              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.total_price}<\/td>))}
-             <\/tr>
-             <tr>
-              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Action<\/td>
+              <td style={{ padding: '10px', border: '1px solid #ddd' }}>Total Price</td>
+              {providers.map((p, idx) => (<td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>Rs. {p.total_price}</td>))}
+            </tr>
+            <tr>
+              <td style={{ padding: '10px', border: '1px solid #ddd', fontWeight: 'bold' }}>Action</td>
               {providers.map((p, idx) => (
                 <td key={idx} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <button 
@@ -236,146 +236,11 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
                   >
                     Book Now
                   </button>
-                <\/td>
+                </td>
               ))}
-             <\/tr>
-          <\/tbody>
-        <\/table>
-      <\/div>
-    <\/div>
-  );
-};
-
-// Separate Booking Modal Component - Prevents re-renders when typing
-const BookingModal = ({ show, onClose, provider, tests, onSubmit, loading }) => {
-  const [formData, setFormData] = useState({
-    patient_name: '',
-    patient_age: '',
-    patient_gender: 'male',
-    patient_phone: '',
-    patient_email: '',
-    appointment_date: '',
-    home_collection_requested: false,
-    home_address: ''
-  });
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  if (!show || !provider) return null;
-
-  const total = tests.reduce((sum, test) => sum + (provider.individual_prices?.[test] || 0), 0);
-
-  return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '500px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
-        <h2 style={{ marginBottom: '15px', fontSize: '20px' }}>Book Test</h2>
-        <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px' }}>
-          <p><strong>Provider:</strong> {provider.provider_name}</p>
-          <p><strong>Test(s):</strong> {tests.join(', ')}</p>
-          <p><strong>Total Amount:</strong> Rs. {total}</p>
-          <p><strong>Rating:</strong> {provider.rating} ★</p>
-          {provider.home_collection_available && <p><strong>Home Collection Available</strong></p>}
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Full Name *</label>
-            <input type="text" name="patient_name" required value={formData.patient_name} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
-          </div>
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Age *</label>
-              <input type="number" name="patient_age" required value={formData.patient_age} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Gender *</label>
-              <select name="patient_gender" value={formData.patient_gender} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Phone Number *</label>
-            <input type="tel" name="patient_phone" required value={formData.patient_phone} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Email</label>
-            <input type="email" name="patient_email" value={formData.patient_email} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Appointment Date *</label>
-            <input type="date" name="appointment_date" required value={formData.appointment_date} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
-          </div>
-          {provider.home_collection_available && (
-            <>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-                  <input type="checkbox" name="home_collection_requested" checked={formData.home_collection_requested} onChange={handleChange} />
-                  Request Home Collection
-                </label>
-              </div>
-              {formData.home_collection_requested && (
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Home Address</label>
-                  <textarea name="home_address" rows="2" value={formData.home_address} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
-                </div>
-              )}
-            </>
-          )}
-          <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-            <button type="submit" disabled={loading} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
-              {loading ? 'Processing...' : 'Confirm Booking'}
-            </button>
-            <button type="button" onClick={onClose} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Separate Rating Modal Component
-const RatingModal = ({ show, onClose, booking, onSubmit }) => {
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-
-  const handleSubmit = () => {
-    if (rating === 0) {
-      alert('Please select a rating');
-      return;
-    }
-    onSubmit(rating, comment);
-  };
-
-  if (!show || !booking) return null;
-
-  return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1003, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '400px', width: '90%' }}>
-        <h3 style={{ marginBottom: '15px' }}>Rate Your Experience</h3>
-        <p>How was your experience with <strong>{booking.provider_name}</strong>?</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', margin: '15px 0' }}>
-          {[1, 2, 3, 4, 5].map(star => (
-            <button key={star} onClick={() => setRating(star)} style={{ fontSize: '35px', background: 'none', border: 'none', cursor: 'pointer', color: rating >= star ? '#fbbf24' : '#d1d5db' }}>★</button>
-          ))}
-        </div>
-        <textarea placeholder="Share your experience (optional)" value={comment} onChange={(e) => setComment(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '5px', minHeight: '80px', fontSize: '14px' }} />
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={handleSubmit} style={{ flex: 1, padding: '10px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Submit Rating</button>
-          <button onClick={onClose} style={{ flex: 1, padding: '10px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Skip</button>
-        </div>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -405,9 +270,21 @@ const Diagnostics = () => {
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingTests, setBookingTests] = useState([]);
   const [bookingLoading, setBookingLoading] = useState(false);
-  
+  const [bookingForm, setBookingForm] = useState({
+    patient_name: '',
+    patient_age: '',
+    patient_gender: 'male',
+    patient_phone: '',
+    patient_email: '',
+    appointment_date: '',
+    home_collection_requested: false,
+    home_address: ''
+  });
+
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [completedBooking, setCompletedBooking] = useState(null);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
 
   const getUserLocation = () => {
     setLocationLoading(true);
@@ -478,6 +355,16 @@ const Diagnostics = () => {
   };
 
   const openBookingModal = (provider, tests) => {
+    setBookingForm({
+      patient_name: '',
+      patient_age: '',
+      patient_gender: 'male',
+      patient_phone: '',
+      patient_email: '',
+      appointment_date: '',
+      home_collection_requested: false,
+      home_address: ''
+    });
     setBookingProvider(provider);
     setBookingTests(tests);
     setShowBookingModal(true);
@@ -493,72 +380,88 @@ const Diagnostics = () => {
     openBookingModal(mockProvider, [testName]);
   };
 
-  const handleBookingSubmit = async (formData) => {
-    setBookingLoading(true);
+  const handleBookingChange = (e) => {
+    setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
+  };
+
+  const handleBookingSubmit = async (e) => {
+  e.preventDefault();
+  setBookingLoading(true);
+  
+  const total = bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0);
+  
+  try {
+    const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/bookings/create', {
+      patientName: bookingForm.patient_name,
+      patientAge: parseInt(bookingForm.patient_age),
+      patientGender: bookingForm.patient_gender,
+      patientPhone: bookingForm.patient_phone,
+      patientEmail: bookingForm.patient_email,
+      tests: bookingTests,
+      providerName: bookingProvider.provider_name,
+      totalAmount: total,
+      appointmentDate: bookingForm.appointment_date,
+      homeCollectionRequested: bookingForm.home_collection_requested,
+      homeAddress: bookingForm.home_address,
+      userId: localStorage.getItem('userId') || 'guest'
+    });
     
-    const total = bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0);
-    
-    try {
-      const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/bookings/create', {
-        patientName: formData.patient_name,
-        patientAge: parseInt(formData.patient_age),
-        patientGender: formData.patient_gender,
-        patientPhone: formData.patient_phone,
-        patientEmail: formData.patient_email,
-        tests: bookingTests,
-        providerName: bookingProvider.provider_name,
-        totalAmount: total,
-        appointmentDate: formData.appointment_date,
-        homeCollectionRequested: formData.home_collection_requested,
-        homeAddress: formData.home_address,
-        userId: localStorage.getItem('userId') || 'guest'
+    if (response.data.success) {
+      alert(`Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\nTests: ${bookingTests.join(', ')}\nLab: ${bookingProvider.provider_name}\nTotal: Rs.${total}\nName: ${bookingForm.patient_name}\nPhone: ${bookingForm.patient_phone}\nDate: ${bookingForm.appointment_date}\n\nWe will contact you shortly.`);
+      
+      // Store booking info for rating after payment
+      setCompletedBooking({ 
+        ...bookingProvider, 
+        bookingId: response.data.bookingId,
+        providerId: bookingProvider.provider_id 
       });
       
-      if (response.data.success) {
-        alert(`Booking Confirmed!\n\nBooking ID: ${response.data.bookingId}\n\nTests: ${bookingTests.join(', ')}\nLab: ${bookingProvider.provider_name}\nTotal: Rs.${total}\nName: ${formData.patient_name}\nPhone: ${formData.patient_phone}\nDate: ${formData.appointment_date}\n\nWe will contact you shortly.`);
-        
-        setCompletedBooking(bookingProvider);
-        setShowRatingModal(true);
-        setShowBookingModal(false);
-        setBookingProvider(null);
-        setBookingTests([]);
-      }
-    } catch (error) {
-      console.error('Booking error:', error);
-      alert('Booking failed. Please try again.');
+      // Show rating modal only after payment - for now, show after booking
+      // In production, show after payment verification
+      setShowRatingModal(true);
+      
+      setShowBookingModal(false);
+      setBookingProvider(null);
+      setBookingTests([]);
     }
-    
-    setBookingLoading(false);
-  };
+  } catch (error) {
+    console.error('Booking error:', error);
+    alert('Booking failed. Please try again.');
+  }
+  
+  setBookingLoading(false);
+};
 
   const closeBookingModal = () => {
     setShowBookingModal(false);
     setBookingProvider(null);
   };
 
-  const submitRating = async (rating, comment) => {
+  const submitRating = async () => {
+    if (selectedRating === 0) {
+      alert('Please select a rating');
+      return;
+    }
+    
     try {
       await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/reviews/create', {
         providerId: completedBooking?.provider_id,
         providerName: completedBooking?.provider_name,
-        patientName: 'Patient',
-        patientPhone: '9999999999',
-        rating: rating,
-        comment: comment,
-        bookingId: 'BOOKING_ID'
+        patientName: bookingForm.patient_name,
+        patientPhone: bookingForm.patient_phone,
+        rating: selectedRating,
+        comment: ratingComment,
+        bookingId: completedBooking?.bookingId
       });
+      
       alert('Thank you for your feedback!');
       setShowRatingModal(false);
-      setCompletedBooking(null);
+      setSelectedRating(0);
+      setRatingComment('');
     } catch (error) {
       console.error('Rating error:', error);
       alert('Failed to submit rating. Please try again.');
     }
-  };
-
-  const closeRatingModal = () => {
-    setShowRatingModal(false);
-    setCompletedBooking(null);
   };
 
   const resetFilters = () => {
@@ -806,23 +709,121 @@ const Diagnostics = () => {
       {!showComparison && activeTab === 'packages' && <HealthPackagesTab />}
       {!showComparison && activeTab === 'custom' && <DiagnosticsCustomPackage />}
 
-      {/* Booking Modal - Separate component prevents refresh */}
-      <BookingModal 
-        show={showBookingModal}
-        onClose={closeBookingModal}
-        provider={bookingProvider}
-        tests={bookingTests}
-        onSubmit={handleBookingSubmit}
-        loading={bookingLoading}
-      />
+      {showBookingModal && bookingProvider && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '500px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
+            <h2 style={{ marginBottom: '15px', fontSize: '20px' }}>Book Test</h2>
+            <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px' }}>
+              <p><strong>Provider:</strong> {bookingProvider.provider_name}</p>
+              <p><strong>Test(s):</strong> {bookingTests.join(', ')}</p>
+              <p><strong>Total Amount:</strong> Rs. {bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0)}</p>
+              <p><strong>Rating:</strong> {bookingProvider.rating} ★</p>
+              {bookingProvider.home_collection_available && <p><strong>Home Collection Available</strong></p>}
+            </div>
+            <form onSubmit={handleBookingSubmit}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Full Name *</label>
+                <input type="text" name="patient_name" required value={bookingForm.patient_name} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Age *</label>
+                  <input type="number" name="patient_age" required value={bookingForm.patient_age} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Gender *</label>
+                  <select name="patient_gender" value={bookingForm.patient_gender} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }}>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Phone Number *</label>
+                <input type="tel" name="patient_phone" required value={bookingForm.patient_phone} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Email</label>
+                <input type="email" name="patient_email" value={bookingForm.patient_email} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Appointment Date *</label>
+                <input type="date" name="appointment_date" required value={bookingForm.appointment_date} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+              </div>
+              {bookingProvider.home_collection_available && (
+                <>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+                      <input type="checkbox" name="home_collection_requested" checked={bookingForm.home_collection_requested} onChange={(e) => setBookingForm({...bookingForm, home_collection_requested: e.target.checked})} />
+                      Request Home Collection
+                    </label>
+                  </div>
+                  {bookingForm.home_collection_requested && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Home Address</label>
+                      <textarea name="home_address" rows="2" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+                    </div>
+                  )}
+                </>
+              )}
+              <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                <button type="submit" disabled={bookingLoading} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
+                  {bookingLoading ? 'Processing...' : 'Confirm Booking'}
+                </button>
+                <button type="button" onClick={closeBookingModal} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-      {/* Rating Modal */}
-      <RatingModal 
-        show={showRatingModal}
-        onClose={closeRatingModal}
-        booking={completedBooking}
-        onSubmit={submitRating}
-      />
+      {showRatingModal && completedBooking && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1003, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '400px', width: '90%' }}>
+            <h3 style={{ marginBottom: '15px' }}>Rate Your Experience</h3>
+            <p>How was your experience with <strong>{completedBooking.provider_name}</strong>?</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', margin: '15px 0' }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  onClick={() => setSelectedRating(star)}
+                  style={{
+                    fontSize: '35px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: selectedRating >= star ? '#fbbf24' : '#d1d5db',
+                    transition: 'transform 0.2s'
+                  }}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <textarea
+              placeholder="Share your experience (optional)"
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '5px', minHeight: '80px', fontSize: '14px' }}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={submitRating}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Submit Rating
+              </button>
+              <button
+                onClick={() => setShowRatingModal(false)}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
