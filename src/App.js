@@ -49,48 +49,36 @@ function App() {
         {/* Ambulance Tag */}
         <Route path="/ambulance" element={<Ambulance />} />
 
-	{/* caregiver Tag */}
-	<Route path="/caregivers" element={<Caregivers />} />
-	<Route path="/caregiver-profile/:id" element={<CaregiverProfile />} />
-	<Route path="/book-caregiver/:id" element={<BookCaregiver />} />
-	<Route path="/login" element={<Login />} />
+        {/* Caregiver Tag */}
+        <Route path="/caregivers" element={<Caregivers />} />
+        <Route path="/caregiver-profile/:id" element={<CaregiverProfile />} />
+        <Route path="/book-caregiver/:id" element={<BookCaregiver />} />
+        <Route path="/login" element={<Login />} />
 
-	{/* diagnostics Tag */}
-	<Route path="/diagnostics-list" element={<DiagnosticsList />} />
-	<Route path="/diagnostics-compare-providers" element={<DiagnosticsCompareProviders />} />
-	<Route path="/diagnostics-custom-package" element={<DiagnosticsCustomPackage />} />
-	<Route path="/diagnostics" element={<Diagnostics />} />
-	<Route path="/health-packages" element={<HealthPackages />} />
-	<Route path="/health-packages" element={<HealthPackagesPage />} />
+        {/* Diagnostics Tag */}
+        <Route path="/diagnostics-list" element={<DiagnosticsList />} />
+        <Route path="/diagnostics-compare-providers" element={<DiagnosticsCompareProviders />} />
+        <Route path="/diagnostics-custom-package" element={<DiagnosticsCustomPackage />} />
+        <Route path="/diagnostics" element={<Diagnostics />} />
+        <Route path="/health-packages" element={<HealthPackages />} />
+        <Route path="/health-packages" element={<HealthPackagesPage />} />
         <Route path="/package-detail/:id" element={<PackageDetail />} />
         <Route path="/test-compare" element={<SimpleCompareTest />} />
-	<Route path="/provider-dashboard" element={<ProviderDashboard />} />
-	<Route path="/admin-panel" element={<AdminPanel />} />
+        <Route path="/provider-dashboard" element={<ProviderDashboard />} />
+        <Route path="/admin-panel" element={<AdminPanel />} />
 
         {/* HealthEMI Tag */}
-     	<Route path="/financing" element={<Financing />} />
+        <Route path="/financing" element={<Financing />} />
 
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
         <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
         <Route path="/preventive" element={<ComingSoon title="Preventive Checkups" />} />
-        <Route path="/financing" element={<ComingSoon title="Health Financing" />} />
         <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
         <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
-	<Route path="/admin/upload" element={<AdminUpload />} />
+        <Route path="/admin/upload" element={<AdminUpload />} />
       </Routes>
-    </BrowserRouter> //
-  );
-}
-
-import { LoanProvider } from './context/LoanContext';
-
-// Wrap your routes with LoanProvider
-function App() {
-  return (
-    <LoanProvider>
-      {/* Your existing routes */}
-    </LoanProvider>
+    </BrowserRouter>
   );
 }
 
