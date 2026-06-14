@@ -799,7 +799,13 @@ const Financing = () => {
   // ============================================
   // STEP 5: Application Status Dashboard
   // ============================================
+    // ============================================
+  // STEP 5: Application Status Dashboard (PATIENT VIEW - No Actions)
+  // ============================================
   if (step === 5 && activeApplication) {
+    // Check if user is lender (for demo, use URL param or localStorage)
+    const isLenderMode = localStorage.getItem('lenderMode') === 'true' || window.location.search.includes('lender=true');
+    
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem 1rem' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -811,55 +817,183 @@ const Financing = () => {
               <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>ID: {activeApplication.applicationId}</span>
             </div>
             
+            {/* Status Timeline */}
             <div style={{ marginBottom: '2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <div style={{ textAlign: 'center', flex: 1 }}><div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.timeline?.submittedAt ? '#10b981' : '#e5e7eb', margin: '0 auto' }}>✓</div><p style={{ fontSize: '0.7rem', marginTop: '0.25rem' }}>Submitted</p></div>
-                <div style={{ textAlign: 'center', flex: 1 }}><div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.status === 'approved' || activeApplication.status === 'disbursed' ? '#10b981' : '#e5e7eb', margin: '0 auto' }}>{activeApplication.status === 'approved' ? '✓' : '⏳'}</div><p style={{ fontSize: '0.7rem', marginTop: '0.25rem' }}>Approved</p></div>
-                <div style={{ textAlign: 'center', flex: 1 }}><div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.status === 'disbursed' ? '#10b981' : '#e5e7eb', margin: '0 auto' }}>{activeApplication.status === 'disbursed' ? '✓' : '⏳'}</div><p style={{ fontSize: '0.7rem', marginTop: '0.25rem' }}>Disbursed</p></div>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.timeline?.submittedAt ? '#10b981' : '#e5e7eb', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.875rem' }}>
+                    {activeApplication.timeline?.submittedAt ? '✓' : '1'}
+                  </div>
+                  <p style={{ fontSize: '0.7rem', marginTop: '0.25rem', fontWeight: activeApplication.timeline?.submittedAt ? 'bold' : 'normal' }}>Submitted</p>
+                  {activeApplication.timeline?.submittedAt && <p style={{ fontSize: '0.6rem', color: '#6b7280' }}>{formatDate(activeApplication.timeline.submittedAt)}</p>}
+                </div>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.status === 'approved' || activeApplication.status === 'disbursed' ? '#10b981' : '#e5e7eb', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.875rem' }}>
+                    {activeApplication.status === 'approved' || activeApplication.status === 'disbursed' ? '✓' : '2'}
+                  </div>
+                  <p style={{ fontSize: '0.7rem', marginTop: '0.25rem', fontWeight: activeApplication.status === 'approved' || activeApplication.status === 'disbursed' ? 'bold' : 'normal' }}>Approved</p>
+                  {activeApplication.timeline?.approvedAt && <p style={{ fontSize: '0.6rem', color: '#6b7280' }}>{formatDate(activeApplication.timeline.approvedAt)}</p>}
+                </div>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.status === 'disbursed' ? '#10b981' : '#e5e7eb', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.875rem' }}>
+                    {activeApplication.status === 'disbursed' ? '✓' : '3'}
+                  </div>
+                  <p style={{ fontSize: '0.7rem', marginTop: '0.25rem', fontWeight: activeApplication.status === 'disbursed' ? 'bold' : 'normal' }}>Disbursed</p>
+                  {activeApplication.timeline?.disbursedAt && <p style={{ fontSize: '0.6rem', color: '#6b7280' }}>{formatDate(activeApplication.timeline.disbursedAt)}</p>}
+                </div>
               </div>
             </div>
             
-            <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-              <p><strong>Lender:</strong> {activeApplication.lender} ({activeApplication.lenderType})</p>
-              <p><strong>Requested Amount:</strong> ₹{(activeApplication.requestedAmount || activeApplication.amount || 0).toLocaleString()}</p>
-              {activeApplication.approvedAmount && <p><strong>Approved Amount:</strong> ₹{activeApplication.approvedAmount.toLocaleString()}</p>}
-              {activeApplication.disbursedAmount && <p><strong>Disbursed Amount:</strong> ₹{activeApplication.disbursedAmount.toLocaleString()}</p>}
-              {activeApplication.finalBillAmount && <p><strong>Final Bill:</strong> ₹{activeApplication.finalBillAmount.toLocaleString()}</p>}
-              <p><strong>EMI:</strong> ₹{activeApplication.emi}/month for {activeApplication.tenure} months</p>
-              <p><strong>Hospital:</strong> {activeApplication.hospitalName}</p>
-              <p><strong>Status:</strong> <span style={{ color: activeApplication.status === 'disbursed' ? '#10b981' : activeApplication.status === 'approved' ? '#8b5cf6' : '#f59e0b' }}>{activeApplication.status?.toUpperCase() || 'PENDING'}</span></p>
+            {/* Current Status Message */}
+            <div style={{ 
+              backgroundColor: 
+                activeApplication.status === 'disbursed' ? '#dcfce7' : 
+                activeApplication.status === 'approved' ? '#fef3c7' : 
+                activeApplication.status === 'submitted' ? '#ede9fe' : '#fee2e2',
+              padding: '1rem', 
+              borderRadius: '0.5rem', 
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <p style={{ 
+                fontSize: '1rem', 
+                fontWeight: 'bold',
+                color: 
+                  activeApplication.status === 'disbursed' ? '#166534' : 
+                  activeApplication.status === 'approved' ? '#92400e' : 
+                  activeApplication.status === 'submitted' ? '#5b21b6' : '#991b1b'
+              }}>
+                {activeApplication.status === 'disbursed' && '✅ Loan Disbursed Successfully!'}
+                {activeApplication.status === 'approved' && '👍 Loan Approved! Waiting for Disbursal'}
+                {activeApplication.status === 'submitted' && '⏳ Application Under Review'}
+                {activeApplication.status === 'document_needed' && '📄 Additional Documents Required'}
+                {activeApplication.status === 'rejected' && '❌ Application Declined'}
+                {activeApplication.status === 'excess_refund' && '💰 Final Bill Adjusted - Refund Processing'}
+              </p>
+              {activeApplication.status === 'submitted' && (
+                <p style={{ fontSize: '0.75rem', color: '#5b21b6', marginTop: '0.5rem' }}>
+                  Your application is being reviewed by {activeApplication.lender}. Expected decision: {activeApplication.lenderType === 'Secured' ? '2-3 days' : '24 hours'}
+                </p>
+              )}
+              {activeApplication.status === 'approved' && (
+                <p style={{ fontSize: '0.75rem', color: '#92400e', marginTop: '0.5rem' }}>
+                  Your loan has been approved! The amount will be disbursed to {activeApplication.hospitalName} shortly.
+                </p>
+              )}
+              {activeApplication.status === 'disbursed' && (
+                <p style={{ fontSize: '0.75rem', color: '#166534', marginTop: '0.5rem' }}>
+                  Amount of ₹{activeApplication.disbursedAmount?.toLocaleString()} has been sent to {activeApplication.hospitalName}. Your first EMI of ₹{activeApplication.emi} is due on {new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}.
+                </p>
+              )}
+              {activeApplication.status === 'document_needed' && (
+                <p style={{ fontSize: '0.75rem', color: '#92400e', marginTop: '0.5rem' }}>
+                  Please upload the requested documents within 2 days to continue processing.
+                </p>
+              )}
             </div>
             
+            {/* Application Details */}
+            <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
+              <h3 style={{ fontWeight: 'bold', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Application Details</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.875rem' }}>
+                <p><strong>Lender:</strong></p><p>{activeApplication.lender} ({activeApplication.lenderType})</p>
+                <p><strong>Requested Amount:</strong></p><p>₹{(activeApplication.requestedAmount || activeApplication.amount || 0).toLocaleString()}</p>
+                {activeApplication.approvedAmount && <><p><strong>Approved Amount:</strong></p><p>₹{activeApplication.approvedAmount.toLocaleString()}</p></>}
+                {activeApplication.disbursedAmount && <><p><strong>Disbursed Amount:</strong></p><p>₹{activeApplication.disbursedAmount.toLocaleString()}</p></>}
+                {activeApplication.finalBillAmount && <><p><strong>Final Bill:</strong></p><p>₹{activeApplication.finalBillAmount.toLocaleString()}</p></>}
+                <p><strong>EMI:</strong></p><p>₹{activeApplication.emi}/month for {activeApplication.tenure} months</p>
+                <p><strong>Interest Rate:</strong></p><p>{activeApplication.interestRate}% p.a.</p>
+                <p><strong>Hospital:</strong></p><p>{activeApplication.hospitalName}</p>
+                <p><strong>Treatment:</strong></p><p>{activeApplication.treatmentType}</p>
+                <p><strong>Application Date:</strong></p><p>{activeApplication.timeline?.submittedAt ? formatDate(activeApplication.timeline.submittedAt) : 'N/A'}</p>
+              </div>
+            </div>
+            
+            {/* Lender Requests (if any) */}
             {activeApplication.lenderRequests && activeApplication.lenderRequests.length > 0 && (
               <div style={{ backgroundColor: '#fef3c7', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📋 Lender Requests:</p>
-                {activeApplication.lenderRequests.map((req, idx) => (<p key={idx} style={{ fontSize: '0.875rem' }}>• {req.request} <span style={{ color: '#f59e0b' }}>(Pending)</span></p>))}
-              </div>
-            )}
-            
-            {notificationLog.length > 0 && (
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1rem', marginBottom: '1rem' }}>
-                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📱 Recent Notifications:</p>
-                {notificationLog.slice(0, 3).map((notif, idx) => (
-                  <div key={idx} style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-                    {notif.type === 'sms' && '📱'} {notif.type === 'email' && '📧'} {notif.type === 'whatsapp' && '💬'} {new Date(notif.sentAt).toLocaleTimeString()} - {notif.message?.substring(0, 50)}...
+                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📋 Documents Requested by Lender:</p>
+                {activeApplication.lenderRequests.map((req, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <p style={{ fontSize: '0.875rem' }}>• {req.request}</p>
+                    <button 
+                      onClick={() => alert(`Demo: Upload document - ${req.request}\nIn production, this will open file upload dialog.`)}
+                      style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontSize: '0.7rem' }}
+                    >
+                      Upload
+                    </button>
                   </div>
                 ))}
+                <p style={{ fontSize: '0.7rem', color: '#92400e', marginTop: '0.5rem' }}>⚠️ Please upload requested documents within 2 days to avoid application rejection.</p>
               </div>
             )}
             
-            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1rem', marginTop: '1rem' }}>
-              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem' }}>Demo Lender Actions (Simulate Lender):</p>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <button onClick={() => mockLenderApprove(activeApplication)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>✅ Approve Loan</button>
-                <button onClick={() => mockLenderDisburse(activeApplication)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>💰 Disburse to Hospital</button>
-                <button onClick={() => mockRequestDocument(activeApplication)} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>📄 Request Documents</button>
-                <button onClick={() => mockFinalBillAdjustment(activeApplication)} style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>🏥 Final Bill Adjustment</button>
+            {/* EMI Payment Schedule (for approved/disbursed loans) */}
+            {(activeApplication.status === 'approved' || activeApplication.status === 'disbursed') && (
+              <div style={{ backgroundColor: '#ecfdf5', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
+                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📅 EMI Payment Schedule</p>
+                <div style={{ fontSize: '0.75rem' }}>
+                  <p>• EMI Amount: <strong>₹{activeApplication.emi}/month</strong></p>
+                  <p>• Total EMIs: <strong>{activeApplication.tenure} months</strong></p>
+                  <p>• Total Payable: <strong>₹{(activeApplication.emi * activeApplication.tenure).toLocaleString()}</strong></p>
+                  <p>• Next EMI Due: <strong>{new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</strong></p>
+                </div>
               </div>
+            )}
+            
+            {/* Notification History */}
+            {notificationLog.length > 0 && (
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1rem', marginTop: '1rem' }}>
+                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📱 Notification History</p>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {notificationLog.slice(0, 5).map((notif, idx) => (
+                    <div key={idx} style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.5rem', padding: '0.25rem', borderBottom: '1px solid #e5e7eb' }}>
+                      <span>
+                        {notif.type === 'sms' && '📱'} {notif.type === 'email' && '📧'} {notif.type === 'whatsapp' && '💬'}
+                      </span>
+                      <span style={{ marginLeft: '0.5rem' }}>{new Date(notif.sentAt).toLocaleTimeString()}</span>
+                      <p style={{ marginTop: '0.25rem', wordBreak: 'break-word' }}>{notif.message?.substring(0, 100)}...</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Support Contact */}
+            <div style={{ backgroundColor: '#f3e8ff', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '1rem', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.75rem', color: '#5b21b6' }}>
+                📞 Need help? Contact our support team at <strong>+91-XXXXXXXXXX</strong> or email <strong>support@kiaetocare.com</strong>
+              </p>
             </div>
             
-            <button onClick={handleBookAnother} style={{ width: '100%', backgroundColor: '#e5e7eb', color: '#374151', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '1rem' }}>Apply Another Loan</button>
+            <button onClick={handleBookAnother} style={{ width: '100%', backgroundColor: '#e5e7eb', color: '#374151', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '1rem' }}>
+              Apply Another Loan
+            </button>
           </div>
+          
+          {/* Previous Applications */}
+          {loanHistory.length > 1 && (
+            <div style={{ marginTop: '2rem', backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem' }}>
+              <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📋 Your Other Applications</h3>
+              {loanHistory.filter(l => l.applicationId !== activeApplication.applicationId).slice(0, 2).map((loan) => (
+                <div key={loan.applicationId} style={{ borderBottom: '1px solid #e5e7eb', padding: '0.75rem 0', cursor: 'pointer' }} onClick={() => { setActiveApplication(loan); setStep(5); }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: '1.25rem', marginRight: '0.5rem' }}>{loan.lenderLogo || '🏦'}</span>
+                      <strong>{loan.lender}</strong>
+                      <p style={{ fontSize: '0.7rem', color: '#6b7280' }}>{loan.applicationId}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p>₹{(loan.requestedAmount || loan.amount || 0).toLocaleString()}</p>
+                      <p style={{ fontSize: '0.7rem', color: loan.status === 'disbursed' ? '#10b981' : loan.status === 'approved' ? '#8b5cf6' : '#f59e0b' }}>
+                        {loan.status === 'disbursed' ? '✅ Disbursed' : loan.status === 'approved' ? '👍 Approved' : loan.status || 'Pending'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
