@@ -26,6 +26,7 @@ import PackageDetail from './pages/PackageDetail';
 import SimpleCompareTest from './pages/SimpleCompareTest';
 import ProviderDashboard from './pages/ProviderDashboard';
 import AdminPanel from './pages/AdminPanel';
+import Financing from './pages/Financing';
 
 function App() {
   return (
@@ -66,6 +67,9 @@ function App() {
 	<Route path="/provider-dashboard" element={<ProviderDashboard />} />
 	<Route path="/admin-panel" element={<AdminPanel />} />
 
+        {/* HealthEMI Tag */}
+     	<Route path="/financing" element={<Financing />} />
+
         {/* Other Tags (Coming Soon) */}
         <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
         <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
@@ -76,6 +80,17 @@ function App() {
 	<Route path="/admin/upload" element={<AdminUpload />} />
       </Routes>
     </BrowserRouter> //
+  );
+}
+
+import { LoanProvider } from './context/LoanContext';
+
+// Wrap your routes with LoanProvider
+function App() {
+  return (
+    <LoanProvider>
+      {/* Your existing routes */}
+    </LoanProvider>
   );
 }
 
