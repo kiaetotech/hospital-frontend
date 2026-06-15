@@ -48,6 +48,16 @@ const Financing = () => {
   const [patientId, setPatientId] = useState(null);
   const [notificationLog, setNotificationLog] = useState([]);
   
+  // Document upload state
+  const [uploadedDocuments, setUploadedDocuments] = useState({
+    tentativeEstimate: null,
+    panCard: null,
+    aadhaarCard: null,
+    salarySlip: null,
+    bankStatement: null,
+    finalBill: null
+  });
+  
   const [formData, setFormData] = useState({
     treatmentType: '',
     hospitalName: '',
@@ -84,6 +94,21 @@ const Financing = () => {
       setNotificationLog(JSON.parse(savedNotifications));
     }
   }, []);
+
+  // ============================================
+  // FILE UPLOAD HANDLER
+  // ============================================
+  const handleFileUpload = (docType, file) => {
+    if (!file) return;
+    
+    // Create local URL for preview (in production, upload to cloud storage)
+    const fileUrl = URL.createObjectURL(file);
+    setUploadedDocuments(prev => ({
+      ...prev,
+      [docType]: { name: file.name, url: fileUrl, uploadedAt: new Date().toISOString() }
+    }));
+    alert(`${docType} uploaded: ${file.name}`);
+  };
 
   // ============================================
   // NOTIFICATION FUNCTIONS (SMS, Email, WhatsApp)
@@ -245,6 +270,7 @@ const Financing = () => {
   const handleSubmitApplication = (e) => {
     e.preventDefault();
     
+    // Validate required fields
     if (!formData.fullName || !formData.phone || !formData.pan) {
       alert('Please fill all required KYC fields');
       return;
@@ -263,6 +289,20 @@ const Financing = () => {
     }
     if (formData.selectedLender.requiresCollateral && !collateralDetails) {
       alert('Please provide collateral/mortgage details');
+      return;
+    }
+    
+    // Validate required documents
+    if (!uploadedDocuments.tentativeEstimate) {
+      alert('Please upload tentative hospital bill/estimate');
+      return;
+    }
+    if (!uploadedDocuments.panCard) {
+      alert('Please upload PAN card');
+      return;
+    }
+    if (!uploadedDocuments.aadhaarCard) {
+      alert('Please upload Aadhaar card');
       return;
     }
     
@@ -302,6 +342,7 @@ const Financing = () => {
       employmentType: employmentType,
       collateral: collateralDetails,
       requiresCollateral: formData.selectedLender.requiresCollateral,
+      documents: uploadedDocuments,
       status: 'submitted',
       timeline: {
         submittedAt: new Date().toISOString(),
@@ -333,11 +374,16 @@ const Financing = () => {
     setStep(4);
   };
 
-  const mockLenderApprove = (application) => {
+  const handleFinalBillUpload = (application, file) => {
+    if (!file) return;
+    const fileUrl = URL.createObjectURL(file);
+    setUploadedDocuments(prev => ({ ...prev, finalBill: { name: file.name, url: fileUrl, uploadedAt: new Date().toISOString() } }));
+    
     const updated = { ...application };
-    updated.status = 'approved';
-    updated.approvedAmount = application.requestedAmount;
-    updated.timeline.approvedAt = new Date().toISOString();
+    updated.documents = { ...updated.documents, finalBill: { name: file.name, url: fileUrl } };
+    updated.finalBillUploaded = true;
+    updated.status = 'pending_disbursal';
+    updated.timeline.finalBillUploadedAt = new Date().toISOString();
     
     const updatedHistory = loanHistory.map(app => 
       app.applicationId === updated.applicationId ? updated : app
@@ -346,110 +392,7 @@ const Financing = () => {
     localStorage.setItem('healthEmiHistory', JSON.stringify(updatedHistory));
     setActiveApplication(updated);
     
-    const smsMessage = `KiaetoCare: GREAT NEWS! Your loan of ₹${updated.requestedAmount.toLocaleString()} has been APPROVED by ${updated.lender}. Amount will be disbursed to ${updated.hospitalName} shortly. EMI: ₹${updated.emi}/month. - KiaetoCare`;
-    
-    const emailSubject = `Loan Approved - ${updated.applicationId}`;
-    const emailBody = `Dear ${updated.patientName},\n\nCongratulations! Your loan application has been APPROVED by ${updated.lender}.\n\n✅ Loan Details:\n- Application ID: ${updated.applicationId}\n- Approved Amount: ₹${updated.approvedAmount.toLocaleString()}\n- Tenure: ${updated.tenure} months\n- EMI: ₹${updated.emi}/month\n- Interest Rate: ${updated.interestRate}% p.a.\n\nNext Steps:\n1. The amount will be disbursed to ${updated.hospitalName}\n2. You will receive confirmation once disbursed\n3. Your EMI payments will start from next month\n\nTrack your loan: https://kiaetocare.com/my-loans\n\nThank you for choosing KiaetoCare.\n\nRegards,\nKiaetoCare Team`;
-    
-    const whatsappMessage = `✅ *LOAN APPROVED!*\n\n🎉 Congratulations ${updated.patientName}!\n\n📋 Application: ${updated.applicationId}\n💰 Amount: ₹${updated.approvedAmount.toLocaleString()}\n🏦 Lender: ${updated.lender}\n📅 EMI: ₹${updated.emi}/month for ${updated.tenure} months\n\nFunds will be sent to ${updated.hospitalName} shortly.\n\n- KiaetoCare`;
-    
-    sendAllNotifications(updated.patientPhone, updated.patientEmail, smsMessage, emailSubject, emailBody, whatsappMessage);
-    alert(`✅ Loan Approved! Notifications sent to ${updated.patientPhone}`);
-  };
-  
-  const mockLenderDisburse = (application) => {
-    if (application.status !== 'approved') {
-      alert('Please approve the loan first');
-      return;
-    }
-    
-    const updated = { ...application };
-    updated.status = 'disbursed';
-    updated.disbursedAmount = application.approvedAmount;
-    updated.timeline.disbursedAt = new Date().toISOString();
-    
-    const updatedHistory = loanHistory.map(app => 
-      app.applicationId === updated.applicationId ? updated : app
-    );
-    setLoanHistory(updatedHistory);
-    localStorage.setItem('healthEmiHistory', JSON.stringify(updatedHistory));
-    setActiveApplication(updated);
-    
-    const smsMessage = `KiaetoCare: Loan of ₹${updated.disbursedAmount.toLocaleString()} has been DISBURSED to ${updated.hospitalName}. Your first EMI of ₹${updated.emi} is due on ${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}. - KiaetoCare`;
-    
-    const emailSubject = `Loan Disbursed - ${updated.applicationId}`;
-    const emailBody = `Dear ${updated.patientName},\n\nYour loan amount of ₹${updated.disbursedAmount.toLocaleString()} has been DISBURSED to ${updated.hospitalName}.\n\n💰 Disbursal Details:\n- Application ID: ${updated.applicationId}\n- Disbursed Amount: ₹${updated.disbursedAmount.toLocaleString()}\n- First EMI Due Date: ${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}\n- EMI Amount: ₹${updated.emi}/month\n\nPlease ensure timely EMI payments to maintain a good credit score.\n\nTrack your loan: https://kiaetocare.com/my-loans\n\nRegards,\nKiaetoCare Team`;
-    
-    const whatsappMessage = `💰 *LOAN DISBURSED!*\n\n🏥 Hospital: ${updated.hospitalName}\n💵 Amount: ₹${updated.disbursedAmount.toLocaleString()}\n📅 First EMI: ₹${updated.emi} due on ${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}\n\nSet up auto-pay to avoid missing payments.\n\n- KiaetoCare`;
-    
-    sendAllNotifications(updated.patientPhone, updated.patientEmail, smsMessage, emailSubject, emailBody, whatsappMessage);
-    alert(`💰 Loan Disbursed! Notifications sent to ${updated.patientPhone}`);
-  };
-  
-  const mockRequestDocument = (application) => {
-    const docRequest = prompt('Enter document name needed (e.g., "Salary Slip", "Bank Statement", "Property Deed"):', 'Salary Slip');
-    if (!docRequest) return;
-    
-    const updated = { ...application };
-    updated.lenderRequests.push({
-      request: docRequest,
-      requestedAt: new Date().toISOString(),
-      status: 'pending'
-    });
-    updated.status = 'document_needed';
-    
-    const updatedHistory = loanHistory.map(app => 
-      app.applicationId === updated.applicationId ? updated : app
-    );
-    setLoanHistory(updatedHistory);
-    localStorage.setItem('healthEmiHistory', JSON.stringify(updatedHistory));
-    setActiveApplication(updated);
-    
-    const smsMessage = `KiaetoCare: ${updated.lender} needs additional documents: ${docRequest}. Please upload via portal within 2 days to avoid delay. - KiaetoCare`;
-    
-    const emailSubject = `Document Required - ${updated.applicationId}`;
-    const emailBody = `Dear ${updated.patientName},\n\n${updated.lender} requires the following document(s) to process your loan application:\n\n📄 Required Document: ${docRequest}\n\nPlease upload the document within 2 business days.\n\nUpload here: https://kiaetocare.com/upload/${updated.applicationId}\n\nFailure to provide documents may result in application rejection.\n\nRegards,\nKiaetoCare Team`;
-    
-    const whatsappMessage = `📄 *DOCUMENTS REQUIRED*\n\nApplication: ${updated.applicationId}\nDocument: ${docRequest}\n\nPlease upload within 2 days to continue.\n\n- KiaetoCare`;
-    
-    sendAllNotifications(updated.patientPhone, updated.patientEmail, smsMessage, emailSubject, emailBody, whatsappMessage);
-    alert(`📄 Document request sent to ${updated.patientPhone}`);
-  };
-  
-  const mockFinalBillAdjustment = (application) => {
-    if (application.status !== 'disbursed') {
-      alert('Loan must be disbursed first');
-      return;
-    }
-    
-    const finalBill = prompt('Enter final hospital bill amount (₹):', Math.round(application.disbursedAmount * 0.7));
-    if (!finalBill) return;
-    
-    const excessAmount = application.disbursedAmount - parseInt(finalBill);
-    const updated = { ...application };
-    updated.finalBillAmount = parseInt(finalBill);
-    updated.timeline.finalBillAdjustedAt = new Date().toISOString();
-    
-    if (excessAmount > 0) {
-      updated.status = 'excess_refund';
-    }
-    
-    const updatedHistory = loanHistory.map(app => 
-      app.applicationId === updated.applicationId ? updated : app
-    );
-    setLoanHistory(updatedHistory);
-    localStorage.setItem('healthEmiHistory', JSON.stringify(updatedHistory));
-    setActiveApplication(updated);
-    
-    const smsMessage = `KiaetoCare: Final hospital bill of ₹${parseInt(finalBill).toLocaleString()} received. Excess amount of ₹${excessAmount.toLocaleString()} will be refunded/reduced from loan. - KiaetoCare`;
-    
-    const emailSubject = `Final Bill Adjustment - ${updated.applicationId}`;
-    const emailBody = `Dear ${updated.patientName},\n\nFinal bill adjustment has been processed.\n\n📋 Adjustment Details:\n- Original Loan Amount: ₹${updated.disbursedAmount.toLocaleString()}\n- Final Hospital Bill: ₹${parseInt(finalBill).toLocaleString()}\n- Excess Amount: ₹${excessAmount.toLocaleString()}\n\nThe excess amount will be refunded to your bank account within 7-10 business days OR reduced from your outstanding loan balance.\n\nRegards,\nKiaetoCare Team`;
-    
-    const whatsappMessage = `🏥 *FINAL BILL ADJUSTMENT*\n\nOriginal Loan: ₹${updated.disbursedAmount.toLocaleString()}\nFinal Bill: ₹${parseInt(finalBill).toLocaleString()}\nExcess Refund: ₹${excessAmount.toLocaleString()}\n\nRefund will be processed in 7-10 days.\n\n- KiaetoCare`;
-    
-    sendAllNotifications(updated.patientPhone, updated.patientEmail, smsMessage, emailSubject, emailBody, whatsappMessage);
-    alert(`🏥 Final bill adjustment sent! Excess amount: ₹${excessAmount.toLocaleString()}`);
+    alert(`Final bill uploaded: ${file.name}\nNotified lender for disbursal.`);
   };
 
   const handleBookAnother = () => {
@@ -479,6 +422,14 @@ const Financing = () => {
     setMonthlyIncome('');
     setEmploymentType('');
     setLoanCategory('all');
+    setUploadedDocuments({
+      tentativeEstimate: null,
+      panCard: null,
+      aadhaarCard: null,
+      salarySlip: null,
+      bankStatement: null,
+      finalBill: null
+    });
     setStep(1);
   };
 
@@ -683,7 +634,7 @@ const Financing = () => {
   }
 
   // ============================================
-  // STEP 3: Complete Application (KYC + Aadhaar + Income + Collateral)
+  // STEP 3: Complete Application (KYC + Aadhaar + Income + Collateral + DOCUMENTS)
   // ============================================
   if (step === 3) {
     return (
@@ -695,6 +646,7 @@ const Financing = () => {
             <p style={{ color: '#6b7280', marginBottom: '1.5rem', fontSize: '0.875rem' }}>Lender: <strong>{formData.selectedLender?.name}</strong> • Amount: ₹{parseInt(formData.treatmentCost).toLocaleString()}{formData.selectedLender?.requiresCollateral && <span style={{ color: '#f59e0b' }}> • Collateral Required</span>}</p>
 
             <form onSubmit={handleSubmitApplication}>
+              {/* Aadhaar OTP Verification */}
               <div style={{ marginBottom: '1.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1rem' }}>
                 <h4 style={{ fontWeight: '600', marginBottom: '0.5rem' }}>📱 Aadhaar Verification (eKYC)</h4>
                 {!aadhaarVerified ? (
@@ -715,12 +667,14 @@ const Financing = () => {
                 )}
               </div>
 
+              {/* Personal Information */}
               <h3 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '1rem' }}>Personal Information</h3>
               <div style={{ marginBottom: '1rem' }}><label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Full Name (as per PAN) *</label><input type="text" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }} required /></div>
               <div style={{ marginBottom: '1rem' }}><label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>PAN Card Number *</label><input type="text" value={formData.pan} onChange={(e) => setFormData({...formData, pan: e.target.value.toUpperCase()})} placeholder="ABCDE1234F" maxLength="10" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', textTransform: 'uppercase' }} required /></div>
               <div style={{ marginBottom: '1rem' }}><label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Phone Number *</label><input type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="10-digit mobile number" maxLength="10" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }} required /></div>
               <div style={{ marginBottom: '1rem' }}><label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Email ID</label><input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }} /></div>
 
+              {/* Credit & Income Details */}
               <h3 style={{ fontWeight: '600', marginTop: '1.5rem', marginBottom: '1rem', fontSize: '1rem' }}>Credit & Income Details</h3>
               <div style={{ marginBottom: '1rem' }}><label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>CIBIL Score * (Min required: {formData.selectedLender?.minCibil})</label><input type="number" value={cibilScore} onChange={(e) => setCibilScore(e.target.value)} placeholder="Enter CIBIL score (300-900)" min="300" max="900" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }} required /></div>
 
@@ -731,6 +685,7 @@ const Financing = () => {
                 </>
               )}
 
+              {/* Collateral Section (for Secured Loans) */}
               {formData.selectedLender?.requiresCollateral && (
                 <div style={{ marginBottom: '1.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1rem' }}>
                   <h4 style={{ fontWeight: '600', marginBottom: '0.5rem' }}>🏠 Collateral / Mortgage Details</h4>
@@ -740,7 +695,47 @@ const Financing = () => {
                 </div>
               )}
 
-              <div style={{ backgroundColor: '#fef3c7', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.75rem' }}>⚡ <strong>Realistic Flow:</strong> Your application will be submitted to {formData.selectedLender?.name}. {formData.selectedLender?.requiresCollateral ? ' They will verify your collateral documents.' : ' They will verify your CIBIL score and income.'} Approval time: {formData.selectedLender?.approvalTime}</div>
+              {/* ============================================ */}
+              {/* DOCUMENT UPLOAD SECTION - NEWLY ADDED */}
+              {/* ============================================ */}
+              <h3 style={{ fontWeight: '600', marginTop: '1.5rem', marginBottom: '1rem', fontSize: '1rem' }}>📄 Required Documents</h3>
+              
+              <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', backgroundColor: '#fef3c7' }}>
+                <label style={{ fontWeight: 'bold' }}>🏥 Tentative Hospital Bill/Estimate *</label>
+                <p style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.5rem' }}>Upload the cost estimate from hospital (PDF/Image)</p>
+                <input type="file" onChange={(e) => handleFileUpload('tentativeEstimate', e.target.files[0])} accept=".pdf,.jpg,.png" />
+                {uploadedDocuments.tentativeEstimate && <p style={{ color: '#10b981', fontSize: '0.7rem', marginTop: '0.5rem' }}>✅ {uploadedDocuments.tentativeEstimate.name}</p>}
+              </div>
+
+              <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+                <label style={{ fontWeight: 'bold' }}>📇 PAN Card *</label>
+                <input type="file" onChange={(e) => handleFileUpload('panCard', e.target.files[0])} accept=".pdf,.jpg,.png" />
+                {uploadedDocuments.panCard && <p style={{ color: '#10b981', fontSize: '0.7rem', marginTop: '0.5rem' }}>✅ {uploadedDocuments.panCard.name}</p>}
+              </div>
+
+              <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+                <label style={{ fontWeight: 'bold' }}>🆔 Aadhaar Card *</label>
+                <input type="file" onChange={(e) => handleFileUpload('aadhaarCard', e.target.files[0])} accept=".pdf,.jpg,.png" />
+                {uploadedDocuments.aadhaarCard && <p style={{ color: '#10b981', fontSize: '0.7rem', marginTop: '0.5rem' }}>✅ {uploadedDocuments.aadhaarCard.name}</p>}
+              </div>
+
+              <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+                <label style={{ fontWeight: 'bold' }}>💰 Salary Slip (Last 3 months)</label>
+                <p style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.5rem' }}>Optional but recommended for faster approval</p>
+                <input type="file" onChange={(e) => handleFileUpload('salarySlip', e.target.files[0])} accept=".pdf,.jpg,.png" />
+                {uploadedDocuments.salarySlip && <p style={{ color: '#10b981', fontSize: '0.7rem', marginTop: '0.5rem' }}>✅ {uploadedDocuments.salarySlip.name}</p>}
+              </div>
+
+              <div style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+                <label style={{ fontWeight: 'bold' }}>🏦 Bank Statement (6 months)</label>
+                <p style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.5rem' }}>Optional but recommended for higher loan amounts</p>
+                <input type="file" onChange={(e) => handleFileUpload('bankStatement', e.target.files[0])} accept=".pdf" />
+                {uploadedDocuments.bankStatement && <p style={{ color: '#10b981', fontSize: '0.7rem', marginTop: '0.5rem' }}>✅ {uploadedDocuments.bankStatement.name}</p>}
+              </div>
+
+              <div style={{ backgroundColor: '#fef3c7', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.75rem' }}>
+                ⚡ <strong>Realistic Flow:</strong> Your application will be submitted to {formData.selectedLender?.name}. {formData.selectedLender?.requiresCollateral ? ' They will verify your collateral documents.' : ' They will verify your CIBIL score and income.'} Approval time: {formData.selectedLender?.approvalTime}
+              </div>
 
               <button type="submit" style={{ width: '100%', backgroundColor: '#8b5cf6', color: 'white', padding: '0.875rem', borderRadius: '0.5rem', border: 'none', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>Submit Application to Lender →</button>
             </form>
@@ -769,7 +764,11 @@ const Financing = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}><span>Lender:</span><strong>{application.lender}</strong></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}><span>Loan Amount:</span><strong>₹{(application.requestedAmount || application.amount || 0).toLocaleString()}</strong></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}><span>EMI:</span><strong>₹{application.emi}/month for {application.tenure} months</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Notifications Sent:</span><strong>SMS ✓ Email ✓ WhatsApp ✓</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Documents Uploaded:</span><strong>
+                {application.documents?.tentativeEstimate && '📄 '}
+                {application.documents?.panCard && '📇 '}
+                {application.documents?.aadhaarCard && '🆔 '}
+              </strong></div>
             </div>
 
             <div style={{ backgroundColor: '#dcfce7', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', textAlign: 'left' }}>
@@ -781,7 +780,7 @@ const Financing = () => {
 
             <div style={{ backgroundColor: '#ede9fe', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', textAlign: 'left' }}>
               <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>📋 <strong>What happens next?</strong></p>
-              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>1. {application.lender} will verify your application</p>
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>1. {application.lender} will verify your application and documents</p>
               <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>2. You will receive SMS/WhatsApp/Email updates on status change</p>
               <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>3. Upon approval, lender pays hospital directly → You pay EMI to lender</p>
             </div>
@@ -797,15 +796,9 @@ const Financing = () => {
   }
 
   // ============================================
-  // STEP 5: Application Status Dashboard
-  // ============================================
-    // ============================================
-  // STEP 5: Application Status Dashboard (PATIENT VIEW - No Actions)
+  // STEP 5: Application Status Dashboard (PATIENT VIEW - No Lender Actions)
   // ============================================
   if (step === 5 && activeApplication) {
-    // Check if user is lender (for demo, use URL param or localStorage)
-    const isLenderMode = localStorage.getItem('lenderMode') === 'true' || window.location.search.includes('lender=true');
-    
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem 1rem' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -817,34 +810,7 @@ const Financing = () => {
               <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>ID: {activeApplication.applicationId}</span>
             </div>
             
-            {/* Status Timeline */}
-            <div style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.timeline?.submittedAt ? '#10b981' : '#e5e7eb', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.875rem' }}>
-                    {activeApplication.timeline?.submittedAt ? '✓' : '1'}
-                  </div>
-                  <p style={{ fontSize: '0.7rem', marginTop: '0.25rem', fontWeight: activeApplication.timeline?.submittedAt ? 'bold' : 'normal' }}>Submitted</p>
-                  {activeApplication.timeline?.submittedAt && <p style={{ fontSize: '0.6rem', color: '#6b7280' }}>{formatDate(activeApplication.timeline.submittedAt)}</p>}
-                </div>
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.status === 'approved' || activeApplication.status === 'disbursed' ? '#10b981' : '#e5e7eb', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.875rem' }}>
-                    {activeApplication.status === 'approved' || activeApplication.status === 'disbursed' ? '✓' : '2'}
-                  </div>
-                  <p style={{ fontSize: '0.7rem', marginTop: '0.25rem', fontWeight: activeApplication.status === 'approved' || activeApplication.status === 'disbursed' ? 'bold' : 'normal' }}>Approved</p>
-                  {activeApplication.timeline?.approvedAt && <p style={{ fontSize: '0.6rem', color: '#6b7280' }}>{formatDate(activeApplication.timeline.approvedAt)}</p>}
-                </div>
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: activeApplication.status === 'disbursed' ? '#10b981' : '#e5e7eb', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.875rem' }}>
-                    {activeApplication.status === 'disbursed' ? '✓' : '3'}
-                  </div>
-                  <p style={{ fontSize: '0.7rem', marginTop: '0.25rem', fontWeight: activeApplication.status === 'disbursed' ? 'bold' : 'normal' }}>Disbursed</p>
-                  {activeApplication.timeline?.disbursedAt && <p style={{ fontSize: '0.6rem', color: '#6b7280' }}>{formatDate(activeApplication.timeline.disbursedAt)}</p>}
-                </div>
-              </div>
-            </div>
-            
-            {/* Current Status Message */}
+            {/* Status Badge */}
             <div style={{ 
               backgroundColor: 
                 activeApplication.status === 'disbursed' ? '#dcfce7' : 
@@ -867,102 +833,52 @@ const Financing = () => {
                 {activeApplication.status === 'approved' && '👍 Loan Approved! Waiting for Disbursal'}
                 {activeApplication.status === 'submitted' && '⏳ Application Under Review'}
                 {activeApplication.status === 'document_needed' && '📄 Additional Documents Required'}
-                {activeApplication.status === 'rejected' && '❌ Application Declined'}
-                {activeApplication.status === 'excess_refund' && '💰 Final Bill Adjusted - Refund Processing'}
+                {activeApplication.status === 'pending_disbursal' && '🏥 Final Bill Received - Processing Disbursal'}
               </p>
-              {activeApplication.status === 'submitted' && (
-                <p style={{ fontSize: '0.75rem', color: '#5b21b6', marginTop: '0.5rem' }}>
-                  Your application is being reviewed by {activeApplication.lender}. Expected decision: {activeApplication.lenderType === 'Secured' ? '2-3 days' : '24 hours'}
-                </p>
-              )}
-              {activeApplication.status === 'approved' && (
-                <p style={{ fontSize: '0.75rem', color: '#92400e', marginTop: '0.5rem' }}>
-                  Your loan has been approved! The amount will be disbursed to {activeApplication.hospitalName} shortly.
-                </p>
-              )}
-              {activeApplication.status === 'disbursed' && (
-                <p style={{ fontSize: '0.75rem', color: '#166534', marginTop: '0.5rem' }}>
-                  Amount of ₹{activeApplication.disbursedAmount?.toLocaleString()} has been sent to {activeApplication.hospitalName}. Your first EMI of ₹{activeApplication.emi} is due on {new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}.
-                </p>
-              )}
-              {activeApplication.status === 'document_needed' && (
-                <p style={{ fontSize: '0.75rem', color: '#92400e', marginTop: '0.5rem' }}>
-                  Please upload the requested documents within 2 days to continue processing.
-                </p>
-              )}
             </div>
             
             {/* Application Details */}
             <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
               <h3 style={{ fontWeight: 'bold', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Application Details</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.875rem' }}>
+                <p><strong>Patient ID:</strong></p><p>{activeApplication.patientId}</p>
+                <p><strong>Patient Name:</strong></p><p>{activeApplication.patientName}</p>
                 <p><strong>Lender:</strong></p><p>{activeApplication.lender} ({activeApplication.lenderType})</p>
                 <p><strong>Requested Amount:</strong></p><p>₹{(activeApplication.requestedAmount || activeApplication.amount || 0).toLocaleString()}</p>
                 {activeApplication.approvedAmount && <><p><strong>Approved Amount:</strong></p><p>₹{activeApplication.approvedAmount.toLocaleString()}</p></>}
                 {activeApplication.disbursedAmount && <><p><strong>Disbursed Amount:</strong></p><p>₹{activeApplication.disbursedAmount.toLocaleString()}</p></>}
-                {activeApplication.finalBillAmount && <><p><strong>Final Bill:</strong></p><p>₹{activeApplication.finalBillAmount.toLocaleString()}</p></>}
                 <p><strong>EMI:</strong></p><p>₹{activeApplication.emi}/month for {activeApplication.tenure} months</p>
                 <p><strong>Interest Rate:</strong></p><p>{activeApplication.interestRate}% p.a.</p>
                 <p><strong>Hospital:</strong></p><p>{activeApplication.hospitalName}</p>
                 <p><strong>Treatment:</strong></p><p>{activeApplication.treatmentType}</p>
-                <p><strong>Application Date:</strong></p><p>{activeApplication.timeline?.submittedAt ? formatDate(activeApplication.timeline.submittedAt) : 'N/A'}</p>
+                <p><strong>Submitted:</strong></p><p>{activeApplication.timeline?.submittedAt ? formatDate(activeApplication.timeline.submittedAt) : 'N/A'}</p>
               </div>
             </div>
             
-            {/* Lender Requests (if any) */}
-            {activeApplication.lenderRequests && activeApplication.lenderRequests.length > 0 && (
+            {/* Uploaded Documents Summary */}
+            <div style={{ backgroundColor: '#ecfdf5', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📄 Uploaded Documents:</p>
+              {activeApplication.documents?.tentativeEstimate && <p>✅ Tentative Estimate: {activeApplication.documents.tentativeEstimate.name}</p>}
+              {activeApplication.documents?.panCard && <p>✅ PAN Card uploaded</p>}
+              {activeApplication.documents?.aadhaarCard && <p>✅ Aadhaar Card uploaded</p>}
+              {activeApplication.documents?.salarySlip && <p>✅ Salary Slip uploaded</p>}
+              {activeApplication.documents?.bankStatement && <p>✅ Bank Statement uploaded</p>}
+            </div>
+            
+            {/* Final Bill Upload (After Treatment) */}
+            {(activeApplication.status === 'approved' || activeApplication.status === 'submitted') && !activeApplication.finalBillUploaded && (
               <div style={{ backgroundColor: '#fef3c7', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📋 Documents Requested by Lender:</p>
-                {activeApplication.lenderRequests.map((req, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <p style={{ fontSize: '0.875rem' }}>• {req.request}</p>
-                    <button 
-                      onClick={() => alert(`Demo: Upload document - ${req.request}\nIn production, this will open file upload dialog.`)}
-                      style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontSize: '0.7rem' }}
-                    >
-                      Upload
-                    </button>
-                  </div>
-                ))}
-                <p style={{ fontSize: '0.7rem', color: '#92400e', marginTop: '0.5rem' }}>⚠️ Please upload requested documents within 2 days to avoid application rejection.</p>
-              </div>
-            )}
-            
-            {/* EMI Payment Schedule (for approved/disbursed loans) */}
-            {(activeApplication.status === 'approved' || activeApplication.status === 'disbursed') && (
-              <div style={{ backgroundColor: '#ecfdf5', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📅 EMI Payment Schedule</p>
-                <div style={{ fontSize: '0.75rem' }}>
-                  <p>• EMI Amount: <strong>₹{activeApplication.emi}/month</strong></p>
-                  <p>• Total EMIs: <strong>{activeApplication.tenure} months</strong></p>
-                  <p>• Total Payable: <strong>₹{(activeApplication.emi * activeApplication.tenure).toLocaleString()}</strong></p>
-                  <p>• Next EMI Due: <strong>{new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</strong></p>
-                </div>
-              </div>
-            )}
-            
-            {/* Notification History */}
-            {notificationLog.length > 0 && (
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1rem', marginTop: '1rem' }}>
-                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📱 Notification History</p>
-                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                  {notificationLog.slice(0, 5).map((notif, idx) => (
-                    <div key={idx} style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.5rem', padding: '0.25rem', borderBottom: '1px solid #e5e7eb' }}>
-                      <span>
-                        {notif.type === 'sms' && '📱'} {notif.type === 'email' && '📧'} {notif.type === 'whatsapp' && '💬'}
-                      </span>
-                      <span style={{ marginLeft: '0.5rem' }}>{new Date(notif.sentAt).toLocaleTimeString()}</span>
-                      <p style={{ marginTop: '0.25rem', wordBreak: 'break-word' }}>{notif.message?.substring(0, 100)}...</p>
-                    </div>
-                  ))}
-                </div>
+                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>🏥 Final Hospital Bill (After Treatment)</p>
+                <p style={{ fontSize: '0.75rem', marginBottom: '0.5rem' }}>After treatment completion, upload final bill for disbursal</p>
+                <input type="file" onChange={(e) => handleFinalBillUpload(activeApplication, e.target.files[0])} accept=".pdf,.jpg,.png" />
+                {uploadedDocuments.finalBill && <p style={{ color: '#166534', fontSize: '0.7rem', marginTop: '0.5rem' }}>✅ {uploadedDocuments.finalBill.name} uploaded - Waiting for lender disbursal</p>}
               </div>
             )}
             
             {/* Support Contact */}
             <div style={{ backgroundColor: '#f3e8ff', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '1rem', textAlign: 'center' }}>
               <p style={{ fontSize: '0.75rem', color: '#5b21b6' }}>
-                📞 Need help? Contact our support team at <strong>+91-XXXXXXXXXX</strong> or email <strong>support@kiaetocare.com</strong>
+                📞 Need help? Contact support: <strong>support@kiaetocare.com</strong>
               </p>
             </div>
             
@@ -972,23 +888,14 @@ const Financing = () => {
           </div>
           
           {/* Previous Applications */}
-          {loanHistory.length > 1 && (
+          {loanHistory.filter(l => l.applicationId !== activeApplication.applicationId).length > 0 && (
             <div style={{ marginTop: '2rem', backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem' }}>
-              <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📋 Your Other Applications</h3>
+              <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Previous Applications</h3>
               {loanHistory.filter(l => l.applicationId !== activeApplication.applicationId).slice(0, 2).map((loan) => (
                 <div key={loan.applicationId} style={{ borderBottom: '1px solid #e5e7eb', padding: '0.75rem 0', cursor: 'pointer' }} onClick={() => { setActiveApplication(loan); setStep(5); }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ fontSize: '1.25rem', marginRight: '0.5rem' }}>{loan.lenderLogo || '🏦'}</span>
-                      <strong>{loan.lender}</strong>
-                      <p style={{ fontSize: '0.7rem', color: '#6b7280' }}>{loan.applicationId}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p>₹{(loan.requestedAmount || loan.amount || 0).toLocaleString()}</p>
-                      <p style={{ fontSize: '0.7rem', color: loan.status === 'disbursed' ? '#10b981' : loan.status === 'approved' ? '#8b5cf6' : '#f59e0b' }}>
-                        {loan.status === 'disbursed' ? '✅ Disbursed' : loan.status === 'approved' ? '👍 Approved' : loan.status || 'Pending'}
-                      </p>
-                    </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div><strong>{loan.lender}</strong><p style={{ fontSize: '0.7rem' }}>{loan.applicationId}</p></div>
+                    <div>₹{(loan.requestedAmount || loan.amount || 0).toLocaleString()}<p style={{ fontSize: '0.7rem', color: loan.status === 'disbursed' ? '#10b981' : '#f59e0b' }}>{loan.status}</p></div>
                   </div>
                 </div>
               ))}
