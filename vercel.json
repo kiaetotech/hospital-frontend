@@ -1,5 +1,16 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' https://hospital-backend-production-8de3.up.railway.app; connect-src 'self' https://hospital-backend-production-8de3.up.railway.app; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;"
+        }
+      ]
+    }
   ]
 }
