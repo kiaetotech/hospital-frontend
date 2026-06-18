@@ -88,6 +88,18 @@ export const lenderAuth = {
   deleteBranch: (branchId) => loanApi.delete(`/lender/branches/${branchId}`)
 };
 
+// Upload documents with FormData
+uploadDocuments: (applicationId, formData) => {
+  const token = localStorage.getItem('patientToken');
+  return fetch(`${API_URL}/api/loan/patient/applications/${applicationId}/upload-documents`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+}
+
 // ============================================
 // LENDER DASHBOARD
 // ============================================

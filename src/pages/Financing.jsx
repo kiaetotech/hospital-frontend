@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { patientAuth, patientLoans } from '../services/loanApi';
 
+// ============================================
+// API URL for Cloudinary upload
+// ============================================
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-8de3.up.railway.app';
+
 const Financing = () => {
   const navigate = useNavigate();
 
@@ -56,7 +61,7 @@ const Financing = () => {
   // API lenders
   const [availableLenders, setAvailableLenders] = useState([]);
   
-  // Document upload state
+  // Document upload state - stores file objects for Cloudinary upload
   const [uploadedDocuments, setUploadedDocuments] = useState({
     tentativeEstimate: null,
     panCard: null,
@@ -138,14 +143,18 @@ const Financing = () => {
   };
 
   // ============================================
-  // FILE UPLOAD HANDLER
+  // FILE UPLOAD HANDLER - Saves file object for Cloudinary
   // ============================================
   const handleFileUpload = (docType, file) => {
     if (!file) return;
-    const fileUrl = URL.createObjectURL(file);
+    // Store the actual file object for Cloudinary upload
     setUploadedDocuments(prev => ({
       ...prev,
-      [docType]: { name: file.name, url: fileUrl, uploadedAt: new Date().toISOString() }
+      [docType]: { 
+        file: file,
+        name: file.name,
+        uploadedAt: new Date().toISOString()
+      }
     }));
     alert(`${docType} uploaded: ${file.name}`);
   };
@@ -355,9 +364,13 @@ const Financing = () => {
     setStep(5);
   };
 
+  // ============================================
+  // SUBMIT APPLICATION WITH CLOUDINARY UPLOAD
+  // ============================================
   const handleSubmitApplication = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
     if (!formData.fullName || !formData.phone || !formData.pan) {
       alert('Please fill all required KYC fields');
       return;
@@ -392,20 +405,15 @@ const Financing = () => {
     }
     
     setLoading(true);
+    
     try {
+      // Step 1: Create the application
       const applicationData = {
         treatmentType: formData.treatmentType,
         hospitalName: formData.hospitalName,
         estimatedAmount: parseInt(formData.treatmentCost),
         lenderId: formData.selectedLender._id || formData.selectedLender.id,
         tenure: formData.selectedTenure,
-        documents: {
-          tentativeEstimate: uploadedDocuments.tentativeEstimate?.url,
-          panCard: uploadedDocuments.panCard?.url,
-          aadhaarCard: uploadedDocuments.aadhaarCard?.url,
-          salarySlip: uploadedDocuments.salarySlip?.url,
-          bankStatement: uploadedDocuments.bankStatement?.url
-        },
         collateral: collateralDetails,
         patientLocation: {
           pincode: userPincode,
@@ -416,15 +424,54 @@ const Financing = () => {
       };
       
       const response = await patientLoans.submitApplication(applicationData);
-      if (response.data.success) {
-        const smsMessage = `KiaetoCare: Loan application ${response.data.applicationId} submitted to ${formData.selectedLender.name}. Track status: https://kiaetocare.com/my-loans. - KiaetoCare`;
-        const emailSubject = `Loan Application Submitted - ${response.data.applicationId}`;
-        const emailBody = `Dear ${formData.fullName},\n\nYour loan application has been submitted.\n\nApplication ID: ${response.data.applicationId}\nAmount: ₹${parseInt(formData.treatmentCost).toLocaleString()}\nLender: ${formData.selectedLender.name}\n\nTrack: https://kiaetocare.com/my-loans\n\nRegards,\nKiaetoCare Team`;
-        sendAllNotifications(formData.phone, formData.email, smsMessage, emailSubject, emailBody, null);
-        alert(`Application Submitted!\nApplication ID: ${response.data.applicationId}\nAssigned to: ${response.data.assignedBranch?.branchName || 'Lender'}`);
-        fetchLoanHistory();
-        setStep(7);
+      const applicationId = response.data.applicationId;
+      
+      // Step 2: Upload documents to Cloudinary
+      const formDataObj = new FormData();
+      
+      // Append each uploaded document
+      const docTypes = ['tentativeEstimate', 'panCard', 'aadhaarCard', 'salarySlip', 'bankStatement'];
+      let hasDocuments = false;
+      
+      for (const docType of docTypes) {
+        if (uploadedDocuments[docType] && uploadedDocuments[docType].file) {
+          formDataObj.append(docType, uploadedDocuments[docType].file);
+          hasDocuments = true;
+        }
       }
+      
+      if (hasDocuments) {
+        const token = localStorage.getItem('patientToken');
+        const uploadResponse = await fetch(
+          `${API_URL}/api/loan/patient/applications/${applicationId}/upload-documents`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formDataObj
+          }
+        );
+        
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.warn('Document upload warning:', errorText);
+        } else {
+          const uploadResult = await uploadResponse.json();
+          console.log('Documents uploaded:', uploadResult);
+        }
+      }
+      
+      // Step 3: Send notifications
+      const smsMessage = `KiaetoCare: Loan application ${applicationId} submitted to ${formData.selectedLender.name}. Track status: https://kiaetocare.com/my-loans. - KiaetoCare`;
+      const emailSubject = `Loan Application Submitted - ${applicationId}`;
+      const emailBody = `Dear ${formData.fullName},\n\nYour loan application has been submitted.\n\nApplication ID: ${applicationId}\nAmount: ₹${parseInt(formData.treatmentCost).toLocaleString()}\nLender: ${formData.selectedLender.name}\n\nTrack: https://kiaetocare.com/my-loans\n\nRegards,\nKiaetoCare Team`;
+      sendAllNotifications(formData.phone, formData.email, smsMessage, emailSubject, emailBody, null);
+      
+      alert(`✅ Application Submitted!\nApplication ID: ${applicationId}\nAssigned to: ${response.data.assignedBranch?.branchName || 'Lender'}`);
+      fetchLoanHistory();
+      setStep(7);
+      
     } catch (error) {
       console.error('Submission failed:', error);
       alert(error.response?.data?.error || 'Failed to submit application');
@@ -437,11 +484,36 @@ const Financing = () => {
     if (!file) return;
     setLoading(true);
     try {
-      const fileUrl = URL.createObjectURL(file);
-      await patientLoans.uploadFinalBill(application.applicationId, fileUrl, null, null);
-      alert(`Final bill uploaded. Lender will process disbursal.`);
+      // Upload final bill to Cloudinary first
+      const formDataObj = new FormData();
+      formDataObj.append('finalBill', file);
+      
+      const token = localStorage.getItem('patientToken');
+      const uploadResponse = await fetch(
+        `${API_URL}/api/loan/patient/applications/${application.applicationId}/upload-documents`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formDataObj
+        }
+      );
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload final bill');
+      }
+      
+      const result = await uploadResponse.json();
+      const finalBillUrl = result.documents?.finalBill;
+      
+      // Update application with final bill
+      await patientLoans.uploadFinalBill(application.applicationId, finalBillUrl, null, null);
+      
+      alert(`✅ Final bill uploaded successfully. Lender will process disbursal.`);
       fetchLoanHistory();
     } catch (error) {
+      console.error('Final bill upload failed:', error);
       alert('Failed to upload final bill');
     } finally {
       setLoading(false);
