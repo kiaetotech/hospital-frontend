@@ -36,6 +36,31 @@ export const getPanchakarmaCenterById = (id) => {
   return safeApiCall(api.get(`/ayurveda/centers/${id}`));
 };
 
+// 🆕 ADVANCED SEARCH ENDPOINTS
+
+export const searchDoctors = (params) => {
+  return api.get('/ayurveda/search', { params });
+};
+
+export const getNearbyDoctors = (lat, lng, radius = 10) => {
+  return api.get('/ayurveda/nearby', { 
+    params: { lat, lng, radius } 
+  });
+};
+
+export const getRecommendedDoctors = (lat, lng, symptoms, patientDosha) => {
+  return api.get('/ayurveda/recommend', { 
+    params: { lat, lng, symptoms, patientDosha } 
+  });
+};
+
+// Get doctor's available slots with real-time updates
+export const getDoctorSlots = (doctorId, date) => {
+  return api.get(`/ayurveda/doctors/${doctorId}/slots`, { 
+    params: { date } 
+  });
+};
+
 export const bookAyurvedaConsultation = (bookingData) => {
   return api.post('/ayurveda/bookings', bookingData);
 };
