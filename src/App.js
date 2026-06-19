@@ -34,10 +34,14 @@ import Financing from './pages/Financing';
 import AyurvedaHub from './pages/ayurveda/AyurvedaHub';
 import AyurvedaDoctors from './pages/ayurveda/AyurvedaDoctors';
 import AyurvedaDoctorProfile from './pages/ayurveda/AyurvedaDoctorProfile';
+import AyurvedaAdvancedSearch from './pages/ayurveda/AyurvedaAdvancedSearch';
 import PanchakarmaCenters from './pages/ayurveda/PanchakarmaCenters';
 import PanchakarmaCenterDetail from './pages/ayurveda/PanchakarmaCenterDetail';
+import BookPanchakarmaPackage from './pages/ayurveda/BookPanchakarmaPackage';
 import PrakritiQuiz from './pages/ayurveda/PrakritiQuiz';
 import BookAyurvedaConsult from './pages/ayurveda/BookAyurvedaConsult';
+import AyurvedaPayment from './pages/ayurveda/AyurvedaPayment';
+import AyurvedaBookingConfirmation from './pages/ayurveda/AyurvedaBookingConfirmation';
 
 // ============================================
 // LENDER PORTAL IMPORTS
@@ -92,15 +96,19 @@ function App() {
           <Route path="/ambulance" element={<Ambulance />} />
 
           {/* ============================================
-              AYURVEDA & WELLNESS HUB TAG (NEW)
+              AYURVEDA & WELLNESS HUB TAG (ADVANCED)
           ============================================ */}
           <Route path="/ayurveda" element={<AyurvedaHub />} />
+          <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
           <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
           <Route path="/ayurveda/doctor/:id" element={<AyurvedaDoctorProfile />} />
           <Route path="/ayurveda/centers" element={<PanchakarmaCenters />} />
           <Route path="/ayurveda/center/:id" element={<PanchakarmaCenterDetail />} />
+          <Route path="/ayurveda/center/:centerId/book/:packageId" element={<BookPanchakarmaPackage />} />
           <Route path="/ayurveda/prakriti" element={<PrakritiQuiz />} />
           <Route path="/ayurveda/book/:doctorId" element={<BookAyurvedaConsult />} />
+          <Route path="/ayurveda/payment/:bookingType/:bookingId" element={<AyurvedaPayment />} />
+          <Route path="/ayurveda/confirmation/:bookingId" element={<AyurvedaBookingConfirmation />} />
 
           {/* ============================================
               CAREGIVER TAG
