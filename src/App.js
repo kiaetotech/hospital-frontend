@@ -43,6 +43,7 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminVerifyLenders from './pages/admin/AdminVerifyLenders';
 import AdminCommission from './pages/admin/AdminCommission';
+import AdminDiscounts from './pages/admin/AdminDiscounts';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -121,6 +122,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
           <Route path="/admin/commission" element={<AdminCommission />} />
+	  <Route path="/admin/discounts" element={<AdminDiscounts />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
