@@ -42,6 +42,7 @@ import PrakritiQuiz from './pages/ayurveda/PrakritiQuiz';
 import BookAyurvedaConsult from './pages/ayurveda/BookAyurvedaConsult';
 import AyurvedaPayment from './pages/ayurveda/AyurvedaPayment';
 import AyurvedaBookingConfirmation from './pages/ayurveda/AyurvedaBookingConfirmation';
+import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
 
 // ============================================
 // LENDER PORTAL IMPORTS
@@ -153,6 +154,7 @@ function App() {
           <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
           <Route path="/admin/commission" element={<AdminCommission />} />
           <Route path="/admin/discounts" element={<AdminDiscounts />} />
+	  <Route path="/admin/ayurveda" element={<AyurvedaAdminPanel />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
