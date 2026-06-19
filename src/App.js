@@ -29,6 +29,17 @@ import AdminPanel from './pages/AdminPanel';
 import Financing from './pages/Financing';
 
 // ============================================
+// AYURVEDA MODULE IMPORTS
+// ============================================
+import AyurvedaHub from './pages/ayurveda/AyurvedaHub';
+import AyurvedaDoctors from './pages/ayurveda/AyurvedaDoctors';
+import AyurvedaDoctorProfile from './pages/ayurveda/AyurvedaDoctorProfile';
+import PanchakarmaCenters from './pages/ayurveda/PanchakarmaCenters';
+import PanchakarmaCenterDetail from './pages/ayurveda/PanchakarmaCenterDetail';
+import PrakritiQuiz from './pages/ayurveda/PrakritiQuiz';
+import BookAyurvedaConsult from './pages/ayurveda/BookAyurvedaConsult';
+
+// ============================================
 // LENDER PORTAL IMPORTS
 // ============================================
 import LenderLogin from './pages/lender/LenderLogin';
@@ -56,7 +67,7 @@ function App() {
       <LenderProvider>
         <Routes>
           {/* ============================================
-              MAIN PAGES
+              MAIN PAGE
           ============================================ */}
           <Route path="/" element={<HomePage />} />
           
@@ -79,6 +90,17 @@ function App() {
               AMBULANCE TAG
           ============================================ */}
           <Route path="/ambulance" element={<Ambulance />} />
+
+          {/* ============================================
+              AYURVEDA & WELLNESS HUB TAG (NEW)
+          ============================================ */}
+          <Route path="/ayurveda" element={<AyurvedaHub />} />
+          <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
+          <Route path="/ayurveda/doctor/:id" element={<AyurvedaDoctorProfile />} />
+          <Route path="/ayurveda/centers" element={<PanchakarmaCenters />} />
+          <Route path="/ayurveda/center/:id" element={<PanchakarmaCenterDetail />} />
+          <Route path="/ayurveda/prakriti" element={<PrakritiQuiz />} />
+          <Route path="/ayurveda/book/:doctorId" element={<BookAyurvedaConsult />} />
 
           {/* ============================================
               CAREGIVER TAG
@@ -122,14 +144,13 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
           <Route path="/admin/commission" element={<AdminCommission />} />
-	  <Route path="/admin/discounts" element={<AdminDiscounts />} />
+          <Route path="/admin/discounts" element={<AdminDiscounts />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
           ============================================ */}
           <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
           <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
-          <Route path="/preventive" element={<ComingSoon title="Preventive Checkups" />} />
           <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
           <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
           <Route path="/admin/upload" element={<AdminUpload />} />
