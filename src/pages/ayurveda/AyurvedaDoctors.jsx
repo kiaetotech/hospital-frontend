@@ -9,24 +9,28 @@ const AyurvedaDoctors = () => {
   const [filters, setFilters] = useState({
     specialization: '',
     experience: '',
-    language: '',
     available: false
   });
+
+  // Dummy data for fallback
+  const dummyDoctors = [
+    { _id: 'AYD001', name: 'Dr. Rajesh Sharma', specialization: 'Panchakarma', experience: 15, languages: ['Hindi', 'English'], rating: 4.8, consultationFee: 500, availableSlots: ['10:00 AM', '2:00 PM'], city: 'Mumbai', available: true },
+    { _id: 'AYD002', name: 'Dr. Priya Gupta', specialization: 'General Ayurveda', experience: 12, languages: ['Hindi', 'English', 'Marathi'], rating: 4.9, consultationFee: 400, availableSlots: ['11:00 AM', '4:00 PM'], city: 'Pune', available: true },
+    { _id: 'AYD003', name: 'Dr. Amit Verma', specialization: 'Kerala Ayurveda', experience: 20, languages: ['English', 'Malayalam'], rating: 4.7, consultationFee: 600, availableSlots: ['9:00 AM'], city: 'Kochi', available: false },
+    { _id: 'AYD004', name: 'Dr. Sunita Reddy', specialization: 'Ayurvedic Dermatology', experience: 10, languages: ['Telugu', 'English'], rating: 4.6, consultationFee: 350, availableSlots: ['3:00 PM', '5:00 PM'], city: 'Hyderabad', available: true },
+    { _id: 'AYD005', name: 'Dr. Karan Patel', specialization: 'Panchakarma', experience: 8, languages: ['Gujarati', 'Hindi', 'English'], rating: 4.5, consultationFee: 450, availableSlots: ['12:00 PM'], city: 'Ahmedabad', available: true },
+  ];
 
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         const response = await getAyurvedaDoctors(filters);
-        setDoctors(response.data || []);
+        const doctorsData = response.data?.data || response.data || [];
+        const doctorsArray = Array.isArray(doctorsData) ? doctorsData : dummyDoctors;
+        setDoctors(doctorsArray);
       } catch (error) {
-        // Dummy data
-        setDoctors([
-          { _id: 'AYD001', name: 'Dr. Rajesh Sharma', specialization: 'Panchakarma', experience: 15, languages: ['Hindi', 'English'], rating: 4.8, consultationFee: 500, availableSlots: ['10:00 AM', '2:00 PM'], city: 'Mumbai' },
-          { _id: 'AYD002', name: 'Dr. Priya Gupta', specialization: 'General Ayurveda', experience: 12, languages: ['Hindi', 'English', 'Marathi'], rating: 4.9, consultationFee: 400, availableSlots: ['11:00 AM', '4:00 PM'], city: 'Pune' },
-          { _id: 'AYD003', name: 'Dr. Amit Verma', specialization: 'Kerala Ayurveda', experience: 20, languages: ['English', 'Malayalam'], rating: 4.7, consultationFee: 600, availableSlots: ['9:00 AM'], city: 'Kochi' },
-          { _id: 'AYD004', name: 'Dr. Sunita Reddy', specialization: 'Ayurvedic Dermatology', experience: 10, languages: ['Telugu', 'English'], rating: 4.6, consultationFee: 350, availableSlots: ['3:00 PM', '5:00 PM'], city: 'Hyderabad' },
-          { _id: 'AYD005', name: 'Dr. Karan Patel', specialization: 'Panchakarma', experience: 8, languages: ['Gujarati', 'Hindi', 'English'], rating: 4.5, consultationFee: 450, availableSlots: ['12:00 PM'], city: 'Ahmedabad' },
-        ]);
+        console.log('Using dummy doctors data');
+        setDoctors(dummyDoctors);
       } finally {
         setLoading(false);
       }
@@ -55,6 +59,7 @@ const AyurvedaDoctors = () => {
       }}>
         <select 
           style={filterStyle}
+          value={filters.specialization}
           onChange={(e) => setFilters({...filters, specialization: e.target.value})}
         >
           <option value="">All Specializations</option>
@@ -65,6 +70,7 @@ const AyurvedaDoctors = () => {
         
         <select 
           style={filterStyle}
+          value={filters.experience}
           onChange={(e) => setFilters({...filters, experience: e.target.value})}
         >
           <option value="">Experience</option>
@@ -86,6 +92,8 @@ const AyurvedaDoctors = () => {
       {/* Doctor List */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem' }}>Loading doctors...</div>
+      ) : doctors.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem' }}>No doctors found matching your criteria.</div>
       ) : (
         <div style={{ display: 'grid', gap: '1rem' }}>
           {doctors.map(doctor => (
@@ -125,7 +133,7 @@ const AyurvedaDoctors = () => {
                     📅 {doctor.experience} years exp. | 📍 {doctor.city}
                   </p>
                   <p style={{ color: '#64748b', fontSize: '0.85rem' }}>
-                    🗣️ {doctor.languages.join(', ')}
+                    🗣️ {doctor.languages?.join(', ') || 'Multiple languages'}
                   </p>
                 </div>
               </div>

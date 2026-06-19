@@ -11,8 +11,13 @@ const AyurvedaHub = () => {
     const fetchDoctors = async () => {
       try {
         const response = await getFeaturedDoctors();
-        setFeaturedDoctors(response.data || []);
+        // FIX: Handle different response structures
+        const doctorsData = response.data?.data || response.data || [];
+        // Ensure it's an array
+        const doctorsArray = Array.isArray(doctorsData) ? doctorsData : [];
+        setFeaturedDoctors(doctorsArray);
       } catch (error) {
+        console.log('Using dummy data - API not reachable');
         // Use dummy data if API fails
         setFeaturedDoctors([
           { _id: 'AYD001', name: 'Dr. Rajesh Sharma', specialization: 'Panchakarma Specialist', experience: '15 years', rating: 4.8, consultationFee: 500, available: true },
