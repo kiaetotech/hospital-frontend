@@ -46,7 +46,18 @@ import WellnessCenterRegistration from './pages/ayurveda/WellnessCenterRegistrat
 import WellnessCenterLogin from './pages/ayurveda/WellnessCenterLogin';
 import WellnessCenterDashboard from './pages/ayurveda/WellnessCenterDashboard';
 import PatientReview from './pages/ayurveda/PatientReview';
-import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
+import DoctorRegistration from './pages/ayurveda/DoctorRegistration';
+import DoctorLogin from './pages/ayurveda/DoctorLogin';
+import DoctorDashboard from './pages/ayurveda/DoctorDashboard';
+import WritePrescription from './pages/ayurveda/WritePrescription';
+import ViewPrescription from './pages/ayurveda/ViewPrescription';
+
+// ============================================
+// LEGAL PAGES
+// ============================================
+import TermsAndConditions from './pages/TermsAndConditions';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import RefundPolicy from './pages/RefundPolicy';
 
 // ============================================
 // LENDER PORTAL IMPORTS
@@ -65,8 +76,7 @@ import AdminVerifyLenders from './pages/admin/AdminVerifyLenders';
 import AdminCommission from './pages/admin/AdminCommission';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
-import WritePrescription from './pages/ayurveda/WritePrescription';
-import ViewPrescription from './pages/ayurveda/ViewPrescription';
+import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -107,23 +117,32 @@ function App() {
               AYURVEDA & WELLNESS HUB TAG (ADVANCED)
           ============================================ */}
           <Route path="/ayurveda" element={<AyurvedaHub />} />
-	  <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
-	  <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
-	  <Route path="/ayurveda/doctor/:id" element={<AyurvedaDoctorProfile />} />
-	  <Route path="/ayurveda/centers" element={<PanchakarmaCenters />} />
-	  <Route path="/ayurveda/center/:id" element={<PanchakarmaCenterDetail />} />
-	  <Route path="/ayurveda/center/:centerId/book/:packageId" element={<BookPanchakarmaPackage />} />
-	  <Route path="/ayurveda/prakriti" element={<PrakritiQuiz />} />
-	  <Route path="/ayurveda/book/:doctorId" element={<BookAyurvedaConsult />} />
-	  <Route path="/ayurveda/payment/:bookingType/:bookingId" element={<AyurvedaPayment />} />
-	  <Route path="/ayurveda/confirmation/:bookingId" element={<AyurvedaBookingConfirmation />} />
-	  <Route path="/ayurveda/center/register" element={<WellnessCenterRegistration />} />
-	  <Route path="/ayurveda/center/login" element={<WellnessCenterLogin />} />
-	  <Route path="/ayurveda/center/dashboard" element={<WellnessCenterDashboard />} />
-	  <Route path="/ayurveda/review/:bookingId" element={<PatientReview />} />
-	  <Route path="/admin/finance" element={<AdminFinancialDashboard />} />
-	  <Route path="/ayurveda/prescription/write/:bookingId" element={<WritePrescription />} />
-	  <Route path="/ayurveda/prescription/:prescriptionId" element={<ViewPrescription />} />
+          <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
+          <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
+          <Route path="/ayurveda/doctor/:id" element={<AyurvedaDoctorProfile />} />
+          <Route path="/ayurveda/centers" element={<PanchakarmaCenters />} />
+          <Route path="/ayurveda/center/:id" element={<PanchakarmaCenterDetail />} />
+          <Route path="/ayurveda/center/:centerId/book/:packageId" element={<BookPanchakarmaPackage />} />
+          <Route path="/ayurveda/prakriti" element={<PrakritiQuiz />} />
+          <Route path="/ayurveda/book/:doctorId" element={<BookAyurvedaConsult />} />
+          <Route path="/ayurveda/payment/:bookingType/:bookingId" element={<AyurvedaPayment />} />
+          <Route path="/ayurveda/confirmation/:bookingId" element={<AyurvedaBookingConfirmation />} />
+          <Route path="/ayurveda/center/register" element={<WellnessCenterRegistration />} />
+          <Route path="/ayurveda/center/login" element={<WellnessCenterLogin />} />
+          <Route path="/ayurveda/center/dashboard" element={<WellnessCenterDashboard />} />
+          <Route path="/ayurveda/review/:bookingId" element={<PatientReview />} />
+          <Route path="/ayurveda/doctor/register" element={<DoctorRegistration />} />
+          <Route path="/ayurveda/doctor/login" element={<DoctorLogin />} />
+          <Route path="/ayurveda/doctor/dashboard" element={<DoctorDashboard />} />
+          <Route path="/ayurveda/prescription/write/:bookingId" element={<WritePrescription />} />
+          <Route path="/ayurveda/prescription/:prescriptionId" element={<ViewPrescription />} />
+
+          {/* ============================================
+              LEGAL PAGES
+          ============================================ */}
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/refund" element={<RefundPolicy />} />
 
           {/* ============================================
               CAREGIVER TAG
@@ -164,11 +183,12 @@ function App() {
               ADMIN PANEL ROUTES
           ============================================ */}
           <Route path="/admin/login" element={<AdminLogin />} />
-	  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-	  <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
-	  <Route path="/admin/commission" element={<AdminCommission />} />
-	  <Route path="/admin/discounts" element={<AdminDiscounts />} />
-	  <Route path="/admin/ayurveda" element={<AyurvedaAdminPanel />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
+          <Route path="/admin/commission" element={<AdminCommission />} />
+          <Route path="/admin/discounts" element={<AdminDiscounts />} />
+          <Route path="/admin/ayurveda" element={<AyurvedaAdminPanel />} />
+          <Route path="/admin/finance" element={<AdminFinancialDashboard />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
