@@ -45,6 +45,8 @@ import AyurvedaBookingConfirmation from './pages/ayurveda/AyurvedaBookingConfirm
 import WellnessCenterRegistration from './pages/ayurveda/WellnessCenterRegistration';
 import WellnessCenterLogin from './pages/ayurveda/WellnessCenterLogin';
 import WellnessCenterDashboard from './pages/ayurveda/WellnessCenterDashboard';
+import PatientReview from './pages/ayurveda/PatientReview';
+import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
 
 // ============================================
 // LENDER PORTAL IMPORTS
@@ -116,6 +118,8 @@ function App() {
 	  <Route path="/ayurveda/center/register" element={<WellnessCenterRegistration />} />
 	  <Route path="/ayurveda/center/login" element={<WellnessCenterLogin />} />
 	  <Route path="/ayurveda/center/dashboard" element={<WellnessCenterDashboard />} />
+	  <Route path="/ayurveda/review/:bookingId" element={<PatientReview />} />
+	  <Route path="/admin/finance" element={<AdminFinancialDashboard />} />
 
           {/* ============================================
               CAREGIVER TAG
