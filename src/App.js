@@ -65,6 +65,8 @@ import AdminVerifyLenders from './pages/admin/AdminVerifyLenders';
 import AdminCommission from './pages/admin/AdminCommission';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
+import WritePrescription from './pages/ayurveda/WritePrescription';
+import ViewPrescription from './pages/ayurveda/ViewPrescription';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -120,6 +122,8 @@ function App() {
 	  <Route path="/ayurveda/center/dashboard" element={<WellnessCenterDashboard />} />
 	  <Route path="/ayurveda/review/:bookingId" element={<PatientReview />} />
 	  <Route path="/admin/finance" element={<AdminFinancialDashboard />} />
+	  <Route path="/ayurveda/prescription/write/:bookingId" element={<WritePrescription />} />
+	  <Route path="/ayurveda/prescription/:prescriptionId" element={<ViewPrescription />} />
 
           {/* ============================================
               CAREGIVER TAG
