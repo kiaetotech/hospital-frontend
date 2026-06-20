@@ -42,7 +42,6 @@ import PrakritiQuiz from './pages/ayurveda/PrakritiQuiz';
 import BookAyurvedaConsult from './pages/ayurveda/BookAyurvedaConsult';
 import AyurvedaPayment from './pages/ayurveda/AyurvedaPayment';
 import AyurvedaBookingConfirmation from './pages/ayurveda/AyurvedaBookingConfirmation';
-import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
 import WellnessCenterRegistration from './pages/ayurveda/WellnessCenterRegistration';
 import WellnessCenterLogin from './pages/ayurveda/WellnessCenterLogin';
 import WellnessCenterDashboard from './pages/ayurveda/WellnessCenterDashboard';
@@ -63,6 +62,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminVerifyLenders from './pages/admin/AdminVerifyLenders';
 import AdminCommission from './pages/admin/AdminCommission';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
+import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -103,18 +103,17 @@ function App() {
               AYURVEDA & WELLNESS HUB TAG (ADVANCED)
           ============================================ */}
           <Route path="/ayurveda" element={<AyurvedaHub />} />
-          <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
-          <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
-          <Route path="/ayurveda/doctor/:id" element={<AyurvedaDoctorProfile />} />
-          <Route path="/ayurveda/centers" element={<PanchakarmaCenters />} />
-          <Route path="/ayurveda/center/:id" element={<PanchakarmaCenterDetail />} />
-          <Route path="/ayurveda/center/:centerId/book/:packageId" element={<BookPanchakarmaPackage />} />
-          <Route path="/ayurveda/prakriti" element={<PrakritiQuiz />} />
-          <Route path="/ayurveda/book/:doctorId" element={<BookAyurvedaConsult />} />
-          <Route path="/ayurveda/payment/:bookingType/:bookingId" element={<AyurvedaPayment />} />
-          <Route path="/ayurveda/confirmation/:bookingId" element={<AyurvedaBookingConfirmation />} />
+	  <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
+	  <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
+	  <Route path="/ayurveda/doctor/:id" element={<AyurvedaDoctorProfile />} />
+	  <Route path="/ayurveda/centers" element={<PanchakarmaCenters />} />
+	  <Route path="/ayurveda/center/:id" element={<PanchakarmaCenterDetail />} />
+	  <Route path="/ayurveda/center/:centerId/book/:packageId" element={<BookPanchakarmaPackage />} />
+	  <Route path="/ayurveda/prakriti" element={<PrakritiQuiz />} />
+	  <Route path="/ayurveda/book/:doctorId" element={<BookAyurvedaConsult />} />
+	  <Route path="/ayurveda/payment/:bookingType/:bookingId" element={<AyurvedaPayment />} />
+	  <Route path="/ayurveda/confirmation/:bookingId" element={<AyurvedaBookingConfirmation />} />
 	  <Route path="/ayurveda/center/register" element={<WellnessCenterRegistration />} />
-	  <Route path="/ayurveda/center/login" element={<ComingSoon title="Center Login" />} />
 	  <Route path="/ayurveda/center/login" element={<WellnessCenterLogin />} />
 	  <Route path="/ayurveda/center/dashboard" element={<WellnessCenterDashboard />} />
 
@@ -157,10 +156,10 @@ function App() {
               ADMIN PANEL ROUTES
           ============================================ */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
-          <Route path="/admin/commission" element={<AdminCommission />} />
-          <Route path="/admin/discounts" element={<AdminDiscounts />} />
+	  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+	  <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
+	  <Route path="/admin/commission" element={<AdminCommission />} />
+	  <Route path="/admin/discounts" element={<AdminDiscounts />} />
 	  <Route path="/admin/ayurveda" element={<AyurvedaAdminPanel />} />
 
           {/* ============================================
