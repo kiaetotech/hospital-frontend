@@ -13,9 +13,23 @@ const HomePage = () => {
   };
 
   const serviceTags = [
-    { name: 'Hospitals', path: '/hospitals', desc: 'Compare price, rating, beds & insurance' },
-    { name: 'Ambulance', path: '/ambulance', desc: 'Live tracking, instant ETA' },
-    { name: 'Health Insurance', path: '/insurance', desc: 'Compare plans & buy online' },
+    { 
+      name: 'Hospitals', 
+      path: '/hospitals', 
+      desc: 'Compare price, rating, beds & insurance' 
+    },
+    { 
+      name: 'Ambulance', 
+      path: '/ambulance', 
+      desc: 'Live tracking, instant ETA' 
+    },
+    { 
+      name: 'Health Insurance', 
+      path: '/insurance', 
+      desc: 'Compare plans & buy online',
+      isNew: true,
+      isInsurance: true
+    },
     { 
       name: 'Homeopathy & Naturopathy', 
       path: '/homeopathy', 
@@ -28,11 +42,31 @@ const HomePage = () => {
       desc: 'Ancient healing, modern access • Doctors • Panchakarma • Prakriti',
       isNew: true 
     },
-    { name: 'Caregiver', path: '/caregivers', desc: 'Elder care, nursing at home' },
-    { name: 'Health EMI', path: '/financing', desc: 'No‑cost EMI for treatments' },
-    { name: 'Online Doctor', path: '/teleconsult', desc: 'Video consult, prescription' },
-    { name: 'Corporate', path: '/corporate', desc: 'Employee wellness plans' },
-    { name: 'Diagnostics', path: '/diagnostics', desc: 'Lab tests & health checkups' },
+    { 
+      name: 'Caregiver', 
+      path: '/caregivers', 
+      desc: 'Elder care, nursing at home' 
+    },
+    { 
+      name: 'Health EMI', 
+      path: '/financing', 
+      desc: 'No‑cost EMI for treatments' 
+    },
+    { 
+      name: 'Online Doctor', 
+      path: '/teleconsult', 
+      desc: 'Video consult, prescription' 
+    },
+    { 
+      name: 'Corporate', 
+      path: '/corporate', 
+      desc: 'Employee wellness plans' 
+    },
+    { 
+      name: 'Diagnostics', 
+      path: '/diagnostics', 
+      desc: 'Lab tests & health checkups' 
+    },
   ];
 
   return (
@@ -68,38 +102,130 @@ const HomePage = () => {
                 backgroundColor: 'white', 
                 padding: '1.5rem', 
                 borderRadius: '1rem', 
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)', 
+                boxShadow: tag.isInsurance ? '0 4px 12px rgba(37, 99, 235, 0.3)' : '0 4px 6px rgba(0,0,0,0.1)', 
                 cursor: 'pointer', 
-                transition: 'transform 0.2s',
+                transition: 'transform 0.2s, box-shadow 0.2s',
                 position: 'relative',
-                border: tag.isNew ? '2px solid #4CAF50' : 'none'
+                border: tag.isInsurance ? '2px solid #2563eb' : (tag.isNew ? '2px solid #4CAF50' : 'none'),
+                transform: tag.isInsurance ? 'scale(1.02)' : 'scale(1)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                e.currentTarget.style.boxShadow = tag.isInsurance ? '0 8px 24px rgba(37, 99, 235, 0.4)' : '0 8px 16px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = tag.isInsurance ? 'scale(1.02)' : 'translateY(0)';
+                e.currentTarget.style.boxShadow = tag.isInsurance ? '0 4px 12px rgba(37, 99, 235, 0.3)' : '0 4px 6px rgba(0,0,0,0.1)';
+              }}
             >
+              {/* NEW Badge */}
               {tag.isNew && (
                 <span style={{
                   position: 'absolute',
                   top: '-10px',
                   right: '-10px',
-                  backgroundColor: '#4CAF50',
+                  backgroundColor: tag.isInsurance ? '#2563eb' : '#4CAF50',
                   color: 'white',
                   padding: '4px 12px',
                   borderRadius: '20px',
                   fontSize: '0.75rem',
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
+                  animation: 'pulse 2s infinite'
                 }}>
-                  🆕 NEW
+                  {tag.isInsurance ? '🛡️ LIVE' : '🆕 NEW'}
                 </span>
               )}
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', color: tag.isNew ? '#4CAF50' : '#1e293b' }}>
-                {tag.isNew && '🌿 '}{tag.name}
+
+              {/* Insurance Icon */}
+              {tag.isInsurance && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  backgroundColor: '#2563eb',
+                  color: 'white',
+                  padding: '2px 16px',
+                  borderRadius: '20px',
+                  fontSize: '0.65rem',
+                  fontWeight: 'bold',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase'
+                }}>
+                  ⭐ Trusted
+                </div>
+              )}
+
+              {/* Tag Name with Icon */}
+              <h3 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: 'bold', 
+                marginBottom: '0.5rem', 
+                color: tag.isInsurance ? '#2563eb' : (tag.isNew ? '#4CAF50' : '#1e293b'),
+                marginTop: tag.isInsurance ? '8px' : '0'
+              }}>
+                {tag.isInsurance && '🛡️ '}
+                {tag.isNew && !tag.isInsurance && '🌿 '}
+                {tag.name}
               </h3>
+
+              {/* Description */}
               <p style={{ color: '#64748b', fontSize: '0.875rem' }}>{tag.desc}</p>
+
+              {/* Insurance-specific badge */}
+              {tag.isInsurance && (
+                <div style={{
+                  marginTop: '0.75rem',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <span style={{
+                    fontSize: '0.6rem',
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    padding: '2px 10px',
+                    borderRadius: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Compare Plans
+                  </span>
+                  <span style={{
+                    fontSize: '0.6rem',
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    padding: '2px 10px',
+                    borderRadius: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Best Price
+                  </span>
+                  <span style={{
+                    fontSize: '0.6rem',
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    padding: '2px 10px',
+                    borderRadius: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Instant Policy
+                  </span>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
+
+      {/* CSS Animation for pulse effect */}
+      <style>{`
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 };

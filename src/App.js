@@ -94,6 +94,17 @@ import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
 import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
 
 // ============================================
+// 🆕 INSURANCE MODULE IMPORTS (ADDED)
+// ============================================
+import InsuranceHub from './pages/insurance/InsuranceHub';
+import InsuranceList from './pages/insurance/InsuranceList';
+import InsuranceCompare from './pages/insurance/InsuranceCompare';
+import InsuranceDetail from './pages/insurance/InsuranceDetail';
+import InsuranceApplication from './pages/insurance/InsuranceApplication';
+import InsuranceConfirmation from './pages/insurance/InsuranceConfirmation';
+import InsurancePolicyDetail from './pages/insurance/InsurancePolicyDetail';
+
+// ============================================
 // CONTEXT PROVIDERS
 // ============================================
 import { LenderProvider } from './contexts/LenderContext';
@@ -164,8 +175,8 @@ function App() {
           <Route path="/homeopathy/doctor/dashboard" element={<HomeoDoctorDashboard />} />
           <Route path="/homeopathy/center/register" element={<HomeoCenterRegistration />} />
           <Route path="/homeopathy/pharmacy/register" element={<HomeoPharmacyRegistration />} />
-	  <Route path="/homeopathy/centers" element={<NaturopathyCenters />} />
-  	  <Route path="/admin/homeopathy" element={<HomeopathyAdminPanel />} />
+          <Route path="/homeopathy/centers" element={<NaturopathyCenters />} />
+          <Route path="/admin/homeopathy" element={<HomeopathyAdminPanel />} />
 
           {/* ============================================
               LEGAL PAGES
@@ -221,9 +232,21 @@ function App() {
           <Route path="/admin/finance" element={<AdminFinancialDashboard />} />
 
           {/* ============================================
+              🆕 INSURANCE MODULE ROUTES (ADDED)
+          ============================================ */}
+          <Route path="/insurance" element={<InsuranceHub />} />
+          <Route path="/insurance/list" element={<InsuranceList />} />
+          <Route path="/insurance/compare" element={<InsuranceCompare />} />
+          <Route path="/insurance/plan/:id" element={<InsuranceDetail />} />
+          <Route path="/insurance/apply/:planId" element={<InsuranceApplication />} />
+          <Route path="/insurance/confirmation" element={<InsuranceConfirmation />} />
+          <Route path="/insurance/my-policies/:id" element={<InsurancePolicyDetail />} />
+
+          {/* ============================================
               OTHER TAGS (Coming Soon)
           ============================================ */}
-          <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} />
+          {/* ✅ INSURANCE TAG - NOW ACTIVE (REMOVED ComingSoon) */}
+          {/* <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} /> */}
           <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
           <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
           <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
