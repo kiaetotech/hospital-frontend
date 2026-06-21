@@ -1,32 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Search,
-  Filter,
-  SlidersHorizontal,
-  ChevronDown,
-  X,
-  Star,
-  Building,
-  TrendingUp,
-  Clock,
-  Shield,
-  CheckCircle,
-  AlertCircle,
-  Heart,
-  Users,
-  User,
-  Baby,
-  Calendar,
-  IndianRupee,
-  SortAsc,
-  SortDesc,
-  Grid,
-  List,
-  MapPin
-} from 'lucide-react';
 import axios from 'axios';
-import InsuranceCard from '../../components/InsuranceCard';
 
 const InsuranceList = () => {
   const navigate = useNavigate();
@@ -38,7 +12,7 @@ const InsuranceList = () => {
   const [totalPlans, setTotalPlans] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+  const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
   
   // Filter states
@@ -184,199 +158,216 @@ const InsuranceList = () => {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            <div className="h-12 w-64 bg-gray-200 rounded mb-4"></div>
-            <div className="flex gap-4 mb-6">
-              <div className="h-10 w-32 bg-gray-200 rounded"></div>
-              <div className="h-10 w-32 bg-gray-200 rounded"></div>
-              <div className="h-10 w-32 bg-gray-200 rounded"></div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="bg-white rounded-xl h-64"></div>
-              ))}
-            </div>
-          </div>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Loading insurance plans...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <Shield className="w-6 h-6 text-blue-600" />
-                Health Insurance Plans
-              </h1>
-              <p className="text-sm text-gray-500">
-                {totalPlans} plans available • Compare and choose the best
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Search */}
-              <div className="relative flex-1 md:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search plans..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+      <div style={{ 
+        backgroundColor: 'white', 
+        borderBottom: '1px solid #e5e7eb',
+        position: 'sticky',
+        top: 0,
+        zIndex: 30,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  🛡️ Health Insurance Plans
+                </h1>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                  {totalPlans} plans available • Compare and choose the best
+                </p>
               </div>
 
-              {/* View toggle */}
-              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {/* Search */}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Search plans..."
+                    value={filters.search}
+                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    style={{ 
+                      padding: '8px 12px 8px 36px', 
+                      border: '1px solid #d1d5db', 
+                      borderRadius: '8px',
+                      fontSize: '0.875rem',
+                      width: '200px',
+                      outline: 'none'
+                    }}
+                  />
+                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}>🔍</span>
+                </div>
+
+                {/* View toggle */}
+                <div style={{ display: 'flex', border: '1px solid #d1d5db', borderRadius: '8px', overflow: 'hidden' }}>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    style={{ 
+                      padding: '6px 12px', 
+                      backgroundColor: viewMode === 'grid' ? '#2563eb' : 'white',
+                      color: viewMode === 'grid' ? 'white' : '#4b5563',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ▦ Grid
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    style={{ 
+                      padding: '6px 12px', 
+                      backgroundColor: viewMode === 'list' ? '#2563eb' : 'white',
+                      color: viewMode === 'list' ? 'white' : '#4b5563',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ☰ List
+                  </button>
+                </div>
+
+                {/* Filter toggle */}
                 <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setShowFilters(!showFilters)}
+                  style={{ 
+                    padding: '8px 16px', 
+                    borderRadius: '8px', 
+                    border: '1px solid #d1d5db',
+                    backgroundColor: showFilters || hasActiveFilters() ? '#2563eb' : 'white',
+                    color: showFilters || hasActiveFilters() ? 'white' : '#4b5563',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
                 >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <List className="w-4 h-4" />
+                  ⚙️ Filters
+                  {hasActiveFilters() && (
+                    <span style={{ 
+                      backgroundColor: '#f59e0b', 
+                      color: 'white', 
+                      borderRadius: '50%', 
+                      width: '20px', 
+                      height: '20px', 
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {Object.values(filters).filter(v => v !== '' && v !== 'all' && v !== 'popular').length}
+                    </span>
+                  )}
                 </button>
               </div>
-
-              {/* Filter toggle */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                  showFilters || hasActiveFilters()
-                    ? 'bg-blue-50 border-blue-300 text-blue-600'
-                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Filter className="w-4 h-4" />
-                <span>Filters</span>
-                {hasActiveFilters() && (
-                  <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {Object.values(filters).filter(v => v !== '' && v !== 'all' && v !== 'popular').length}
-                  </span>
-                )}
-              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* ============================================
-              FILTERS SIDEBAR
-              ============================================ */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Filters Sidebar */}
           {showFilters && (
-            <div className="lg:w-72 flex-shrink-0">
-              <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <SlidersHorizontal className="w-4 h-4" />
-                    Filters
-                  </h3>
-                  {hasActiveFilters() && (
-                    <button
-                      onClick={clearFilters}
-                      className="text-sm text-red-600 hover:text-red-700"
-                    >
-                      Clear All
-                    </button>
-                  )}
-                </div>
+            <div style={{ 
+              backgroundColor: 'white', 
+              borderRadius: '12px', 
+              padding: '1.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontWeight: 'bold' }}>⚙️ Filters</h3>
+                {hasActiveFilters() && (
+                  <button
+                    onClick={clearFilters}
+                    style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 {/* Plan Type */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Plan Type
-                  </label>
-                  <div className="space-y-2">
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '4px' }}>Plan Type</label>
+                  <select
+                    value={filters.planType}
+                    onChange={(e) => handleFilterChange('planType', e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                  >
                     {planTypes.map((type) => (
-                      <label key={type.id} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="planType"
-                          value={type.id}
-                          checked={filters.planType === type.id}
-                          onChange={(e) => handleFilterChange('planType', e.target.value)}
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <span className="text-sm text-gray-700">{type.label}</span>
-                      </label>
+                      <option key={type.id} value={type.id}>{type.label}</option>
                     ))}
-                  </div>
+                  </select>
                 </div>
 
                 {/* Sum Insured */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sum Insured (₹)
-                  </label>
-                  <div className="flex gap-2">
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '4px' }}>Sum Insured (₹)</label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
                     <input
                       type="number"
                       placeholder="Min"
                       value={filters.minSumInsured}
                       onChange={(e) => handleFilterChange('minSumInsured', e.target.value)}
-                      className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{ width: '50%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
                     />
                     <input
                       type="number"
                       placeholder="Max"
                       value={filters.maxSumInsured}
                       onChange={(e) => handleFilterChange('maxSumInsured', e.target.value)}
-                      className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{ width: '50%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
                     />
                   </div>
                 </div>
 
                 {/* Premium */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Premium (₹)
-                  </label>
-                  <div className="flex gap-2">
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '4px' }}>Premium (₹)</label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
                     <input
                       type="number"
                       placeholder="Min"
                       value={filters.minPremium}
                       onChange={(e) => handleFilterChange('minPremium', e.target.value)}
-                      className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{ width: '50%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
                     />
                     <input
                       type="number"
                       placeholder="Max"
                       value={filters.maxPremium}
                       onChange={(e) => handleFilterChange('maxPremium', e.target.value)}
-                      className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{ width: '50%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
                     />
                   </div>
                 </div>
 
                 {/* Company */}
                 {companies.length > 0 && (
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Insurance Company
-                    </label>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '4px' }}>Insurance Company</label>
                     <select
                       value={filters.companyId}
                       onChange={(e) => handleFilterChange('companyId', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
                     >
                       <option value="">All Companies</option>
                       {companies.map((company) => (
                         <option key={company._id} value={company._id}>
-                          {company.name}
+                          {company.name || company.companyName}
                         </option>
                       ))}
                     </select>
@@ -385,142 +376,284 @@ const InsuranceList = () => {
 
                 {/* Sort */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sort By
-                  </label>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '4px' }}>Sort By</label>
                   <select
                     value={filters.sortBy}
                     onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
                   >
                     {sortOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
+                      <option key={option.id} value={option.id}>{option.label}</option>
                     ))}
                   </select>
                 </div>
-
-                {/* Apply Filters Button */}
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors duration-200"
-                >
-                  Apply Filters
-                </button>
               </div>
             </div>
           )}
 
-          {/* ============================================
-              PLANS GRID
-              ============================================ */}
-          <div className="flex-1">
-            {/* Results count */}
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-sm text-gray-500">
-                Showing {plans.length} of {totalPlans} plans
-              </p>
-              {hasActiveFilters() && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">Active filters:</span>
-                  {filters.planType && filters.planType !== 'all' && (
-                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                      {planTypes.find(t => t.id === filters.planType)?.label}
-                    </span>
-                  )}
-                  {filters.minSumInsured && (
-                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                      ₹{filters.minSumInsured}+
-                    </span>
-                  )}
-                  {filters.maxSumInsured && (
-                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                      ₹{filters.maxSumInsured}-
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Plans Display */}
-            {plans.length > 0 ? (
-              <div className={viewMode === 'grid' 
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-                : 'space-y-4'
-              }>
-                {plans.map((plan) => (
-                  <InsuranceCard key={plan._id} plan={plan} viewMode={viewMode} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 bg-white rounded-xl">
-                <div className="flex flex-col items-center">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <Search className="w-10 h-10 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No Plans Found</h3>
-                  <p className="text-gray-500 mb-4">
-                    We couldn't find any plans matching your criteria.
-                  </p>
-                  <button
-                    onClick={clearFilters}
-                    className="text-blue-600 hover:text-blue-700 font-semibold"
-                  >
-                    Clear all filters
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-                >
-                  Previous
-                </button>
-                
-                {[...Array(totalPages)].map((_, index) => {
-                  const page = index + 1;
-                  if (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`w-10 h-10 rounded-lg transition-colors ${
-                          currentPage === page
-                            ? 'bg-blue-600 text-white'
-                            : 'border border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  }
-                  if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <span key={page} className="text-gray-400">…</span>;
-                  }
-                  return null;
-                })}
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-                >
-                  Next
-                </button>
+          {/* Results count */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+              Showing {plans.length} of {totalPlans} plans
+            </p>
+            {hasActiveFilters() && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Active filters:</span>
+                {filters.planType && filters.planType !== 'all' && (
+                  <span style={{ backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontSize: '0.7rem' }}>
+                    {planTypes.find(t => t.id === filters.planType)?.label}
+                  </span>
+                )}
+                {filters.minSumInsured && (
+                  <span style={{ backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontSize: '0.7rem' }}>
+                    ₹{filters.minSumInsured}+
+                  </span>
+                )}
+                {filters.maxSumInsured && (
+                  <span style={{ backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontSize: '0.7rem' }}>
+                    ₹{filters.maxSumInsured}-
+                  </span>
+                )}
               </div>
             )}
           </div>
+
+          {/* Plans Grid */}
+          {plans.length > 0 ? (
+            <div style={{ 
+              display: viewMode === 'grid' 
+                ? 'grid' 
+                : 'flex',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
+              {plans.map((plan) => (
+                <div key={plan._id} style={{ 
+                  backgroundColor: 'white', 
+                  borderRadius: '12px', 
+                  padding: viewMode === 'grid' ? '1.5rem' : '1rem',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: viewMode === 'list' ? 'flex' : 'block',
+                  gap: viewMode === 'list' ? '1rem' : '0',
+                  alignItems: viewMode === 'list' ? 'center' : 'stretch',
+                  transition: 'transform 0.2s, box-shadow 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                }}>
+                  {/* Company Info */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div style={{ 
+                      width: '40px', 
+                      height: '40px', 
+                      backgroundColor: '#dbeafe', 
+                      borderRadius: '8px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      fontSize: '1.25rem'
+                    }}>
+                      🏢
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>
+                        {plan.companyId?.name || 'Insurance Company'}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                        {plan.planType?.replace('_', ' ').toUpperCase()}
+                      </div>
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '2px', color: '#f59e0b' }}>
+                      <span>⭐</span>
+                      <span>{plan.rating || 0}</span>
+                    </div>
+                  </div>
+
+                  {/* Plan Name */}
+                  <div onClick={() => navigate(`/insurance/plan/${plan._id}`)} style={{ cursor: 'pointer' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#1e3a5f' }}>
+                      {plan.planName}
+                    </h3>
+                  </div>
+
+                  {/* Description */}
+                  <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '4px 0' }}>
+                    {plan.shortDescription || plan.description || 'Comprehensive health insurance plan'}
+                  </p>
+
+                  {/* Features */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', margin: '8px 0' }}>
+                    {(plan.features || []).slice(0, viewMode === 'grid' ? 3 : 5).map((feature, idx) => (
+                      <span key={idx} style={{ 
+                        fontSize: '0.65rem', 
+                        backgroundColor: '#f3f4f6', 
+                        padding: '2px 10px', 
+                        borderRadius: '12px',
+                        color: '#4b5563'
+                      }}>
+                        ✅ {typeof feature === 'string' ? feature.substring(0, 20) : feature.title?.substring(0, 20)}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Price & Actions */}
+                  <div style={{ 
+                    display: viewMode === 'list' ? 'flex' : 'block',
+                    justifyContent: viewMode === 'list' ? 'space-between' : 'flex-start',
+                    alignItems: viewMode === 'list' ? 'center' : 'stretch',
+                    marginTop: viewMode === 'grid' ? '1rem' : '0',
+                    borderTop: viewMode === 'grid' ? '1px solid #e5e7eb' : 'none',
+                    paddingTop: viewMode === 'grid' ? '1rem' : '0'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: viewMode === 'list' ? 'row' : 'column',
+                      alignItems: viewMode === 'list' ? 'center' : 'flex-start',
+                      gap: viewMode === 'list' ? '1rem' : '0'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Starting from</div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2563eb' }}>
+                          ₹{plan.basePremium?.toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>per year incl. GST</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Sum Insured</div>
+                        <div style={{ fontWeight: 'bold' }}>₹{plan.sumInsured?.default?.toLocaleString()}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '0.5rem',
+                      marginTop: viewMode === 'grid' ? '0.75rem' : '0',
+                      flex: viewMode === 'list' ? 1 : 'none',
+                      justifyContent: viewMode === 'list' ? 'flex-end' : 'stretch'
+                    }}>
+                      <button 
+                        onClick={() => navigate(`/insurance/plan/${plan._id}`)} 
+                        style={{ 
+                          flex: 1, 
+                          padding: '8px 16px', 
+                          backgroundColor: '#2563eb', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '6px', 
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        View Details
+                      </button>
+                      <button 
+                        onClick={() => navigate(`/insurance/apply/${plan._id}`)} 
+                        style={{ 
+                          flex: 1, 
+                          padding: '8px 16px', 
+                          backgroundColor: '#f59e0b', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '6px', 
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        Apply Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '12px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>No Plans Found</h3>
+              <p style={{ color: '#6b7280', marginBottom: '1rem' }}>We couldn't find any plans matching your criteria.</p>
+              <button
+                onClick={clearFilters}
+                style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{ 
+                  padding: '8px 16px', 
+                  border: '1px solid #d1d5db', 
+                  borderRadius: '6px',
+                  backgroundColor: 'white',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  opacity: currentPage === 1 ? 0.5 : 1
+                }}
+              >
+                Previous
+              </button>
+              
+              {[...Array(totalPages)].map((_, index) => {
+                const page = index + 1;
+                if (
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      style={{ 
+                        width: '36px', 
+                        height: '36px', 
+                        borderRadius: '6px',
+                        border: currentPage === page ? 'none' : '1px solid #d1d5db',
+                        backgroundColor: currentPage === page ? '#2563eb' : 'white',
+                        color: currentPage === page ? 'white' : '#4b5563',
+                        cursor: 'pointer',
+                        fontWeight: currentPage === page ? 'bold' : 'normal'
+                      }}
+                    >
+                      {page}
+                    </button>
+                  );
+                }
+                if (page === currentPage - 2 || page === currentPage + 2) {
+                  return <span key={page} style={{ color: '#6b7280' }}>…</span>;
+                }
+                return null;
+              })}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                style={{ 
+                  padding: '8px 16px', 
+                  border: '1px solid #d1d5db', 
+                  borderRadius: '6px',
+                  backgroundColor: 'white',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  opacity: currentPage === totalPages ? 0.5 : 1
+                }}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

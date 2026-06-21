@@ -1,27 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Check,
-  X,
-  Plus,
-  Minus,
-  Star,
-  Shield,
-  Building,
-  Users,
-  Clock,
-  Award,
-  AlertCircle,
-  CheckCircle,
-  Heart,
-  TrendingUp,
-  IndianRupee,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Sparkles
-} from 'lucide-react';
 import axios from 'axios';
 
 const InsuranceCompare = () => {
@@ -147,70 +125,94 @@ const InsuranceCompare = () => {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 w-48 bg-gray-200 rounded mb-6"></div>
-            <div className="grid grid-cols-3 gap-6">
-              {[1,2,3].map(i => (
-                <div key={i} className="bg-white rounded-xl p-6 h-64"></div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem', textAlign: 'center' }}>
+        <p>Loading comparison...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+      <div style={{ 
+        backgroundColor: 'white', 
+        borderBottom: '1px solid #e5e7eb',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button
               onClick={() => navigate('/insurance/list')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563', background: 'none', border: 'none', cursor: 'pointer' }}
             >
-              <ArrowLeft className="w-5 h-5" />
-              <span>Back to Plans</span>
+              ← Back to Plans
             </button>
-            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Shield className="w-6 h-6 text-blue-600" />
-              Compare Plans
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              📊 Compare Plans
             </h1>
-            <div className="w-24"></div> {/* Spacer */}
+            <div style={{ width: '100px' }}></div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Comparison Table */}
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
+        {/* Comparison Grid */}
+        <div style={{ overflowX: 'auto' }}>
+          <div style={{ minWidth: '800px' }}>
             {/* Header Row - Plan Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(comparison.length + 1, 5)}, 1fr)`, gap: '1rem', marginBottom: '1.5rem' }}>
               {comparison.map((plan) => (
-                <div key={plan._id} className="bg-white rounded-xl shadow-lg overflow-hidden relative">
+                <div key={plan._id} style={{ 
+                  backgroundColor: 'white', 
+                  borderRadius: '12px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  borderTop: '4px solid #2563eb'
+                }}>
                   {/* Remove button */}
                   <button
                     onClick={() => handleRemovePlan(plan._id)}
-                    className="absolute top-2 right-2 w-6 h-6 bg-red-100 hover:bg-red-200 text-red-600 rounded-full flex items-center justify-center transition-colors z-10"
+                    style={{ 
+                      position: 'absolute', 
+                      top: '8px', 
+                      right: '8px',
+                      width: '24px',
+                      height: '24px',
+                      backgroundColor: '#fee2e2',
+                      color: '#dc2626',
+                      borderRadius: '50%',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px'
+                    }}
                   >
-                    <X className="w-4 h-4" />
+                    ✕
                   </button>
 
                   {/* Company logo */}
-                  <div className="p-4 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <Building className="w-6 h-6 text-blue-600" />
+                  <div style={{ padding: '1rem', borderBottom: '1px solid #f3f4f6' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        backgroundColor: '#dbeafe', 
+                        borderRadius: '8px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        fontSize: '1.25rem'
+                      }}>
+                        🏢
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-800 text-sm">
+                        <div style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>
                           {plan.companyId?.name || 'Insurance Company'}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>
                           {getPlanTypeLabel(plan.planType)}
                         </div>
                       </div>
@@ -218,34 +220,37 @@ const InsuranceCompare = () => {
                   </div>
 
                   {/* Plan name */}
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg text-gray-800 mb-1">
-                      {plan.planName}
-                    </h3>
-                    <div className="flex items-center gap-1 text-yellow-500">
-                      <Star className="w-4 h-4 fill-current" />
-                      <span className="text-sm font-medium text-gray-700">
-                        {plan.rating || 0}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        ({plan.totalReviews || 0} reviews)
-                      </span>
+                  <div style={{ padding: '1rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold' }}>{plan.planName}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#f59e0b' }}>
+                      <span>⭐</span>
+                      <span>{plan.rating || 0}</span>
+                      <span style={{ fontSize: '0.65rem', color: '#6b7280' }}>({plan.totalReviews || 0} reviews)</span>
                     </div>
                   </div>
 
                   {/* Price */}
-                  <div className="p-4 bg-blue-50">
-                    <div className="text-sm text-gray-600">Starting from</div>
-                    <div className="text-2xl font-bold text-blue-600">
+                  <div style={{ padding: '1rem', backgroundColor: '#eff6ff' }}>
+                    <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>Starting from</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#2563eb' }}>
                       {formatCurrency(plan.basePremium)}
                     </div>
-                    <div className="text-xs text-gray-500">per year incl. GST</div>
+                    <div style={{ fontSize: '0.6rem', color: '#6b7280' }}>per year incl. GST</div>
                   </div>
 
                   {/* View Details Button */}
                   <button
                     onClick={() => navigate(`/insurance/plan/${plan._id}`)}
-                    className="w-full p-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors duration-200"
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.75rem', 
+                      backgroundColor: '#2563eb', 
+                      color: 'white', 
+                      border: 'none', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '0.875rem'
+                    }}
                   >
                     View Details
                   </button>
@@ -255,146 +260,138 @@ const InsuranceCompare = () => {
               {/* Add Plan Card */}
               {comparison.length < 4 && (
                 <div 
-                  className="bg-white rounded-xl shadow-lg border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer flex flex-col items-center justify-center p-6 min-h-[300px]"
                   onClick={handleAddPlan}
+                  style={{ 
+                    backgroundColor: 'white', 
+                    borderRadius: '12px', 
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    border: '2px dashed #d1d5db',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1.5rem',
+                    cursor: 'pointer',
+                    minHeight: '300px'
+                  }}
                 >
-                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-3">
-                    <Plus className="w-8 h-8 text-blue-600" />
+                  <div style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    backgroundColor: '#dbeafe', 
+                    borderRadius: '50%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    fontSize: '1.5rem',
+                    marginBottom: '0.5rem'
+                  }}>
+                    ➕
                   </div>
-                  <p className="text-gray-600 font-medium">Add Plan</p>
-                  <p className="text-xs text-gray-400">Compare up to 4 plans</p>
+                  <p style={{ fontWeight: 'bold' }}>Add Plan</p>
+                  <p style={{ fontSize: '0.7rem', color: '#6b7280' }}>Compare up to 4 plans</p>
                 </div>
               )}
             </div>
 
             {/* Add Plan Dropdown */}
             {showAddPlan && (
-              <div className="mb-6 p-4 bg-white rounded-xl shadow-lg">
-                <h4 className="font-semibold text-gray-800 mb-3">
-                  Select a plan to compare
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Select a plan to compare</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem' }}>
                   {availablePlans.map((plan) => (
                     <button
                       key={plan._id}
                       onClick={() => handleSelectPlan(plan._id)}
-                      className="p-3 border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left"
+                      style={{ 
+                        padding: '0.75rem', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px',
+                        background: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2563eb'}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#d1d5db'}
                     >
-                      <div className="font-medium text-sm text-gray-800">
-                        {plan.planName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {plan.companyId?.name}
-                      </div>
-                      <div className="text-sm font-semibold text-blue-600 mt-1">
-                        {formatCurrency(plan.basePremium)}
-                      </div>
+                      <div style={{ fontWeight: 'bold', fontSize: '0.875rem' }}>{plan.planName}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>{plan.companyId?.name}</div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#2563eb' }}>{formatCurrency(plan.basePremium)}</div>
                     </button>
                   ))}
                   {availablePlans.length === 0 && (
-                    <div className="col-span-full text-center text-gray-500 py-4">
-                      No more plans available to compare
-                    </div>
+                    <div style={{ textAlign: 'center', color: '#6b7280', padding: '1rem' }}>No more plans available to compare</div>
                   )}
                 </div>
                 <button
                   onClick={() => setShowAddPlan(false)}
-                  className="mt-3 text-sm text-red-600 hover:text-red-700"
+                  style={{ marginTop: '0.5rem', color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
               </div>
             )}
 
-            {/* ============================================
-                COMPARISON TABLE - SECTIONS
-                ============================================ */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            {/* Comparison Table - Sections */}
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
               {/* Plan Type */}
-              <div className="p-4 border-b border-gray-100">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="font-semibold text-gray-700">Plan Type</div>
+              <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #f3f4f6' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${comparison.length + 1}, 1fr)` }}>
+                  <div style={{ fontWeight: 'bold', color: '#4b5563' }}>Plan Type</div>
                   {comparison.map((plan) => (
-                    <div key={plan._id} className="text-gray-600">
-                      {getPlanTypeLabel(plan.planType)}
-                    </div>
+                    <div key={plan._id}>{getPlanTypeLabel(plan.planType)}</div>
                   ))}
                 </div>
               </div>
 
               {/* Coverage Section */}
-              <div className="border-b border-gray-100">
+              <div style={{ borderBottom: '1px solid #f3f4f6' }}>
                 <button
                   onClick={() => toggleSection('coverage')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem 1rem', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
                 >
-                  <span className="font-semibold text-gray-700 flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-blue-600" />
-                    Coverage Details
-                  </span>
-                  {expandedSections.coverage ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
+                  <span>🛡️ Coverage Details</span>
+                  <span>{expandedSections.coverage ? '▲' : '▼'}</span>
                 </button>
                 {expandedSections.coverage && (
-                  <div className="p-4 space-y-3">
+                  <div style={{ padding: '0.75rem 1rem' }}>
                     {/* Sum Insured */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">Sum Insured</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${comparison.length + 1}, 1fr)`, padding: '0.5rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Sum Insured</div>
                       {comparison.map((plan) => (
-                        <div key={plan._id} className="font-medium text-gray-800">
-                          {formatCurrency(plan.sumInsured?.default || 0)}
-                        </div>
+                        <div key={plan._id} style={{ fontWeight: 'bold' }}>{formatCurrency(plan.sumInsured?.default || 0)}</div>
                       ))}
                     </div>
-
                     {/* Room Rent Limit */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">Room Rent Limit</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${comparison.length + 1}, 1fr)`, padding: '0.5rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Room Rent Limit</div>
                       {comparison.map((plan) => (
-                        <div key={plan._id} className="text-gray-600 capitalize">
-                          {plan.roomRentLimit || 'Standard'}
-                        </div>
+                        <div key={plan._id} style={{ textTransform: 'capitalize' }}>{plan.roomRentLimit || 'Standard'}</div>
                       ))}
                     </div>
-
                     {/* ICU Coverage */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">ICU Coverage</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${comparison.length + 1}, 1fr)`, padding: '0.5rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>ICU Coverage</div>
                       {comparison.map((plan) => (
-                        <div key={plan._id} className="text-gray-600">
-                          {plan.icuCoverage ? (
-                            <Check className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <X className="w-5 h-5 text-red-600" />
-                          )}
-                        </div>
+                        <div key={plan._id}>{plan.icuCoverage ? '✅' : '❌'}</div>
                       ))}
                     </div>
-
                     {/* Daycare Coverage */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">Daycare Coverage</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${comparison.length + 1}, 1fr)`, padding: '0.5rem 0' }}>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Daycare Coverage</div>
                       {comparison.map((plan) => (
-                        <div key={plan._id} className="text-gray-600">
-                          {plan.daycareCoverage ? (
-                            <Check className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <X className="w-5 h-5 text-red-600" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Pre-existing Waiting */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">Pre-existing Waiting</div>
-                      {comparison.map((plan) => (
-                        <div key={plan._id} className="text-gray-600">
-                          {plan.preExistingWaiting || 48} months
-                        </div>
+                        <div key={plan._id}>{plan.daycareCoverage ? '✅' : '❌'}</div>
                       ))}
                     </div>
                   </div>
@@ -402,37 +399,35 @@ const InsuranceCompare = () => {
               </div>
 
               {/* Features Section */}
-              <div className="border-b border-gray-100">
+              <div style={{ borderBottom: '1px solid #f3f4f6' }}>
                 <button
                   onClick={() => toggleSection('features')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem 1rem', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
                 >
-                  <span className="font-semibold text-gray-700 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-yellow-600" />
-                    Features & Benefits
-                  </span>
-                  {expandedSections.features ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
+                  <span>✨ Features & Benefits</span>
+                  <span>{expandedSections.features ? '▲' : '▼'}</span>
                 </button>
                 {expandedSections.features && (
-                  <div className="p-4 space-y-3">
+                  <div style={{ padding: '0.75rem 1rem' }}>
                     {comparison.map((plan) => (
-                      <div key={plan._id} className="space-y-1">
-                        <div className="font-medium text-gray-700">{plan.planName}</div>
-                        <ul className="space-y-1">
+                      <div key={plan._id} style={{ marginBottom: '0.5rem' }}>
+                        <div style={{ fontWeight: 'bold' }}>{plan.planName}</div>
+                        <ul style={{ margin: '0.25rem 0', paddingLeft: '1.2rem' }}>
                           {(plan.features || []).slice(0, 5).map((feature, idx) => (
-                            <li key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                              <Check className="w-4 h-4 text-green-600" />
-                              {feature.title}
-                            </li>
+                            <li key={idx} style={{ fontSize: '0.875rem' }}>✅ {typeof feature === 'string' ? feature : feature.title}</li>
                           ))}
                           {(plan.features || []).length > 5 && (
-                            <li className="text-sm text-blue-600">
-                              +{plan.features.length - 5} more features
-                            </li>
+                            <li style={{ fontSize: '0.875rem', color: '#2563eb' }}>+{plan.features.length - 5} more features</li>
                           )}
                         </ul>
                       </div>
@@ -441,141 +436,64 @@ const InsuranceCompare = () => {
                 )}
               </div>
 
-              {/* Network Hospitals */}
-              <div className="border-b border-gray-100">
-                <button
-                  onClick={() => toggleSection('network')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                  <span className="font-semibold text-gray-700 flex items-center gap-2">
-                    <Building className="w-5 h-5 text-green-600" />
-                    Network Hospitals
-                  </span>
-                  {expandedSections.network ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </button>
-                {expandedSections.network && (
-                  <div className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">Total Network</div>
-                      {comparison.map((plan) => (
-                        <div key={plan._id} className="font-medium text-gray-800">
-                          {plan.totalNetworkHospitals || plan.networkHospitals?.length || 0} hospitals
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Claim Process */}
-              <div className="border-b border-gray-100">
+              {/* Claim Process Section */}
+              <div style={{ borderBottom: '1px solid #f3f4f6' }}>
                 <button
                   onClick={() => toggleSection('claim')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem 1rem', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
                 >
-                  <span className="font-semibold text-gray-700 flex items-center gap-2">
-                    <Award className="w-5 h-5 text-purple-600" />
-                    Claim Process
-                  </span>
-                  {expandedSections.claim ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
+                  <span>🏆 Claim Process</span>
+                  <span>{expandedSections.claim ? '▲' : '▼'}</span>
                 </button>
                 {expandedSections.claim && (
-                  <div className="p-4 space-y-3">
+                  <div style={{ padding: '0.75rem 1rem' }}>
                     {/* Cashless */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">Cashless Claim</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${comparison.length + 1}, 1fr)`, padding: '0.5rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Cashless Claim</div>
                       {comparison.map((plan) => (
-                        <div key={plan._id} className="text-gray-600">
-                          {plan.claimProcess?.cashless ? (
-                            <Check className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <X className="w-5 h-5 text-red-600" />
-                          )}
-                        </div>
+                        <div key={plan._id}>{plan.claimProcess?.cashless ? '✅' : '❌'}</div>
                       ))}
                     </div>
-
                     {/* Claim Settlement Ratio */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">Claim Settlement Ratio</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${comparison.length + 1}, 1fr)`, padding: '0.5rem 0' }}>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Claim Settlement Ratio</div>
                       {comparison.map((plan) => (
-                        <div key={plan._id} className="text-gray-600">
-                          {plan.claimProcess?.claimSettlementRatio || 'N/A'}%
-                        </div>
+                        <div key={plan._id}>{plan.claimProcess?.claimSettlementRatio || 'N/A'}%</div>
                       ))}
                     </div>
-
-                    {/* Average Settlement Time */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-sm text-gray-500">Avg. Settlement Time</div>
-                      {comparison.map((plan) => (
-                        <div key={plan._id} className="text-gray-600">
-                          {plan.claimProcess?.averageSettlementTime || 'Standard'}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Add-ons */}
-              <div className="border-b border-gray-100">
-                <button
-                  onClick={() => toggleSection('addons')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                  <span className="font-semibold text-gray-700 flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-orange-600" />
-                    Add-ons / Riders
-                  </span>
-                  {expandedSections.addons ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </button>
-                {expandedSections.addons && (
-                  <div className="p-4 space-y-3">
-                    {comparison.map((plan) => (
-                      <div key={plan._id}>
-                        <div className="font-medium text-gray-700">{plan.planName}</div>
-                        {(plan.addons || []).length > 0 ? (
-                          <ul className="space-y-1 mt-1">
-                            {plan.addons.map((addon, idx) => (
-                              <li key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                                <Check className="w-4 h-4 text-green-600" />
-                                {addon.name} - {formatCurrency(addon.price || 0)}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-gray-400">No add-ons available</p>
-                        )}
-                      </div>
-                    ))}
                   </div>
                 )}
               </div>
             </div>
 
             {/* CTA - Buy Now */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${comparison.length}, 1fr)`, gap: '1rem', marginTop: '1.5rem' }}>
               {comparison.map((plan) => (
                 <button
                   key={plan._id}
                   onClick={() => navigate(`/insurance/apply/${plan._id}`)}
-                  className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
+                  style={{ 
+                    padding: '0.75rem', 
+                    backgroundColor: '#2563eb', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '1rem'
+                  }}
                 >
-                  <Shield className="w-5 h-5" />
-                  Buy {plan.planName}
+                  🛡️ Buy {plan.planName}
                 </button>
               ))}
             </div>

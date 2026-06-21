@@ -1,37 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Star,
-  Shield,
-  Building,
-  Users,
-  Clock,
-  Award,
-  CheckCircle,
-  XCircle,
-  Heart,
-  TrendingUp,
-  IndianRupee,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Check,
-  X,
-  Plus,
-  Minus,
-  AlertCircle,
-  Info,
-  Phone,
-  Mail,
-  MapPin,
-  Globe,
-  Share2,
-  Bookmark,
-  Sparkles
-} from 'lucide-react';
 import axios from 'axios';
-import PremiumCalculator from '../../components/PremiumCalculator';
 
 const InsuranceDetail = () => {
   const navigate = useNavigate();
@@ -39,8 +8,7 @@ const InsuranceDetail = () => {
   
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState(null);
-  const [showCalculator, setShowCalculator] = useState(false);
-  const [selectedAddons, setSelectedAddons] = useState([]);
+  const [error, setError] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     overview: true,
     coverage: true,
@@ -50,7 +18,8 @@ const InsuranceDetail = () => {
     addons: true,
     network: true,
     claim: true,
-    tax: true
+    tax: true,
+    documents: true
   });
 
   useEffect(() => {
@@ -60,12 +29,16 @@ const InsuranceDetail = () => {
   const fetchPlanDetails = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await axios.get(`/api/insurance/plans/${id}`);
       if (response.data.success) {
         setPlan(response.data.data);
+      } else {
+        setError('Failed to load plan details');
       }
     } catch (error) {
       console.error('Error fetching plan details:', error);
+      setError('Error loading plan details. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -76,26 +49,6 @@ const InsuranceDetail = () => {
       ...prev,
       [section]: !prev[section]
     }));
-  };
-
-  const toggleAddon = (addon) => {
-    setSelectedAddons(prev => {
-      if (prev.includes(addon._id)) {
-        return prev.filter(id => id !== addon._id);
-      } else {
-        return [...prev, addon._id];
-      }
-    });
-  };
-
-  const handleBuyNow = () => {
-    if (!plan) return;
-    navigate(`/insurance/apply/${plan._id}`);
-  };
-
-  const handleCompare = () => {
-    if (!plan) return;
-    navigate(`/insurance/compare?ids=${plan._id}`);
   };
 
   const formatCurrency = (amount) => {
@@ -112,7 +65,9 @@ const InsuranceDetail = () => {
       'family_floater': 'Family Floater',
       'critical_illness': 'Critical Illness',
       'senior_citizen': 'Senior Citizen',
-      'maternity': 'Maternity'
+      'maternity': 'Maternity',
+      'personal_accident': 'Personal Accident',
+      'travel': 'Travel Insurance'
     };
     return map[type] || type;
   };
@@ -120,38 +75,26 @@ const InsuranceDetail = () => {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 w-48 bg-gray-200 rounded mb-6"></div>
-            <div className="bg-white rounded-xl p-6">
-              <div className="flex gap-6">
-                <div className="flex-1">
-                  <div className="h-10 w-64 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-6 w-32 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-20 bg-gray-200 rounded"></div>
-                </div>
-                <div className="w-80">
-                  <div className="h-32 bg-gray-200 rounded"></div>
-                </div>
-              </div>
-            </div>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+          <div style={{ textAlign: 'center', padding: '3rem' }}>
+            <p>Loading plan details...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!plan) {
+  if (error || !plan) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-700">Plan Not Found</h2>
-          <p className="text-gray-500 mt-2">The plan you're looking for doesn't exist.</p>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', backgroundColor: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>Plan Not Found</h2>
+          <p style={{ color: '#6b7280', margin: '0.5rem 0 1rem' }}>{error || 'The plan you are looking for does not exist.'}</p>
           <button
             onClick={() => navigate('/insurance/list')}
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            style={{ padding: '0.5rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             Browse Plans
           </button>
@@ -161,491 +104,512 @@ const InsuranceDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+      {/* ============================================
+          HEADER
+          ============================================ */}
+      <div style={{ 
+        backgroundColor: 'white', 
+        borderBottom: '1px solid #e5e7eb',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 30
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <button
                 onClick={() => navigate(-1)}
-                className="text-gray-600 hover:text-gray-800 transition-colors"
+                style={{ color: '#4b5563', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', padding: '0.25rem' }}
               >
-                <ArrowLeft className="w-5 h-5" />
+                ←
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">{plan.planName}</h1>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-gray-500">
-                    {plan.companyId?.name || 'Insurance Company'}
+                <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{plan.planName}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#6b7280', flexWrap: 'wrap' }}>
+                  <span>{plan.companyId?.name || 'Insurance Company'}</span>
+                  <span>•</span>
+                  <span>{getPlanTypeLabel(plan.planType)}</span>
+                  <span>•</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#f59e0b' }}>
+                    ⭐ {plan.rating || 0}
+                    {plan.totalReviews > 0 && <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>({plan.totalReviews} reviews)</span>}
                   </span>
-                  <span className="text-gray-300">|</span>
-                  <span className="text-gray-500">{getPlanTypeLabel(plan.planType)}</span>
-                  <span className="text-gray-300">|</span>
-                  <div className="flex items-center gap-1 text-yellow-500">
-                    <Star className="w-4 h-4 fill-current" />
-                    <span className="text-gray-700">{plan.rating || 0}</span>
-                    <span className="text-gray-400">
-                      ({plan.totalReviews || 0} reviews)
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
-                onClick={handleCompare}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                onClick={() => navigate(`/insurance/compare?ids=${plan._id}`)}
+                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', cursor: 'pointer', fontWeight: '500' }}
               >
-                <TrendingUp className="w-4 h-4" />
-                Compare
+                📊 Compare
               </button>
               <button
-                onClick={() => {/* Share functionality */}}
-                className="p-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                onClick={() => navigate(`/insurance/apply/${plan._id}`)}
+                style={{ padding: '0.5rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
               >
-                <Share2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => {/* Bookmark functionality */}}
-                className="p-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                <Bookmark className="w-4 h-4" />
+                🛡️ Apply Now
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
+      {/* ============================================
+          MAIN CONTENT
+          ============================================ */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
           {/* ============================================
-              MAIN CONTENT
+              QUICK STATS BAR
               ============================================ */}
-          <div className="flex-1">
-            {/* Overview Section */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-              <div className="p-6 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-800 mb-2">
-                  About {plan.planName}
-                </h2>
-                <p className="text-gray-600">{plan.description || 'No description available'}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+            <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Sum Insured</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{formatCurrency(plan.sumInsured?.default || 0)}</div>
+              {plan.sumInsured?.min && plan.sumInsured?.max && (
+                <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>Min: {formatCurrency(plan.sumInsured.min)} • Max: {formatCurrency(plan.sumInsured.max)}</div>
+              )}
+            </div>
+            <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Premium</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#2563eb' }}>{formatCurrency(plan.basePremium)}</div>
+              <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>per year incl. GST</div>
+              {plan.discountPercentage > 0 && (
+                <div style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 'bold' }}>{plan.discountPercentage}% OFF</div>
+              )}
+            </div>
+            <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Plan Type</div>
+              <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>{getPlanTypeLabel(plan.planType)}</div>
+            </div>
+            <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Rating</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b' }}>⭐ {plan.rating || 0}</div>
+              <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>{plan.totalReviews || 0} reviews</div>
+            </div>
+          </div>
+
+          {/* ============================================
+              OVERVIEW SECTION
+              ============================================ */}
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+            <button
+              onClick={() => toggleSection('overview')}
+              style={{ 
+                width: '100%', 
+                padding: '1rem 1.5rem', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                borderBottom: expandedSections.overview ? '1px solid #f3f4f6' : 'none'
+              }}
+            >
+              <span>📋 Overview</span>
+              <span>{expandedSections.overview ? '▲' : '▼'}</span>
+            </button>
+            {expandedSections.overview && (
+              <div style={{ padding: '1.5rem' }}>
+                <p style={{ color: '#4b5563', lineHeight: '1.6' }}>
+                  {plan.description || 'No description available for this plan.'}
+                </p>
+                {plan.shortDescription && (
+                  <p style={{ color: '#6b7280', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                    {plan.shortDescription}
+                  </p>
+                )}
                 {plan.keyHighlights && plan.keyHighlights.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
                     {plan.keyHighlights.map((highlight, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full"
-                      >
-                        {highlight}
+                      <span key={idx} style={{ padding: '0.25rem 0.75rem', backgroundColor: '#dbeafe', color: '#1e40af', borderRadius: '20px', fontSize: '0.75rem' }}>
+                        ⭐ {highlight}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {plan.tags && plan.tags.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {plan.tags.map((tag, idx) => (
+                      <span key={idx} style={{ padding: '0.25rem 0.75rem', backgroundColor: '#f3f4f6', color: '#4b5563', borderRadius: '20px', fontSize: '0.75rem' }}>
+                        #{tag}
                       </span>
                     ))}
                   </div>
                 )}
               </div>
+            )}
+          </div>
 
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
-                <div className="p-4 text-center">
-                  <div className="text-sm text-gray-500">Sum Insured</div>
-                  <div className="font-bold text-gray-800">
-                    {formatCurrency(plan.sumInsured?.default || 0)}
+          {/* ============================================
+              COVERAGE DETAILS
+              ============================================ */}
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+            <button
+              onClick={() => toggleSection('coverage')}
+              style={{ 
+                width: '100%', 
+                padding: '1rem 1.5rem', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                borderBottom: expandedSections.coverage ? '1px solid #f3f4f6' : 'none'
+              }}
+            >
+              <span>🛡️ Coverage Details</span>
+              <span>{expandedSections.coverage ? '▲' : '▼'}</span>
+            </button>
+            {expandedSections.coverage && (
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Sum Insured</div>
+                    <div style={{ fontWeight: 'bold' }}>{formatCurrency(plan.sumInsured?.default || 0)}</div>
+                    <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>Min: {formatCurrency(plan.sumInsured?.min || 0)} • Max: {formatCurrency(plan.sumInsured?.max || 0)}</div>
                   </div>
-                </div>
-                <div className="p-4 text-center">
-                  <div className="text-sm text-gray-500">Premium</div>
-                  <div className="font-bold text-blue-600">
-                    {formatCurrency(plan.basePremium)}
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Room Rent Limit</div>
+                    <div style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>{plan.roomRentLimit || 'Standard'}</div>
                   </div>
-                  <div className="text-xs text-gray-400">per year</div>
-                </div>
-                <div className="p-4 text-center">
-                  <div className="text-sm text-gray-500">Plan Type</div>
-                  <div className="font-bold text-gray-800">
-                    {getPlanTypeLabel(plan.planType)}
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>ICU Coverage</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.icuCoverage ? '✅ Yes' : '❌ No'}</div>
+                    {plan.icuLimit && <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>{plan.icuLimit}% of sum insured</div>}
                   </div>
-                </div>
-                <div className="p-4 text-center">
-                  <div className="text-sm text-gray-500">Rating</div>
-                  <div className="flex items-center justify-center gap-1 text-yellow-500">
-                    <Star className="w-5 h-5 fill-current" />
-                    <span className="font-bold text-gray-800">{plan.rating || 0}</span>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Daycare Coverage</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.daycareCoverage ? '✅ Yes' : '❌ No'}</div>
+                  </div>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Ambulance Coverage</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.ambulanceCoverage ? '✅ Yes' : '❌ No'}</div>
+                    {plan.ambulanceLimit && <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>₹{plan.ambulanceLimit}</div>}
+                  </div>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Domiciliary Coverage</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.domiciliaryCoverage ? '✅ Yes' : '❌ No'}</div>
+                  </div>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Hospitalization Coverage</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.hospitalizationCoverage ? '✅ Yes' : '❌ No'}</div>
+                    {plan.preHospitalizationDays && <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>Pre: {plan.preHospitalizationDays} days</div>}
+                    {plan.postHospitalizationDays && <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>Post: {plan.postHospitalizationDays} days</div>}
+                  </div>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Pre-existing Waiting</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.preExistingWaiting || 48} months</div>
+                    {plan.preExistingWaiting && <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>{plan.preExistingWaiting > 0 ? 'Standard waiting period' : 'No waiting period'}</div>}
                   </div>
                 </div>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Coverage Section */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-              <button
-                onClick={() => toggleSection('coverage')}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
-              >
-                <span className="font-semibold text-gray-800 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-blue-600" />
-                  Coverage Details
-                </span>
-                {expandedSections.coverage ? (
-                  <ChevronUp className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-              {expandedSections.coverage && (
-                <div className="p-4 space-y-3">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <div className="text-sm text-gray-500">Sum Insured</div>
-                      <div className="font-medium text-gray-800">
-                        {formatCurrency(plan.sumInsured?.default || 0)}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Min: {formatCurrency(plan.sumInsured?.min || 0)} • Max: {formatCurrency(plan.sumInsured?.max || 0)}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500">Room Rent Limit</div>
-                      <div className="font-medium text-gray-800 capitalize">
-                        {plan.roomRentLimit || 'Standard'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500">ICU Coverage</div>
-                      <div className="font-medium text-gray-800">
-                        {plan.icuCoverage ? 'Yes' : 'No'}
-                        {plan.icuLimit && ` (${plan.icuLimit}% of sum insured)`}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500">Daycare Coverage</div>
-                      <div className="font-medium text-gray-800">
-                        {plan.daycareCoverage ? 'Yes' : 'No'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500">Ambulance Coverage</div>
-                      <div className="font-medium text-gray-800">
-                        {plan.ambulanceCoverage ? 'Yes' : 'No'}
-                        {plan.ambulanceLimit && ` (₹${plan.ambulanceLimit})`}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500">Pre-existing Waiting</div>
-                      <div className="font-medium text-gray-800">
-                        {plan.preExistingWaiting || 48} months
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Features Section */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-              <button
-                onClick={() => toggleSection('features')}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
-              >
-                <span className="font-semibold text-gray-800 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-yellow-600" />
-                  Features & Benefits
-                </span>
-                {expandedSections.features ? (
-                  <ChevronUp className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-              {expandedSections.features && (
-                <div className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(plan.features || []).map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        {feature.included ? (
-                          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          {/* ============================================
+              FEATURES & BENEFITS
+              ============================================ */}
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+            <button
+              onClick={() => toggleSection('features')}
+              style={{ 
+                width: '100%', 
+                padding: '1rem 1.5rem', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                borderBottom: expandedSections.features ? '1px solid #f3f4f6' : 'none'
+              }}
+            >
+              <span>✨ Features & Benefits</span>
+              <span>{expandedSections.features ? '▲' : '▼'}</span>
+            </button>
+            {expandedSections.features && (
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                  {(plan.features || []).map((feature, idx) => (
+                    <div key={idx} style={{ 
+                      display: 'flex', 
+                      alignItems: 'flex-start', 
+                      gap: '0.75rem', 
+                      padding: '0.75rem', 
+                      backgroundColor: '#f9fafb', 
+                      borderRadius: '8px',
+                      border: feature.included !== false ? '1px solid #d1fae5' : '1px solid #fee2e2'
+                    }}>
+                      <span style={{ fontSize: '1.25rem' }}>{feature.included !== false ? '✅' : '❌'}</span>
+                      <div>
+                        <div style={{ fontWeight: 'bold', fontSize: '0.875rem' }}>{typeof feature === 'string' ? feature : feature.title}</div>
+                        {typeof feature !== 'string' && feature.description && (
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{feature.description}</div>
                         )}
-                        <div>
-                          <div className="font-medium text-gray-800">{feature.title}</div>
-                          {feature.description && (
-                            <div className="text-sm text-gray-500">{feature.description}</div>
-                          )}
-                        </div>
+                        {typeof feature !== 'string' && feature.category && (
+                          <div style={{ fontSize: '0.65rem', color: '#6b7280', marginTop: '0.25rem' }}>Category: {feature.category}</div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                  {(plan.features || []).length === 0 && (
-                    <p className="text-gray-500 text-center py-4">No features listed</p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Inclusions & Exclusions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              {/* Inclusions */}
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <button
-                  onClick={() => toggleSection('inclusions')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
-                >
-                  <span className="font-semibold text-green-700 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    Inclusions
-                  </span>
-                  {expandedSections.inclusions ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </button>
-                {expandedSections.inclusions && (
-                  <div className="p-4">
-                    <ul className="space-y-2">
-                      {(plan.inclusions || []).map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                          <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                    {(plan.inclusions || []).length === 0 && (
-                      <p className="text-gray-500 text-center py-4">No inclusions listed</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Exclusions */}
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <button
-                  onClick={() => toggleSection('exclusions')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
-                >
-                  <span className="font-semibold text-red-700 flex items-center gap-2">
-                    <XCircle className="w-5 h-5" />
-                    Exclusions
-                  </span>
-                  {expandedSections.exclusions ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </button>
-                {expandedSections.exclusions && (
-                  <div className="p-4">
-                    <ul className="space-y-2">
-                      {(plan.exclusions || []).map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                          <X className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                    {(plan.exclusions || []).length === 0 && (
-                      <p className="text-gray-500 text-center py-4">No exclusions listed</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Add-ons */}
-            {(plan.addons || []).length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-                <button
-                  onClick={() => toggleSection('addons')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
-                >
-                  <span className="font-semibold text-gray-800 flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-orange-600" />
-                    Add-ons / Riders
-                  </span>
-                  {expandedSections.addons ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </button>
-                {expandedSections.addons && (
-                  <div className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {plan.addons.map((addon, idx) => (
-                        <div
-                          key={idx}
-                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                            selectedAddons.includes(addon._id)
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-blue-300'
-                          }`}
-                          onClick={() => toggleAddon(addon)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <div className="font-medium text-gray-800">{addon.name}</div>
-                              <div className="text-sm text-gray-500">{addon.description}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-semibold text-blue-600">
-                                {formatCurrency(addon.price || 0)}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
                     </div>
-                  </div>
+                  ))}
+                </div>
+                {(plan.features || []).length === 0 && (
+                  <p style={{ color: '#6b7280', textAlign: 'center', padding: '1rem' }}>No features listed for this plan.</p>
                 )}
               </div>
             )}
+          </div>
 
-            {/* Network Hospitals */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+          {/* ============================================
+              INCLUSIONS & EXCLUSIONS
+              ============================================ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            {/* Inclusions */}
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              <button
+                onClick={() => toggleSection('inclusions')}
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem 1.5rem', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  borderBottom: expandedSections.inclusions ? '1px solid #f3f4f6' : 'none'
+                }}
+              >
+                <span style={{ color: '#10b981' }}>✅ Inclusions</span>
+                <span>{expandedSections.inclusions ? '▲' : '▼'}</span>
+              </button>
+              {expandedSections.inclusions && (
+                <div style={{ padding: '1.5rem' }}>
+                  <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                    {(plan.inclusions || []).map((item, idx) => (
+                      <li key={idx} style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{item}</li>
+                    ))}
+                  </ul>
+                  {(plan.inclusions || []).length === 0 && (
+                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '1rem' }}>No inclusions listed.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Exclusions */}
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              <button
+                onClick={() => toggleSection('exclusions')}
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem 1.5rem', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  borderBottom: expandedSections.exclusions ? '1px solid #f3f4f6' : 'none'
+                }}
+              >
+                <span style={{ color: '#dc2626' }}>❌ Exclusions</span>
+                <span>{expandedSections.exclusions ? '▲' : '▼'}</span>
+              </button>
+              {expandedSections.exclusions && (
+                <div style={{ padding: '1.5rem' }}>
+                  <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                    {(plan.exclusions || []).map((item, idx) => (
+                      <li key={idx} style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{item}</li>
+                    ))}
+                  </ul>
+                  {(plan.exclusions || []).length === 0 && (
+                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '1rem' }}>No exclusions listed.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ============================================
+              ADD-ONS / RIDERS
+              ============================================ */}
+          {(plan.addons || []).length > 0 && (
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              <button
+                onClick={() => toggleSection('addons')}
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem 1.5rem', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  borderBottom: expandedSections.addons ? '1px solid #f3f4f6' : 'none'
+                }}
+              >
+                <span>➕ Add-ons / Riders</span>
+                <span>{expandedSections.addons ? '▲' : '▼'}</span>
+              </button>
+              {expandedSections.addons && (
+                <div style={{ padding: '1.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                    {(plan.addons || []).map((addon, idx) => (
+                      <div key={idx} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontWeight: 'bold' }}>{addon.name}</div>
+                            {addon.description && <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{addon.description}</div>}
+                          </div>
+                          <div style={{ fontWeight: 'bold', color: '#2563eb' }}>{formatCurrency(addon.price || 0)}</div>
+                        </div>
+                        {addon.coverage && (
+                          <div style={{ fontSize: '0.65rem', color: '#6b7280', marginTop: '0.25rem' }}>Coverage: {addon.coverage}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ============================================
+              NETWORK HOSPITALS
+              ============================================ */}
+          {(plan.networkHospitals && plan.networkHospitals.length > 0) || plan.totalNetworkHospitals > 0 ? (
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
               <button
                 onClick={() => toggleSection('network')}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem 1.5rem', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  borderBottom: expandedSections.network ? '1px solid #f3f4f6' : 'none'
+                }}
               >
-                <span className="font-semibold text-gray-800 flex items-center gap-2">
-                  <Building className="w-5 h-5 text-green-600" />
-                  Network Hospitals
-                </span>
-                {expandedSections.network ? (
-                  <ChevronUp className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                )}
+                <span>🏥 Network Hospitals</span>
+                <span>{expandedSections.network ? '▲' : '▼'}</span>
               </button>
               {expandedSections.network && (
-                <div className="p-4">
-                  <div className="mb-4">
-                    <div className="text-sm text-gray-500">Total Network Hospitals</div>
-                    <div className="font-bold text-2xl text-gray-800">
-                      {plan.totalNetworkHospitals || plan.networkHospitals?.length || 0}
-                    </div>
+                <div style={{ padding: '1.5rem' }}>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Total Network Hospitals</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{plan.totalNetworkHospitals || plan.networkHospitals?.length || 0}</div>
                   </div>
                   {(plan.networkHospitals || []).length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-                      {plan.networkHospitals.slice(0, 10).map((hospital, idx) => (
-                        <div key={idx} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-                          <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <div className="text-sm font-medium text-gray-800">{hospital.name}</div>
-                            <div className="text-xs text-gray-500">
-                              {hospital.city}, {hospital.state}
-                            </div>
-                          </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+                      {plan.networkHospitals.map((hospital, idx) => (
+                        <div key={idx} style={{ padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: '6px' }}>
+                          <div style={{ fontWeight: 'bold', fontSize: '0.875rem' }}>{hospital.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{hospital.city}, {hospital.state}</div>
+                          {hospital.address && <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>{hospital.address}</div>}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-4">No network hospitals listed</p>
+                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '1rem' }}>No network hospitals listed for this plan.</p>
                   )}
                   {(plan.networkHospitals || []).length > 10 && (
-                    <p className="text-center text-sm text-blue-600 mt-4">
+                    <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#2563eb', marginTop: '0.5rem' }}>
                       +{(plan.networkHospitals || []).length - 10} more hospitals
                     </p>
                   )}
                 </div>
               )}
             </div>
+          ) : null}
 
-            {/* Claim Process */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-              <button
-                onClick={() => toggleSection('claim')}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
-              >
-                <span className="font-semibold text-gray-800 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-purple-600" />
-                  Claim Process
-                </span>
-                {expandedSections.claim ? (
-                  <ChevronUp className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-              {expandedSections.claim && (
-                <div className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-sm text-gray-500">Cashless Claim</div>
-                      <div className="font-semibold text-gray-800">
-                        {plan.claimProcess?.cashless ? 'Available' : 'Not Available'}
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-sm text-gray-500">Claim Settlement Ratio</div>
-                      <div className="font-semibold text-gray-800">
-                        {plan.claimProcess?.claimSettlementRatio || 'N/A'}%
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-sm text-gray-500">Avg. Settlement Time</div>
-                      <div className="font-semibold text-gray-800">
-                        {plan.claimProcess?.averageSettlementTime || 'Standard'}
-                      </div>
-                    </div>
+          {/* ============================================
+              CLAIM PROCESS
+              ============================================ */}
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+            <button
+              onClick={() => toggleSection('claim')}
+              style={{ 
+                width: '100%', 
+                padding: '1rem 1.5rem', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                borderBottom: expandedSections.claim ? '1px solid #f3f4f6' : 'none'
+              }}
+            >
+              <span>🏆 Claim Process</span>
+              <span>{expandedSections.claim ? '▲' : '▼'}</span>
+            </button>
+            {expandedSections.claim && (
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Cashless Claim</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.claimProcess?.cashless ? '✅ Available' : '❌ Not Available'}</div>
                   </div>
-
-                  {plan.claimProcess?.processDescription && (
-                    <div className="mt-4">
-                      <div className="text-sm font-medium text-gray-700 mb-2">Process Description</div>
-                      <p className="text-sm text-gray-600">{plan.claimProcess.processDescription}</p>
-                    </div>
-                  )}
-
-                  {(plan.claimProcess?.requiredDocuments || []).length > 0 && (
-                    <div className="mt-4">
-                      <div className="text-sm font-medium text-gray-700 mb-2">Required Documents</div>
-                      <ul className="space-y-1">
-                        {plan.claimProcess.requiredDocuments.map((doc, idx) => (
-                          <li key={idx} className="text-sm text-gray-600 flex items-center gap-2">
-                            <Check className="w-4 h-4 text-green-600" />
-                            {doc}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Claim Settlement Ratio</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.claimProcess?.claimSettlementRatio || 'N/A'}%</div>
+                  </div>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Avg. Settlement Time</div>
+                    <div style={{ fontWeight: 'bold' }}>{plan.claimProcess?.averageSettlementTime || 'Standard'}</div>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Tax Benefits */}
-            {(plan.taxBenefits || []).length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-                <button
-                  onClick={() => toggleSection('tax')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
-                >
-                  <span className="font-semibold text-gray-800 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
-                    Tax Benefits
-                  </span>
-                  {expandedSections.tax ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </button>
-                {expandedSections.tax && (
-                  <div className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {plan.taxBenefits.map((tax, idx) => (
-                        <div key={idx} className="p-4 bg-green-50 rounded-lg">
-                          <div className="font-semibold text-gray-800">Section {tax.section}</div>
-                          <div className="text-sm text-gray-600">{tax.description}</div>
-                          {tax.maxAmount && (
-                            <div className="text-sm text-green-700 font-medium mt-1">
-                              Up to ₹{tax.maxAmount} deduction
-                            </div>
-                          )}
-                        </div>
+                {plan.claimProcess?.processDescription && (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>Process Description</div>
+                    <p style={{ fontSize: '0.875rem', color: '#4b5563', marginTop: '0.25rem' }}>{plan.claimProcess.processDescription}</p>
+                  </div>
+                )}
+
+                {(plan.claimProcess?.requiredDocuments || []).length > 0 && (
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>Required Documents</div>
+                    <ul style={{ paddingLeft: '1.2rem', marginTop: '0.25rem' }}>
+                      {plan.claimProcess.requiredDocuments.map((doc, idx) => (
+                        <li key={idx} style={{ fontSize: '0.875rem', color: '#4b5563' }}>📄 {doc}</li>
                       ))}
-                    </div>
+                    </ul>
+                  </div>
+                )}
+
+                {plan.claimProcess?.claimIntimationNumber && (
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                    Claim Intimation Number: <strong>{plan.claimProcess.claimIntimationNumber}</strong>
                   </div>
                 )}
               </div>
@@ -653,125 +617,188 @@ const InsuranceDetail = () => {
           </div>
 
           {/* ============================================
-              SIDEBAR - BUY / CALCULATOR
+              TAX BENEFITS
               ============================================ */}
-          <div className="lg:w-80 flex-shrink-0">
-            <div className="sticky top-24 space-y-4">
-              {/* Price Card */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="text-center border-b border-gray-100 pb-4 mb-4">
-                  <div className="text-sm text-gray-500">Starting Premium</div>
-                  <div className="text-3xl font-bold text-blue-600">
-                    {formatCurrency(plan.basePremium)}
-                  </div>
-                  <div className="text-xs text-gray-400">per year (incl. GST)</div>
-                  {plan.discountPercentage > 0 && (
-                    <div className="mt-2 inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">
-                      {plan.discountPercentage}% OFF
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleBuyNow}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  <Shield className="w-5 h-5" />
-                  Buy Now
-                </button>
-
-                <button
-                  onClick={handleCompare}
-                  className="w-full mt-3 border border-blue-600 text-blue-600 hover:bg-blue-50 py-2.5 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  Compare with Other Plans
-                </button>
-
-                <div className="mt-4 text-center text-xs text-gray-400">
-                  <Clock className="w-3 h-3 inline mr-1" />
-                  Policy issued in minutes
-                </div>
-              </div>
-
-              {/* Premium Calculator Toggle */}
+          {(plan.taxBenefits || []).length > 0 && (
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
               <button
-                onClick={() => setShowCalculator(!showCalculator)}
-                className="w-full bg-white border border-gray-200 hover:border-blue-400 text-gray-700 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
+                onClick={() => toggleSection('tax')}
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem 1.5rem', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  borderBottom: expandedSections.tax ? '1px solid #f3f4f6' : 'none'
+                }}
               >
-                <IndianRupee className="w-5 h-5" />
-                Calculate Your Premium
-                {showCalculator ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                <span>💰 Tax Benefits</span>
+                <span>{expandedSections.tax ? '▲' : '▼'}</span>
               </button>
-
-              {showCalculator && (
-                <div className="bg-white rounded-xl shadow-lg p-4">
-                  <PremiumCalculator defaultPlanId={plan._id} />
+              {expandedSections.tax && (
+                <div style={{ padding: '1.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                    {(plan.taxBenefits || []).map((tax, idx) => (
+                      <div key={idx} style={{ padding: '0.75rem', backgroundColor: '#ecfdf5', borderRadius: '8px', border: '1px solid #d1fae5' }}>
+                        <div style={{ fontWeight: 'bold' }}>Section {tax.section}</div>
+                        <div style={{ fontSize: '0.875rem', color: '#4b5563' }}>{tax.description}</div>
+                        {tax.maxAmount && (
+                          <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 'bold', marginTop: '0.25rem' }}>
+                            Up to ₹{tax.maxAmount.toLocaleString()} deduction
+                          </div>
+                        )}
+                        {tax.eligibility && (
+                          <div style={{ fontSize: '0.65rem', color: '#6b7280', marginTop: '0.25rem' }}>Eligibility: {tax.eligibility}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
+            </div>
+          )}
 
-              {/* Company Info */}
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <Building className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-800">
-                      {plan.companyId?.name || 'Insurance Company'}
-                    </div>
-                    <div className="text-xs text-gray-500">Insurance Provider</div>
-                  </div>
-                </div>
-                <div className="space-y-2 text-sm">
-                  {plan.companyId?.email && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Mail className="w-4 h-4" />
-                      {plan.companyId.email}
-                    </div>
-                  )}
-                  {plan.companyId?.phone && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="w-4 h-4" />
-                      {plan.companyId.phone}
-                    </div>
-                  )}
-                  {plan.companyId?.website && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Globe className="w-4 h-4" />
-                      <a href={plan.companyId.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        Visit Website
+          {/* ============================================
+              DOCUMENTS
+              ============================================ */}
+          {(plan.brochureUrl || plan.policyWordingsUrl || plan.proposalFormUrl || plan.claimFormUrl) && (
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              <button
+                onClick={() => toggleSection('documents')}
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem 1.5rem', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  borderBottom: expandedSections.documents ? '1px solid #f3f4f6' : 'none'
+                }}
+              >
+                <span>📄 Documents</span>
+                <span>{expandedSections.documents ? '▲' : '▼'}</span>
+              </button>
+              {expandedSections.documents && (
+                <div style={{ padding: '1.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                    {plan.brochureUrl && (
+                      <a href={plan.brochureUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px', textDecoration: 'none', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        📄 Brochure
                       </a>
-                    </div>
-                  )}
+                    )}
+                    {plan.policyWordingsUrl && (
+                      <a href={plan.policyWordingsUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px', textDecoration: 'none', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        📜 Policy Wordings
+                      </a>
+                    )}
+                    {plan.proposalFormUrl && (
+                      <a href={plan.proposalFormUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px', textDecoration: 'none', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        📝 Proposal Form
+                      </a>
+                    )}
+                    {plan.claimFormUrl && (
+                      <a href={plan.claimFormUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px', textDecoration: 'none', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        📋 Claim Form
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
+            </div>
+          )}
 
-              {/* Trust Badges */}
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex justify-around">
-                  <div className="text-center">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div className="text-xs text-gray-500">IRDAI Approved</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <Shield className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="text-xs text-gray-500">Trusted Platform</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <Star className="w-5 h-5 text-yellow-600" />
-                    </div>
-                    <div className="text-xs text-gray-500">4.8 Rating</div>
-                  </div>
-                </div>
+          {/* ============================================
+              COMPANY INFO
+              ============================================ */}
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '1.5rem' }}>
+            <h3 style={{ fontWeight: 'bold', marginBottom: '0.75rem' }}>🏢 Insurance Company</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Company Name</div>
+                <div style={{ fontWeight: 'bold' }}>{plan.companyId?.name || 'N/A'}</div>
               </div>
+              {plan.companyId?.email && (
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Email</div>
+                  <div>{plan.companyId.email}</div>
+                </div>
+              )}
+              {plan.companyId?.phone && (
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Phone</div>
+                  <div>{plan.companyId.phone}</div>
+                </div>
+              )}
+              {plan.companyId?.website && (
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Website</div>
+                  <a href={plan.companyId.website} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none' }}>
+                    Visit Website →
+                  </a>
+                </div>
+              )}
+              {plan.companyId?.address && (
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Address</div>
+                  <div style={{ fontSize: '0.875rem' }}>{plan.companyId.address}</div>
+                </div>
+              )}
+              {plan.companyId?.isVerified && (
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Verification Status</div>
+                  <div style={{ color: '#10b981', fontWeight: 'bold' }}>✅ Verified</div>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* ============================================
+              CTA - FLOATING BOTTOM BAR
+              ============================================ */}
+          <div style={{ 
+            position: 'sticky', 
+            bottom: 0, 
+            backgroundColor: 'white', 
+            borderTop: '1px solid #e5e7eb',
+            padding: '1rem',
+            boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            zIndex: 20
+          }}>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Starting from</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2563eb' }}>{formatCurrency(plan.basePremium)}</div>
+              <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>per year incl. GST</div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => navigate(`/insurance/compare?ids=${plan._id}`)}
+                style={{ padding: '0.6rem 1.5rem', border: '1px solid #2563eb', borderRadius: '8px', background: 'white', color: '#2563eb', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                📊 Compare
+              </button>
+              <button
+                onClick={() => navigate(`/insurance/apply/${plan._id}`)}
+                style={{ padding: '0.6rem 2rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+              >
+                🛡️ Apply Now
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

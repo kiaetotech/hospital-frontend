@@ -1,32 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Search, 
-  Shield, 
-  TrendingUp, 
-  Users, 
-  Award, 
-  Clock, 
-  CheckCircle,
-  ChevronRight,
-  Star,
-  Building,
-  Heart,
-  Family,
-  User,
-  Baby,
-  AlertCircle,
-  ArrowRight,
-  Sparkles,
-  ShieldCheck,
-  Globe,
-  Phone,
-  Mail,
-  MapPin
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import InsuranceCard from '../../components/InsuranceCard';
-import PremiumCalculator from '../../components/PremiumCalculator';
 
 const InsuranceHub = () => {
   const navigate = useNavigate();
@@ -34,24 +8,12 @@ const InsuranceHub = () => {
   const [featuredPlans, setFeaturedPlans] = useState([]);
   const [popularPlans, setPopularPlans] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPlanType, setSelectedPlanType] = useState('all');
-  const [showCalculator, setShowCalculator] = useState(false);
   const [stats, setStats] = useState({
     totalPlans: 0,
     totalCompanies: 0,
     policiesIssued: 0,
     claimSettlementRate: 0
   });
-
-  // Plan types for filtering
-  const planTypes = [
-    { id: 'all', label: 'All Plans', icon: Shield },
-    { id: 'individual', label: 'Individual', icon: User },
-    { id: 'family_floater', label: 'Family Floater', icon: Family },
-    { id: 'critical_illness', label: 'Critical Illness', icon: AlertCircle },
-    { id: 'senior_citizen', label: 'Senior Citizen', icon: Users },
-    { id: 'maternity', label: 'Maternity', icon: Baby }
-  ];
 
   // Fetch data on load
   useEffect(() => {
@@ -102,114 +64,119 @@ const InsuranceHub = () => {
     }
   };
 
-  const handleViewAllPlans = () => {
-    navigate('/insurance/list');
-  };
-
-  const handleViewAllPopular = () => {
-    navigate('/insurance/list?sort=popular');
-  };
+  // Plan types for filtering
+  const planTypes = [
+    { id: 'all', label: 'All Plans', icon: '📋' },
+    { id: 'individual', label: 'Individual', icon: '👤' },
+    { id: 'family_floater', label: 'Family Floater', icon: '👨‍👩‍👧‍👦' },
+    { id: 'critical_illness', label: 'Critical Illness', icon: '❤️' },
+    { id: 'senior_citizen', label: 'Senior Citizen', icon: '👴' },
+    { id: 'maternity', label: 'Maternity', icon: '👶' }
+  ];
 
   // Loading skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="animate-pulse">
-          <div className="bg-blue-600 h-[400px] w-full"></div>
-          <div className="container mx-auto px-4 py-8">
-            <div className="grid grid-cols-4 gap-6">
-              {[1,2,3,4].map(i => (
-                <div key={i} className="bg-white rounded-xl h-32"></div>
-              ))}
-            </div>
-            <div className="mt-12">
-              <div className="flex justify-between items-center mb-6">
-                <div className="h-8 w-48 bg-gray-200 rounded"></div>
-                <div className="h-6 w-24 bg-gray-200 rounded"></div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[1,2,3].map(i => (
-                  <div key={i} className="bg-white rounded-xl h-64"></div>
-                ))}
-              </div>
-            </div>
-          </div>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Loading insurance plans...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
       {/* ============================================
           HERO SECTION
           ============================================ */}
-      <section className="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
-          <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-        </div>
-        
-        <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Shield className="w-8 h-8 text-yellow-400" />
-              <span className="text-yellow-400 font-semibold text-sm uppercase tracking-wider">
-                India's Trusted Health Insurance Marketplace
-              </span>
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              Compare & Buy Health Insurance
-              <span className="text-yellow-400 block">Plans That Protect Your Family</span>
-            </h1>
-            
-            <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Compare 50+ health insurance plans from top insurers. Get the best coverage at the lowest premium. Save up to 40% on your policy.
-            </p>
+      <section style={{ 
+        backgroundColor: '#1e3a5f', 
+        padding: '4rem 2rem', 
+        textAlign: 'center', 
+        color: 'white' 
+      }}>
+        <div style={{ fontSize: '48px', marginBottom: '1rem' }}>🛡️</div>
+        <h1 style={{ 
+          fontSize: '2.5rem', 
+          fontWeight: 'bold', 
+          marginBottom: '1rem',
+          maxWidth: '800px',
+          marginLeft: 'auto',
+          marginRight: 'auto'
+        }}>
+          Compare & Buy Health Insurance
+        </h1>
+        <p style={{ 
+          fontSize: '1.2rem', 
+          opacity: 0.9, 
+          maxWidth: '600px', 
+          margin: '0 auto 2rem' 
+        }}>
+          Compare 50+ health insurance plans from top insurers. Get the best coverage at the lowest premium.
+        </p>
 
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-              <div className="relative flex items-center bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search plans by name, coverage, or company..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 text-gray-800 placeholder-gray-400 focus:outline-none"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 font-semibold transition-colors duration-200"
-                >
-                  Search Plans
-                </button>
-              </div>
-            </form>
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <div style={{ 
+            display: 'flex', 
+            borderRadius: '8px', 
+            overflow: 'hidden',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
+          }}>
+            <input
+              type="text"
+              placeholder="Search plans by name, coverage, or company..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ 
+                flex: 1, 
+                padding: '14px 20px', 
+                border: 'none', 
+                fontSize: '16px',
+                outline: 'none'
+              }}
+            />
+            <button 
+              type="submit" 
+              style={{ 
+                padding: '14px 32px', 
+                backgroundColor: '#f59e0b', 
+                border: 'none', 
+                color: 'white', 
+                fontWeight: 'bold', 
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              🔍 Search Plans
+            </button>
+          </div>
+        </form>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
-              <div className="text-center">
-                <div className="text-3xl font-bold">{stats.totalPlans}+</div>
-                <div className="text-blue-200 text-sm">Insurance Plans</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold">{stats.totalCompanies}+</div>
-                <div className="text-blue-200 text-sm">Insurance Companies</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold">{stats.policiesIssued}+</div>
-                <div className="text-blue-200 text-sm">Policies Issued</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold">{stats.claimSettlementRate}%</div>
-                <div className="text-blue-200 text-sm">Claim Settlement Ratio</div>
-              </div>
-            </div>
+        {/* Quick Stats */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+          gap: '1.5rem', 
+          maxWidth: '900px', 
+          margin: '2rem auto 0'
+        }}>
+          <div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalPlans || 50}+</div>
+            <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Insurance Plans</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalCompanies || 20}+</div>
+            <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Insurance Companies</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.policiesIssued || 10000}+</div>
+            <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Policies Issued</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.claimSettlementRate || 95}%</div>
+            <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Claim Settlement Ratio</div>
           </div>
         </div>
       </section>
@@ -217,137 +184,154 @@ const InsuranceHub = () => {
       {/* ============================================
           PLAN TYPES QUICK ACCESS
           ============================================ */}
-      <section className="container mx-auto px-4 py-8 -mt-8 relative z-20">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {planTypes.map((type) => {
-            const Icon = type.icon;
-            return (
-              <button
-                key={type.id}
-                onClick={() => handlePlanTypeClick(type.id)}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg p-4 text-center transition-all duration-200 hover:-translate-y-1"
-              >
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-2">
-                    <Icon className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">{type.label}</span>
-                </div>
-              </button>
-            );
-          })}
+      <section style={{ 
+        maxWidth: '1200px', 
+        margin: '-2rem auto 2rem', 
+        padding: '0 1rem'
+      }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+          gap: '1rem'
+        }}>
+          {planTypes.map((type) => (
+            <div
+              key={type.id}
+              onClick={() => handlePlanTypeClick(type.id)}
+              style={{ 
+                backgroundColor: 'white', 
+                padding: '1.5rem 1rem', 
+                borderRadius: '12px', 
+                textAlign: 'center', 
+                cursor: 'pointer', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div style={{ fontSize: '2rem' }}>{type.icon}</div>
+              <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginTop: '0.5rem' }}>{type.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* ============================================
           FEATURED PLANS
           ============================================ */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="flex justify-between items-center mb-6">
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-              ⭐ Featured Plans
-            </h2>
-            <p className="text-gray-600">Most popular and highly rated insurance plans</p>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>⭐ Featured Plans</h2>
+            <p style={{ color: '#6b7280' }}>Most popular and highly rated insurance plans</p>
           </div>
-          <button
-            onClick={handleViewAllPlans}
-            className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
+          <button 
+            onClick={() => navigate('/insurance/list')} 
+            style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            View All <ChevronRight className="w-4 h-4" />
+            View All →
           </button>
         </div>
 
         {featuredPlans.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+            gap: '1.5rem',
+            marginBottom: '3rem'
+          }}>
             {featuredPlans.map((plan) => (
-              <InsuranceCard key={plan._id} plan={plan} featured />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-xl">
-            <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No featured plans available</p>
-          </div>
-        )}
-      </section>
-
-      {/* ============================================
-          PREMIUM CALCULATOR
-          ============================================ */}
-      <section className="bg-gradient-to-r from-blue-50 to-indigo-50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="md:w-1/2">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
-                💰 Calculate Your Premium
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Get an instant estimate of your health insurance premium. Enter your details and see how much you can save.
-              </p>
-              <button
-                onClick={() => setShowCalculator(!showCalculator)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 inline-flex items-center gap-2"
-              >
-                {showCalculator ? 'Hide Calculator' : 'Try Premium Calculator'}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="md:w-1/2 flex justify-center">
-              <div className="bg-white rounded-xl shadow-lg p-8 text-center w-full max-w-sm">
-                <div className="text-4xl font-bold text-blue-600 mb-2">₹ 500</div>
-                <div className="text-gray-500 text-sm">Average Monthly Premium</div>
-                <div className="flex justify-center gap-4 mt-4 text-sm">
+              <div key={plan._id} style={{ 
+                backgroundColor: 'white', 
+                borderRadius: '12px', 
+                padding: '1.5rem', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                borderTop: '4px solid #f59e0b',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <span className="text-gray-500">Min</span>
-                    <div className="font-semibold">₹ 200</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{plan.companyId?.name || 'Insurance Company'}</div>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', margin: '4px 0' }}>{plan.planName}</h3>
                   </div>
-                  <div>
-                    <span className="text-gray-500">Max</span>
-                    <div className="font-semibold">₹ 2,000</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b' }}>
+                    <span>⭐</span>
+                    <span>{plan.rating || 0}</span>
                   </div>
                 </div>
+                
+                <div style={{ margin: '12px 0' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2563eb' }}>₹{plan.basePremium?.toLocaleString()}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>per year incl. GST</div>
+                </div>
+
+                <div style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {(plan.features || []).slice(0, 3).map((feature, idx) => (
+                    <span key={idx} style={{ 
+                      fontSize: '0.7rem', 
+                      backgroundColor: '#f3f4f6', 
+                      padding: '2px 10px', 
+                      borderRadius: '12px',
+                      color: '#4b5563'
+                    }}>
+                      ✅ {typeof feature === 'string' ? feature : feature.title}
+                    </span>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  <button 
+                    onClick={() => navigate(`/insurance/plan/${plan._id}`)} 
+                    style={{ 
+                      flex: 1, 
+                      padding: '10px', 
+                      backgroundColor: '#2563eb', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    View Details
+                  </button>
+                  <button 
+                    onClick={() => navigate(`/insurance/apply/${plan._id}`)} 
+                    style={{ 
+                      flex: 1, 
+                      padding: '10px', 
+                      backgroundColor: '#f59e0b', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Apply Now
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {showCalculator && (
-            <div className="mt-8 max-w-3xl mx-auto">
-              <PremiumCalculator />
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ============================================
-          POPULAR PLANS
-          ============================================ */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-              🔥 Most Popular Plans
-            </h2>
-            <p className="text-gray-600">Trusted by thousands of customers</p>
-          </div>
-          <button
-            onClick={handleViewAllPopular}
-            className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
-          >
-            View All <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {popularPlans.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {popularPlans.map((plan) => (
-              <InsuranceCard key={plan._id} plan={plan} popular />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-xl">
-            <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No popular plans available</p>
+          <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: 'white', borderRadius: '12px' }}>
+            <p style={{ color: '#6b7280' }}>No featured plans available</p>
           </div>
         )}
       </section>
@@ -355,92 +339,39 @@ const InsuranceHub = () => {
       {/* ============================================
           WHY CHOOSE US
           ============================================ */}
-      <section className="bg-white py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-12">
+      <section style={{ backgroundColor: 'white', padding: '3rem 1rem' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '2rem' }}>
             Why Choose Our Insurance Marketplace?
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShieldCheck className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Trusted Platform</h3>
-              <p className="text-gray-600 text-sm">Compare plans from 20+ IRDAI approved insurance companies</p>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
+            gap: '2rem'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem' }}>🛡️</div>
+              <h3 style={{ fontWeight: 'bold', margin: '0.5rem 0' }}>Trusted Platform</h3>
+              <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Compare plans from 20+ IRDAI approved insurance companies</p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Best Prices</h3>
-              <p className="text-gray-600 text-sm">Get the lowest premiums with exclusive online discounts</p>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem' }}>💰</div>
+              <h3 style={{ fontWeight: 'bold', margin: '0.5rem 0' }}>Best Prices</h3>
+              <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Get the lowest premiums with exclusive online discounts</p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Quick Process</h3>
-              <p className="text-gray-600 text-sm">Get policy issued in minutes. No medical tests required for some plans</p>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem' }}>⏱️</div>
+              <h3 style={{ fontWeight: 'bold', margin: '0.5rem 0' }}>Quick Process</h3>
+              <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Get policy issued in minutes. No medical tests required</p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="w-8 h-8 text-yellow-600" />
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Expert Support</h3>
-              <p className="text-gray-600 text-sm">Dedicated claims assistance and 24/7 customer support</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================
-          TRUST INDICATORS
-          ============================================ */}
-      <section className="bg-gray-50 py-12 border-y border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <div className="font-bold text-gray-800">50,000+</div>
-                <div className="text-xs text-gray-500">Happy Customers</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Building className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <div className="font-bold text-gray-800">20+</div>
-                <div className="text-xs text-gray-500">Insurance Partners</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Star className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div>
-                <div className="font-bold text-gray-800">4.8/5</div>
-                <div className="text-xs text-gray-500">Average Rating</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <Heart className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <div className="font-bold text-gray-800">95%</div>
-                <div className="text-xs text-gray-500">Claim Settlement</div>
-              </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem' }}>🏆</div>
+              <h3 style={{ fontWeight: 'bold', margin: '0.5rem 0' }}>Expert Support</h3>
+              <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Dedicated claims assistance and 24/7 customer support</p>
             </div>
           </div>
         </div>
@@ -449,90 +380,51 @@ const InsuranceHub = () => {
       {/* ============================================
           CTA SECTION
           ============================================ */}
-      <section className="bg-gradient-to-r from-blue-700 to-blue-900 py-16 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Protect Your Health?
-          </h2>
-          <p className="text-xl text-blue-200 mb-8 max-w-2xl mx-auto">
-            Get the best health insurance plan tailored to your needs. Compare, choose, and buy in minutes.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link
-              to="/insurance/list"
-              className="bg-white text-blue-700 hover:bg-blue-50 px-8 py-3 rounded-lg font-semibold transition-colors duration-200 inline-flex items-center justify-center gap-2"
-            >
-              Compare Plans Now
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link
-              to="/insurance/plans"
-              className="bg-transparent border-2 border-white hover:bg-white/10 px-8 py-3 rounded-lg font-semibold transition-colors duration-200 inline-flex items-center justify-center gap-2"
-            >
-              Explore All Plans
-            </Link>
-          </div>
+      <section style={{ 
+        backgroundColor: '#1e3a5f', 
+        padding: '3rem 1rem', 
+        textAlign: 'center', 
+        color: 'white'
+      }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+          Ready to Protect Your Health?
+        </h2>
+        <p style={{ fontSize: '1.1rem', opacity: 0.9, maxWidth: '600px', margin: '0 auto 1.5rem' }}>
+          Get the best health insurance plan tailored to your needs. Compare, choose, and buy in minutes.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => navigate('/insurance/list')} 
+            style={{ 
+              padding: '12px 32px', 
+              backgroundColor: '#f59e0b', 
+              border: 'none', 
+              borderRadius: '8px', 
+              color: 'white', 
+              fontWeight: 'bold', 
+              fontSize: '16px', 
+              cursor: 'pointer'
+            }}
+          >
+            Compare Plans Now
+          </button>
+          <button 
+            onClick={() => navigate('/insurance/list')} 
+            style={{ 
+              padding: '12px 32px', 
+              backgroundColor: 'transparent', 
+              border: '2px solid white', 
+              borderRadius: '8px', 
+              color: 'white', 
+              fontWeight: 'bold', 
+              fontSize: '16px', 
+              cursor: 'pointer'
+            }}
+          >
+            Explore All Plans
+          </button>
         </div>
       </section>
-
-      {/* ============================================
-          FOOTER SECTION
-          ============================================ */}
-      <footer className="bg-gray-800 text-gray-300 py-8">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h4 className="text-white font-semibold mb-4">About Us</h4>
-              <p className="text-sm">
-                India's leading health insurance marketplace. We help you compare and buy the best health insurance plans from top insurers.
-              </p>
-              <div className="flex items-center gap-4 mt-4">
-                <a href="#" className="hover:text-white transition-colors">
-                  <Phone className="w-4 h-4" />
-                </a>
-                <a href="#" className="hover:text-white transition-colors">
-                  <Mail className="w-4 h-4" />
-                </a>
-                <a href="#" className="hover:text-white transition-colors">
-                  <Globe className="w-4 h-4" />
-                </a>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/insurance/list" className="hover:text-white transition-colors">All Plans</Link></li>
-                <li><Link to="/insurance/compare" className="hover:text-white transition-colors">Compare Plans</Link></li>
-                <li><Link to="/my-policies" className="hover:text-white transition-colors">My Policies</Link></li>
-                <li><Link to="/insurance/claims" className="hover:text-white transition-colors">Claim Assistance</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-semibold mb-4">Contact</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  <span>+91 1800-123-4567</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  <span>insurance@yourplatform.com</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>Mumbai, India</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-700 mt-8 pt-6 text-center text-sm">
-            <p>&copy; {new Date().getFullYear()} Your Platform. All rights reserved. | Insurance is a subject matter of solicitation.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
