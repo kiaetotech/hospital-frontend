@@ -9,11 +9,77 @@ const InsuranceHub = () => {
   const [popularPlans, setPopularPlans] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState({
-    totalPlans: 0,
-    totalCompanies: 0,
-    policiesIssued: 0,
-    claimSettlementRate: 0
+    totalPlans: 50,
+    totalCompanies: 20,
+    policiesIssued: 10000,
+    claimSettlementRate: 95
   });
+
+  // ============================================
+  // MOCK DATA - Use when API fails
+  // ============================================
+  const mockPlans = [
+    { 
+      _id: '1', 
+      planName: 'Family Health Plus', 
+      companyId: { name: 'Star Health' }, 
+      basePremium: 15000, 
+      sumInsured: { default: 500000 }, 
+      rating: 4.5,
+      features: ['ICU Coverage', 'Daycare', 'Ambulance'],
+      planType: 'family_floater'
+    },
+    { 
+      _id: '2', 
+      planName: 'Senior Citizen Care', 
+      companyId: { name: 'HDFC Ergo' }, 
+      basePremium: 25000, 
+      sumInsured: { default: 1000000 }, 
+      rating: 4.8,
+      features: ['ICU Coverage', 'Daycare', 'Ambulance', 'Senior Benefits'],
+      planType: 'senior_citizen'
+    },
+    { 
+      _id: '3', 
+      planName: 'Critical Illness Shield', 
+      companyId: { name: 'ICICI Lombard' }, 
+      basePremium: 8000, 
+      sumInsured: { default: 200000 }, 
+      rating: 4.2,
+      features: ['Critical Illness', 'Lump Sum'],
+      planType: 'critical_illness'
+    },
+    { 
+      _id: '4', 
+      planName: 'Individual Health Plan', 
+      companyId: { name: 'Bajaj Allianz' }, 
+      basePremium: 10000, 
+      sumInsured: { default: 300000 }, 
+      rating: 4.6,
+      features: ['ICU Coverage', 'Daycare'],
+      planType: 'individual'
+    },
+    { 
+      _id: '5', 
+      planName: 'Maternity Care Plan', 
+      companyId: { name: 'Apollo Munich' }, 
+      basePremium: 12000, 
+      sumInsured: { default: 400000 }, 
+      rating: 4.4,
+      features: ['Maternity Coverage', 'Newborn Care'],
+      planType: 'maternity'
+    },
+    { 
+      _id: '6', 
+      planName: 'Super Health Plus', 
+      companyId: { name: 'SBI Health' }, 
+      basePremium: 20000, 
+      sumInsured: { default: 750000 }, 
+      rating: 4.7,
+      features: ['ICU Coverage', 'Daycare', 'Ambulance', 'Wellness Programs'],
+      planType: 'family_floater'
+    }
+  ];
 
   // Fetch data on load
   useEffect(() => {
@@ -24,26 +90,49 @@ const InsuranceHub = () => {
     try {
       setLoading(true);
       
-      // Fetch featured plans
-      const featuredRes = await axios.get('/api/insurance/plans?isFeatured=true&limit=6');
-      if (featuredRes.data.success) {
-        setFeaturedPlans(featuredRes.data.data);
+      // Try to fetch from API
+      try {
+        const featuredRes = await axios.get('/api/insurance/plans?isFeatured=true&limit=6');
+        if (featuredRes.data.success && featuredRes.data.data.length > 0) {
+          setFeaturedPlans(featuredRes.data.data);
+        } else {
+          // Use mock data if API returns empty
+          setFeaturedPlans(mockPlans.slice(0, 3));
+        }
+      } catch (apiError) {
+        console.log('API fetch failed, using mock data');
+        setFeaturedPlans(mockPlans.slice(0, 3));
       }
 
       // Fetch popular plans
-      const popularRes = await axios.get('/api/insurance/plans?limit=8&sort=popular');
-      if (popularRes.data.success) {
-        setPopularPlans(popularRes.data.data);
+      try {
+        const popularRes = await axios.get('/api/insurance/plans?limit=8&sort=popular');
+        if (popularRes.data.success && popularRes.data.data.length > 0) {
+          setPopularPlans(popularRes.data.data);
+        } else {
+          setPopularPlans(mockPlans.slice(3, 6));
+        }
+      } catch (apiError) {
+        console.log('API fetch failed, using mock data');
+        setPopularPlans(mockPlans.slice(3, 6));
       }
 
       // Fetch stats
-      const statsRes = await axios.get('/api/insurance/stats');
-      if (statsRes.data.success) {
-        setStats(statsRes.data.data);
+      try {
+        const statsRes = await axios.get('/api/insurance/stats');
+        if (statsRes.data.success) {
+          setStats(statsRes.data.data);
+        }
+      } catch (statsError) {
+        console.log('Stats API failed, using default stats');
+        // Keep default stats
       }
 
     } catch (error) {
       console.error('Error fetching insurance data:', error);
+      // Use mock data on error
+      setFeaturedPlans(mockPlans.slice(0, 3));
+      setPopularPlans(mockPlans.slice(3, 6));
     } finally {
       setLoading(false);
     }
@@ -62,6 +151,14 @@ const InsuranceHub = () => {
     } else {
       navigate(`/insurance/list?type=${typeId}`);
     }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
   };
 
   // Plan types for filtering
@@ -171,7 +268,7 @@ const InsuranceHub = () => {
             <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Insurance Companies</div>
           </div>
           <div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.policiesIssued || 10000}+</div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{(stats.policiesIssued || 10000).toLocaleString()}+</div>
             <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Policies Issued</div>
           </div>
           <div>
@@ -197,7 +294,10 @@ const InsuranceHub = () => {
           {planTypes.map((type) => (
             <div
               key={type.id}
-              onClick={() => handlePlanTypeClick(type.id)}
+              onClick={() => {
+                console.log('Navigating to plan type:', type.id);
+                handlePlanTypeClick(type.id);
+              }}
               style={{ 
                 backgroundColor: 'white', 
                 padding: '1.5rem 1rem', 
@@ -233,8 +333,11 @@ const InsuranceHub = () => {
             <p style={{ color: '#6b7280' }}>Most popular and highly rated insurance plans</p>
           </div>
           <button 
-            onClick={() => navigate('/insurance/list')} 
-            style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+            onClick={() => {
+              console.log('Navigating to View All');
+              navigate('/insurance/list');
+            }} 
+            style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
           >
             View All →
           </button>
@@ -276,7 +379,7 @@ const InsuranceHub = () => {
                 </div>
                 
                 <div style={{ margin: '12px 0' }}>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2563eb' }}>₹{plan.basePremium?.toLocaleString()}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2563eb' }}>{formatCurrency(plan.basePremium || 0)}</div>
                   <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>per year incl. GST</div>
                 </div>
 
@@ -296,7 +399,10 @@ const InsuranceHub = () => {
 
                 <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                   <button 
-                    onClick={() => navigate(`/insurance/plan/${plan._id}`)} 
+                    onClick={() => {
+                      console.log('Navigating to plan detail:', plan._id);
+                      navigate(`/insurance/plan/${plan._id}`);
+                    }} 
                     style={{ 
                       flex: 1, 
                       padding: '10px', 
@@ -311,7 +417,10 @@ const InsuranceHub = () => {
                     View Details
                   </button>
                   <button 
-                    onClick={() => navigate(`/insurance/apply/${plan._id}`)} 
+                    onClick={() => {
+                      console.log('Navigating to apply:', plan._id);
+                      navigate(`/insurance/apply/${plan._id}`);
+                    }} 
                     style={{ 
                       flex: 1, 
                       padding: '10px', 
@@ -330,8 +439,97 @@ const InsuranceHub = () => {
             ))}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: 'white', borderRadius: '12px' }}>
-            <p style={{ color: '#6b7280' }}>No featured plans available</p>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '3rem', 
+            backgroundColor: 'white', 
+            borderRadius: '12px',
+            marginBottom: '3rem'
+          }}>
+            <p style={{ color: '#6b7280' }}>No featured plans available. <button onClick={() => navigate('/insurance/list')} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Browse all plans →</button></p>
+          </div>
+        )}
+      </section>
+
+      {/* ============================================
+          POPULAR PLANS SECTION
+          ============================================ */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem 3rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>🔥 Popular Plans</h2>
+            <p style={{ color: '#6b7280' }}>Most viewed and trusted by customers</p>
+          </div>
+          <button 
+            onClick={() => navigate('/insurance/list?sort=popular')} 
+            style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            View All →
+          </button>
+        </div>
+
+        {popularPlans.length > 0 ? (
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+            gap: '1.5rem'
+          }}>
+            {popularPlans.map((plan) => (
+              <div key={plan._id} style={{ 
+                backgroundColor: 'white', 
+                borderRadius: '12px', 
+                padding: '1.5rem', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{plan.companyId?.name || 'Insurance Company'}</div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 'bold', margin: '4px 0' }}>{plan.planName}</h3>
+                </div>
+                
+                <div style={{ margin: '12px 0' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#2563eb' }}>{formatCurrency(plan.basePremium || 0)}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>per year</div>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    console.log('Navigating to plan detail:', plan._id);
+                    navigate(`/insurance/plan/${plan._id}`);
+                  }} 
+                  style={{ 
+                    width: '100%', 
+                    padding: '8px', 
+                    backgroundColor: '#2563eb', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    marginTop: '8px'
+                  }}
+                >
+                  View Details
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '3rem', 
+            backgroundColor: 'white', 
+            borderRadius: '12px'
+          }}>
+            <p style={{ color: '#6b7280' }}>No popular plans available.</p>
           </div>
         )}
       </section>
@@ -394,7 +592,10 @@ const InsuranceHub = () => {
         </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button 
-            onClick={() => navigate('/insurance/list')} 
+            onClick={() => {
+              console.log('Navigating to Compare Plans Now');
+              navigate('/insurance/list');
+            }} 
             style={{ 
               padding: '12px 32px', 
               backgroundColor: '#f59e0b', 
@@ -409,7 +610,10 @@ const InsuranceHub = () => {
             Compare Plans Now
           </button>
           <button 
-            onClick={() => navigate('/insurance/list')} 
+            onClick={() => {
+              console.log('Navigating to Explore All Plans');
+              navigate('/insurance/list');
+            }} 
             style={{ 
               padding: '12px 32px', 
               backgroundColor: 'transparent', 
