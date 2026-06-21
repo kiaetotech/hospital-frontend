@@ -16,7 +16,12 @@ const HomePage = () => {
     { name: 'Hospitals', path: '/hospitals', desc: 'Compare price, rating, beds & insurance' },
     { name: 'Ambulance', path: '/ambulance', desc: 'Live tracking, instant ETA' },
     { name: 'Health Insurance', path: '/insurance', desc: 'Compare plans & buy online' },
-    { name: 'Lab Tests', path: '/diagnostics-list', desc: 'Price, home collection, reports' },
+    { 
+      name: 'Homeopathy & Naturopathy', 
+      path: '/homeopathy', 
+      desc: 'Homeopathy doctors • Naturopathy • Natural remedies',
+      isNew: true 
+    },
     { 
       name: 'Ayurveda & Wellness Hub', 
       path: '/ayurveda', 
@@ -88,7 +93,7 @@ const HomePage = () => {
                 </span>
               )}
               <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', color: tag.isNew ? '#4CAF50' : '#1e293b' }}>
-                {tag.isNew && '🧘 '}{tag.name}
+                {tag.isNew && '🌿 '}{tag.name}
               </h3>
               <p style={{ color: '#64748b', fontSize: '0.875rem' }}>{tag.desc}</p>
             </div>

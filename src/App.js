@@ -53,6 +53,14 @@ import WritePrescription from './pages/ayurveda/WritePrescription';
 import ViewPrescription from './pages/ayurveda/ViewPrescription';
 
 // ============================================
+// HOMEOPATHY & NATUROPATHY MODULE IMPORTS
+// ============================================
+import HomeopathyHub from './pages/homeopathy/HomeopathyHub';
+import HomeopathyDoctors from './pages/homeopathy/HomeopathyDoctors';
+import HomeopathyPharmacy from './pages/homeopathy/HomeopathyPharmacy';
+import BookHomeopathyConsult from './pages/homeopathy/BookHomeopathyConsult';
+
+// ============================================
 // LEGAL PAGES
 // ============================================
 import TermsAndConditions from './pages/TermsAndConditions';
@@ -114,7 +122,7 @@ function App() {
           <Route path="/ambulance" element={<Ambulance />} />
 
           {/* ============================================
-              AYURVEDA & WELLNESS HUB TAG (ADVANCED)
+              AYURVEDA & WELLNESS HUB TAG
           ============================================ */}
           <Route path="/ayurveda" element={<AyurvedaHub />} />
           <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
@@ -136,6 +144,14 @@ function App() {
           <Route path="/ayurveda/doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="/ayurveda/prescription/write/:bookingId" element={<WritePrescription />} />
           <Route path="/ayurveda/prescription/:prescriptionId" element={<ViewPrescription />} />
+
+          {/* ============================================
+              HOMEOPATHY & NATUROPATHY TAG
+          ============================================ */}
+          <Route path="/homeopathy" element={<HomeopathyHub />} />
+          <Route path="/homeopathy/doctors" element={<HomeopathyDoctors />} />
+          <Route path="/homeopathy/pharmacy" element={<HomeopathyPharmacy />} />
+          <Route path="/homeopathy/book/:doctorId" element={<BookHomeopathyConsult />} />
 
           {/* ============================================
               LEGAL PAGES
