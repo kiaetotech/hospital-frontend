@@ -2,42 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
-// At the top of the component, add this to parse URL params
-const [searchParams] = useSearchParams();
-
-// Add this effect to handle search criteria from URL
-useEffect(() => {
-  const membersParam = searchParams.get('members');
-  const ageParam = searchParams.get('age');
-  const pincodeParam = searchParams.get('pincode');
-  
-  if (membersParam || ageParam || pincodeParam) {
-    // Update filters with search criteria
-    const newFilters = { ...filters };
-    
-    if (ageParam) {
-      // Age affects premium calculation - we'll show this in results
-      setUserAge(ageParam);
-    }
-    
-    if (pincodeParam) {
-      setUserPincode(pincodeParam);
-    }
-    
-    if (membersParam) {
-      try {
-        const members = JSON.parse(membersParam);
-        setSelectedMembers(members);
-      } catch (e) {
-        console.log('Error parsing members:', e);
-      }
-    }
-    
-    setFilters(newFilters);
-    fetchPlans();
-  }
-}, [searchParams]);
-
 const InsuranceList = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -65,6 +29,11 @@ const InsuranceList = () => {
 
   // Companies list for filter
   const [companies, setCompanies] = useState([]);
+  
+  // User search criteria from URL
+  const [userAge, setUserAge] = useState('');
+  const [userPincode, setUserPincode] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState({});
 
   // Plan types
   const planTypes = [
@@ -97,10 +66,22 @@ const InsuranceList = () => {
     const type = searchParams.get('type');
     const search = searchParams.get('search');
     const sort = searchParams.get('sort');
+    const age = searchParams.get('age');
+    const pincode = searchParams.get('pincode');
+    const members = searchParams.get('members');
     
     if (type) setFilters(prev => ({ ...prev, planType: type }));
     if (search) setFilters(prev => ({ ...prev, search }));
     if (sort) setFilters(prev => ({ ...prev, sortBy: sort }));
+    if (age) setUserAge(age);
+    if (pincode) setUserPincode(pincode);
+    if (members) {
+      try {
+        setSelectedMembers(JSON.parse(members));
+      } catch (e) {
+        console.log('Error parsing members:', e);
+      }
+    }
   }, [searchParams]);
 
   const fetchPlans = async () => {
@@ -110,6 +91,13 @@ const InsuranceList = () => {
       const queryParams = new URLSearchParams();
       queryParams.append('page', currentPage);
       queryParams.append('limit', 12);
+      
+      // Add search criteria from URL
+      if (userAge) queryParams.append('age', userAge);
+      if (userPincode) queryParams.append('pincode', userPincode);
+      if (Object.keys(selectedMembers).length > 0) {
+        queryParams.append('members', JSON.stringify(selectedMembers));
+      }
       
       if (filters.planType && filters.planType !== 'all') {
         queryParams.append('planType', filters.planType);
@@ -189,6 +177,14 @@ const InsuranceList = () => {
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
   };
 
   // Loading skeleton
@@ -308,6 +304,25 @@ const InsuranceList = () => {
                 </button>
               </div>
             </div>
+
+            {/* Search criteria banner */}
+            {(userAge || userPincode || Object.keys(selectedMembers).length > 0) && (
+              <div style={{ 
+                backgroundColor: '#eff6ff', 
+                padding: '0.75rem 1rem', 
+                borderRadius: '8px',
+                border: '1px solid #bfdbfe'
+              }}>
+                <p style={{ fontSize: '0.875rem', color: '#1e40af' }}>
+                  🎯 Showing plans for: 
+                  {userAge && ` Age: ${userAge}`}
+                  {userPincode && ` • Pincode: ${userPincode}`}
+                  {Object.keys(selectedMembers).filter(k => selectedMembers[k]).length > 0 && 
+                    ` • Members: ${Object.keys(selectedMembers).filter(k => selectedMembers[k]).join(', ')}`
+                  }
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -556,9 +571,11 @@ const InsuranceList = () => {
                       <div>
                         <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Starting from</div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2563eb' }}>
-                          ₹{plan.basePremium?.toLocaleString()}
+                          ₹{plan.personalizedPremium ? plan.personalizedPremium.toLocaleString() : plan.basePremium?.toLocaleString()}
                         </div>
-                        <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>per year incl. GST</div>
+                        <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>
+                          {plan.monthlyPrice ? `₹${plan.monthlyPrice}/month` : 'per year incl. GST'}
+                        </div>
                       </div>
                       <div>
                         <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Sum Insured</div>
