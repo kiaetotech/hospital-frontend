@@ -64,6 +64,8 @@ import HomeoDoctorLogin from './pages/homeopathy/DoctorLogin';
 import HomeoDoctorDashboard from './pages/homeopathy/DoctorDashboard';
 import HomeoCenterRegistration from './pages/homeopathy/CenterRegistration';
 import HomeoPharmacyRegistration from './pages/homeopathy/PharmacyRegistration';
+import NaturopathyCenters from './pages/homeopathy/NaturopathyCenters';
+import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';
 
 // ============================================
 // LEGAL PAGES
@@ -162,6 +164,8 @@ function App() {
           <Route path="/homeopathy/doctor/dashboard" element={<HomeoDoctorDashboard />} />
           <Route path="/homeopathy/center/register" element={<HomeoCenterRegistration />} />
           <Route path="/homeopathy/pharmacy/register" element={<HomeoPharmacyRegistration />} />
+	  <Route path="/homeopathy/centers" element={<NaturopathyCenters />} />
+  	  <Route path="/admin/homeopathy" element={<HomeopathyAdminPanel />} />
 
           {/* ============================================
               LEGAL PAGES
