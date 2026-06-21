@@ -608,7 +608,7 @@ const InsuranceApplication = () => {
                     <div style={{ fontWeight: 'bold' }}>{plan.companyId?.name}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.75rem, color: '#6b7280' }}>Sum Insured</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Sum Insured</div>
                     <div style={{ fontWeight: 'bold' }}>{formatCurrency(parseInt(formData.sumInsured) || plan.sumInsured?.default)}</div>
                   </div>
                   <div>
@@ -653,7 +653,7 @@ const InsuranceApplication = () => {
                     style={{ width: '18px', height: '18px' }}
                   />
                   <span style={{ fontSize: '0.875rem' }}>
-                    I have read and agree to the <a href="/terms" target="_blank" style={{ color: '#2563eb' }}>Terms and Conditions</a> and <a href="/privacy" target="_blank" style={{ color: '#2563eb' }}>Privacy Policy</a>
+                    I have read and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>Terms and Conditions</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>Privacy Policy</a>
                   </span>
                 </label>
               </div>
@@ -688,7 +688,7 @@ const InsuranceApplication = () => {
                     opacity: submitting ? 0.7 : 1
                   }}
                 >
-                  {submitting ? 'Processing...' : '💳 Pay & Submit'}
+                  {submitting ? 'Processing...' : 'Pay & Submit'}
                 </button>
               </div>
             </div>
