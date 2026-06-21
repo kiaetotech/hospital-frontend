@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import InsuranceSearchForm from '../../components/InsuranceSearchForm';
 
 const InsuranceHub = () => {
   const navigate = useNavigate();
@@ -279,11 +280,25 @@ const InsuranceHub = () => {
       </section>
 
       {/* ============================================
+          INSURANCE SEARCH FORM
+          ============================================ */}
+      <section style={{ 
+        maxWidth: '900px', 
+        margin: '-1.5rem auto 2rem', 
+        padding: '0 1rem'
+      }}>
+        <InsuranceSearchForm onSearch={(data) => {
+          // Navigate to filtered list with search criteria
+          navigate(`/insurance/list?members=${JSON.stringify(data.members)}&age=${data.age}&pincode=${data.pincode}`);
+        }} />
+      </section>
+
+      {/* ============================================
           PLAN TYPES QUICK ACCESS
           ============================================ */}
       <section style={{ 
         maxWidth: '1200px', 
-        margin: '-2rem auto 2rem', 
+        margin: '0 auto 2rem', 
         padding: '0 1rem'
       }}>
         <div style={{ 
