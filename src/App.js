@@ -59,6 +59,11 @@ import HomeopathyHub from './pages/homeopathy/HomeopathyHub';
 import HomeopathyDoctors from './pages/homeopathy/HomeopathyDoctors';
 import HomeopathyPharmacy from './pages/homeopathy/HomeopathyPharmacy';
 import BookHomeopathyConsult from './pages/homeopathy/BookHomeopathyConsult';
+import DoctorRegistration from './pages/homeopathy/DoctorRegistration';
+import DoctorLogin from './pages/homeopathy/DoctorLogin';
+import DoctorDashboard from './pages/homeopathy/DoctorDashboard';
+import CenterRegistration from './pages/homeopathy/CenterRegistration';
+import PharmacyRegistration from './pages/homeopathy/PharmacyRegistration';
 
 // ============================================
 // LEGAL PAGES
@@ -152,6 +157,11 @@ function App() {
           <Route path="/homeopathy/doctors" element={<HomeopathyDoctors />} />
           <Route path="/homeopathy/pharmacy" element={<HomeopathyPharmacy />} />
           <Route path="/homeopathy/book/:doctorId" element={<BookHomeopathyConsult />} />
+	  <Route path="/homeopathy/doctor/register" element={<DoctorRegistration />} />
+	  <Route path="/homeopathy/doctor/login" element={<DoctorLogin />} />
+	  <Route path="/homeopathy/doctor/dashboard" element={<DoctorDashboard />} />
+	  <Route path="/homeopathy/center/register" element={<CenterRegistration />} />
+	  <Route path="/homeopathy/pharmacy/register" element={<PharmacyRegistration />} />
 
           {/* ============================================
               LEGAL PAGES
