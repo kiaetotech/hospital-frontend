@@ -156,45 +156,68 @@ const InsuranceApplication = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.termsAccepted) {
-      setError('Please accept the terms and conditions');
+  e.preventDefault();
+  
+  if (!formData.termsAccepted) {
+    setError('Please accept the terms and conditions');
+    return;
+  }
+
+  if (!formData.primaryInsured.name || !formData.primaryInsured.age) {
+    setError('Please fill in primary insured details');
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+    setError(null);
+
+    // Get user token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Please login to apply for insurance');
+      navigate('/login');
       return;
     }
 
-    if (!formData.primaryInsured.name || !formData.primaryInsured.age) {
-      setError('Please fill in primary insured details');
-      return;
-    }
+    const payload = {
+      planId: plan._id,
+      sumInsured: parseInt(formData.sumInsured),
+      members: formData.members,
+      startDate: formData.startDate,
+      selectedAddons: formData.selectedAddons,
+      primaryInsured: formData.primaryInsured,
+      nominee: formData.nominee,
+      termsAccepted: formData.termsAccepted
+    };
 
-    try {
-      setSubmitting(true);
-      setError(null);
-
-      const payload = {
-        planId: plan._id,
-        sumInsured: parseInt(formData.sumInsured),
-        members: formData.members,
-        startDate: formData.startDate,
-        selectedAddons: formData.selectedAddons,
-        primaryInsured: formData.primaryInsured,
-        nominee: formData.nominee,
-        termsAccepted: formData.termsAccepted
-      };
-
-      const response = await axios.post('/api/insurance/apply', payload);
-      
-      if (response.data.success) {
-        navigate(`/payment?orderId=${response.data.data.orderId}&bookingId=${response.data.data.bookingId}&amount=${response.data.data.amount}`);
+    const response = await axios.post('/api/insurance/apply', payload, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    } catch (error) {
-      console.error('Error submitting application:', error);
-      setError(error.response?.data?.message || 'Failed to submit application');
-    } finally {
-      setSubmitting(false);
+    });
+    
+    if (response.data.success) {
+      // Store booking data for payment
+      localStorage.setItem('insuranceBookingId', response.data.data.bookingId);
+      localStorage.setItem('insurancePolicyId', response.data.data.policyId);
+      
+      // Navigate to payment
+      navigate(`/payment?orderId=${response.data.data.orderId}&bookingId=${response.data.data.bookingId}&amount=${response.data.data.amount}`);
     }
-  };
+  } catch (error) {
+    console.error('Error submitting application:', error);
+    
+    if (error.response?.status === 401) {
+      setError('Please login to continue');
+      navigate('/login');
+    } else {
+      setError(error.response?.data?.message || 'Failed to submit application. Please try again.');
+    }
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {

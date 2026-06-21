@@ -2,6 +2,42 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
+// At the top of the component, add this to parse URL params
+const [searchParams] = useSearchParams();
+
+// Add this effect to handle search criteria from URL
+useEffect(() => {
+  const membersParam = searchParams.get('members');
+  const ageParam = searchParams.get('age');
+  const pincodeParam = searchParams.get('pincode');
+  
+  if (membersParam || ageParam || pincodeParam) {
+    // Update filters with search criteria
+    const newFilters = { ...filters };
+    
+    if (ageParam) {
+      // Age affects premium calculation - we'll show this in results
+      setUserAge(ageParam);
+    }
+    
+    if (pincodeParam) {
+      setUserPincode(pincodeParam);
+    }
+    
+    if (membersParam) {
+      try {
+        const members = JSON.parse(membersParam);
+        setSelectedMembers(members);
+      } catch (e) {
+        console.log('Error parsing members:', e);
+      }
+    }
+    
+    setFilters(newFilters);
+    fetchPlans();
+  }
+}, [searchParams]);
+
 const InsuranceList = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
