@@ -12,9 +12,7 @@ const AdminDashboard = () => {
   const [recentLenders, setRecentLenders] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // ============================================
-  // 🆕 INSURANCE STATE (ADDED)
-  // ============================================
+  // Insurance state
   const [insuranceStats, setInsuranceStats] = useState({
     companies: { total: 0, pending: 0, verified: 0 },
     plans: { total: 0, active: 0, inactive: 0 },
@@ -23,7 +21,15 @@ const AdminDashboard = () => {
   });
   const [recentInsuranceCompanies, setRecentInsuranceCompanies] = useState([]);
   const [pendingSettlements, setPendingSettlements] = useState([]);
-  const [activeTab, setActiveTab] = useState('lenders'); // 'lenders' | 'insurance'
+  const [activeTab, setActiveTab] = useState('lenders');
+
+  // 🆕 Quick stats for all modules
+  const [moduleStats, setModuleStats] = useState({
+    hospitals: { total: 0, pending: 0 },
+    ambulance: { total: 0, pending: 0 },
+    caregivers: { total: 0, pending: 0 },
+    diagnostics: { total: 0, pending: 0 }
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -32,12 +38,10 @@ const AdminDashboard = () => {
       return;
     }
     fetchDashboardData();
-    fetchInsuranceData(); // 🆕 Fetch insurance data
+    fetchInsuranceData();
+    fetchModuleStats();
   }, [navigate]);
 
-  // ============================================
-  // EXISTING DASHBOARD DATA (PRESERVED)
-  // ============================================
   const fetchDashboardData = async () => {
     try {
       const [statsRes, lendersRes] = await Promise.all([
@@ -53,41 +57,27 @@ const AdminDashboard = () => {
     }
   };
 
-  // ============================================
-  // 🆕 INSURANCE DATA (ADDED)
-  // ============================================
   const fetchInsuranceData = async () => {
     try {
       const token = localStorage.getItem('adminToken');
       const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
-      // Fetch insurance companies
       const companiesRes = await axios.get('/api/insurance-admin/companies', config);
-      
-      // Fetch pending settlements
       const settlementsRes = await axios.get('/api/insurance-admin/settlements/pending', config);
-      
-      // Fetch summary stats
       const summaryRes = await axios.get('/api/insurance-admin/reports/summary', config);
 
       const companies = companiesRes.data.data || [];
       const settlements = settlementsRes.data.data || [];
       const summary = summaryRes.data.data || {};
 
-      // Calculate insurance stats
       const totalCompanies = companies.length;
       const pendingCompanies = companies.filter(c => !c.isVerified).length;
       const verifiedCompanies = companies.filter(c => c.isVerified).length;
 
-      // Get plan stats from summary or calculate
       const totalPlans = summary.totalPlans || 0;
       const activePlans = summary.activePlans || 0;
-
-      // Policy stats
       const totalPolicies = summary.totalPolicies || 0;
       const activePolicies = summary.activePolicies || 0;
-
-      // Settlement stats
       const pendingSettlementsCount = settlements.length;
       const totalSettlementAmount = settlements.reduce((sum, s) => sum + (s.providerAmount || 0), 0);
 
@@ -115,36 +105,52 @@ const AdminDashboard = () => {
     }
   };
 
+  // 🆕 Fetch module stats for quick overview
+  const fetchModuleStats = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+      // Fetch stats for each module
+      const [hospitalsRes, ambulanceRes, caregiversRes, diagnosticsRes] = await Promise.all([
+        axios.get('/api/hospitals/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/ambulance/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/caregivers/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/diagnostics/admin/stats', config).catch(() => ({ data: { data: {} } })),
+      ]);
+
+      setModuleStats({
+        hospitals: {
+          total: hospitalsRes.data?.data?.totalHospitals || 0,
+          pending: hospitalsRes.data?.data?.pendingVerifications || 0
+        },
+        ambulance: {
+          total: ambulanceRes.data?.data?.totalAmbulances || 0,
+          pending: ambulanceRes.data?.data?.pendingVerifications || 0
+        },
+        caregivers: {
+          total: caregiversRes.data?.data?.totalCaregivers || 0,
+          pending: caregiversRes.data?.data?.pendingVerifications || 0
+        },
+        diagnostics: {
+          total: diagnosticsRes.data?.data?.totalLabs || 0,
+          pending: diagnosticsRes.data?.data?.pendingVerifications || 0
+        }
+      });
+
+    } catch (error) {
+      console.error('Error fetching module stats:', error);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     navigate('/admin/login');
   };
 
-  // ============================================
-  // 🆕 INSURANCE ACTION HANDLERS (ADDED)
-  // ============================================
-  const handleVerifyCompany = async (companyId) => {
-    try {
-      await axios.put(`/api/insurance-admin/companies/${companyId}/verify`, { verified: true });
-      alert('Company verified successfully!');
-      fetchInsuranceData();
-    } catch (error) {
-      console.error('Error verifying company:', error);
-      alert('Failed to verify company. Please try again.');
-    }
-  };
-
-  const handleProcessSettlement = async (transactionId) => {
-    try {
-      await axios.post('/api/insurance-admin/settlements/process', { 
-        transactionIds: [transactionId] 
-      });
-      alert('Settlement processed successfully!');
-      fetchInsuranceData();
-    } catch (error) {
-      console.error('Error processing settlement:', error);
-      alert('Failed to process settlement. Please try again.');
-    }
+  // 🆕 Navigate to admin panel
+  const goToAdminPanel = (path) => {
+    navigate(path);
   };
 
   if (loading) {
@@ -161,7 +167,7 @@ const AdminDashboard = () => {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Admin Dashboard</h1>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => navigate('/admin/verify-lenders')}
               style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
@@ -174,24 +180,23 @@ const AdminDashboard = () => {
             >
               Commission Report
             </button>
-            {/* 🆕 Insurance Admin Buttons (ADDED) */}
             <button
-              onClick={() => navigate('/admin/insurance/companies')}
-              style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+              onClick={() => navigate('/admin/finance')}
+              style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
             >
-              🛡️ Insurance
+              💰 Finance
             </button>
             <button
-              onClick={() => navigate('/admin/insurance/plans')}
-              style={{ backgroundColor: '#7c3aed', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+              onClick={() => navigate('/admin/ayurveda')}
+              style={{ backgroundColor: '#4CAF50', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
             >
-              📋 Manage Plans
+              🧘 Ayurveda
             </button>
             <button
-              onClick={() => navigate('/admin/insurance/settlements')}
-              style={{ backgroundColor: '#059669', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+              onClick={() => navigate('/admin/homeopathy')}
+              style={{ backgroundColor: '#7C3AED', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
             >
-              💰 Settlements
+              🌿 Homeopathy
             </button>
             <button
               onClick={handleLogout}
@@ -203,7 +208,84 @@ const AdminDashboard = () => {
         </div>
 
         {/* ============================================
-            TAB NAVIGATION (ADDED)
+            🆕 QUICK ACCESS - ALL ADMIN PANELS
+            ============================================ */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+          gap: '0.75rem',
+          marginBottom: '2rem'
+        }}>
+          {[
+            { label: '🏥 Hospitals', path: '/admin/hospitals', color: '#2563eb' },
+            { label: '🚑 Ambulance', path: '/admin/ambulance', color: '#f59e0b' },
+            { label: '🏠 Caregivers', path: '/admin/caregivers', color: '#8b5cf6' },
+            { label: '🔬 Diagnostics', path: '/admin/diagnostics', color: '#06b6d4' },
+            { label: '💰 Financing', path: '/admin/financing', color: '#10b981' },
+            { label: '👥 Users', path: '/admin/users', color: '#6b7280' },
+            { label: '🛡️ Insurance', path: '/admin/dashboard?tab=insurance', color: '#2563eb' },
+          ].map((item) => (
+            <button
+              key={item.path}
+              onClick={() => goToAdminPanel(item.path)}
+              style={{
+                padding: '0.75rem',
+                backgroundColor: 'white',
+                border: `2px solid ${item.color}`,
+                borderRadius: '0.75rem',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                color: item.color,
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = item.color;
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.color = item.color;
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ============================================
+            MODULE STATS CARDS
+            ============================================ */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+          gap: '1rem',
+          marginBottom: '2rem'
+        }}>
+          {[
+            { label: '🏥 Hospitals', total: moduleStats.hospitals.total, pending: moduleStats.hospitals.pending, color: '#2563eb' },
+            { label: '🚑 Ambulance', total: moduleStats.ambulance.total, pending: moduleStats.ambulance.pending, color: '#f59e0b' },
+            { label: '🏠 Caregivers', total: moduleStats.caregivers.total, pending: moduleStats.caregivers.pending, color: '#8b5cf6' },
+            { label: '🔬 Diagnostics', total: moduleStats.diagnostics.total, pending: moduleStats.diagnostics.pending, color: '#06b6d4' },
+          ].map((mod) => (
+            <div key={mod.label} style={{
+              backgroundColor: 'white',
+              borderRadius: '0.75rem',
+              padding: '1rem',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+              borderLeft: `4px solid ${mod.color}`
+            }}>
+              <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{mod.label}</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mod.total}</p>
+              {mod.pending > 0 && (
+                <p style={{ fontSize: '0.75rem', color: '#f59e0b' }}>⏳ {mod.pending} pending</p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ============================================
+            TAB NAVIGATION
             ============================================ */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem' }}>
           <button
@@ -237,11 +319,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* ============================================
-            TAB 1: LENDERS & COMMISSION (PRESERVED)
+            TAB 1: LENDERS & COMMISSION
             ============================================ */}
         {activeTab === 'lenders' && (
           <>
-            {/* Stats Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
               <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Lenders</p>
@@ -269,10 +350,8 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Recent Lenders */}
             <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Recent Lenders</h2>
-              
               {recentLenders.length === 0 ? (
                 <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>No lenders registered yet</p>
               ) : (
@@ -321,11 +400,10 @@ const AdminDashboard = () => {
         )}
 
         {/* ============================================
-            TAB 2: INSURANCE MODULE (ADDED)
+            TAB 2: INSURANCE MODULE
             ============================================ */}
         {activeTab === 'insurance' && (
           <>
-            {/* Insurance Stats Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
               <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #2563eb' }}>
                 <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏢 Insurance Companies</p>
@@ -353,52 +431,18 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Quick Action Buttons */}
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-              <button
-                onClick={() => navigate('/admin/insurance/companies')}
-                style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                🏢 Manage Companies
-              </button>
-              <button
-                onClick={() => navigate('/admin/insurance/plans')}
-                style={{ backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                📋 Manage Plans
-              </button>
-              <button
-                onClick={() => navigate('/admin/insurance/policies')}
-                style={{ backgroundColor: '#059669', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                📄 View Policies
-              </button>
-              <button
-                onClick={() => navigate('/admin/insurance/settlements')}
-                style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                💰 Settlements
-              </button>
-              <button
-                onClick={() => navigate('/admin/insurance/reports')}
-                style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                📊 Reports
-              </button>
+              <button onClick={() => navigate('/admin/insurance/companies')} style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>🏢 Manage Companies</button>
+              <button onClick={() => navigate('/admin/insurance/plans')} style={{ backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>📋 Manage Plans</button>
+              <button onClick={() => navigate('/admin/insurance/policies')} style={{ backgroundColor: '#059669', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>📄 View Policies</button>
+              <button onClick={() => navigate('/admin/insurance/settlements')} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>💰 Settlements</button>
             </div>
 
-            {/* Recent Insurance Companies */}
             <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>🏢 Recent Insurance Companies</h2>
-                <button
-                  onClick={() => navigate('/admin/insurance/companies')}
-                  style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
-                >
-                  View All →
-                </button>
+                <button onClick={() => navigate('/admin/insurance/companies')} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>View All →</button>
               </div>
-              
               {recentInsuranceCompanies.length === 0 ? (
                 <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>No insurance companies registered yet</p>
               ) : (
@@ -415,37 +459,16 @@ const AdminDashboard = () => {
                   <tbody>
                     {recentInsuranceCompanies.map((company) => (
                       <tr key={company._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                          {company.companyName || company.name}
-                        </td>
+                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', fontWeight: '500' }}>{company.companyName || company.name}</td>
                         <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{company.email}</td>
                         <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{company.irdaRegistration || 'N/A'}</td>
                         <td style={{ padding: '0.75rem' }}>
-                          <span style={{ 
-                            backgroundColor: company.isVerified ? '#10b981' : '#f59e0b',
-                            color: 'white',
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.75rem'
-                          }}>
+                          <span style={{ backgroundColor: company.isVerified ? '#10b981' : '#f59e0b', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
                             {company.isVerified ? '✅ Verified' : '⏳ Pending'}
                           </span>
                         </td>
                         <td style={{ padding: '0.75rem' }}>
-                          {!company.isVerified && (
-                            <button
-                              onClick={() => handleVerifyCompany(company._id)}
-                              style={{ backgroundColor: '#10b981', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
-                            >
-                              Verify
-                            </button>
-                          )}
-                          <button
-                            onClick={() => navigate(`/admin/insurance/companies/${company._id}`)}
-                            style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem', marginLeft: '0.5rem' }}
-                          >
-                            View
-                          </button>
+                          <button onClick={() => navigate(`/admin/insurance/companies/${company._id}`)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>View</button>
                         </td>
                       </tr>
                     ))}
@@ -454,18 +477,11 @@ const AdminDashboard = () => {
               )}
             </div>
 
-            {/* Pending Settlements */}
             <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>💰 Pending Settlements</h2>
-                <button
-                  onClick={() => navigate('/admin/insurance/settlements')}
-                  style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
-                >
-                  View All →
-                </button>
+                <button onClick={() => navigate('/admin/insurance/settlements')} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>View All →</button>
               </div>
-              
               {pendingSettlements.length === 0 ? (
                 <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>No pending settlements</p>
               ) : (
@@ -482,25 +498,12 @@ const AdminDashboard = () => {
                   <tbody>
                     {pendingSettlements.map((settlement) => (
                       <tr key={settlement._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
-                          {settlement.bookingId?.insurancePlanName || 'N/A'}
-                        </td>
-                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', fontWeight: 'bold' }}>
-                          ₹{settlement.totalPremium?.toLocaleString() || 0}
-                        </td>
-                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: '#8b5cf6' }}>
-                          ₹{settlement.platformCommission?.toLocaleString() || 0}
-                        </td>
-                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', fontWeight: 'bold', color: '#059669' }}>
-                          ₹{settlement.providerAmount?.toLocaleString() || 0}
-                        </td>
+                        <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{settlement.bookingId?.insurancePlanName || 'N/A'}</td>
+                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', fontWeight: 'bold' }}>₹{settlement.totalPremium?.toLocaleString() || 0}</td>
+                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: '#8b5cf6' }}>₹{settlement.platformCommission?.toLocaleString() || 0}</td>
+                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', fontWeight: 'bold', color: '#059669' }}>₹{settlement.providerAmount?.toLocaleString() || 0}</td>
                         <td style={{ padding: '0.75rem' }}>
-                          <button
-                            onClick={() => handleProcessSettlement(settlement._id)}
-                            style={{ backgroundColor: '#059669', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
-                          >
-                            Process Settlement
-                          </button>
+                          <button style={{ backgroundColor: '#059669', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>Process</button>
                         </td>
                       </tr>
                     ))}

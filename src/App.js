@@ -83,7 +83,7 @@ import LenderApplications from './pages/lender/LenderApplications';
 import LenderApplicationDetail from './pages/lender/LenderApplicationDetail';
 
 // ============================================
-// ADMIN PANEL IMPORTS
+// ADMIN PANEL IMPORTS (EXISTING)
 // ============================================
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -92,9 +92,20 @@ import AdminCommission from './pages/admin/AdminCommission';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
 import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
+import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';
 
 // ============================================
-// 🆕 INSURANCE MODULE IMPORTS (ADDED)
+// 🆕 NEW ADMIN PANEL IMPORTS
+// ============================================
+import AdminHospitals from './pages/admin/AdminHospitals';
+import AdminAmbulance from './pages/admin/AdminAmbulance';
+import AdminCaregivers from './pages/admin/AdminCaregivers';
+import AdminDiagnostics from './pages/admin/AdminDiagnostics';
+import AdminFinancing from './pages/admin/AdminFinancing';
+import AdminUsers from './pages/admin/AdminUsers';
+
+// ============================================
+// INSURANCE MODULE IMPORTS
 // ============================================
 import InsuranceHub from './pages/insurance/InsuranceHub';
 import InsuranceList from './pages/insurance/InsuranceList';
@@ -221,7 +232,7 @@ function App() {
           <Route path="/lender/applications/:id" element={<LenderApplicationDetail />} />
 
           {/* ============================================
-              ADMIN PANEL ROUTES
+              ADMIN PANEL ROUTES (EXISTING)
           ============================================ */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -230,9 +241,20 @@ function App() {
           <Route path="/admin/discounts" element={<AdminDiscounts />} />
           <Route path="/admin/ayurveda" element={<AyurvedaAdminPanel />} />
           <Route path="/admin/finance" element={<AdminFinancialDashboard />} />
+          <Route path="/admin/homeopathy" element={<HomeopathyAdminPanel />} />
 
           {/* ============================================
-              🆕 INSURANCE MODULE ROUTES (ADDED)
+              🆕 NEW ADMIN PANEL ROUTES
+          ============================================ */}
+          <Route path="/admin/hospitals" element={<AdminHospitals />} />
+          <Route path="/admin/ambulance" element={<AdminAmbulance />} />
+          <Route path="/admin/caregivers" element={<AdminCaregivers />} />
+          <Route path="/admin/diagnostics" element={<AdminDiagnostics />} />
+          <Route path="/admin/financing" element={<AdminFinancing />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+
+          {/* ============================================
+              INSURANCE MODULE ROUTES
           ============================================ */}
           <Route path="/insurance" element={<InsuranceHub />} />
           <Route path="/insurance/list" element={<InsuranceList />} />
@@ -245,8 +267,6 @@ function App() {
           {/* ============================================
               OTHER TAGS (Coming Soon)
           ============================================ */}
-          {/* ✅ INSURANCE TAG - NOW ACTIVE (REMOVED ComingSoon) */}
-          {/* <Route path="/insurance" element={<ComingSoon title="Health Insurance" />} /> */}
           <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
           <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
           <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
