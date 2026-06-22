@@ -65,7 +65,6 @@ import HomeoDoctorDashboard from './pages/homeopathy/DoctorDashboard';
 import HomeoCenterRegistration from './pages/homeopathy/CenterRegistration';
 import HomeoPharmacyRegistration from './pages/homeopathy/PharmacyRegistration';
 import NaturopathyCenters from './pages/homeopathy/NaturopathyCenters';
-import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';
 
 // ============================================
 // LEGAL PAGES
@@ -92,7 +91,7 @@ import AdminCommission from './pages/admin/AdminCommission';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
 import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
-import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';
+import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';   // ✅ KEEP THIS ONE ONLY
 
 // ============================================
 // 🆕 NEW ADMIN PANEL IMPORTS
@@ -187,7 +186,6 @@ function App() {
           <Route path="/homeopathy/center/register" element={<HomeoCenterRegistration />} />
           <Route path="/homeopathy/pharmacy/register" element={<HomeoPharmacyRegistration />} />
           <Route path="/homeopathy/centers" element={<NaturopathyCenters />} />
-          <Route path="/admin/homeopathy" element={<HomeopathyAdminPanel />} />
 
           {/* ============================================
               LEGAL PAGES
