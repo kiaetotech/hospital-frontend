@@ -127,6 +127,10 @@ import CorporatePlanDetail from './pages/corporate/CorporatePlanDetail';
 import CorporateEnrollment from './pages/corporate/CorporateEnrollment';
 import CorporateHRLogin from './pages/corporate/CorporateHRLogin';
 import CorporateHRDashboard from './pages/corporate/CorporateHRDashboard';
+import CorporateCheckups from './pages/corporate/CorporateCheckups';
+import CorporateWellness from './pages/corporate/CorporateWellness';
+import EmployeeLogin from './pages/corporate/EmployeeLogin';
+import EmployeePortal from './pages/corporate/EmployeePortal';
 
 // ============================================
 // PROVIDER REGISTRATION IMPORTS
@@ -301,6 +305,10 @@ function App() {
           <Route path="/corporate/enroll" element={<CorporateEnrollment />} />
           <Route path="/corporate/hr/login" element={<CorporateHRLogin />} />
           <Route path="/corporate/hr/dashboard" element={<CorporateHRDashboard />} />
+	  <Route path="/corporate/checkups" element={<CorporateCheckups />} />
+	  <Route path="/corporate/wellness" element={<CorporateWellness />} />
+	  <Route path="/corporate/employee/login" element={<EmployeeLogin />} />
+	  <Route path="/corporate/employee/dashboard" element={<EmployeePortal />} />
 
           {/* ============================================
               PROVIDER REGISTRATION ROUTES
