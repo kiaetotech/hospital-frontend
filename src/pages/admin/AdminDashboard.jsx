@@ -12,7 +12,6 @@ const AdminDashboard = () => {
   const [recentLenders, setRecentLenders] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Insurance state
   const [insuranceStats, setInsuranceStats] = useState({
     companies: { total: 0, pending: 0, verified: 0 },
     plans: { total: 0, active: 0, inactive: 0 },
@@ -28,6 +27,12 @@ const AdminDashboard = () => {
     active: 0,
     employees: 0
   });
+  const [moduleStats, setModuleStats] = useState({
+    hospitals: 0,
+    ambulance: 0,
+    caregivers: 0,
+    diagnostics: 0
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -38,6 +43,7 @@ const AdminDashboard = () => {
     fetchDashboardData();
     fetchInsuranceData();
     fetchCorporateData();
+    fetchModuleStats();
   }, [navigate]);
 
   const fetchDashboardData = async () => {
@@ -103,7 +109,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // 🆕 Fetch Corporate Data
   const fetchCorporateData = async () => {
     try {
       const token = localStorage.getItem('adminToken');
@@ -126,6 +131,30 @@ const AdminDashboard = () => {
 
     } catch (error) {
       console.error('Error fetching corporate data:', error);
+    }
+  };
+
+  const fetchModuleStats = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+      const [hospitalsRes, ambulanceRes, caregiversRes, diagnosticsRes] = await Promise.all([
+        axios.get('/api/hospitals/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/ambulance/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/caregivers/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/diagnostics/admin/stats', config).catch(() => ({ data: { data: {} } }))
+      ]);
+
+      setModuleStats({
+        hospitals: hospitalsRes.data?.data?.totalHospitals || 0,
+        ambulance: ambulanceRes.data?.data?.totalAmbulances || 0,
+        caregivers: caregiversRes.data?.data?.totalCaregivers || 0,
+        diagnostics: diagnosticsRes.data?.data?.totalLabs || 0
+      });
+
+    } catch (error) {
+      console.error('Error fetching module stats:', error);
     }
   };
 
@@ -201,23 +230,23 @@ const AdminDashboard = () => {
           gap: '1rem',
           marginBottom: '2rem'
         }}>
-          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#2563eb' }}>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #2563eb' }}>
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏥 Hospitals</p>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.hospitals || 0}</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.hospitals || 0}</p>
           </div>
-          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#f59e0b' }}>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #f59e0b' }}>
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🚑 Ambulance</p>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.ambulance || 0}</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.ambulance || 0}</p>
           </div>
-          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#8b5cf6' }}>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #8b5cf6' }}>
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏠 Caregivers</p>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.caregivers || 0}</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.caregivers || 0}</p>
           </div>
-          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#06b6d4' }}>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #06b6d4' }}>
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🔬 Diagnostics</p>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.diagnostics || 0}</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.diagnostics || 0}</p>
           </div>
-          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#1e3a5f' }}>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #1e3a5f' }}>
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏢 Corporate</p>
             <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{corporateStats.totalPlans || 0}</p>
           </div>
@@ -269,9 +298,7 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* ============================================
-            TAB 1: LENDERS & COMMISSION
-            ============================================ */}
+        {/* TAB 1: LENDERS & COMMISSION */}
         {activeTab === 'lenders' && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
@@ -350,9 +377,7 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {/* ============================================
-            TAB 2: INSURANCE MODULE
-            ============================================ */}
+        {/* TAB 2: INSURANCE MODULE */}
         {activeTab === 'insurance' && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
@@ -465,9 +490,7 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {/* ============================================
-            TAB 3: CORPORATE HEALTH & INSURANCE
-            ============================================ */}
+        {/* TAB 3: CORPORATE HEALTH & INSURANCE */}
         {activeTab === 'corporate' && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
@@ -514,7 +537,6 @@ const AdminDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Sample data - will be populated from API */}
                       <tr>
                         <td style={{ padding: '0.75rem' }}>Sample Corp</td>
                         <td style={{ padding: '0.75rem' }}>Group Health Plan</td>
