@@ -80,6 +80,7 @@ import LenderLogin from './pages/lender/LenderLogin';
 import LenderDashboard from './pages/lender/LenderDashboard';
 import LenderApplications from './pages/lender/LenderApplications';
 import LenderApplicationDetail from './pages/lender/LenderApplicationDetail';
+import LenderRegister from './pages/lender/LenderRegister';  // ✅ CORRECT PATH
 
 // ============================================
 // ADMIN PANEL IMPORTS (EXISTING)
@@ -137,9 +138,6 @@ import CaregiverDashboard from './pages/caregivers/CaregiverDashboard';
 import DiagnosticsRegister from './pages/diagnostics/DiagnosticsRegister';
 import DiagnosticsLogin from './pages/diagnostics/DiagnosticsLogin';
 import DiagnosticsDashboard from './pages/diagnostics/DiagnosticsDashboard';
-
-// Lender Provider (Register - New)
-import LenderRegister from './pages/financing/LenderRegister';
 
 // Insurance Provider
 import InsuranceCompanyRegister from './pages/insurance/InsuranceCompanyRegister';
@@ -260,6 +258,7 @@ function App() {
           <Route path="/lender/dashboard" element={<LenderDashboard />} />
           <Route path="/lender/applications" element={<LenderApplications />} />
           <Route path="/lender/applications/:id" element={<LenderApplicationDetail />} />
+          <Route path="/lender/register" element={<LenderRegister />} />  {/* ✅ NEW LENDER REGISTER ROUTE */}
 
           {/* ============================================
               ADMIN PANEL ROUTES (EXISTING)
@@ -317,9 +316,6 @@ function App() {
           <Route path="/diagnostics/register" element={<DiagnosticsRegister />} />
           <Route path="/diagnostics/login" element={<DiagnosticsLogin />} />
           <Route path="/diagnostics/dashboard" element={<DiagnosticsDashboard />} />
-
-          {/* LENDER PROVIDER ROUTES */}
-          <Route path="/lender/register" element={<LenderRegister />} />
 
           {/* INSURANCE PROVIDER ROUTES */}
           <Route path="/insurance/company/register" element={<InsuranceCompanyRegister />} />
