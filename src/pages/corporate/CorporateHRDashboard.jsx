@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import BulkEmployeeUpload from '../../components/corporate/BulkEmployeeUpload';
 
 const CorporateHRDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    totalPremium: 0,
+    totalClaims: 0,
+    pendingClaims: 0,
+    planStatus: 'pending',
+    planName: 'No active plan'
+  });
   const [employees, setEmployees] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  // Check authentication on load
   useEffect(() => {
     const token = localStorage.getItem('corporateToken');
     if (!token) {
@@ -18,6 +28,7 @@ const CorporateHRDashboard = () => {
     loadData();
   }, [activeTab]);
 
+  // Load data based on active tab
   const loadData = async () => {
     setLoading(true);
     try {
@@ -25,10 +36,23 @@ const CorporateHRDashboard = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       if (activeTab === 'dashboard') {
+        // Fetch dashboard stats
         const statsRes = await axios.get('/api/corporate/hr/dashboard', config);
-        setStats(statsRes.data.data);
+        if (statsRes.data.success) {
+          setStats(statsRes.data.data);
+        }
+
+        // Fetch employees
         const empRes = await axios.get('/api/corporate/hr/employees', config);
-        setEmployees(empRes.data.data);
+        if (empRes.data.success) {
+          setEmployees(empRes.data.data);
+        }
+      } else if (activeTab === 'employees') {
+        // Fetch only employees
+        const empRes = await axios.get('/api/corporate/hr/employees', config);
+        if (empRes.data.success) {
+          setEmployees(empRes.data.data);
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -41,94 +65,502 @@ const CorporateHRDashboard = () => {
     }
   };
 
+  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('corporateToken');
     localStorage.removeItem('corporateId');
     navigate('/corporate');
   };
 
+  // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(amount || 0);
   };
 
+  // Get status badge color
+  const getStatusBadge = (status) => {
+    const styles = {
+      pending: { backgroundColor: '#fef3c7', color: '#92400e' },
+      active: { backgroundColor: '#dcfce7', color: '#166534' },
+      expired: { backgroundColor: '#fee2e2', color: '#dc2626' },
+      cancelled: { backgroundColor: '#fee2e2', color: '#dc2626' }
+    };
+    const style = styles[status] || styles.pending;
+    return (
+      <span style={{
+        padding: '0.25rem 0.75rem',
+        borderRadius: '20px',
+        fontSize: '0.75rem',
+        backgroundColor: style.backgroundColor,
+        color: style.color,
+        fontWeight: 'bold'
+      }}>
+        {status.toUpperCase()}
+      </span>
+    );
+  };
+
+  // Loading skeleton
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '3rem' }}>Loading dashboard...</div>;
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔄</div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
-      {/* Header */}
-      <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>🏢 HR Dashboard</h1>
+      {/* ============================================
+          HEADER
+          ============================================ */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
+        padding: '1.5rem 2rem',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>🏢 HR Dashboard</h1>
+          <p style={{ opacity: 0.9, fontSize: '0.9rem' }}>Manage your corporate health benefits</p>
+        </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button onClick={() => setActiveTab('dashboard')} style={{ padding: '8px 16px', backgroundColor: activeTab === 'dashboard' ? '#2563eb' : 'transparent', color: activeTab === 'dashboard' ? 'white' : '#1e293b', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal' }}>📊 Dashboard</button>
-          <button onClick={() => setActiveTab('employees')} style={{ padding: '8px 16px', backgroundColor: activeTab === 'employees' ? '#2563eb' : 'transparent', color: activeTab === 'employees' ? 'white' : '#1e293b', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: activeTab === 'employees' ? 'bold' : 'normal' }}>👨‍💼 Employees</button>
-          <button onClick={() => setActiveTab('add')} style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>➕ Add Employee</button>
-          <button onClick={handleLogout} style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Logout</button>
+          <span style={{
+            padding: '0.25rem 1rem',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            borderRadius: '20px',
+            fontSize: '0.85rem'
+          }}>
+            Plan: {stats.planName}
+          </span>
+          {getStatusBadge(stats.planStatus)}
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '0.5rem 1.5rem',
+              backgroundColor: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
 
+      {/* ============================================
+          TAB NAVIGATION
+          ============================================ */}
+      <div style={{
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e5e7eb',
+        padding: '0.5rem 2rem',
+        display: 'flex',
+        gap: '0.5rem',
+        flexWrap: 'wrap'
+      }}>
+        {[
+          { id: 'dashboard', label: '📊 Dashboard' },
+          { id: 'employees', label: '👨‍💼 Employees' },
+          { id: 'bulk', label: '📤 Bulk Upload' },
+          { id: 'claims', label: '📋 Claims' },
+          { id: 'tax', label: '💰 Tax Benefits' },
+          { id: 'reports', label: '📊 Reports' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              padding: '0.5rem 1.5rem',
+              backgroundColor: activeTab === tab.id ? '#2563eb' : 'transparent',
+              color: activeTab === tab.id ? 'white' : '#1e293b',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontWeight: activeTab === tab.id ? 'bold' : 'normal',
+              transition: 'all 0.2s'
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ============================================
+          CONTENT AREA
+          ============================================ */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+
+        {/* ============================================
+            TAB 1: DASHBOARD
+            ============================================ */}
         {activeTab === 'dashboard' && (
           <>
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <p style={{ color: '#6b7280' }}>Total Employees</p>
+            {/* Stats Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+              marginBottom: '2rem'
+            }}>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '1.5rem',
+                borderRadius: '12px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                borderLeft: '4px solid #2563eb'
+              }}>
+                <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>👥 Total Employees</p>
                 <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalEmployees || 0}</p>
               </div>
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <p style={{ color: '#6b7280' }}>Active Employees</p>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '1.5rem',
+                borderRadius: '12px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                borderLeft: '4px solid #10b981'
+              }}>
+                <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>✅ Active Employees</p>
                 <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>{stats.activeEmployees || 0}</p>
               </div>
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <p style={{ color: '#6b7280' }}>Total Premium</p>
-                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb' }}>{formatCurrency(stats.totalPremium || 0)}</p>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '1.5rem',
+                borderRadius: '12px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                borderLeft: '4px solid #8b5cf6'
+              }}>
+                <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>💰 Total Premium</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#8b5cf6' }}>{formatCurrency(stats.totalPremium)}</p>
               </div>
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <p style={{ color: '#6b7280' }}>Claims</p>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '1.5rem',
+                borderRadius: '12px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                borderLeft: '4px solid #f59e0b'
+              }}>
+                <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>📋 Total Claims</p>
                 <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>{stats.totalClaims || 0}</p>
+                <p style={{ fontSize: '0.75rem', color: '#dc2626' }}>{stats.pendingClaims || 0} pending</p>
               </div>
             </div>
 
-            {/* Employees Table */}
-            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Recent Employees</h3>
+            {/* Recent Employees Table */}
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontWeight: 'bold' }}>📋 Recent Employees</h3>
+                <button
+                  onClick={() => setActiveTab('employees')}
+                  style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  View All →
+                </button>
+              </div>
+
               {employees.length === 0 ? (
-                <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>No employees added yet. <button onClick={() => setActiveTab('add')} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Add your first employee</button></p>
+                <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                  No employees added yet.
+                  <button
+                    onClick={() => setActiveTab('bulk')}
+                    style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginLeft: '0.5rem' }}
+                  >
+                    Add your first employee
+                  </button>
+                </p>
               ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Name</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Email</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Department</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.slice(0, 5).map((emp, index) => (
+                        <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                          <td style={{ padding: '0.75rem', fontWeight: '500' }}>{emp.name}</td>
+                          <td style={{ padding: '0.75rem' }}>{emp.email}</td>
+                          <td style={{ padding: '0.75rem' }}>{emp.department || '-'}</td>
+                          <td style={{ padding: '0.75rem' }}>
+                            <span style={{
+                              padding: '0.25rem 0.75rem',
+                              borderRadius: '20px',
+                              fontSize: '0.75rem',
+                              backgroundColor: emp.isActive ? '#dcfce7' : '#fee2e2',
+                              color: emp.isActive ? '#166534' : '#dc2626',
+                              fontWeight: 'bold'
+                            }}>
+                              {emp.isActive ? '✅ Active' : '❌ Inactive'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ============================================
+            TAB 2: EMPLOYEES
+            ============================================ */}
+        {activeTab === 'employees' && (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>👨‍💼 All Employees ({employees.length})</h2>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setActiveTab('bulk')}
+                  style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  📤 Bulk Upload
+                </button>
+                <button
+                  style={{ padding: '0.5rem 1rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}
+                  onClick={() => alert('Add employee form coming soon')}
+                >
+                  ➕ Add Employee
+                </button>
+              </div>
+            </div>
+
+            {employees.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>No employees found</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <th style={{ padding: '8px', textAlign: 'left' }}>Name</th>
-                      <th style={{ padding: '8px', textAlign: 'left' }}>Email</th>
-                      <th style={{ padding: '8px', textAlign: 'left' }}>Department</th>
-                      <th style={{ padding: '8px', textAlign: 'left' }}>Status</th>
+                    <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Name</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Email</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Phone</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Department</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Designation</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {employees.slice(0, 10).map((emp, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '8px' }}>{emp.name}</td>
-                        <td style={{ padding: '8px' }}>{emp.email}</td>
-                        <td style={{ padding: '8px' }}>{emp.department || '-'}</td>
-                        <td style={{ padding: '8px' }}>
-                          <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', backgroundColor: emp.isActive ? '#dcfce7' : '#fee2e2', color: emp.isActive ? '#166534' : '#dc2626' }}>
-                            {emp.isActive ? 'Active' : 'Inactive'}
+                    {employees.map((emp, index) => (
+                      <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '0.75rem', fontWeight: '500' }}>{emp.name}</td>
+                        <td style={{ padding: '0.75rem' }}>{emp.email}</td>
+                        <td style={{ padding: '0.75rem' }}>{emp.phone}</td>
+                        <td style={{ padding: '0.75rem' }}>{emp.department || '-'}</td>
+                        <td style={{ padding: '0.75rem' }}>{emp.designation || '-'}</td>
+                        <td style={{ padding: '0.75rem' }}>
+                          <span style={{
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '20px',
+                            fontSize: '0.75rem',
+                            backgroundColor: emp.isActive ? '#dcfce7' : '#fee2e2',
+                            color: emp.isActive ? '#166534' : '#dc2626',
+                            fontWeight: 'bold'
+                          }}>
+                            {emp.isActive ? '✅ Active' : '❌ Inactive'}
                           </span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              )}
-            </div>
-          </>
+              </div>
+            )}
+          </div>
         )}
+
+        {/* ============================================
+            TAB 3: BULK UPLOAD
+            ============================================ */}
+        {activeTab === 'bulk' && (
+          <BulkEmployeeUpload onUploadComplete={() => {
+            loadData();
+            setActiveTab('employees');
+          }} />
+        )}
+
+        {/* ============================================
+            TAB 4: CLAIMS
+            ============================================ */}
+        {activeTab === 'claims' && (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>📋 Claims Management</h2>
+            <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>Track and manage employee claims</p>
+
+            {stats.totalClaims === 0 ? (
+              <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>No claims filed yet</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Employee</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Amount</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Date</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '0.75rem' }}>John Doe</td>
+                      <td style={{ padding: '0.75rem', fontWeight: 'bold' }}>₹15,000</td>
+                      <td style={{ padding: '0.75rem' }}>2024-01-15</td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                          Pending
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ============================================
+            TAB 5: TAX BENEFITS
+            ============================================ */}
+        {activeTab === 'tax' && (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>💰 Tax Benefit Calculator</h2>
+            <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>Calculate tax savings on health insurance premiums</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Annual Premium (₹)</label>
+                <input
+                  type="number"
+                  id="premiumInput"
+                  placeholder="e.g., 15000"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tax Slab (%)</label>
+                <select
+                  id="slabSelect"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                >
+                  <option value="5">5%</option>
+                  <option value="10">10%</option>
+                  <option value="20">20%</option>
+                  <option value="30">30%</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                const premium = document.getElementById('premiumInput').value;
+                const slab = document.getElementById('slabSelect').value;
+                if (!premium || premium <= 0) {
+                  alert('Please enter a valid premium amount');
+                  return;
+                }
+                const saving = (parseFloat(premium) * parseFloat(slab)) / 100;
+                alert(`💰 Tax Savings: ₹${saving.toFixed(2)} per year`);
+              }}
+              style={{
+                padding: '0.75rem 2rem',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '1rem'
+              }}
+            >
+              Calculate Savings
+            </button>
+          </div>
+        )}
+
+        {/* ============================================
+            TAB 6: REPORTS
+            ============================================ */}
+        {activeTab === 'reports' && (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>📊 Reports & Analytics</h2>
+            <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>Generate and download reports</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+              <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <h4 style={{ fontWeight: 'bold' }}>👥 Employee Report</h4>
+                <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>List of all employees</p>
+                <button style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Download PDF</button>
+              </div>
+              <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <h4 style={{ fontWeight: 'bold' }}>💰 Financial Report</h4>
+                <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Premium and claims summary</p>
+                <button style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Download PDF</button>
+              </div>
+              <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <h4 style={{ fontWeight: 'bold' }}>📋 Claims Report</h4>
+                <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Claims filed and status</p>
+                <button style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Download PDF</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
