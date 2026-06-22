@@ -80,10 +80,10 @@ import LenderLogin from './pages/lender/LenderLogin';
 import LenderDashboard from './pages/lender/LenderDashboard';
 import LenderApplications from './pages/lender/LenderApplications';
 import LenderApplicationDetail from './pages/lender/LenderApplicationDetail';
-import LenderRegister from './pages/lender/LenderRegister';  // ✅ CORRECT PATH
+import LenderRegister from './pages/lender/LenderRegister';
 
 // ============================================
-// ADMIN PANEL IMPORTS (EXISTING)
+// ADMIN PANEL IMPORTS
 // ============================================
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -95,7 +95,7 @@ import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
 import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';
 
 // ============================================
-// 🆕 NEW ADMIN PANEL IMPORTS
+// NEW ADMIN PANEL IMPORTS
 // ============================================
 import AdminHospitals from './pages/admin/AdminHospitals';
 import AdminAmbulance from './pages/admin/AdminAmbulance';
@@ -114,35 +114,35 @@ import InsuranceDetail from './pages/insurance/InsuranceDetail';
 import InsuranceApplication from './pages/insurance/InsuranceApplication';
 import InsuranceConfirmation from './pages/insurance/InsuranceConfirmation';
 import InsurancePolicyDetail from './pages/insurance/InsurancePolicyDetail';
-
-// ============================================
-// 🆕 PROVIDER REGISTRATION & DASHBOARD IMPORTS
-// ============================================
-
-// Hospitals Provider
-import HospitalRegister from './pages/hospitals/HospitalRegister';
-import HospitalLogin from './pages/hospitals/HospitalLogin';
-import HospitalDashboard from './pages/hospitals/HospitalDashboard';
-
-// Ambulance Provider
-import AmbulanceRegister from './pages/ambulance/AmbulanceRegister';
-import AmbulanceLogin from './pages/ambulance/AmbulanceLogin';
-import AmbulanceDashboard from './pages/ambulance/AmbulanceDashboard';
-
-// Caregiver Provider
-import CaregiverRegister from './pages/caregivers/CaregiverRegister';
-import CaregiverLogin from './pages/caregivers/CaregiverLogin';
-import CaregiverDashboard from './pages/caregivers/CaregiverDashboard';
-
-// Diagnostics Provider
-import DiagnosticsRegister from './pages/diagnostics/DiagnosticsRegister';
-import DiagnosticsLogin from './pages/diagnostics/DiagnosticsLogin';
-import DiagnosticsDashboard from './pages/diagnostics/DiagnosticsDashboard';
-
-// Insurance Provider
 import InsuranceCompanyRegister from './pages/insurance/InsuranceCompanyRegister';
 import InsuranceCompanyLogin from './pages/insurance/InsuranceCompanyLogin';
 import InsuranceCompanyDashboard from './pages/insurance/InsuranceCompanyDashboard';
+
+// ============================================
+// 🆕 CORPORATE MODULE IMPORTS
+// ============================================
+import CorporateHub from './pages/corporate/CorporateHub';
+import CorporatePlans from './pages/corporate/CorporatePlans';
+import CorporatePlanDetail from './pages/corporate/CorporatePlanDetail';
+import CorporateEnrollment from './pages/corporate/CorporateEnrollment';
+import CorporateHRLogin from './pages/corporate/CorporateHRLogin';
+import CorporateHRDashboard from './pages/corporate/CorporateHRDashboard';
+
+// ============================================
+// PROVIDER REGISTRATION IMPORTS
+// ============================================
+import HospitalRegister from './pages/hospitals/HospitalRegister';
+import HospitalLogin from './pages/hospitals/HospitalLogin';
+import HospitalDashboard from './pages/hospitals/HospitalDashboard';
+import AmbulanceRegister from './pages/ambulance/AmbulanceRegister';
+import AmbulanceLogin from './pages/ambulance/AmbulanceLogin';
+import AmbulanceDashboard from './pages/ambulance/AmbulanceDashboard';
+import CaregiverRegister from './pages/caregivers/CaregiverRegister';
+import CaregiverLogin from './pages/caregivers/CaregiverLogin';
+import CaregiverDashboard from './pages/caregivers/CaregiverDashboard';
+import DiagnosticsRegister from './pages/diagnostics/DiagnosticsRegister';
+import DiagnosticsLogin from './pages/diagnostics/DiagnosticsLogin';
+import DiagnosticsDashboard from './pages/diagnostics/DiagnosticsDashboard';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -158,14 +158,14 @@ function App() {
               MAIN PAGE
           ============================================ */}
           <Route path="/" element={<HomePage />} />
-          
+
           {/* ============================================
               HOSPITALS TAG
           ============================================ */}
           <Route path="/hospitals" element={<HospitalsList />} />
           <Route path="/hospital-info/:id" element={<HospitalSimpleDetails />} />
           <Route path="/emergency-search" element={<EmergencySearch />} />
-          
+
           {/* ============================================
               BOOKING PAGES
           ============================================ */}
@@ -173,7 +173,7 @@ function App() {
           <Route path="/book-admission/:id" element={<BookAdmission />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/my-bookings" element={<MyBookings />} />
-          
+
           {/* ============================================
               AMBULANCE TAG
           ============================================ */}
@@ -258,10 +258,10 @@ function App() {
           <Route path="/lender/dashboard" element={<LenderDashboard />} />
           <Route path="/lender/applications" element={<LenderApplications />} />
           <Route path="/lender/applications/:id" element={<LenderApplicationDetail />} />
-          <Route path="/lender/register" element={<LenderRegister />} />  {/* ✅ NEW LENDER REGISTER ROUTE */}
+          <Route path="/lender/register" element={<LenderRegister />} />
 
           {/* ============================================
-              ADMIN PANEL ROUTES (EXISTING)
+              ADMIN PANEL ROUTES
           ============================================ */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -271,10 +271,6 @@ function App() {
           <Route path="/admin/ayurveda" element={<AyurvedaAdminPanel />} />
           <Route path="/admin/finance" element={<AdminFinancialDashboard />} />
           <Route path="/admin/homeopathy" element={<HomeopathyAdminPanel />} />
-
-          {/* ============================================
-              🆕 NEW ADMIN PANEL ROUTES
-          ============================================ */}
           <Route path="/admin/hospitals" element={<AdminHospitals />} />
           <Route path="/admin/ambulance" element={<AdminAmbulance />} />
           <Route path="/admin/caregivers" element={<AdminCaregivers />} />
@@ -292,35 +288,35 @@ function App() {
           <Route path="/insurance/apply/:planId" element={<InsuranceApplication />} />
           <Route path="/insurance/confirmation" element={<InsuranceConfirmation />} />
           <Route path="/insurance/my-policies/:id" element={<InsurancePolicyDetail />} />
-
-          {/* ============================================
-              🆕 PROVIDER REGISTRATION & DASHBOARD ROUTES
-          ============================================ */}
-
-          {/* HOSPITAL PROVIDER ROUTES */}
-          <Route path="/hospital/register" element={<HospitalRegister />} />
-          <Route path="/hospital/login" element={<HospitalLogin />} />
-          <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
-
-          {/* AMBULANCE PROVIDER ROUTES */}
-          <Route path="/ambulance/register" element={<AmbulanceRegister />} />
-          <Route path="/ambulance/login" element={<AmbulanceLogin />} />
-          <Route path="/ambulance/dashboard" element={<AmbulanceDashboard />} />
-
-          {/* CAREGIVER PROVIDER ROUTES */}
-          <Route path="/caregiver/register" element={<CaregiverRegister />} />
-          <Route path="/caregiver/login" element={<CaregiverLogin />} />
-          <Route path="/caregiver/dashboard" element={<CaregiverDashboard />} />
-
-          {/* DIAGNOSTICS PROVIDER ROUTES */}
-          <Route path="/diagnostics/register" element={<DiagnosticsRegister />} />
-          <Route path="/diagnostics/login" element={<DiagnosticsLogin />} />
-          <Route path="/diagnostics/dashboard" element={<DiagnosticsDashboard />} />
-
-          {/* INSURANCE PROVIDER ROUTES */}
           <Route path="/insurance/company/register" element={<InsuranceCompanyRegister />} />
           <Route path="/insurance/company/login" element={<InsuranceCompanyLogin />} />
           <Route path="/insurance/company/dashboard" element={<InsuranceCompanyDashboard />} />
+
+          {/* ============================================
+              🆕 CORPORATE HEALTH & INSURANCE ROUTES
+          ============================================ */}
+          <Route path="/corporate" element={<CorporateHub />} />
+          <Route path="/corporate/plans" element={<CorporatePlans />} />
+          <Route path="/corporate/plan/:id" element={<CorporatePlanDetail />} />
+          <Route path="/corporate/enroll" element={<CorporateEnrollment />} />
+          <Route path="/corporate/hr/login" element={<CorporateHRLogin />} />
+          <Route path="/corporate/hr/dashboard" element={<CorporateHRDashboard />} />
+
+          {/* ============================================
+              PROVIDER REGISTRATION ROUTES
+          ============================================ */}
+          <Route path="/hospital/register" element={<HospitalRegister />} />
+          <Route path="/hospital/login" element={<HospitalLogin />} />
+          <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
+          <Route path="/ambulance/register" element={<AmbulanceRegister />} />
+          <Route path="/ambulance/login" element={<AmbulanceLogin />} />
+          <Route path="/ambulance/dashboard" element={<AmbulanceDashboard />} />
+          <Route path="/caregiver/register" element={<CaregiverRegister />} />
+          <Route path="/caregiver/login" element={<CaregiverLogin />} />
+          <Route path="/caregiver/dashboard" element={<CaregiverDashboard />} />
+          <Route path="/diagnostics/register" element={<DiagnosticsRegister />} />
+          <Route path="/diagnostics/login" element={<DiagnosticsLogin />} />
+          <Route path="/diagnostics/dashboard" element={<DiagnosticsDashboard />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
