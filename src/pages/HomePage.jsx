@@ -58,9 +58,11 @@ const HomePage = () => {
       desc: 'Video consult, prescription' 
     },
     { 
-      name: 'Corporate', 
+      name: 'Corporate Health & Insurance', 
       path: '/corporate', 
-      desc: 'Employee wellness plans' 
+      desc: 'Group Insurance • Wellness • Checkups',
+      isNew: true,
+      isCorporate: true 
     },
     { 
       name: 'Diagnostics', 
@@ -107,15 +109,15 @@ const HomePage = () => {
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 position: 'relative',
                 border: tag.isInsurance ? '2px solid #2563eb' : (tag.isNew ? '2px solid #4CAF50' : 'none'),
-                transform: tag.isInsurance ? 'scale(1.02)' : 'scale(1)'
+                transform: tag.isCorporate ? 'scale(1.02)' : (tag.isInsurance ? 'scale(1.02)' : 'scale(1)')
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
-                e.currentTarget.style.boxShadow = tag.isInsurance ? '0 8px 24px rgba(37, 99, 235, 0.4)' : '0 8px 16px rgba(0,0,0,0.15)';
+                e.currentTarget.style.boxShadow = tag.isInsurance || tag.isCorporate ? '0 8px 24px rgba(37, 99, 235, 0.4)' : '0 8px 16px rgba(0,0,0,0.15)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = tag.isInsurance ? 'scale(1.02)' : 'translateY(0)';
-                e.currentTarget.style.boxShadow = tag.isInsurance ? '0 4px 12px rgba(37, 99, 235, 0.3)' : '0 4px 6px rgba(0,0,0,0.1)';
+                e.currentTarget.style.transform = tag.isInsurance || tag.isCorporate ? 'scale(1.02)' : 'translateY(0)';
+                e.currentTarget.style.boxShadow = tag.isInsurance ? '0 4px 12px rgba(37, 99, 235, 0.3)' : (tag.isCorporate ? '0 4px 12px rgba(30, 58, 95, 0.3)' : '0 4px 6px rgba(0,0,0,0.1)');
               }}
             >
               {/* NEW Badge */}
@@ -124,7 +126,7 @@ const HomePage = () => {
                   position: 'absolute',
                   top: '-10px',
                   right: '-10px',
-                  backgroundColor: tag.isInsurance ? '#2563eb' : '#4CAF50',
+                  backgroundColor: tag.isInsurance ? '#2563eb' : (tag.isCorporate ? '#1e3a5f' : '#4CAF50'),
                   color: 'white',
                   padding: '4px 12px',
                   borderRadius: '20px',
@@ -132,18 +134,18 @@ const HomePage = () => {
                   fontWeight: 'bold',
                   animation: 'pulse 2s infinite'
                 }}>
-                  {tag.isInsurance ? '🛡️ LIVE' : '🆕 NEW'}
+                  {tag.isInsurance ? '🛡️ LIVE' : (tag.isCorporate ? '🏢 LIVE' : '🆕 NEW')}
                 </span>
               )}
 
-              {/* Insurance Icon */}
-              {tag.isInsurance && (
+              {/* Corporate or Insurance Icon */}
+              {(tag.isInsurance || tag.isCorporate) && (
                 <div style={{
                   position: 'absolute',
                   top: '-6px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  backgroundColor: '#2563eb',
+                  backgroundColor: tag.isInsurance ? '#2563eb' : '#1e3a5f',
                   color: 'white',
                   padding: '2px 16px',
                   borderRadius: '20px',
@@ -152,7 +154,7 @@ const HomePage = () => {
                   letterSpacing: '1px',
                   textTransform: 'uppercase'
                 }}>
-                  ⭐ Trusted
+                  {tag.isInsurance ? '⭐ Trusted' : '🏢 For Companies'}
                 </div>
               )}
 
@@ -161,11 +163,12 @@ const HomePage = () => {
                 fontSize: '1.25rem', 
                 fontWeight: 'bold', 
                 marginBottom: '0.5rem', 
-                color: tag.isInsurance ? '#2563eb' : (tag.isNew ? '#4CAF50' : '#1e293b'),
-                marginTop: tag.isInsurance ? '8px' : '0'
+                color: tag.isInsurance ? '#2563eb' : (tag.isCorporate ? '#1e3a5f' : (tag.isNew ? '#4CAF50' : '#1e293b')),
+                marginTop: (tag.isInsurance || tag.isCorporate) ? '8px' : '0'
               }}>
                 {tag.isInsurance && '🛡️ '}
-                {tag.isNew && !tag.isInsurance && '🌿 '}
+                {tag.isCorporate && '🏢 '}
+                {tag.isNew && !tag.isInsurance && !tag.isCorporate && '🌿 '}
                 {tag.name}
               </h3>
 
@@ -210,6 +213,48 @@ const HomePage = () => {
                     fontWeight: '600'
                   }}>
                     Instant Policy
+                  </span>
+                </div>
+              )}
+
+              {/* Corporate-specific badge */}
+              {tag.isCorporate && (
+                <div style={{
+                  marginTop: '0.75rem',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <span style={{
+                    fontSize: '0.6rem',
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    padding: '2px 10px',
+                    borderRadius: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Group Insurance
+                  </span>
+                  <span style={{
+                    fontSize: '0.6rem',
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    padding: '2px 10px',
+                    borderRadius: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Wellness
+                  </span>
+                  <span style={{
+                    fontSize: '0.6rem',
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    padding: '2px 10px',
+                    borderRadius: '12px',
+                    fontWeight: '600'
+                  }}>
+                    HR Dashboard
                   </span>
                 </div>
               )}
