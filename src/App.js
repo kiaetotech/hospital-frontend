@@ -91,7 +91,7 @@ import AdminCommission from './pages/admin/AdminCommission';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
 import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
-import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';   // ✅ KEEP THIS ONE ONLY
+import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';
 
 // ============================================
 // 🆕 NEW ADMIN PANEL IMPORTS
@@ -113,6 +113,38 @@ import InsuranceDetail from './pages/insurance/InsuranceDetail';
 import InsuranceApplication from './pages/insurance/InsuranceApplication';
 import InsuranceConfirmation from './pages/insurance/InsuranceConfirmation';
 import InsurancePolicyDetail from './pages/insurance/InsurancePolicyDetail';
+
+// ============================================
+// 🆕 PROVIDER REGISTRATION & DASHBOARD IMPORTS
+// ============================================
+
+// Hospitals Provider
+import HospitalRegister from './pages/hospitals/HospitalRegister';
+import HospitalLogin from './pages/hospitals/HospitalLogin';
+import HospitalDashboard from './pages/hospitals/HospitalDashboard';
+
+// Ambulance Provider
+import AmbulanceRegister from './pages/ambulance/AmbulanceRegister';
+import AmbulanceLogin from './pages/ambulance/AmbulanceLogin';
+import AmbulanceDashboard from './pages/ambulance/AmbulanceDashboard';
+
+// Caregiver Provider
+import CaregiverRegister from './pages/caregivers/CaregiverRegister';
+import CaregiverLogin from './pages/caregivers/CaregiverLogin';
+import CaregiverDashboard from './pages/caregivers/CaregiverDashboard';
+
+// Diagnostics Provider
+import DiagnosticsRegister from './pages/diagnostics/DiagnosticsRegister';
+import DiagnosticsLogin from './pages/diagnostics/DiagnosticsLogin';
+import DiagnosticsDashboard from './pages/diagnostics/DiagnosticsDashboard';
+
+// Lender Provider (Register - New)
+import LenderRegister from './pages/financing/LenderRegister';
+
+// Insurance Provider
+import InsuranceCompanyRegister from './pages/insurance/InsuranceCompanyRegister';
+import InsuranceCompanyLogin from './pages/insurance/InsuranceCompanyLogin';
+import InsuranceCompanyDashboard from './pages/insurance/InsuranceCompanyDashboard';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -261,6 +293,38 @@ function App() {
           <Route path="/insurance/apply/:planId" element={<InsuranceApplication />} />
           <Route path="/insurance/confirmation" element={<InsuranceConfirmation />} />
           <Route path="/insurance/my-policies/:id" element={<InsurancePolicyDetail />} />
+
+          {/* ============================================
+              🆕 PROVIDER REGISTRATION & DASHBOARD ROUTES
+          ============================================ */}
+
+          {/* HOSPITAL PROVIDER ROUTES */}
+          <Route path="/hospital/register" element={<HospitalRegister />} />
+          <Route path="/hospital/login" element={<HospitalLogin />} />
+          <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
+
+          {/* AMBULANCE PROVIDER ROUTES */}
+          <Route path="/ambulance/register" element={<AmbulanceRegister />} />
+          <Route path="/ambulance/login" element={<AmbulanceLogin />} />
+          <Route path="/ambulance/dashboard" element={<AmbulanceDashboard />} />
+
+          {/* CAREGIVER PROVIDER ROUTES */}
+          <Route path="/caregiver/register" element={<CaregiverRegister />} />
+          <Route path="/caregiver/login" element={<CaregiverLogin />} />
+          <Route path="/caregiver/dashboard" element={<CaregiverDashboard />} />
+
+          {/* DIAGNOSTICS PROVIDER ROUTES */}
+          <Route path="/diagnostics/register" element={<DiagnosticsRegister />} />
+          <Route path="/diagnostics/login" element={<DiagnosticsLogin />} />
+          <Route path="/diagnostics/dashboard" element={<DiagnosticsDashboard />} />
+
+          {/* LENDER PROVIDER ROUTES */}
+          <Route path="/lender/register" element={<LenderRegister />} />
+
+          {/* INSURANCE PROVIDER ROUTES */}
+          <Route path="/insurance/company/register" element={<InsuranceCompanyRegister />} />
+          <Route path="/insurance/company/login" element={<InsuranceCompanyLogin />} />
+          <Route path="/insurance/company/dashboard" element={<InsuranceCompanyDashboard />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
