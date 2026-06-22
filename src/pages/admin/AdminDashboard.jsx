@@ -22,13 +22,11 @@ const AdminDashboard = () => {
   const [recentInsuranceCompanies, setRecentInsuranceCompanies] = useState([]);
   const [pendingSettlements, setPendingSettlements] = useState([]);
   const [activeTab, setActiveTab] = useState('lenders');
-
-  // 🆕 Quick stats for all modules
-  const [moduleStats, setModuleStats] = useState({
-    hospitals: { total: 0, pending: 0 },
-    ambulance: { total: 0, pending: 0 },
-    caregivers: { total: 0, pending: 0 },
-    diagnostics: { total: 0, pending: 0 }
+  const [corporateStats, setCorporateStats] = useState({
+    totalPlans: 0,
+    pending: 0,
+    active: 0,
+    employees: 0
   });
 
   useEffect(() => {
@@ -39,7 +37,7 @@ const AdminDashboard = () => {
     }
     fetchDashboardData();
     fetchInsuranceData();
-    fetchModuleStats();
+    fetchCorporateData();
   }, [navigate]);
 
   const fetchDashboardData = async () => {
@@ -105,52 +103,35 @@ const AdminDashboard = () => {
     }
   };
 
-  // 🆕 Fetch module stats for quick overview
-  const fetchModuleStats = async () => {
+  // 🆕 Fetch Corporate Data
+  const fetchCorporateData = async () => {
     try {
       const token = localStorage.getItem('adminToken');
       const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
-      // Fetch stats for each module
-      const [hospitalsRes, ambulanceRes, caregiversRes, diagnosticsRes] = await Promise.all([
-        axios.get('/api/hospitals/admin/stats', config).catch(() => ({ data: { data: {} } })),
-        axios.get('/api/ambulance/admin/stats', config).catch(() => ({ data: { data: {} } })),
-        axios.get('/api/caregivers/admin/stats', config).catch(() => ({ data: { data: {} } })),
-        axios.get('/api/diagnostics/admin/stats', config).catch(() => ({ data: { data: {} } })),
-      ]);
+      const statsRes = await axios.get('/api/corporate/stats', config);
+      const pendingRes = await axios.get('/api/corporate/admin/pending', config);
+      const allRes = await axios.get('/api/corporate/admin/all', config);
 
-      setModuleStats({
-        hospitals: {
-          total: hospitalsRes.data?.data?.totalHospitals || 0,
-          pending: hospitalsRes.data?.data?.pendingVerifications || 0
-        },
-        ambulance: {
-          total: ambulanceRes.data?.data?.totalAmbulances || 0,
-          pending: ambulanceRes.data?.data?.pendingVerifications || 0
-        },
-        caregivers: {
-          total: caregiversRes.data?.data?.totalCaregivers || 0,
-          pending: caregiversRes.data?.data?.pendingVerifications || 0
-        },
-        diagnostics: {
-          total: diagnosticsRes.data?.data?.totalLabs || 0,
-          pending: diagnosticsRes.data?.data?.pendingVerifications || 0
-        }
+      const stats = statsRes.data.data || {};
+      const pending = pendingRes.data.data || [];
+      const all = allRes.data.data || [];
+
+      setCorporateStats({
+        totalPlans: stats.plansAvailable || all.length || 0,
+        pending: pending.length || 0,
+        active: all.filter(p => p.status === 'active').length || 0,
+        employees: stats.employeesCovered || 0
       });
 
     } catch (error) {
-      console.error('Error fetching module stats:', error);
+      console.error('Error fetching corporate data:', error);
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     navigate('/admin/login');
-  };
-
-  // 🆕 Navigate to admin panel
-  const goToAdminPanel = (path) => {
-    navigate(path);
   };
 
   if (loading) {
@@ -199,6 +180,12 @@ const AdminDashboard = () => {
               🌿 Homeopathy
             </button>
             <button
+              onClick={() => navigate('/admin/corporate')}
+              style={{ backgroundColor: '#1e3a5f', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+            >
+              🏢 Corporate
+            </button>
+            <button
               onClick={handleLogout}
               style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
             >
@@ -207,87 +194,37 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* ============================================
-            🆕 QUICK ACCESS - ALL ADMIN PANELS
-            ============================================ */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-          gap: '0.75rem',
-          marginBottom: '2rem'
-        }}>
-          {[
-            { label: '🏥 Hospitals', path: '/admin/hospitals', color: '#2563eb' },
-            { label: '🚑 Ambulance', path: '/admin/ambulance', color: '#f59e0b' },
-            { label: '🏠 Caregivers', path: '/admin/caregivers', color: '#8b5cf6' },
-            { label: '🔬 Diagnostics', path: '/admin/diagnostics', color: '#06b6d4' },
-            { label: '💰 Financing', path: '/admin/financing', color: '#10b981' },
-            { label: '👥 Users', path: '/admin/users', color: '#6b7280' },
-            { label: '🛡️ Insurance', path: '/admin/dashboard?tab=insurance', color: '#2563eb' },
-          ].map((item) => (
-            <button
-              key={item.path}
-              onClick={() => goToAdminPanel(item.path)}
-              style={{
-                padding: '0.75rem',
-                backgroundColor: 'white',
-                border: `2px solid ${item.color}`,
-                borderRadius: '0.75rem',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                color: item.color,
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = item.color;
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'white';
-                e.currentTarget.style.color = item.color;
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* ============================================
-            MODULE STATS CARDS
-            ============================================ */}
+        {/* Module Stats Cards */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
           gap: '1rem',
           marginBottom: '2rem'
         }}>
-          {[
-            { label: '🏥 Hospitals', total: moduleStats.hospitals.total, pending: moduleStats.hospitals.pending, color: '#2563eb' },
-            { label: '🚑 Ambulance', total: moduleStats.ambulance.total, pending: moduleStats.ambulance.pending, color: '#f59e0b' },
-            { label: '🏠 Caregivers', total: moduleStats.caregivers.total, pending: moduleStats.caregivers.pending, color: '#8b5cf6' },
-            { label: '🔬 Diagnostics', total: moduleStats.diagnostics.total, pending: moduleStats.diagnostics.pending, color: '#06b6d4' },
-          ].map((mod) => (
-            <div key={mod.label} style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              padding: '1rem',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-              borderLeft: `4px solid ${mod.color}`
-            }}>
-              <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{mod.label}</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mod.total}</p>
-              {mod.pending > 0 && (
-                <p style={{ fontSize: '0.75rem', color: '#f59e0b' }}>⏳ {mod.pending} pending</p>
-              )}
-            </div>
-          ))}
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#2563eb' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏥 Hospitals</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.hospitals || 0}</p>
+          </div>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#f59e0b' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🚑 Ambulance</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.ambulance || 0}</p>
+          </div>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#8b5cf6' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏠 Caregivers</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.caregivers || 0}</p>
+          </div>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#06b6d4' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🔬 Diagnostics</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.diagnostics || 0}</p>
+          </div>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid '#1e3a5f' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏢 Corporate</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{corporateStats.totalPlans || 0}</p>
+          </div>
         </div>
 
-        {/* ============================================
-            TAB NAVIGATION
-            ============================================ */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem' }}>
+        {/* Tab Navigation */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => setActiveTab('lenders')}
             style={{
@@ -315,6 +252,20 @@ const AdminDashboard = () => {
             }}
           >
             🛡️ Insurance Module
+          </button>
+          <button
+            onClick={() => setActiveTab('corporate')}
+            style={{
+              padding: '0.5rem 1.5rem',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              backgroundColor: activeTab === 'corporate' ? '#1e3a5f' : 'transparent',
+              color: activeTab === 'corporate' ? 'white' : '#6b7280',
+              fontWeight: activeTab === 'corporate' ? 'bold' : 'normal'
+            }}
+          >
+            🏢 Corporate Health & Insurance
           </button>
         </div>
 
@@ -509,6 +460,72 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </table>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ============================================
+            TAB 3: CORPORATE HEALTH & INSURANCE
+            ============================================ */}
+        {activeTab === 'corporate' && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #1e3a5f' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏢 Total Corporate Plans</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{corporateStats.totalPlans || 0}</p>
+              </div>
+              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #f59e0b' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>⏳ Pending Verification</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>{corporateStats.pending || 0}</p>
+              </div>
+              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #10b981' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>✅ Active Plans</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>{corporateStats.active || 0}</p>
+              </div>
+              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #8b5cf6' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>👥 Employees Covered</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#8b5cf6' }}>{corporateStats.employees || 0}</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+              <button onClick={() => navigate('/admin/corporate')} style={{ backgroundColor: '#1e3a5f', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>🏢 Manage Corporate Plans</button>
+              <button onClick={() => navigate('/corporate/hr/dashboard')} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>📊 HR Dashboard</button>
+              <button onClick={() => navigate('/corporate')} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>🏢 View Corporate Hub</button>
+            </div>
+
+            <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>📋 Corporate Plans</h2>
+                <button onClick={() => navigate('/admin/corporate')} style={{ color: '#1e3a5f', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>View All →</button>
+              </div>
+              {corporateStats.totalPlans === 0 ? (
+                <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>No corporate plans registered yet</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Company</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Plan</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Employees</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Sample data - will be populated from API */}
+                      <tr>
+                        <td style={{ padding: '0.75rem' }}>Sample Corp</td>
+                        <td style={{ padding: '0.75rem' }}>Group Health Plan</td>
+                        <td style={{ padding: '0.75rem' }}>50</td>
+                        <td style={{ padding: '0.75rem' }}>
+                          <span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>Pending</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </>
