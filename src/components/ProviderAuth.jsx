@@ -41,33 +41,28 @@ const TherapistEarnings = () => {
     try {
       const token = localStorage.getItem('providerToken');
       
-      // Fetch overview
       const overviewRes = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/earnings/overview`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setOverview(overviewRes.data.data);
 
-      // Fetch transactions
       const transactionsRes = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/payout/wallet/transactions`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setTransactions(transactionsRes.data.data.transactions || []);
 
-      // Fetch payout history
       const payoutRes = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/payout/payout/history`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setPayoutHistory(payoutRes.data.data.payouts || []);
 
-      // Fetch monthly earnings
       if (overviewRes.data.data.monthlyEarnings) {
         setMonthlyEarnings(overviewRes.data.data.monthlyEarnings);
       }
 
-      // Fetch bank details
       const walletRes = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/payout/wallet/summary`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -239,7 +234,6 @@ const TherapistEarnings = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Earnings Dashboard</h1>
@@ -267,7 +261,6 @@ const TherapistEarnings = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {stats.map((stat, index) => (
             <motion.div
@@ -286,7 +279,6 @@ const TherapistEarnings = () => {
           ))}
         </div>
 
-        {/* Monthly Earnings Chart */}
         {monthlyEarnings.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Monthly Earnings</h2>
@@ -315,9 +307,7 @@ const TherapistEarnings = () => {
           </div>
         )}
 
-        {/* Transactions & Payout History */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Transactions */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Recent Transactions</h2>
             {transactions.length === 0 ? (
@@ -351,7 +341,6 @@ const TherapistEarnings = () => {
             )}
           </div>
 
-          {/* Payout History */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Payout History</h2>
             {payoutHistory.length === 0 ? (
@@ -381,7 +370,6 @@ const TherapistEarnings = () => {
           </div>
         </div>
 
-        {/* Bank Details Modal */}
         {showBankDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
@@ -466,7 +454,6 @@ const TherapistEarnings = () => {
           </div>
         )}
 
-        {/* Payout Modal */}
         {showPayoutModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
@@ -515,5 +502,13 @@ const TherapistEarnings = () => {
   );
 };
 
-// Wrap with ProviderAuth for therapist authentication
-export default ProviderAuth(TherapistEarnings, { providerType: 'mentalhealth' });
+// ============================================
+// WRAP WITH PROVIDERAUTH (FIXED)
+// ============================================
+const TherapistEarningsWithAuth = () => (
+  <ProviderAuth providerType="mentalhealth">
+    <TherapistEarnings />
+  </ProviderAuth>
+);
+
+export default TherapistEarningsWithAuth;
