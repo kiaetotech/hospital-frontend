@@ -12,6 +12,7 @@ const MentalHealthScreening = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [showCrisis, setShowCrisis] = useState(false);
+  const [error, setError] = useState('');
 
   const getQuestions = () => {
     if (type === 'depression') {
@@ -54,13 +55,15 @@ const MentalHealthScreening = () => {
     }
   };
 
+  // ✅ FIXED: Using POST method instead of GET
   const submitScreening = async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await axios.post('/api/mentalhealth/screening', {
         screeningType: type,
         answers: answers,
-        isAnonymous
+        isAnonymous: isAnonymous
       });
 
       if (res.data.success) {
@@ -71,7 +74,8 @@ const MentalHealthScreening = () => {
         }
       }
     } catch (error) {
-      alert('Error submitting screening: ' + error.message);
+      console.error('Error submitting screening:', error);
+      setError(error.response?.data?.message || 'Error submitting screening. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -88,6 +92,7 @@ const MentalHealthScreening = () => {
     return colors[severity] || '#6b7280';
   };
 
+  // Step 1: Welcome
   if (step === 1) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -115,6 +120,7 @@ const MentalHealthScreening = () => {
     );
   }
 
+  // Step 2: Questions
   if (step === 2) {
     const question = questions[currentQuestion];
     const progress = ((currentQuestion) / questions.length) * 100;
@@ -197,6 +203,7 @@ const MentalHealthScreening = () => {
     );
   }
 
+  // Step 3: Results
   if (step === 3 && result) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -241,6 +248,12 @@ const MentalHealthScreening = () => {
             </div>
           )}
 
+          {error && (
+            <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', borderRadius: '6px', marginBottom: '1rem', color: '#dc2626' }}>
+              {error}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               onClick={() => {
@@ -249,6 +262,7 @@ const MentalHealthScreening = () => {
                 setCurrentQuestion(0);
                 setResult(null);
                 setShowCrisis(false);
+                setError('');
               }}
               style={{ flex: 1, padding: '10px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
             >
