@@ -69,6 +69,14 @@ const HomePage = () => {
       path: '/diagnostics', 
       desc: 'Lab tests & health checkups' 
     },
+    // 🆕 MENTAL HEALTH & COUNSELING
+    { 
+      name: 'Mental Health & Counseling', 
+      path: '/mentalhealth', 
+      desc: 'Therapy • Counseling • Anonymous support',
+      isNew: true,
+      isMentalHealth: true 
+    },
   ];
 
   return (
@@ -91,7 +99,7 @@ const HomePage = () => {
         </form>
       </div>
 
-      {/* 10 Service Tags */}
+      {/* Service Tags */}
       <div style={{ padding: '3rem 2rem', backgroundColor: '#f8fafc', textAlign: 'center' }}>
         <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Healthcare services at your fingertips</h2>
         <p style={{ color: '#64748b', marginTop: '0.5rem' }}>Compare, choose, book – all in minutes</p>
@@ -104,29 +112,44 @@ const HomePage = () => {
                 backgroundColor: 'white', 
                 padding: '1.5rem', 
                 borderRadius: '1rem', 
-                boxShadow: tag.isInsurance ? '0 4px 12px rgba(37, 99, 235, 0.3)' : '0 4px 6px rgba(0,0,0,0.1)', 
+                boxShadow: tag.isInsurance ? '0 4px 12px rgba(37, 99, 235, 0.3)' : 
+                            tag.isMentalHealth ? '0 4px 12px rgba(139, 92, 246, 0.3)' :
+                            tag.isCorporate ? '0 4px 12px rgba(30, 58, 95, 0.3)' :
+                            '0 4px 6px rgba(0,0,0,0.1)', 
                 cursor: 'pointer', 
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 position: 'relative',
-                border: tag.isInsurance ? '2px solid #2563eb' : (tag.isNew ? '2px solid #4CAF50' : 'none'),
-                transform: tag.isCorporate ? 'scale(1.02)' : (tag.isInsurance ? 'scale(1.02)' : 'scale(1)')
+                border: tag.isInsurance ? '2px solid #2563eb' : 
+                        tag.isMentalHealth ? '2px solid #8b5cf6' :
+                        tag.isCorporate ? '2px solid #1e3a5f' : 
+                        (tag.isNew ? '2px solid #4CAF50' : 'none'),
+                transform: tag.isInsurance ? 'scale(1.02)' : 
+                          tag.isMentalHealth ? 'scale(1.02)' :
+                          tag.isCorporate ? 'scale(1.02)' : 
+                          'scale(1)'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
-                e.currentTarget.style.boxShadow = tag.isInsurance || tag.isCorporate ? '0 8px 24px rgba(37, 99, 235, 0.4)' : '0 8px 16px rgba(0,0,0,0.15)';
+                e.currentTarget.style.boxShadow = tag.isInsurance || tag.isMentalHealth || tag.isCorporate ? '0 8px 24px rgba(37, 99, 235, 0.4)' : '0 8px 16px rgba(0,0,0,0.15)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = tag.isInsurance || tag.isCorporate ? 'scale(1.02)' : 'translateY(0)';
-                e.currentTarget.style.boxShadow = tag.isInsurance ? '0 4px 12px rgba(37, 99, 235, 0.3)' : (tag.isCorporate ? '0 4px 12px rgba(30, 58, 95, 0.3)' : '0 4px 6px rgba(0,0,0,0.1)');
+                e.currentTarget.style.transform = tag.isInsurance || tag.isMentalHealth || tag.isCorporate ? 'scale(1.02)' : 'translateY(0)';
+                e.currentTarget.style.boxShadow = tag.isInsurance ? '0 4px 12px rgba(37, 99, 235, 0.3)' : 
+                                                   tag.isMentalHealth ? '0 4px 12px rgba(139, 92, 246, 0.3)' :
+                                                   tag.isCorporate ? '0 4px 12px rgba(30, 58, 95, 0.3)' : 
+                                                   '0 4px 6px rgba(0,0,0,0.1)';
               }}
             >
-              {/* NEW Badge */}
+              {/* Badge */}
               {tag.isNew && (
                 <span style={{
                   position: 'absolute',
                   top: '-10px',
                   right: '-10px',
-                  backgroundColor: tag.isInsurance ? '#2563eb' : (tag.isCorporate ? '#1e3a5f' : '#4CAF50'),
+                  backgroundColor: tag.isInsurance ? '#2563eb' : 
+                                  tag.isMentalHealth ? '#8b5cf6' :
+                                  tag.isCorporate ? '#1e3a5f' : 
+                                  '#4CAF50',
                   color: 'white',
                   padding: '4px 12px',
                   borderRadius: '20px',
@@ -134,18 +157,23 @@ const HomePage = () => {
                   fontWeight: 'bold',
                   animation: 'pulse 2s infinite'
                 }}>
-                  {tag.isInsurance ? '🛡️ LIVE' : (tag.isCorporate ? '🏢 LIVE' : '🆕 NEW')}
+                  {tag.isInsurance ? '🛡️ LIVE' : 
+                   tag.isMentalHealth ? '🧠 NEW' :
+                   tag.isCorporate ? '🏢 LIVE' : 
+                   '🆕 NEW'}
                 </span>
               )}
 
-              {/* Corporate or Insurance Icon */}
-              {(tag.isInsurance || tag.isCorporate) && (
+              {/* Top Banner */}
+              {(tag.isInsurance || tag.isCorporate || tag.isMentalHealth) && (
                 <div style={{
                   position: 'absolute',
                   top: '-6px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  backgroundColor: tag.isInsurance ? '#2563eb' : '#1e3a5f',
+                  backgroundColor: tag.isInsurance ? '#2563eb' : 
+                                  tag.isMentalHealth ? '#8b5cf6' :
+                                  '#1e3a5f',
                   color: 'white',
                   padding: '2px 16px',
                   borderRadius: '20px',
@@ -154,108 +182,55 @@ const HomePage = () => {
                   letterSpacing: '1px',
                   textTransform: 'uppercase'
                 }}>
-                  {tag.isInsurance ? '⭐ Trusted' : '🏢 For Companies'}
+                  {tag.isInsurance ? '⭐ Trusted' : 
+                   tag.isMentalHealth ? '🧠 Support' :
+                   '🏢 For Companies'}
                 </div>
               )}
 
-              {/* Tag Name with Icon */}
               <h3 style={{ 
                 fontSize: '1.25rem', 
                 fontWeight: 'bold', 
                 marginBottom: '0.5rem', 
-                color: tag.isInsurance ? '#2563eb' : (tag.isCorporate ? '#1e3a5f' : (tag.isNew ? '#4CAF50' : '#1e293b')),
-                marginTop: (tag.isInsurance || tag.isCorporate) ? '8px' : '0'
+                color: tag.isInsurance ? '#2563eb' : 
+                       tag.isMentalHealth ? '#8b5cf6' :
+                       tag.isCorporate ? '#1e3a5f' : 
+                       (tag.isNew ? '#4CAF50' : '#1e293b'),
+                marginTop: (tag.isInsurance || tag.isCorporate || tag.isMentalHealth) ? '8px' : '0'
               }}>
                 {tag.isInsurance && '🛡️ '}
+                {tag.isMentalHealth && '🧠 '}
                 {tag.isCorporate && '🏢 '}
-                {tag.isNew && !tag.isInsurance && !tag.isCorporate && '🌿 '}
+                {tag.isNew && !tag.isInsurance && !tag.isMentalHealth && !tag.isCorporate && '🌿 '}
                 {tag.name}
               </h3>
 
-              {/* Description */}
               <p style={{ color: '#64748b', fontSize: '0.875rem' }}>{tag.desc}</p>
 
-              {/* Insurance-specific badge */}
+              {/* Insurance Badges */}
               {tag.isInsurance && (
-                <div style={{
-                  marginTop: '0.75rem',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  flexWrap: 'wrap'
-                }}>
-                  <span style={{
-                    fontSize: '0.6rem',
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
-                  }}>
-                    Compare Plans
-                  </span>
-                  <span style={{
-                    fontSize: '0.6rem',
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
-                  }}>
-                    Best Price
-                  </span>
-                  <span style={{
-                    fontSize: '0.6rem',
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
-                  }}>
-                    Instant Policy
-                  </span>
+                <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>Compare Plans</span>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>Best Price</span>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>Instant Policy</span>
                 </div>
               )}
 
-              {/* Corporate-specific badge */}
+              {/* Mental Health Badges */}
+              {tag.isMentalHealth && (
+                <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#ede9fe', color: '#5b21b6', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>Anonymous</span>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#ede9fe', color: '#5b21b6', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>Licensed</span>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#ede9fe', color: '#5b21b6', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>24/7 Support</span>
+                </div>
+              )}
+
+              {/* Corporate Badges */}
               {tag.isCorporate && (
-                <div style={{
-                  marginTop: '0.75rem',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  flexWrap: 'wrap'
-                }}>
-                  <span style={{
-                    fontSize: '0.6rem',
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
-                  }}>
-                    Group Insurance
-                  </span>
-                  <span style={{
-                    fontSize: '0.6rem',
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
-                  }}>
-                    Wellness
-                  </span>
-                  <span style={{
-                    fontSize: '0.6rem',
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
-                  }}>
-                    HR Dashboard
-                  </span>
+                <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>Group Insurance</span>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>Wellness</span>
+                  <span style={{ fontSize: '0.6rem', backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '12px', fontWeight: '600' }}>HR Dashboard</span>
                 </div>
               )}
             </div>
@@ -263,7 +238,6 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* CSS Animation for pulse effect */}
       <style>{`
         @keyframes pulse {
           0% { transform: scale(1); }
@@ -275,4 +249,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default HomePage;"" 
