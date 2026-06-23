@@ -50,18 +50,14 @@ const MentalHealthScreening = () => {
     setAnswers(newAnswers);
     setError('');
 
-    // Move to next question
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
-      // All questions answered
       setAllAnswered(true);
     }
   };
 
-  // ✅ NEW: Manual submit function
   const handleSubmit = async () => {
-    // Check if all questions are answered
     const allAnsweredCheck = answers.every(a => a !== undefined && a !== null);
     if (!allAnsweredCheck) {
       setError('Please answer all questions before submitting.');
@@ -223,7 +219,6 @@ const MentalHealthScreening = () => {
               ← Back
             </button>
             
-            {/* ✅ NEW: Submit button appears on last question */}
             {isLastQuestion && allQuestionsAnswered && (
               <button
                 onClick={handleSubmit}
@@ -265,7 +260,6 @@ const MentalHealthScreening = () => {
             </div>
           )}
 
-          {/* ✅ NEW: Show progress indicator */}
           <div style={{ marginTop: '1rem', textAlign: 'center' }}>
             <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
               {isLastQuestion && allQuestionsAnswered 
