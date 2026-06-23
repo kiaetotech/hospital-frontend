@@ -13,6 +13,7 @@ const MentalHealthScreening = () => {
   const [result, setResult] = useState(null);
   const [showCrisis, setShowCrisis] = useState(false);
   const [error, setError] = useState('');
+  const [allAnswered, setAllAnswered] = useState(false);
 
   const getQuestions = () => {
     if (type === 'depression') {
@@ -43,35 +44,26 @@ const MentalHealthScreening = () => {
 
   const questions = getQuestions();
 
-  // ✅ FIXED: Ensure answers array is properly initialized
   const handleAnswer = (score) => {
     const newAnswers = [...answers];
     newAnswers[currentQuestion] = score;
     setAnswers(newAnswers);
+    setError('');
 
-    // If this is the last question, submit the screening
-    if (currentQuestion === questions.length - 1) {
-      // ✅ Check if all questions are answered
-      const allAnswered = newAnswers.every(a => a !== undefined && a !== null);
-      if (allAnswered) {
-        submitScreening(newAnswers);
-      } else {
-        setError('Please answer all questions before submitting.');
-      }
-    } else {
-      // Move to next question
+    // Move to next question
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
+    } else {
+      // All questions answered
+      setAllAnswered(true);
     }
   };
 
-  // ✅ FIXED: Accept answers as parameter to ensure data is current
-  const submitScreening = async (finalAnswers) => {
-    // If finalAnswers not provided, use the state
-    const answersToSubmit = finalAnswers || answers;
-    
-    // Check if all answers are filled
-    const allAnswered = answersToSubmit.every(a => a !== undefined && a !== null);
-    if (!allAnswered) {
+  // ✅ NEW: Manual submit function
+  const handleSubmit = async () => {
+    // Check if all questions are answered
+    const allAnsweredCheck = answers.every(a => a !== undefined && a !== null);
+    if (!allAnsweredCheck) {
       setError('Please answer all questions before submitting.');
       return;
     }
@@ -82,13 +74,13 @@ const MentalHealthScreening = () => {
     try {
       console.log('Submitting screening:', {
         screeningType: type,
-        answers: answersToSubmit,
+        answers: answers,
         isAnonymous: isAnonymous
       });
 
       const res = await axios.post('/api/mentalhealth/screening', {
         screeningType: type,
-        answers: answersToSubmit,
+        answers: answers,
         isAnonymous: isAnonymous
       });
 
@@ -139,11 +131,6 @@ const MentalHealthScreening = () => {
               Stay Anonymous (results will not be saved)
             </label>
           </div>
-          {error && (
-            <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', borderRadius: '6px', marginBottom: '1rem', color: '#dc2626' }}>
-              {error}
-            </div>
-          )}
           <button
             onClick={() => setStep(2)}
             style={{ width: '100%', padding: '12px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
@@ -159,6 +146,8 @@ const MentalHealthScreening = () => {
   if (step === 2) {
     const question = questions[currentQuestion];
     const progress = ((currentQuestion + 1) / questions.length) * 100;
+    const isLastQuestion = currentQuestion === questions.length - 1;
+    const allQuestionsAnswered = answers.every(a => a !== undefined && a !== null);
 
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -199,15 +188,17 @@ const MentalHealthScreening = () => {
                   cursor: 'pointer',
                   textAlign: 'left',
                   fontSize: '0.95rem',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  opacity: loading ? 0.5 : 1,
+                  pointerEvents: loading ? 'none' : 'auto'
                 }}
                 onMouseEnter={(e) => {
-                  if (answers[currentQuestion] !== option.score) {
+                  if (answers[currentQuestion] !== option.score && !loading) {
                     e.currentTarget.style.backgroundColor = '#f3f4f6';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (answers[currentQuestion] !== option.score) {
+                  if (answers[currentQuestion] !== option.score && !loading) {
                     e.currentTarget.style.backgroundColor = 'transparent';
                   }
                 }}
@@ -218,14 +209,11 @@ const MentalHealthScreening = () => {
             ))}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button
               onClick={() => {
                 if (currentQuestion > 0) {
                   setCurrentQuestion(currentQuestion - 1);
-                  const newAnswers = [...answers];
-                  newAnswers[currentQuestion - 1] = undefined;
-                  setAnswers(newAnswers);
                   setError('');
                 }
               }}
@@ -234,6 +222,29 @@ const MentalHealthScreening = () => {
             >
               ← Back
             </button>
+            
+            {/* ✅ NEW: Submit button appears on last question */}
+            {isLastQuestion && allQuestionsAnswered && (
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                style={{
+                  padding: '10px 32px',
+                  backgroundColor: loading ? '#9ca3af' : '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  opacity: loading ? 0.7 : 1,
+                  animation: 'pulse 2s infinite'
+                }}
+              >
+                {loading ? 'Submitting...' : '✅ Submit Results'}
+              </button>
+            )}
+
             <button
               onClick={() => {
                 setStep(1);
@@ -253,6 +264,15 @@ const MentalHealthScreening = () => {
               Submitting your answers...
             </div>
           )}
+
+          {/* ✅ NEW: Show progress indicator */}
+          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+              {isLastQuestion && allQuestionsAnswered 
+                ? '✅ All questions answered! Click Submit.' 
+                : `${answers.filter(a => a !== undefined).length} of ${questions.length} answered`}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -312,6 +332,7 @@ const MentalHealthScreening = () => {
                 setResult(null);
                 setShowCrisis(false);
                 setError('');
+                setAllAnswered(false);
               }}
               style={{ flex: 1, padding: '10px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
             >
