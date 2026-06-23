@@ -155,9 +155,12 @@ import MentalHealthHub from './pages/mentalhealth/MentalHealthHub';
 import MentalHealthTherapists from './pages/mentalhealth/MentalHealthTherapists';
 import MentalHealthTherapistDetail from './pages/mentalhealth/MentalHealthTherapistDetail';
 import MentalHealthBooking from './pages/mentalhealth/MentalHealthBooking';
+import MentalHealthPayment from './pages/mentalhealth/MentalHealthPayment';
+import MentalHealthConfirmation from './pages/mentalhealth/MentalHealthConfirmation';
 import MentalHealthScreening from './pages/mentalhealth/MentalHealthScreening';
 import MentalHealthChat from './pages/mentalhealth/MentalHealthChat';
 import MentalHealthJournal from './pages/mentalhealth/MentalHealthJournal';
+import MentalHealthResources from './pages/mentalhealth/MentalHealthResources';
 import MentalHealthCrisis from './pages/mentalhealth/MentalHealthCrisis';
 import MentalHealthCorporate from './pages/mentalhealth/MentalHealthCorporate';
 import TherapistRegister from './pages/mentalhealth/TherapistRegister';
@@ -349,9 +352,12 @@ function App() {
           <Route path="/mentalhealth/therapists" element={<MentalHealthTherapists />} />
           <Route path="/mentalhealth/therapist/:id" element={<MentalHealthTherapistDetail />} />
           <Route path="/mentalhealth/book/:id" element={<MentalHealthBooking />} />
+          <Route path="/mentalhealth/payment" element={<MentalHealthPayment />} />
+          <Route path="/mentalhealth/confirmation" element={<MentalHealthConfirmation />} />
           <Route path="/mentalhealth/screening/:type" element={<MentalHealthScreening />} />
           <Route path="/mentalhealth/chat" element={<MentalHealthChat />} />
           <Route path="/mentalhealth/journal" element={<MentalHealthJournal />} />
+          <Route path="/mentalhealth/resources" element={<MentalHealthResources />} />
           <Route path="/mentalhealth/crisis" element={<MentalHealthCrisis />} />
           <Route path="/mentalhealth/corporate" element={<MentalHealthCorporate />} />
           <Route path="/mentalhealth/therapist/register" element={<TherapistRegister />} />
