@@ -8,24 +8,16 @@ import {
   FaArrowDown,
   FaClock,
   FaDownload,
-  FaCalendarAlt,
-  FaFilter,
-  FaEye,
-  FaEyeSlash,
-  FaCreditCard,
   FaUniversity,
-  FaMobileAlt,
-  FaCheckCircle,
-  FaTimesCircle,
   FaSpinner
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import axios from 'axios';
+import ProviderAuth from '../../components/ProviderAuth';
 
-const TherapistEarnings = () => {
+const TherapistEarningsContent = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [overview, setOverview] = useState(null);
@@ -44,48 +36,36 @@ const TherapistEarnings = () => {
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    // Get user from localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch overview
+      const token = localStorage.getItem('providerToken');
+      
       const overviewRes = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/earnings/overview`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setOverview(overviewRes.data.data);
 
-      // Fetch transactions
       const transactionsRes = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/payout/wallet/transactions`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setTransactions(transactionsRes.data.data.transactions || []);
 
-      // Fetch payout history
       const payoutRes = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/payout/payout/history`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setPayoutHistory(payoutRes.data.data.payouts || []);
 
-      // Fetch monthly earnings
       if (overviewRes.data.data.monthlyEarnings) {
         setMonthlyEarnings(overviewRes.data.data.monthlyEarnings);
       }
 
-      // Fetch bank details
       const walletRes = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/payout/wallet/summary`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (walletRes.data.data.bankDetails) {
         setBankDetails(walletRes.data.data.bankDetails);
@@ -97,6 +77,10 @@ const TherapistEarnings = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleRequestPayout = async () => {
     if (!payoutAmount || parseFloat(payoutAmount) <= 0) {
@@ -111,13 +95,14 @@ const TherapistEarnings = () => {
 
     setProcessing(true);
     try {
+      const token = localStorage.getItem('providerToken');
       await axios.post(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/payout/payout/request`,
         {
           amount: parseFloat(payoutAmount),
           method: 'bank_transfer'
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       
       alert('Payout request submitted successfully!');
@@ -133,10 +118,11 @@ const TherapistEarnings = () => {
 
   const handleUpdateBankDetails = async () => {
     try {
+      const token = localStorage.getItem('providerToken');
       await axios.post(
         `${process.env.REACT_APP_API_URL}/api/mentalhealth/payout/wallet/bank-details`,
         bankDetails,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('Bank details updated successfully!');
       setShowBankDetails(false);
@@ -248,7 +234,6 @@ const TherapistEarnings = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Earnings Dashboard</h1>
@@ -276,7 +261,6 @@ const TherapistEarnings = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {stats.map((stat, index) => (
             <motion.div
@@ -295,7 +279,6 @@ const TherapistEarnings = () => {
           ))}
         </div>
 
-        {/* Monthly Earnings Chart */}
         {monthlyEarnings.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Monthly Earnings</h2>
@@ -324,9 +307,7 @@ const TherapistEarnings = () => {
           </div>
         )}
 
-        {/* Transactions & Payout History */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Transactions */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Recent Transactions</h2>
             {transactions.length === 0 ? (
@@ -360,7 +341,6 @@ const TherapistEarnings = () => {
             )}
           </div>
 
-          {/* Payout History */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Payout History</h2>
             {payoutHistory.length === 0 ? (
@@ -390,7 +370,6 @@ const TherapistEarnings = () => {
           </div>
         </div>
 
-        {/* Bank Details Modal */}
         {showBankDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
@@ -475,7 +454,6 @@ const TherapistEarnings = () => {
           </div>
         )}
 
-        {/* Payout Modal */}
         {showPayoutModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
@@ -521,6 +499,15 @@ const TherapistEarnings = () => {
         )}
       </div>
     </div>
+  );
+};
+
+// Wrap with ProviderAuth - this is how your ProviderAuth works
+const TherapistEarnings = () => {
+  return (
+    <ProviderAuth providerType="mentalhealth">
+      <TherapistEarningsContent />
+    </ProviderAuth>
   );
 };
 
