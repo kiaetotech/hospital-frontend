@@ -22,11 +22,10 @@ import {
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import axios from 'axios';
-import { useAuth } from '../../hooks/useAuth';
 
 const TherapistEarnings = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [overview, setOverview] = useState(null);
@@ -46,6 +45,11 @@ const TherapistEarnings = () => {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
+    // Get user from localStorage
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
     fetchData();
   }, []);
 
