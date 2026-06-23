@@ -166,6 +166,7 @@ import MentalHealthCorporate from './pages/mentalhealth/MentalHealthCorporate';
 import TherapistRegister from './pages/mentalhealth/TherapistRegister';
 import TherapistLogin from './pages/mentalhealth/TherapistLogin';
 import TherapistDashboard from './pages/mentalhealth/TherapistDashboard';
+import TherapistEarnings from './pages/mentalhealth/TherapistEarnings';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -363,6 +364,7 @@ function App() {
           <Route path="/mentalhealth/therapist/register" element={<TherapistRegister />} />
           <Route path="/mentalhealth/therapist/login" element={<TherapistLogin />} />
           <Route path="/mentalhealth/therapist/dashboard" element={<TherapistDashboard />} />
+          <Route path="/mentalhealth/therapist/earnings" element={<TherapistEarnings />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
