@@ -66,7 +66,29 @@ const TherapistRegister = () => {
     }
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/api/mentalhealth/therapist/register`, formData);
+      // Restructure data to match backend schema
+      const submitData = {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        password: formData.password,
+        licenseNumber: formData.licenseNumber,
+        specializations: formData.specializations,
+        experience: parseInt(formData.experience) || 0,
+        consultationFee: parseInt(formData.consultationFee) || 0,
+        // Backend expects pricing.consultation
+        pricing: {
+          consultation: parseInt(formData.consultationFee) || 0
+        },
+        about: formData.about || '',
+        city: formData.city || '',
+        state: formData.state || '',
+        education: formData.education || '',
+        languages: formData.languages || [],
+        consultationTypes: formData.consultationTypes || { video: true, audio: true, text: true, anonymous: true }
+      };
+
+      const res = await axios.post(`${API_URL}/api/mentalhealth/therapist/register`, submitData);
       if (res.data.success) {
         alert('Registration submitted! Please wait for verification.');
         navigate('/mentalhealth/therapist/login');
