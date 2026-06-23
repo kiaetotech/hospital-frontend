@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const TherapistRegister = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -64,7 +66,7 @@ const TherapistRegister = () => {
     }
     setLoading(true);
     try {
-      const res = await axios.post('/api/mentalhealth/therapist/register', formData);
+      const res = await axios.post(`${API_URL}/api/mentalhealth/therapist/register`, formData);
       if (res.data.success) {
         alert('Registration submitted! Please wait for verification.');
         navigate('/mentalhealth/therapist/login');
