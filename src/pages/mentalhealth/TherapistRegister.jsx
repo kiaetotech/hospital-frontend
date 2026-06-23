@@ -58,6 +58,9 @@ const TherapistRegister = () => {
     }));
   };
 
+  // ============================================
+  // 🔧 FIXED: handleSubmit - sends correct data format
+  // ============================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
@@ -66,7 +69,7 @@ const TherapistRegister = () => {
     }
     setLoading(true);
     try {
-      // Restructure data to match backend schema
+      // Prepare data matching backend schema
       const submitData = {
         name: formData.name,
         phone: formData.phone,
@@ -75,22 +78,24 @@ const TherapistRegister = () => {
         licenseNumber: formData.licenseNumber,
         specializations: formData.specializations,
         experience: parseInt(formData.experience) || 0,
-        consultationFee: parseInt(formData.consultationFee) || 0,
-        // Backend expects pricing.consultation
-        pricing: {
-          consultation: parseInt(formData.consultationFee) || 0
-        },
         about: formData.about || '',
         city: formData.city || '',
         state: formData.state || '',
         education: formData.education || '',
         languages: formData.languages || [],
-        consultationTypes: formData.consultationTypes || { video: true, audio: true, text: true, anonymous: true }
+        consultationTypes: formData.consultationTypes || { video: true, audio: true, text: true, anonymous: true },
+        // ✅ FIX: Send both formats to satisfy backend model
+        consultationFee: parseInt(formData.consultationFee) || 0,
+        pricing: {
+          consultation: parseInt(formData.consultationFee) || 0,
+          videoTherapy: parseInt(formData.consultationFee) || 0,
+          packageDiscount: 10
+        }
       };
 
       const res = await axios.post(`${API_URL}/api/mentalhealth/therapist/register`, submitData);
       if (res.data.success) {
-        alert('Registration submitted! Please wait for verification.');
+        alert('✅ Registration submitted! Please wait for verification.');
         navigate('/mentalhealth/therapist/login');
       }
     } catch (error) {
