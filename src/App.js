@@ -119,7 +119,7 @@ import InsuranceCompanyLogin from './pages/insurance/InsuranceCompanyLogin';
 import InsuranceCompanyDashboard from './pages/insurance/InsuranceCompanyDashboard';
 
 // ============================================
-// 🆕 CORPORATE MODULE IMPORTS
+// CORPORATE MODULE IMPORTS
 // ============================================
 import CorporateHub from './pages/corporate/CorporateHub';
 import CorporatePlans from './pages/corporate/CorporatePlans';
@@ -147,6 +147,22 @@ import CaregiverDashboard from './pages/caregivers/CaregiverDashboard';
 import DiagnosticsRegister from './pages/diagnostics/DiagnosticsRegister';
 import DiagnosticsLogin from './pages/diagnostics/DiagnosticsLogin';
 import DiagnosticsDashboard from './pages/diagnostics/DiagnosticsDashboard';
+
+// ============================================
+// 🆕 MENTAL HEALTH & COUNSELING IMPORTS
+// ============================================
+import MentalHealthHub from './pages/mentalhealth/MentalHealthHub';
+import MentalHealthTherapists from './pages/mentalhealth/MentalHealthTherapists';
+import MentalHealthTherapistDetail from './pages/mentalhealth/MentalHealthTherapistDetail';
+import MentalHealthBooking from './pages/mentalhealth/MentalHealthBooking';
+import MentalHealthScreening from './pages/mentalhealth/MentalHealthScreening';
+import MentalHealthChat from './pages/mentalhealth/MentalHealthChat';
+import MentalHealthJournal from './pages/mentalhealth/MentalHealthJournal';
+import MentalHealthCrisis from './pages/mentalhealth/MentalHealthCrisis';
+import MentalHealthCorporate from './pages/mentalhealth/MentalHealthCorporate';
+import TherapistRegister from './pages/mentalhealth/TherapistRegister';
+import TherapistLogin from './pages/mentalhealth/TherapistLogin';
+import TherapistDashboard from './pages/mentalhealth/TherapistDashboard';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -297,7 +313,7 @@ function App() {
           <Route path="/insurance/company/dashboard" element={<InsuranceCompanyDashboard />} />
 
           {/* ============================================
-              🆕 CORPORATE HEALTH & INSURANCE ROUTES
+              CORPORATE MODULE ROUTES
           ============================================ */}
           <Route path="/corporate" element={<CorporateHub />} />
           <Route path="/corporate/plans" element={<CorporatePlans />} />
@@ -305,10 +321,10 @@ function App() {
           <Route path="/corporate/enroll" element={<CorporateEnrollment />} />
           <Route path="/corporate/hr/login" element={<CorporateHRLogin />} />
           <Route path="/corporate/hr/dashboard" element={<CorporateHRDashboard />} />
-	  <Route path="/corporate/checkups" element={<CorporateCheckups />} />
-	  <Route path="/corporate/wellness" element={<CorporateWellness />} />
-	  <Route path="/corporate/employee/login" element={<EmployeeLogin />} />
-	  <Route path="/corporate/employee/dashboard" element={<EmployeePortal />} />
+          <Route path="/corporate/checkups" element={<CorporateCheckups />} />
+          <Route path="/corporate/wellness" element={<CorporateWellness />} />
+          <Route path="/corporate/employee/login" element={<EmployeeLogin />} />
+          <Route path="/corporate/employee/dashboard" element={<EmployeePortal />} />
 
           {/* ============================================
               PROVIDER REGISTRATION ROUTES
@@ -325,6 +341,22 @@ function App() {
           <Route path="/diagnostics/register" element={<DiagnosticsRegister />} />
           <Route path="/diagnostics/login" element={<DiagnosticsLogin />} />
           <Route path="/diagnostics/dashboard" element={<DiagnosticsDashboard />} />
+
+          {/* ============================================
+              🆕 MENTAL HEALTH & COUNSELING ROUTES
+          ============================================ */}
+          <Route path="/mentalhealth" element={<MentalHealthHub />} />
+          <Route path="/mentalhealth/therapists" element={<MentalHealthTherapists />} />
+          <Route path="/mentalhealth/therapist/:id" element={<MentalHealthTherapistDetail />} />
+          <Route path="/mentalhealth/book/:id" element={<MentalHealthBooking />} />
+          <Route path="/mentalhealth/screening/:type" element={<MentalHealthScreening />} />
+          <Route path="/mentalhealth/chat" element={<MentalHealthChat />} />
+          <Route path="/mentalhealth/journal" element={<MentalHealthJournal />} />
+          <Route path="/mentalhealth/crisis" element={<MentalHealthCrisis />} />
+          <Route path="/mentalhealth/corporate" element={<MentalHealthCorporate />} />
+          <Route path="/mentalhealth/therapist/register" element={<TherapistRegister />} />
+          <Route path="/mentalhealth/therapist/login" element={<TherapistLogin />} />
+          <Route path="/mentalhealth/therapist/dashboard" element={<TherapistDashboard />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
