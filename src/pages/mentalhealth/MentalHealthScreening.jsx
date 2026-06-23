@@ -43,28 +43,56 @@ const MentalHealthScreening = () => {
 
   const questions = getQuestions();
 
+  // ✅ FIXED: Ensure answers array is properly initialized
   const handleAnswer = (score) => {
     const newAnswers = [...answers];
     newAnswers[currentQuestion] = score;
     setAnswers(newAnswers);
 
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+    // If this is the last question, submit the screening
+    if (currentQuestion === questions.length - 1) {
+      // ✅ Check if all questions are answered
+      const allAnswered = newAnswers.every(a => a !== undefined && a !== null);
+      if (allAnswered) {
+        submitScreening(newAnswers);
+      } else {
+        setError('Please answer all questions before submitting.');
+      }
     } else {
-      submitScreening();
+      // Move to next question
+      setCurrentQuestion(currentQuestion + 1);
     }
   };
 
-  // ✅ FIXED: Using POST method instead of GET
-  const submitScreening = async () => {
+  // ✅ FIXED: Accept answers as parameter to ensure data is current
+  const submitScreening = async (finalAnswers) => {
+    // If finalAnswers not provided, use the state
+    const answersToSubmit = finalAnswers || answers;
+    
+    // Check if all answers are filled
+    const allAnswered = answersToSubmit.every(a => a !== undefined && a !== null);
+    if (!allAnswered) {
+      setError('Please answer all questions before submitting.');
+      return;
+    }
+
     setLoading(true);
     setError('');
+    
     try {
-      const res = await axios.post('/api/mentalhealth/screening', {
+      console.log('Submitting screening:', {
         screeningType: type,
-        answers: answers,
+        answers: answersToSubmit,
         isAnonymous: isAnonymous
       });
+
+      const res = await axios.post('/api/mentalhealth/screening', {
+        screeningType: type,
+        answers: answersToSubmit,
+        isAnonymous: isAnonymous
+      });
+
+      console.log('Screening response:', res.data);
 
       if (res.data.success) {
         setResult(res.data.data);
@@ -72,10 +100,12 @@ const MentalHealthScreening = () => {
         if (res.data.data.requiresEmergency) {
           setShowCrisis(true);
         }
+      } else {
+        setError(res.data.message || 'Error submitting screening');
       }
     } catch (error) {
       console.error('Error submitting screening:', error);
-      setError(error.response?.data?.message || 'Error submitting screening. Please try again.');
+      setError(error.response?.data?.message || error.message || 'Error submitting screening. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -109,6 +139,11 @@ const MentalHealthScreening = () => {
               Stay Anonymous (results will not be saved)
             </label>
           </div>
+          {error && (
+            <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', borderRadius: '6px', marginBottom: '1rem', color: '#dc2626' }}>
+              {error}
+            </div>
+          )}
           <button
             onClick={() => setStep(2)}
             style={{ width: '100%', padding: '12px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
@@ -123,7 +158,7 @@ const MentalHealthScreening = () => {
   // Step 2: Questions
   if (step === 2) {
     const question = questions[currentQuestion];
-    const progress = ((currentQuestion) / questions.length) * 100;
+    const progress = ((currentQuestion + 1) / questions.length) * 100;
 
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -139,6 +174,12 @@ const MentalHealthScreening = () => {
           </div>
 
           <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>{question}</h2>
+
+          {error && (
+            <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', borderRadius: '6px', marginBottom: '1rem', color: '#dc2626' }}>
+              {error}
+            </div>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {[
@@ -170,6 +211,7 @@ const MentalHealthScreening = () => {
                     e.currentTarget.style.backgroundColor = 'transparent';
                   }
                 }}
+                disabled={loading}
               >
                 {option.label}
               </button>
@@ -182,22 +224,35 @@ const MentalHealthScreening = () => {
                 if (currentQuestion > 0) {
                   setCurrentQuestion(currentQuestion - 1);
                   const newAnswers = [...answers];
-                  newAnswers[currentQuestion - 1] = 0;
+                  newAnswers[currentQuestion - 1] = undefined;
                   setAnswers(newAnswers);
+                  setError('');
                 }
               }}
               style={{ padding: '8px 16px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-              disabled={currentQuestion === 0}
+              disabled={currentQuestion === 0 || loading}
             >
               ← Back
             </button>
             <button
-              onClick={() => setStep(1)}
+              onClick={() => {
+                setStep(1);
+                setAnswers([]);
+                setCurrentQuestion(0);
+                setError('');
+              }}
               style={{ padding: '8px 16px', backgroundColor: '#e5e7eb', color: '#1e293b', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+              disabled={loading}
             >
               Cancel
             </button>
           </div>
+          
+          {loading && (
+            <div style={{ textAlign: 'center', marginTop: '1rem', color: '#8b5cf6' }}>
+              Submitting your answers...
+            </div>
+          )}
         </div>
       </div>
     );
@@ -245,12 +300,6 @@ const MentalHealthScreening = () => {
               >
                 🆘 Get Help Now
               </button>
-            </div>
-          )}
-
-          {error && (
-            <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', borderRadius: '6px', marginBottom: '1rem', color: '#dc2626' }}>
-              {error}
             </div>
           )}
 
