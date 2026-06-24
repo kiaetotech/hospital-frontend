@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -11,17 +12,25 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
-      // Simple admin key validation (matches backend)
-      if (adminKey === 'admin_secret_key_2024') {
-        localStorage.setItem('adminToken', 'admin_authenticated');
+      const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-8de3.up.railway.app';
+      
+      // ✅ Call the backend API
+      const response = await axios.post(`${API_URL}/api/admin/login`, {
+        adminKey: adminKey
+      });
+
+      if (response.data.success) {
+        // ✅ Store the JWT token from backend
+        localStorage.setItem('adminToken', response.data.token);
         navigate('/admin/dashboard');
       } else {
-        setError('Invalid admin key');
+        setError(response.data.message || 'Invalid admin key');
       }
     } catch (err) {
-      setError('Login failed');
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -35,13 +44,13 @@ const AdminLogin = () => {
           <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Admin Login</h1>
           <p style={{ color: '#6b7280' }}>Enter your admin key to access the dashboard</p>
         </div>
-        
+
         {error && (
           <div style={{ backgroundColor: '#fee2e2', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1rem', color: '#dc2626' }}>
             {error}
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>Admin Key</label>
@@ -55,7 +64,7 @@ const AdminLogin = () => {
             />
             <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Default key: admin_secret_key_2024</p>
           </div>
-          
+
           <button
             type="submit"
             disabled={loading}
