@@ -61,49 +61,48 @@ const TherapistRegister = () => {
   // ============================================
   // 🔧 FIXED: handleSubmit - sends correct data format
   // ============================================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-    setLoading(true);
-    try {
-      // Prepare data matching backend schema
-      const submitData = {
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        password: formData.password,
-        licenseNumber: formData.licenseNumber,
-        specializations: formData.specializations,
-        experience: parseInt(formData.experience) || 0,
-        about: formData.about || '',
-        city: formData.city || '',
-        state: formData.state || '',
-        education: formData.education || '',
-        languages: formData.languages || [],
-        consultationTypes: formData.consultationTypes || { video: true, audio: true, text: true, anonymous: true },
-        // ✅ FIX: Send both formats to satisfy backend model
-        consultationFee: parseInt(formData.consultationFee) || 0,
-        pricing: {
-          consultation: parseInt(formData.consultationFee) || 0,
-          videoTherapy: parseInt(formData.consultationFee) || 0,
-          packageDiscount: 10
-        }
-      };
-
-      const res = await axios.post(`${API_URL}/api/mentalhealth/therapist/register`, submitData);
-      if (res.data.success) {
-        alert('✅ Registration submitted! Please wait for verification.');
-        navigate('/mentalhealth/therapist/login');
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (formData.password !== formData.confirmPassword) {
+    alert('Passwords do not match');
+    return;
+  }
+  setLoading(true);
+  try {
+    const submitData = {
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email,
+      password: formData.password,
+      licenseNumber: formData.licenseNumber,
+      specializations: formData.specializations,
+      experience: parseInt(formData.experience) || 0,
+      about: formData.about || '',
+      city: formData.city || '',
+      state: formData.state || '',
+      education: formData.education || '',
+      languages: formData.languages || [],
+      consultationTypes: formData.consultationTypes || { video: true, audio: true, text: true, anonymous: true },
+      pricing: {
+        consultation: parseInt(formData.consultationFee) || 0
       }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
+    };
+
+    // 🔍 DEBUG: See what's being sent
+    console.log('📤 Submitting data:', JSON.stringify(submitData, null, 2));
+
+    const res = await axios.post(`${API_URL}/api/mentalhealth/therapist/register`, submitData);
+    if (res.data.success) {
+      alert('✅ Registration submitted! Please wait for verification.');
+      navigate('/mentalhealth/therapist/login');
     }
-  };
+  } catch (error) {
+    console.error('❌ Registration error:', error.response?.data);
+    alert(error.response?.data?.message || 'Registration failed');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem 1rem' }}>
