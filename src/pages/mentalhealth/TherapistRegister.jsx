@@ -69,6 +69,8 @@ const handleSubmit = async (e) => {
   }
   setLoading(true);
   try {
+    const consultationFeeNum = parseInt(formData.consultationFee) || 0;
+
     const submitData = {
       name: formData.name,
       phone: formData.phone,
@@ -83,23 +85,26 @@ const handleSubmit = async (e) => {
       education: formData.education || '',
       languages: formData.languages || [],
       consultationTypes: formData.consultationTypes || { video: true, audio: true, text: true, anonymous: true },
-      // ✅ consultationFee as TOP-LEVEL field (backend requires this)
-      consultationFee: parseInt(formData.consultationFee) || 0,
-      // ✅ Also send pricing for the model
+      // ✅ consultationFee as top-level (required by validation)
+      consultationFee: consultationFeeNum,
+      // ✅ pricing as object with consultation (required by model)
       pricing: {
-        consultation: parseInt(formData.consultationFee) || 0
+        consultation: consultationFeeNum
       }
     };
 
-    console.log('📤 Submitting:', JSON.stringify(submitData, null, 2));
+    console.log('📤 Sending:', JSON.stringify(submitData, null, 2));
 
     const res = await axios.post(`${API_URL}/api/mentalhealth/therapist/register`, submitData);
+
     if (res.data.success) {
       alert('✅ Registration submitted! Please wait for verification.');
       navigate('/mentalhealth/therapist/login');
+    } else {
+      alert(res.data.message || 'Registration failed');
     }
   } catch (error) {
-    console.error('❌ Registration error:', error.response?.data);
+    console.error('❌ Error:', error.response?.data || error.message);
     alert(error.response?.data?.message || 'Registration failed');
   } finally {
     setLoading(false);
