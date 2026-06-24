@@ -31,8 +31,19 @@ const AdminDashboard = () => {
     hospitals: 0,
     ambulance: 0,
     caregivers: 0,
-    diagnostics: 0
+    diagnostics: 0,
+    mentalHealth: 0
   });
+
+  // ============================================
+  // MENTAL HEALTH STATE
+  // ============================================
+  const [mentalHealthStats, setMentalHealthStats] = useState({
+    therapists: { total: 0, pending: 0, approved: 0, rejected: 0 },
+    screenings: { total: 0, requiresEmergency: 0 },
+    crisisReports: { total: 0, active: 0, resolved: 0 }
+  });
+  const [recentTherapists, setRecentTherapists] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -44,6 +55,7 @@ const AdminDashboard = () => {
     fetchInsuranceData();
     fetchCorporateData();
     fetchModuleStats();
+    fetchMentalHealthData();
   }, [navigate]);
 
   const fetchDashboardData = async () => {
@@ -139,22 +151,65 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('adminToken');
       const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
-      const [hospitalsRes, ambulanceRes, caregiversRes, diagnosticsRes] = await Promise.all([
+      const [hospitalsRes, ambulanceRes, caregiversRes, diagnosticsRes, mentalHealthRes] = await Promise.all([
         axios.get('/api/hospitals/admin/stats', config).catch(() => ({ data: { data: {} } })),
         axios.get('/api/ambulance/admin/stats', config).catch(() => ({ data: { data: {} } })),
         axios.get('/api/caregivers/admin/stats', config).catch(() => ({ data: { data: {} } })),
-        axios.get('/api/diagnostics/admin/stats', config).catch(() => ({ data: { data: {} } }))
+        axios.get('/api/diagnostics/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/mentalhealth/admin/stats', config).catch(() => ({ data: { data: {} } }))
       ]);
 
       setModuleStats({
         hospitals: hospitalsRes.data?.data?.totalHospitals || 0,
         ambulance: ambulanceRes.data?.data?.totalAmbulances || 0,
         caregivers: caregiversRes.data?.data?.totalCaregivers || 0,
-        diagnostics: diagnosticsRes.data?.data?.totalLabs || 0
+        diagnostics: diagnosticsRes.data?.data?.totalLabs || 0,
+        mentalHealth: mentalHealthRes.data?.data?.totalTherapists || 0
       });
 
     } catch (error) {
       console.error('Error fetching module stats:', error);
+    }
+  };
+
+  // ============================================
+  // FETCH MENTAL HEALTH DATA
+  // ============================================
+  const fetchMentalHealthData = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+      const [statsRes, therapistsRes] = await Promise.all([
+        axios.get('/api/mentalhealth/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/mentalhealth/admin/therapists', { ...config, params: { limit: 5 } }).catch(() => ({ data: { data: [] } }))
+      ]);
+
+      const stats = statsRes.data.data || {};
+      const therapists = therapistsRes.data.data || [];
+
+      setMentalHealthStats({
+        therapists: {
+          total: stats.totalTherapists || 0,
+          pending: stats.pendingTherapists || 0,
+          approved: stats.approvedTherapists || 0,
+          rejected: stats.rejectedTherapists || 0
+        },
+        screenings: {
+          total: stats.totalScreenings || 0,
+          requiresEmergency: stats.emergencyScreenings || 0
+        },
+        crisisReports: {
+          total: stats.totalCrisis || 0,
+          active: stats.activeCrisis || 0,
+          resolved: stats.resolvedCrisis || 0
+        }
+      });
+
+      setRecentTherapists(therapists.slice(0, 5));
+
+    } catch (error) {
+      console.error('Error fetching mental health data:', error);
     }
   };
 
@@ -214,6 +269,13 @@ const AdminDashboard = () => {
             >
               🏢 Corporate
             </button>
+            {/* 🆕 MENTAL HEALTH BUTTON */}
+            <button
+              onClick={() => navigate('/admin/mentalhealth')}
+              style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+            >
+              🧠 Mental Health
+            </button>
             <button
               onClick={handleLogout}
               style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
@@ -223,7 +285,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Module Stats Cards */}
+        {/* Module Stats Cards - Added Mental Health */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
@@ -250,9 +312,14 @@ const AdminDashboard = () => {
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏢 Corporate</p>
             <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{corporateStats.totalPlans || 0}</p>
           </div>
+          {/* 🆕 MENTAL HEALTH CARD */}
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #8b5cf6' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🧠 Mental Health</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.mentalHealth || 0}</p>
+          </div>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tab Navigation - Added Mental Health Tab */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => setActiveTab('lenders')}
@@ -295,6 +362,21 @@ const AdminDashboard = () => {
             }}
           >
             🏢 Corporate Health & Insurance
+          </button>
+          {/* 🆕 MENTAL HEALTH TAB */}
+          <button
+            onClick={() => setActiveTab('mentalhealth')}
+            style={{
+              padding: '0.5rem 1.5rem',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              backgroundColor: activeTab === 'mentalhealth' ? '#8b5cf6' : 'transparent',
+              color: activeTab === 'mentalhealth' ? 'white' : '#6b7280',
+              fontWeight: activeTab === 'mentalhealth' ? 'bold' : 'normal'
+            }}
+          >
+            🧠 Mental Health
           </button>
         </div>
 
@@ -548,6 +630,89 @@ const AdminDashboard = () => {
                     </tbody>
                   </table>
                 </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* 🆕 TAB 4: MENTAL HEALTH */}
+        {activeTab === 'mentalhealth' && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #8b5cf6' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🧠 Total Therapists</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{mentalHealthStats.therapists.total || 0}</p>
+              </div>
+              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #f59e0b' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>⏳ Pending Verification</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>{mentalHealthStats.therapists.pending || 0}</p>
+              </div>
+              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #10b981' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>✅ Approved Therapists</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>{mentalHealthStats.therapists.approved || 0}</p>
+              </div>
+              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #ef4444' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🚨 Crisis Reports</p>
+                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ef4444' }}>{mentalHealthStats.crisisReports.total || 0}</p>
+                <p style={{ fontSize: '0.75rem', color: '#f59e0b' }}>{mentalHealthStats.crisisReports.active} active</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+              <button onClick={() => navigate('/admin/mentalhealth')} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>🧠 Manage Therapists</button>
+              <button onClick={() => navigate('/admin/mentalhealth/screenings')} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>📋 Screenings</button>
+              <button onClick={() => navigate('/admin/mentalhealth/crisis')} style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>🚨 Crisis Reports</button>
+            </div>
+
+            <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>🧠 Recent Therapists</h2>
+                <button onClick={() => navigate('/admin/mentalhealth')} style={{ color: '#8b5cf6', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>View All →</button>
+              </div>
+              {recentTherapists.length === 0 ? (
+                <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>No therapists registered yet</p>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Name</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Specialization</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Phone</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Status</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', color: '#6b7280' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentTherapists.map((therapist) => (
+                      <tr key={therapist._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '0.75rem', fontSize: '0.875rem', fontWeight: '500' }}>{therapist.name}</td>
+                        <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{therapist.specializations?.join(', ') || 'N/A'}</td>
+                        <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{therapist.phone}</td>
+                        <td style={{ padding: '0.75rem' }}>
+                          <span style={{ 
+                            backgroundColor: therapist.verificationStatus === 'approved' ? '#10b981' : 
+                                          therapist.verificationStatus === 'pending' ? '#f59e0b' : '#ef4444',
+                            color: 'white',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.75rem'
+                          }}>
+                            {therapist.verificationStatus === 'approved' ? '✅ Approved' : 
+                             therapist.verificationStatus === 'pending' ? '⏳ Pending' : '❌ Rejected'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem' }}>
+                          <button 
+                            onClick={() => navigate(`/admin/mentalhealth/therapist/${therapist._id}`)}
+                            style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </>
