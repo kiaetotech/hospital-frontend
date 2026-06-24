@@ -83,13 +83,15 @@ const handleSubmit = async (e) => {
       education: formData.education || '',
       languages: formData.languages || [],
       consultationTypes: formData.consultationTypes || { video: true, audio: true, text: true, anonymous: true },
+      // ✅ consultationFee as TOP-LEVEL field (backend requires this)
+      consultationFee: parseInt(formData.consultationFee) || 0,
+      // ✅ Also send pricing for the model
       pricing: {
         consultation: parseInt(formData.consultationFee) || 0
       }
     };
 
-    // 🔍 DEBUG: See what's being sent
-    console.log('📤 Submitting data:', JSON.stringify(submitData, null, 2));
+    console.log('📤 Submitting:', JSON.stringify(submitData, null, 2));
 
     const res = await axios.post(`${API_URL}/api/mentalhealth/therapist/register`, submitData);
     if (res.data.success) {
