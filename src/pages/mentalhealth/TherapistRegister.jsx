@@ -59,35 +59,76 @@ const TherapistRegister = () => {
   };
 
   // ============================================
-  // ✅ FIXED handleSubmit - sends correct data format
+  // ✅ FINAL FIXED handleSubmit
   // ============================================
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ✅ Validation: Check required fields
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
       return;
     }
+
+    if (!formData.name.trim()) {
+      alert('Please enter your full name');
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      alert('Please enter your phone number');
+      return;
+    }
+
+    if (!formData.city.trim()) {
+      alert('Please enter your city');
+      return;
+    }
+
+    if (!formData.state.trim()) {
+      alert('Please enter your state');
+      return;
+    }
+
+    if (!formData.licenseNumber.trim()) {
+      alert('Please enter your license number');
+      return;
+    }
+
+    if (formData.specializations.length === 0) {
+      alert('Please select at least one specialization');
+      return;
+    }
+
+    if (!formData.experience || parseInt(formData.experience) < 0) {
+      alert('Please enter valid years of experience');
+      return;
+    }
+
+    if (!formData.consultationFee || parseInt(formData.consultationFee) <= 0) {
+      alert('Please enter a valid consultation fee');
+      return;
+    }
+
     setLoading(true);
     try {
       const consultationFeeNum = parseInt(formData.consultationFee) || 0;
 
       const submitData = {
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim(),
         password: formData.password,
-        licenseNumber: formData.licenseNumber,
+        licenseNumber: formData.licenseNumber.trim(),
         specializations: formData.specializations,
         experience: parseInt(formData.experience) || 0,
         about: formData.about || '',
-        city: formData.city || '',
-        state: formData.state || '',
+        city: formData.city.trim(),
+        state: formData.state.trim(),
         education: formData.education || '',
         languages: formData.languages || [],
         consultationTypes: formData.consultationTypes || { video: true, audio: true, text: true, anonymous: true },
-        // ✅ consultationFee as top-level (required by validation)
         consultationFee: consultationFeeNum,
-        // ✅ pricing as object with consultation (required by model)
         pricing: {
           consultation: consultationFeeNum
         }
@@ -105,7 +146,7 @@ const TherapistRegister = () => {
       }
     } catch (error) {
       console.error('❌ Error:', error.response?.data || error.message);
-      alert(error.response?.data?.message || 'Registration failed');
+      alert(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
