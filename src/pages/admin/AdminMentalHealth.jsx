@@ -5,9 +5,9 @@ import axios from 'axios';
 const AdminMentalHealth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [therapists, setTherapists] = useState([]);  // ✅ Always array
-  const [bookings, setBookings] = useState([]);      // ✅ Always array
-  const [screenings, setScreenings] = useState([]);  // ✅ Always array
+  const [therapists, setTherapists] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [screenings, setScreenings] = useState([]);
   const [stats, setStats] = useState({
     therapists: { total: 0, pending: 0, approved: 0, rejected: 0 },
     bookings: { total: 0, pending: 0, completed: 0 },
@@ -34,25 +34,37 @@ const AdminMentalHealth = () => {
 
       if (activeTab === 'therapists') {
         const res = await axios.get('/api/mentalhealth/admin/therapists', config);
-        setTherapists(res.data.data || []);  // ✅ Default to empty array
+        setTherapists(res.data.data || []);
       } else if (activeTab === 'bookings') {
         const res = await axios.get('/api/mentalhealth/admin/bookings', config);
-        setBookings(res.data.data || []);    // ✅ Default to empty array
+        setBookings(res.data.data || []);
       } else if (activeTab === 'screenings') {
         const res = await axios.get('/api/mentalhealth/admin/screenings', config);
-        setScreenings(res.data.data || []);  // ✅ Default to empty array
+        setScreenings(res.data.data || []);
       } else if (activeTab === 'dashboard') {
         const res = await axios.get('/api/mentalhealth/admin/dashboard', config);
         const data = res.data.data || {};
+        // ✅ FIXED: Properly map nested data
         setStats({
-          therapists: data.therapists || { total: 0, pending: 0, approved: 0, rejected: 0 },
-          bookings: data.bookings || { total: 0, pending: 0, completed: 0 },
-          screenings: data.screenings || { total: 0, crisis: 0 }
+          therapists: {
+            total: data.therapists?.total || 0,
+            pending: data.therapists?.pending || 0,
+            approved: data.therapists?.approved || 0,
+            rejected: data.therapists?.rejected || 0
+          },
+          bookings: {
+            total: data.bookings?.total || 0,
+            pending: data.bookings?.pending || 0,
+            completed: data.bookings?.completed || 0
+          },
+          screenings: {
+            total: data.screenings?.total || 0,
+            crisis: data.screenings?.crisis || 0
+          }
         });
       }
     } catch (error) {
       console.error('Error loading mental health data:', error);
-      // ✅ Set empty arrays on error
       setTherapists([]);
       setBookings([]);
       setScreenings([]);
