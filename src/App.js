@@ -93,6 +93,8 @@ import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AyurvedaAdminPanel from './pages/admin/AyurvedaAdminPanel';
 import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
 import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';
+import AdminMentalHealth from './pages/admin/AdminMentalHealth';
+import AdminCorporate from './pages/admin/AdminCorporate';
 
 // ============================================
 // NEW ADMIN PANEL IMPORTS
@@ -303,6 +305,8 @@ function App() {
           <Route path="/admin/financing" element={<AdminFinancing />} />
           <Route path="/admin/users" element={<AdminUsers />} />
 	  <Route path="/admin/insurance-claims" element={<AdminInsuranceClaims />} />
+	  <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
+	  <Route path="/admin/corporate" element={<AdminCorporate />} />
 
           {/* ============================================
               INSURANCE MODULE ROUTES
