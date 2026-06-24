@@ -5,11 +5,15 @@ import axios from 'axios';
 const AdminMentalHealth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [therapists, setTherapists] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [screenings, setScreenings] = useState([]);
-  const [stats, setStats] = useState({});
-  const [activeTab, setActiveTab] = useState('therapists');
+  const [therapists, setTherapists] = useState([]);  // ✅ Always array
+  const [bookings, setBookings] = useState([]);      // ✅ Always array
+  const [screenings, setScreenings] = useState([]);  // ✅ Always array
+  const [stats, setStats] = useState({
+    therapists: { total: 0, pending: 0, approved: 0, rejected: 0 },
+    bookings: { total: 0, pending: 0, completed: 0 },
+    screenings: { total: 0, crisis: 0 }
+  });
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedTherapist, setSelectedTherapist] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -30,19 +34,28 @@ const AdminMentalHealth = () => {
 
       if (activeTab === 'therapists') {
         const res = await axios.get('/api/mentalhealth/admin/therapists', config);
-        setTherapists(res.data.data);
+        setTherapists(res.data.data || []);  // ✅ Default to empty array
       } else if (activeTab === 'bookings') {
         const res = await axios.get('/api/mentalhealth/admin/bookings', config);
-        setBookings(res.data.data);
+        setBookings(res.data.data || []);    // ✅ Default to empty array
       } else if (activeTab === 'screenings') {
         const res = await axios.get('/api/mentalhealth/admin/screenings', config);
-        setScreenings(res.data.data);
+        setScreenings(res.data.data || []);  // ✅ Default to empty array
       } else if (activeTab === 'dashboard') {
         const res = await axios.get('/api/mentalhealth/admin/dashboard', config);
-        setStats(res.data.data);
+        const data = res.data.data || {};
+        setStats({
+          therapists: data.therapists || { total: 0, pending: 0, approved: 0, rejected: 0 },
+          bookings: data.bookings || { total: 0, pending: 0, completed: 0 },
+          screenings: data.screenings || { total: 0, crisis: 0 }
+        });
       }
     } catch (error) {
       console.error('Error loading mental health data:', error);
+      // ✅ Set empty arrays on error
+      setTherapists([]);
+      setBookings([]);
+      setScreenings([]);
     } finally {
       setLoading(false);
     }
@@ -80,7 +93,9 @@ const AdminMentalHealth = () => {
       pending: { backgroundColor: '#fef3c7', color: '#92400e' },
       approved: { backgroundColor: '#dcfce7', color: '#166534' },
       rejected: { backgroundColor: '#fee2e2', color: '#dc2626' },
-      suspended: { backgroundColor: '#fee2e2', color: '#dc2626' }
+      suspended: { backgroundColor: '#fee2e2', color: '#dc2626' },
+      completed: { backgroundColor: '#dcfce7', color: '#166534' },
+      cancelled: { backgroundColor: '#fee2e2', color: '#dc2626' }
     };
     const style = styles[status] || styles.pending;
     return (
@@ -92,10 +107,18 @@ const AdminMentalHealth = () => {
         color: style.color,
         fontWeight: 'bold'
       }}>
-        {status.toUpperCase()}
+        {status?.toUpperCase() || 'UNKNOWN'}
       </span>
     );
   };
+
+  if (loading) {
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem', textAlign: 'center' }}>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -131,9 +154,7 @@ const AdminMentalHealth = () => {
         ))}
       </div>
 
-      {loading ? (
-        <p style={{ textAlign: 'center', padding: '3rem' }}>Loading...</p>
-      ) : activeTab === 'dashboard' && (
+      {activeTab === 'dashboard' && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
             <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #8b5cf6' }}>
@@ -167,12 +188,12 @@ const AdminMentalHealth = () => {
       {activeTab === 'therapists' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <h2 style={{ fontWeight: 'bold' }}>👤 Therapists ({therapists.length})</h2>
+            <h2 style={{ fontWeight: 'bold' }}>👤 Therapists ({therapists?.length || 0})</h2>
             <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-              Pending: {therapists.filter(t => t.verificationStatus === 'pending').length}
+              Pending: {therapists?.filter(t => t.verificationStatus === 'pending')?.length || 0}
             </span>
           </div>
-          {therapists.length === 0 ? (
+          {!therapists || therapists.length === 0 ? (
             <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>No therapists found</p>
           ) : (
             <div style={{ display: 'grid', gap: '1rem' }}>
@@ -189,8 +210,8 @@ const AdminMentalHealth = () => {
                       <h4 style={{ fontWeight: 'bold' }}>{therapist.name}</h4>
                       <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>📞 {therapist.phone}</p>
                       <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>📋 {therapist.licenseNumber}</p>
-                      <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>🎯 {therapist.specializations?.slice(0, 3).join(', ')}</p>
-                      <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>⭐ {therapist.rating || 0} • {therapist.experience} years</p>
+                      <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>🎯 {therapist.specializations?.slice(0, 3).join(', ') || 'N/A'}</p>
+                      <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>⭐ {therapist.rating || 0} • {therapist.experience || 0} years</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
                       <div>{getStatusBadge(therapist.verificationStatus)}</div>
@@ -217,8 +238,8 @@ const AdminMentalHealth = () => {
 
       {activeTab === 'bookings' && (
         <div>
-          <h2 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📋 Bookings ({bookings.length})</h2>
-          {bookings.length === 0 ? (
+          <h2 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📋 Bookings ({bookings?.length || 0})</h2>
+          {!bookings || bookings.length === 0 ? (
             <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>No bookings found</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -239,7 +260,7 @@ const AdminMentalHealth = () => {
                       <td style={{ padding: '12px' }}>{booking.patientId?.name || 'Anonymous'}</td>
                       <td style={{ padding: '12px' }}>{new Date(booking.scheduledDate).toLocaleDateString()}</td>
                       <td style={{ padding: '12px' }}>{getStatusBadge(booking.status)}</td>
-                      <td style={{ padding: '12px' }}>{booking.bookingType}</td>
+                      <td style={{ padding: '12px' }}>{booking.bookingType || 'N/A'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -251,8 +272,8 @@ const AdminMentalHealth = () => {
 
       {activeTab === 'screenings' && (
         <div>
-          <h2 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📝 Screenings ({screenings.length})</h2>
-          {screenings.length === 0 ? (
+          <h2 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📝 Screenings ({screenings?.length || 0})</h2>
+          {!screenings || screenings.length === 0 ? (
             <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>No screenings found</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -269,9 +290,9 @@ const AdminMentalHealth = () => {
                 <tbody>
                   {screenings.map((screening) => (
                     <tr key={screening._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '12px' }}>{screening.screeningType}</td>
+                      <td style={{ padding: '12px' }}>{screening.screeningType || 'N/A'}</td>
                       <td style={{ padding: '12px', fontWeight: 'bold' }}>
-                        {screening.screeningType === 'depression' ? screening.depressionTotal : screening.anxietyTotal}
+                        {screening.screeningType === 'depression' ? screening.depressionTotal : screening.anxietyTotal || 0}
                       </td>
                       <td style={{ padding: '12px' }}>
                         <span style={{
