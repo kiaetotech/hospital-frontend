@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// ✅ THIS IS THE ONLY CORRECT URL - HARDCODED FOR PRODUCTION
+const API_URL = 'https://hospital-backend-production-8de3.up.railway.app';
 
 const TherapistLogin = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const TherapistLogin = () => {
     setLoading(true);
 
     try {
+      // ✅ THIS IS THE ONLY CORRECT API CALL
       const response = await axios.post(`${API_URL}/api/mentalhealth/therapist/login`, {
         phone,
         password
