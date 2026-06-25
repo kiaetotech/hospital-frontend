@@ -347,54 +347,81 @@ const HospitalsList = () => {
             </button>
           </div>
 
-          {/* Row 4: Dropdown Filters */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>💠 Government Scheme</label>
-              <select value={filters.scheme} onChange={(e) => setFilters({...filters, scheme: e.target.value})} style={selectStyle}>
-                {schemeOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
+         {/* Row 4: Dropdown Filters */}
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
+  
+  {/* Government Scheme */}
+  <div>
+    <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>💠 Government Scheme</label>
+    <select value={filters.scheme} onChange={(e) => setFilters({...filters, scheme: e.target.value})} style={selectStyle}>
+      {schemeOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+    </select>
+  </div>
 
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🛡️ Insurance Provider</label>
-              <select value={filters.insurance} onChange={(e) => setFilters({...filters, insurance: e.target.value})} style={selectStyle}>
-                {insuranceOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
+  {/* Insurance Provider */}
+  <div>
+    <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🛡️ Insurance Provider</label>
+    <select value={filters.insurance} onChange={(e) => setFilters({...filters, insurance: e.target.value})} style={selectStyle}>
+      {insuranceOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+    </select>
+  </div>
 
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🏅 Accreditation</label>
-              <select value={filters.accreditation} onChange={(e) => setFilters({...filters, accreditation: e.target.value})} style={selectStyle}>
-                {accreditationOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
+  {/* Accreditation */}
+  <div>
+    <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🏅 Accreditation</label>
+    <select value={filters.accreditation} onChange={(e) => setFilters({...filters, accreditation: e.target.value})} style={selectStyle}>
+      {accreditationOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+    </select>
+  </div>
 
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🏥 Specialty</label>
-              <select value={filters.specialty} onChange={(e) => setFilters({...filters, specialty: e.target.value})} style={selectStyle}>
-                {specialtyOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
+  {/* Specialty */}
+  <div>
+    <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🏥 Specialty</label>
+    <select value={filters.specialty} onChange={(e) => setFilters({...filters, specialty: e.target.value})} style={selectStyle}>
+      {specialtyOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+    </select>
+  </div>
 
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>⭐ Min Rating: {filters.minRating || 'Any'}</label>
-              <input type="range" min="0" max="5" step="0.5" value={filters.minRating} onChange={(e) => setFilters({...filters, minRating: parseFloat(e.target.value)})} style={{ width: '100%' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: '#9ca3af' }}>
-                <span>Any</span><span>⭐5</span>
-              </div>
-            </div>
+  {/* Min Rating */}
+  <div>
+    <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>
+      ⭐ Min Rating: {filters.minRating > 0 ? filters.minRating + ' ★' : 'Any'}
+    </label>
+    <input 
+      type="range" 
+      min="0" max="5" step="0.5" 
+      value={filters.minRating} 
+      onChange={(e) => setFilters({...filters, minRating: parseFloat(e.target.value)})} 
+      style={{ width: '100%', accentColor: '#f59e0b' }} 
+    />
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: '#9ca3af', padding: '0 2px' }}>
+      <span>Any</span><span>3★</span><span>5★</span>
+    </div>
+  </div>
 
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>💰 OPD Fee (₹)</label>
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <input type="number" placeholder="Min" value={filters.opdFeeMin} onChange={(e) => setFilters({...filters, opdFeeMin: e.target.value})} style={{ flex: 1, padding: '0.45rem', border: '2px solid #e5e7eb', borderRadius: '0.4rem', fontSize: '0.85rem', outline: 'none' }} />
-                <span style={{ alignSelf: 'center', color: '#9ca3af' }}>—</span>
-                <input type="number" placeholder="Max" value={filters.opdFeeMax} onChange={(e) => setFilters({...filters, opdFeeMax: e.target.value})} style={{ flex: 1, padding: '0.45rem', border: '2px solid #e5e7eb', borderRadius: '0.4rem', fontSize: '0.85rem', outline: 'none' }} />
-              </div>
-            </div>
-          </div>
-        </div>
+  {/* OPD Fee Range */}
+  <div>
+    <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>💰 OPD Fee Range (₹)</label>
+    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <input 
+        type="number" 
+        placeholder="Min" 
+        value={filters.opdFeeMin} 
+        onChange={(e) => setFilters({...filters, opdFeeMin: e.target.value})} 
+        style={{ flex: 1, padding: '0.5rem 0.4rem', border: '2px solid #e5e7eb', borderRadius: '0.4rem', fontSize: '0.85rem', outline: 'none', minWidth: '50px', width: '50%' }} 
+      />
+      <span style={{ color: '#9ca3af', fontSize: '0.85rem', flexShrink: 0 }}>—</span>
+      <input 
+        type="number" 
+        placeholder="Max" 
+        value={filters.opdFeeMax} 
+        onChange={(e) => setFilters({...filters, opdFeeMax: e.target.value})} 
+        style={{ flex: 1, padding: '0.5rem 0.4rem', border: '2px solid #e5e7eb', borderRadius: '0.4rem', fontSize: '0.85rem', outline: 'none', minWidth: '50px', width: '50%' }} 
+      />
+    </div>
+  </div>
+
+</div>
 
         {/* Results Count */}
         <p style={{ color: '#6b7280', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
