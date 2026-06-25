@@ -12,6 +12,7 @@ const HospitalsList = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [inputQuery, setInputQuery] = useState(initialQuery);
+  const [cityInput, setCityInput] = useState('');
   const [city, setCity] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [sortBy, setSortBy] = useState('distance');
@@ -33,6 +34,9 @@ const HospitalsList = () => {
     cashless: false,
     bedsAvailable: false
   });
+
+  // Debounced filters - prevents multiple API calls
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
   const schemeDisplayNames = {
     'ayushman': 'Ayushman Bharat (PM-JAY)',
@@ -128,31 +132,26 @@ const HospitalsList = () => {
     }
   }, []);
 
-  // ============================================
-  // SMART SEARCH - No refresh on every keystroke
-  // ============================================
-
-  // Search only on button click or sort change (INSTANT)
-  useEffect(() => {
-    fetchHospitals();
-  }, [searchQuery, userLocation, sortBy]);
-
-  // Dropdowns & toggles - 500ms debounce
+  // PROBLEM 5 FIXED: Debounce city input
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchHospitals();
+      setCity(cityInput);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [cityInput]);
+
+  // PROBLEM 4 FIXED: Debounce filters
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
     }, 500);
     return () => clearTimeout(timer);
-  }, [filters.scheme, filters.insurance, filters.accreditation, filters.specialty, 
-      filters.minRating, filters.emergency, filters.cashless, filters.bedsAvailable]);
+  }, [filters]);
 
-  // City & OPD Fee typing - 1000ms debounce
+  // Single fetch trigger
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchHospitals();
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [filters.opdFeeMin, filters.opdFeeMax, city]);
+    fetchHospitals();
+  }, [searchQuery, city, userLocation, sortBy, debouncedFilters]);
 
   const fetchHospitals = async () => {
     setLoading(true);
@@ -161,16 +160,16 @@ const HospitalsList = () => {
       if (searchQuery) params.append('q', searchQuery);
       if (city) params.append('city', city);
       if (userLocation) { params.append('lat', userLocation.lat); params.append('lng', userLocation.lng); }
-      if (filters.scheme) params.append('scheme', filters.scheme);
-      if (filters.insurance) params.append('insurance', filters.insurance);
-      if (filters.accreditation) params.append('accreditation', filters.accreditation);
-      if (filters.specialty) params.append('specialty', filters.specialty);
-      if (filters.cashless) params.append('cashless', 'true');
-      if (filters.emergency) params.append('emergency', 'true');
-      if (filters.bedsAvailable) params.append('beds_available', 'true');
-      if (filters.minRating > 0) params.append('min_rating', filters.minRating);
-      if (filters.opdFeeMin) params.append('opd_fee_min', filters.opdFeeMin);
-      if (filters.opdFeeMax) params.append('opd_fee_max', filters.opdFeeMax);
+      if (debouncedFilters.scheme) params.append('scheme', debouncedFilters.scheme);
+      if (debouncedFilters.insurance) params.append('insurance', debouncedFilters.insurance);
+      if (debouncedFilters.accreditation) params.append('accreditation', debouncedFilters.accreditation);
+      if (debouncedFilters.specialty) params.append('specialty', debouncedFilters.specialty);
+      if (debouncedFilters.cashless) params.append('cashless', 'true');
+      if (debouncedFilters.emergency) params.append('emergency', 'true');
+      if (debouncedFilters.bedsAvailable) params.append('beds_available', 'true');
+      if (debouncedFilters.minRating > 0) params.append('min_rating', debouncedFilters.minRating);
+      if (debouncedFilters.opdFeeMin) params.append('opd_fee_min', debouncedFilters.opdFeeMin);
+      if (debouncedFilters.opdFeeMax) params.append('opd_fee_max', debouncedFilters.opdFeeMax);
       const res = await api.get(`/hospitals/search?${params.toString()}`);
       setHospitals(res.data.data || []);
     } catch (error) { console.error(error); }
@@ -183,6 +182,7 @@ const HospitalsList = () => {
     setCurrentPage(1); 
   };
 
+  // PROBLEM 3 FIXED: Functional state updates
   const clearFilters = () => {
     setFilters({ scheme: '', insurance: '', accreditation: '', specialty: '', minRating: 0, opdFeeMin: '', opdFeeMax: '', emergency: false, cashless: false, bedsAvailable: false });
   };
@@ -243,80 +243,76 @@ const HospitalsList = () => {
         <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '0.25rem' }}>🏥 Find Hospitals</h1>
         <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.9rem' }}>Search, compare, and book appointments at India's top hospitals</p>
 
-        {/* SEARCH + FILTER BAR */}
         <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' }}>
           
-          {/* Row 1: Search Input */}
           <form onSubmit={handleSearch}>
             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
               <input type="text" placeholder="🔍 Search disease, symptom, specialty, or hospital name..." value={inputQuery} onChange={(e) => setInputQuery(e.target.value)} style={{ flex: 3, minWidth: '250px', padding: '0.75rem 1rem', border: '2px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.95rem', outline: 'none' }} />
-              <input type="text" placeholder="📍 City" value={city} onChange={(e) => setCity(e.target.value)} style={{ flex: 1, minWidth: '120px', padding: '0.75rem 1rem', border: '2px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.95rem', outline: 'none' }} />
+              <input type="text" placeholder="📍 City" value={cityInput} onChange={(e) => setCityInput(e.target.value)} style={{ flex: 1, minWidth: '120px', padding: '0.75rem 1rem', border: '2px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.95rem', outline: 'none' }} />
               <button type="submit" style={{ padding: '0.75rem 2rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>🔍 Search</button>
             </div>
           </form>
 
-          {/* Row 2: Sort Options */}
+          {/* PROBLEM 2 FIXED: All buttons have type="button" */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #f3f4f6' }}>
             <span style={{ fontWeight: '600', color: '#374151', fontSize: '0.85rem', marginRight: '0.25rem' }}>Sort:</span>
             {[{ value: 'distance', label: '📍 Nearest' },{ value: 'fee', label: '💰 Lowest Fee' },{ value: 'rating', label: '⭐ Highest Rated' },{ value: 'beds', label: '🛏️ Most Beds' }].map(opt => (
-              <button key={opt.value} onClick={() => setSortBy(opt.value)} style={{ padding: '0.45rem 0.9rem', backgroundColor: sortBy === opt.value ? '#10b981' : '#f3f4f6', color: sortBy === opt.value ? 'white' : '#374151', border: sortBy === opt.value ? 'none' : '1px solid #e5e7eb', borderRadius: '2rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: sortBy === opt.value ? 'bold' : 'normal', transition: 'all 0.2s' }}>{opt.label}</button>
+              <button type="button" key={opt.value} onClick={() => setSortBy(opt.value)} style={{ padding: '0.45rem 0.9rem', backgroundColor: sortBy === opt.value ? '#10b981' : '#f3f4f6', color: sortBy === opt.value ? 'white' : '#374151', border: sortBy === opt.value ? 'none' : '1px solid #e5e7eb', borderRadius: '2rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: sortBy === opt.value ? 'bold' : 'normal', transition: 'all 0.2s' }}>{opt.label}</button>
             ))}
             <div style={{ flex: 1 }}></div>
             {activeFilterCount > 0 && (
-              <button onClick={clearFilters} style={{ padding: '0.45rem 1rem', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '2rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>✕ Clear All ({activeFilterCount})</button>
+              <button type="button" onClick={clearFilters} style={{ padding: '0.45rem 1rem', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '2rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>✕ Clear All ({activeFilterCount})</button>
             )}
           </div>
 
-          {/* Row 3: Quick Toggles */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-            <button onClick={() => setFilters({...filters, emergency: !filters.emergency})} style={toggleStyle(filters.emergency)}>{filters.emergency ? '🚨' : ''} 24/7 Emergency</button>
-            <button onClick={() => setFilters({...filters, bedsAvailable: !filters.bedsAvailable})} style={toggleStyle(filters.bedsAvailable)}>{filters.bedsAvailable ? '🛏️' : ''} Beds Available</button>
-            <button onClick={() => setFilters({...filters, cashless: !filters.cashless})} style={toggleStyle(filters.cashless)}>{filters.cashless ? '💳' : ''} Cashless Only</button>
+            <button type="button" onClick={() => setFilters(prev => ({...prev, emergency: !prev.emergency}))} style={toggleStyle(filters.emergency)}>{filters.emergency ? '🚨' : ''} 24/7 Emergency</button>
+            <button type="button" onClick={() => setFilters(prev => ({...prev, bedsAvailable: !prev.bedsAvailable}))} style={toggleStyle(filters.bedsAvailable)}>{filters.bedsAvailable ? '🛏️' : ''} Beds Available</button>
+            <button type="button" onClick={() => setFilters(prev => ({...prev, cashless: !prev.cashless}))} style={toggleStyle(filters.cashless)}>{filters.cashless ? '💳' : ''} Cashless Only</button>
           </div>
 
-          {/* Row 4: Dropdown Filters */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
             
             <div>
               <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>💠 Government Scheme</label>
-              <select value={filters.scheme} onChange={(e) => setFilters({...filters, scheme: e.target.value})} style={selectStyle}>
+              <select value={filters.scheme} onChange={(e) => setFilters(prev => ({...prev, scheme: e.target.value}))} style={selectStyle}>
                 {schemeOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
 
             <div>
               <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🛡️ Insurance Provider</label>
-              <select value={filters.insurance} onChange={(e) => setFilters({...filters, insurance: e.target.value})} style={selectStyle}>
+              <select value={filters.insurance} onChange={(e) => setFilters(prev => ({...prev, insurance: e.target.value}))} style={selectStyle}>
                 {insuranceOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
 
             <div>
               <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🏅 Accreditation</label>
-              <select value={filters.accreditation} onChange={(e) => setFilters({...filters, accreditation: e.target.value})} style={selectStyle}>
+              <select value={filters.accreditation} onChange={(e) => setFilters(prev => ({...prev, accreditation: e.target.value}))} style={selectStyle}>
                 {accreditationOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
 
             <div>
               <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🏥 Specialty</label>
-              <select value={filters.specialty} onChange={(e) => setFilters({...filters, specialty: e.target.value})} style={selectStyle}>
+              <select value={filters.specialty} onChange={(e) => setFilters(prev => ({...prev, specialty: e.target.value}))} style={selectStyle}>
                 {specialtyOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
 
             <div>
               <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>⭐ Min Rating: {filters.minRating > 0 ? filters.minRating + ' ★' : 'Any'}</label>
-              <input type="range" min="0" max="5" step="0.5" value={filters.minRating} onChange={(e) => setFilters({...filters, minRating: parseFloat(e.target.value)})} style={{ width: '100%', accentColor: '#f59e0b' }} />
+              <input type="range" min="0" max="5" step="0.5" value={filters.minRating} onChange={(e) => setFilters(prev => ({...prev, minRating: parseFloat(e.target.value)}))} style={{ width: '100%', accentColor: '#f59e0b' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: '#9ca3af', padding: '0 2px' }}><span>Any</span><span>3★</span><span>5★</span></div>
             </div>
 
             <div>
               <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>💰 OPD Fee Range (₹)</label>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <input type="number" placeholder="Min" value={filters.opdFeeMin} onChange={(e) => setFilters({...filters, opdFeeMin: e.target.value})} style={{ flex: 1, padding: '0.5rem', border: '2px solid #e5e7eb', borderRadius: '0.4rem', fontSize: '0.85rem', outline: 'none', minWidth: '60px' }} />
+                <input type="number" placeholder="Min" value={filters.opdFeeMin} onChange={(e) => setFilters(prev => ({...prev, opdFeeMin: e.target.value}))} style={{ flex: 1, padding: '0.5rem', border: '2px solid #e5e7eb', borderRadius: '0.4rem', fontSize: '0.85rem', outline: 'none', minWidth: '60px' }} />
                 <span style={{ color: '#9ca3af', fontSize: '0.85rem', flexShrink: 0 }}>—</span>
-                <input type="number" placeholder="Max" value={filters.opdFeeMax} onChange={(e) => setFilters({...filters, opdFeeMax: e.target.value})} style={{ flex: 1, padding: '0.5rem', border: '2px solid #e5e7eb', borderRadius: '0.4rem', fontSize: '0.85rem', outline: 'none', minWidth: '60px' }} />
+                <input type="number" placeholder="Max" value={filters.opdFeeMax} onChange={(e) => setFilters(prev => ({...prev, opdFeeMax: e.target.value}))} style={{ flex: 1, padding: '0.5rem', border: '2px solid #e5e7eb', borderRadius: '0.4rem', fontSize: '0.85rem', outline: 'none', minWidth: '60px' }} />
               </div>
             </div>
 
@@ -324,18 +320,16 @@ const HospitalsList = () => {
 
         </div>
 
-        {/* Results Count */}
         <p style={{ color: '#6b7280', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
           {hospitals.length > 0 ? <><strong>{hospitals.length}</strong> hospital{hospitals.length !== 1 ? 's' : ''} found{searchQuery && ` for "${searchQuery}"`}</> : 'No hospitals found. Try adjusting filters.'}
         </p>
 
-        {/* HOSPITAL CARDS */}
         {paginatedHospitals.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '1rem' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏥</div>
             <h3>No hospitals match your criteria</h3>
             <p style={{ color: '#6b7280', marginBottom: '1rem' }}>Try changing your search terms or filters</p>
-            <button onClick={clearFilters} style={{ padding: '0.6rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>Clear All Filters</button>
+            <button type="button" onClick={clearFilters} style={{ padding: '0.6rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>Clear All Filters</button>
           </div>
         ) : (
           paginatedHospitals.map(h => {
@@ -346,12 +340,10 @@ const HospitalsList = () => {
             const showAllSchemes = expandedSchemes[h._id];
             const matchingDoctors = getMatchingDoctors(h);
             const hasMultipleMatching = matchingDoctors.length > 1;
-            const singleMatching = matchingDoctors.length === 1;
             const bedBadge = getBedUpdateBadge(h.beds?.last_updated);
             
-            if (singleMatching && !selectedDoctor[h._id]) setSelectedDoctor(prev => ({ ...prev, [h._id]: matchingDoctors[0].name }));
-            
-            const selectedDoc = matchingDoctors.find(d => d.name === selectedDoctor[h._id]) || (singleMatching ? matchingDoctors[0] : null);
+            // PROBLEM 1 FIXED: No setState during render
+            const selectedDoc = matchingDoctors.find(d => d.name === selectedDoctor[h._id]) || matchingDoctors[0] || null;
             const opdFee = selectedDoc ? selectedDoc.consultation_fee : (h.pricing?.consultation || 0);
             const discountAmount = Math.round(opdFee * 0.1);
 
@@ -376,15 +368,15 @@ const HospitalsList = () => {
 
                 {schemesList.length > 0 && (
                   <div style={{ margin: '0.5rem 0' }}>
-                    <span onClick={() => toggleSchemes(h._id)} style={{ cursor: 'pointer', fontSize: '0.8rem', color: '#8b5cf6', fontWeight: '600' }}>💠 {schemesList.length} Scheme{schemesList.length > 1 ? 's' : ''} {showAllSchemes ? '▲' : '▼'}</span>
+                    <button type="button" onClick={() => toggleSchemes(h._id)} style={{ cursor: 'pointer', fontSize: '0.8rem', color: '#8b5cf6', fontWeight: '600', background: 'none', border: 'none', padding: 0 }}>💠 {schemesList.length} Scheme{schemesList.length > 1 ? 's' : ''} {showAllSchemes ? '▲' : '▼'}</button>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.2rem' }}>
                       {(showAllSchemes ? schemesList : schemesList.slice(0, 3)).map((scheme, idx) => (<span key={idx} style={{ backgroundColor: '#f3e8ff', color: '#5b21b6', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontSize: '0.65rem' }}>{schemeDisplayNames[scheme] || scheme}</span>))}
-                      {!showAllSchemes && schemesList.length > 3 && (<span onClick={() => toggleSchemes(h._id)} style={{ color: '#8b5cf6', fontSize: '0.65rem', cursor: 'pointer', padding: '0.15rem 0.5rem' }}>+{schemesList.length - 3} more</span>)}
+                      {!showAllSchemes && schemesList.length > 3 && (<button type="button" onClick={() => toggleSchemes(h._id)} style={{ color: '#8b5cf6', fontSize: '0.65rem', cursor: 'pointer', padding: '0.15rem 0.5rem', background: 'none', border: 'none' }}>+{schemesList.length - 3} more</button>)}
                     </div>
                   </div>
                 )}
 
-                {searchQuery && hasMultipleMatching && (
+                {searchQuery && matchingDoctors.length > 1 && (
                   <div style={{ margin: '0.75rem 0', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
                     <strong style={{ fontSize: '0.85rem' }}>👨‍⚕️ Select Doctor ({matchingDoctors.length}):</strong>
                     {matchingDoctors.map(doc => {
@@ -400,13 +392,13 @@ const HospitalsList = () => {
                   </div>
                 )}
 
-                {searchQuery && singleMatching && (
+                {searchQuery && matchingDoctors.length === 1 && (
                   <div style={{ margin: '0.5rem 0', padding: '0.6rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', fontSize: '0.85rem' }}><strong>👨‍⚕️ {matchingDoctors[0].name}</strong> - {matchingDoctors[0].specialization}<br /><span style={{ fontSize: '0.75rem' }}>📜 {matchingDoctors[0].qualification} • ⭐ {matchingDoctors[0].rating} • 💰 ₹{matchingDoctors[0].consultation_fee}</span></div>
                 )}
 
                 <div style={{ display: 'flex', gap: '1.5rem', margin: '0.5rem 0', fontSize: '0.8rem', flexWrap: 'wrap' }}>
                   <span>🧪 Lab: {h.lab_tests_available ? '✅ Yes' : '🔗 Partner'}</span>
-                  <span onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer' }}>🛡️ Insurance: <span style={{ color: '#3b82f6' }}>{insuranceList.length} {showAllInsurance ? '▲' : '▼'}</span></span>
+                  <button type="button" onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer', background: 'none', border: 'none', fontSize: '0.8rem', padding: 0 }}>🛡️ Insurance: <span style={{ color: '#3b82f6' }}>{insuranceList.length} {showAllInsurance ? '▲' : '▼'}</span></button>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', margin: '0.6rem 0', backgroundColor: '#f9fafb', padding: '0.6rem', borderRadius: '0.5rem' }}>
@@ -416,10 +408,10 @@ const HospitalsList = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button onClick={() => handleBookOPD(h, selectedDoc)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>📋 Book OPD</button>
-                  <button onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🏥 Book Admission</button>
-                  <button onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#fff', color: '#374151', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.85rem' }}>Details →</button>
-                  <button onClick={handleAmbulance} style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.55rem 0.8rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>🚑</button>
+                  <button type="button" onClick={() => handleBookOPD(h, selectedDoc)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>📋 Book OPD</button>
+                  <button type="button" onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🏥 Book Admission</button>
+                  <button type="button" onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#fff', color: '#374151', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.85rem' }}>Details →</button>
+                  <button type="button" onClick={handleAmbulance} style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.55rem 0.8rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>🚑</button>
                 </div>
 
                 {h.has24x7ER && (<div style={{ marginTop: '0.5rem' }}><span style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 'bold' }}>🚨 24/7 Emergency</span></div>)}
@@ -430,9 +422,9 @@ const HospitalsList = () => {
 
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1.5rem' }}>
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1.5rem', backgroundColor: currentPage === 1 ? '#e5e7eb' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>← Previous</button>
+            <button type="button" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1.5rem', backgroundColor: currentPage === 1 ? '#e5e7eb' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>← Previous</button>
             <span style={{ padding: '0.5rem', fontWeight: 'bold' }}>Page {currentPage} of {totalPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1.5rem', backgroundColor: currentPage === totalPages ? '#e5e7eb' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>Next →</button>
+            <button type="button" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1.5rem', backgroundColor: currentPage === totalPages ? '#e5e7eb' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>Next →</button>
           </div>
         )}
       </div>
