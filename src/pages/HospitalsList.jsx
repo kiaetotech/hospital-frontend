@@ -365,4 +365,4 @@ const HospitalsList = () => {
   );
 };
 
-export default HospitalsList;
+export default HospitalsList; 
