@@ -102,7 +102,7 @@ const HomePage = () => {
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
       
       {/* ================================================================
-          SECTION 1: NAVIGATION BAR - PATIENT & PROVIDER LOGIN ON TOP
+          SECTION 1: NAVIGATION BAR - PATIENT, PROVIDER, ADMIN LOGIN ON TOP
       ================================================================ */}
       <nav style={{
         backgroundColor: 'white',
@@ -130,6 +130,7 @@ const HomePage = () => {
 
           {/* Desktop Navigation */}
           <div style={{ display: 'none', alignItems: 'center', gap: '12px' }} className="desktop-nav">
+            {/* Home */}
             <Link to="/" style={{ color: '#475569', fontWeight: '500', fontSize: '13px', textDecoration: 'none' }}>Home</Link>
             
             {/* Services Dropdown */}
@@ -166,7 +167,7 @@ const HomePage = () => {
               </button>
             </form>
 
-            {/* 👤 PATIENT LOGIN - VISIBLE ON TOP */}
+            {/* 👤 PATIENT LOGIN - VISIBLE ON TOP RIGHT */}
             <Link to="/login" style={{
               display: 'flex',
               alignItems: 'center',
@@ -183,7 +184,7 @@ const HomePage = () => {
               <FaUser size={14} /> Patient Login
             </Link>
 
-            {/* 🔐 PROVIDER LOGIN - VISIBLE ON TOP */}
+            {/* 🔐 PROVIDER LOGIN - VISIBLE ON TOP RIGHT */}
             <div style={{ position: 'relative' }} onMouseEnter={() => setShowProviderDropdown(true)} onMouseLeave={() => setShowProviderDropdown(false)}>
               <button style={{
                 display: 'flex',
@@ -211,7 +212,7 @@ const HomePage = () => {
               )}
             </div>
 
-            {/* 🔑 ADMIN LOGIN */}
+            {/* 🔑 ADMIN LOGIN - VISIBLE ON TOP RIGHT */}
             <Link to="/admin/login" style={{
               display: 'flex',
               alignItems: 'center',
@@ -252,7 +253,7 @@ const HomePage = () => {
       </nav>
 
       {/* ================================================================
-          SECTION 2: HERO BANNER - COMPACT
+          SECTION 2: HERO BANNER
       ================================================================ */}
       <section style={{
         background: 'linear-gradient(135deg, #1e40af 0%, #7c3aed 50%, #db2777 100%)',
@@ -332,7 +333,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          SECTION 3: 11 BIG SERVICE TAGS - VISIBLE ON SCREEN
+          SECTION 3: 11 BIG SERVICE TAGS
       ================================================================ */}
       <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px' }}>
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
@@ -392,7 +393,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          SECTION 4: WHY CHOOSE US - COMPACT
+          SECTION 4: WHY CHOOSE US
       ================================================================ */}
       <section style={{ background: 'white', padding: '24px 16px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -425,7 +426,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          SECTION 5: HEALTH INSIGHTS - COMPACT
+          SECTION 5: HEALTH INSIGHTS
       ================================================================ */}
       <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -473,7 +474,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          SECTION 6: TESTIMONIALS - COMPACT
+          SECTION 6: TESTIMONIALS
       ================================================================ */}
       <section style={{ background: 'linear-gradient(135deg, #1e40af, #7c3aed)', padding: '24px 16px' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
@@ -534,7 +535,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          SECTION 7: APP DOWNLOAD - COMPACT
+          SECTION 7: APP DOWNLOAD
       ================================================================ */}
       <section style={{ background: 'white', padding: '24px 16px' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', flexWrap: 'wrap' }}>
@@ -563,7 +564,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          SECTION 8: FOOTER - COMPACT
+          SECTION 8: FOOTER
       ================================================================ */}
       <footer style={{ background: '#0f172a', color: 'white', padding: '24px 16px 16px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
