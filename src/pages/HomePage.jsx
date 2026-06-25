@@ -10,7 +10,7 @@ import {
   FaHeart, FaHands, FaSmile, FaUsers, FaQuoteLeft,
   FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube,
   FaApple, FaGooglePlay, FaMapMarkerAlt, FaEnvelope, FaPhone,
-  FaClock, FaShield, FaThumbsUp, FaAward, FaBookOpen,
+  FaClock, FaThumbsUp, FaAward, FaBookOpen,
   FaNewspaper, FaCalendarAlt, FaChevronRight, FaGlobe,
   FaArrowLeft, FaArrowRight as FaArrowRightIcon
 } from 'react-icons/fa';
@@ -38,7 +38,6 @@ const HomePage = () => {
       setUserRole(role || 'patient');
     }
 
-    // Auto-slide testimonials
     const interval = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
     }, 5000);
@@ -58,7 +57,6 @@ const HomePage = () => {
     }
   };
 
-  // Services Data
   const services = [
     { id: 'hospitals', icon: <FaHospital />, label: 'Hospitals', desc: '1,200+ Providers', color: 'blue', path: '/hospitals', badge: null },
     { id: 'ambulance', icon: <FaAmbulance />, label: 'Ambulance', desc: '500+ Vehicles', color: 'orange', path: '/ambulance', badge: 'Live Tracking' },
@@ -73,7 +71,6 @@ const HomePage = () => {
     { id: 'mentalhealth', icon: <FaBrain />, label: 'Mental Health', desc: '150+ Therapists', color: 'violet', path: '/mentalhealth', badge: 'NEW' }
   ];
 
-  // Testimonials Data
   const testimonials = [
     {
       name: 'Rajesh K.',
@@ -112,7 +109,6 @@ const HomePage = () => {
     }
   ];
 
-  // Provider Roles
   const providerRoles = [
     { icon: '🧠', label: 'Therapist', path: '/mentalhealth/therapist/login' },
     { icon: '🏥', label: 'Hospital', path: '/hospital/login' },
@@ -126,7 +122,6 @@ const HomePage = () => {
     { icon: '🏢', label: 'Corporate HR', path: '/corporate/hr/login' }
   ];
 
-  // Navigation Links
   const navLinks = [
     { label: 'Home', path: '/' },
     { label: 'Services', path: '/services', dropdown: true },
@@ -135,7 +130,6 @@ const HomePage = () => {
     { label: 'Contact', path: '/contact' }
   ];
 
-  // Color helper
   const getColorClass = (color) => {
     const colors = {
       blue: 'text-blue-500 bg-blue-50 hover:bg-blue-100',
@@ -161,7 +155,6 @@ const HomePage = () => {
       <nav className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
             <div className="flex items-center">
               <div 
                 onClick={() => navigate('/')} 
@@ -173,14 +166,9 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-6">
-              {/* Home */}
-              <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium text-sm transition">
-                Home
-              </Link>
+              <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium text-sm transition">Home</Link>
 
-              {/* Services Dropdown */}
               <div 
                 className="relative"
                 onMouseEnter={() => setShowServicesDropdown(true)}
@@ -205,17 +193,10 @@ const HomePage = () => {
                 )}
               </div>
 
-              <Link to="/about" className="text-gray-700 hover:text-blue-600 font-medium text-sm transition">
-                About
-              </Link>
-              <Link to="/blog" className="text-gray-700 hover:text-blue-600 font-medium text-sm transition">
-                Blog
-              </Link>
-              <Link to="/contact" className="text-gray-700 hover:text-blue-600 font-medium text-sm transition">
-                Contact
-              </Link>
+              <Link to="/about" className="text-gray-700 hover:text-blue-600 font-medium text-sm transition">About</Link>
+              <Link to="/blog" className="text-gray-700 hover:text-blue-600 font-medium text-sm transition">Blog</Link>
+              <Link to="/contact" className="text-gray-700 hover:text-blue-600 font-medium text-sm transition">Contact</Link>
 
-              {/* Search */}
               <form onSubmit={handleSearch} className="flex items-center">
                 <input
                   type="text"
@@ -232,7 +213,6 @@ const HomePage = () => {
                 </button>
               </form>
 
-              {/* Patient Login */}
               <Link
                 to="/login"
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
@@ -240,7 +220,6 @@ const HomePage = () => {
                 <FaUser /> Patient Login
               </Link>
 
-              {/* Provider Login Dropdown */}
               <div 
                 className="relative"
                 onMouseEnter={() => setShowProviderDropdown(true)}
@@ -268,7 +247,6 @@ const HomePage = () => {
                 )}
               </div>
 
-              {/* Admin Login */}
               <Link
                 to="/admin/login"
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition"
@@ -277,7 +255,6 @@ const HomePage = () => {
               </Link>
             </div>
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
@@ -287,7 +264,6 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isMenuOpen && (
             <motion.div
@@ -364,7 +340,6 @@ const HomePage = () => {
               India's Most Trusted Healthcare Marketplace
             </p>
 
-            {/* Search Bar */}
             <form onSubmit={handleSearch} className="max-w-3xl mx-auto flex flex-col sm:flex-row gap-3">
               <div className="flex-1 flex items-center bg-white rounded-lg overflow-hidden">
                 <FaSearch className="text-gray-400 ml-4" />
@@ -394,7 +369,6 @@ const HomePage = () => {
               </button>
             </form>
 
-            {/* Quick Actions */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mt-8">
               <div 
                 onClick={() => navigate('/emergency-search')}
@@ -481,7 +455,7 @@ const HomePage = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: <FaShield className="text-blue-600 text-3xl" />, title: 'Verified Providers', desc: 'Trusted healthcare partners with verified credentials' },
+              { icon: <FaShieldAlt className="text-blue-600 text-3xl" />, title: 'Verified Providers', desc: 'Trusted healthcare partners with verified credentials' },
               { icon: <FaThumbsUp className="text-green-600 text-3xl" />, title: 'Best Price', desc: 'Compare and save money on healthcare services' },
               { icon: <FaClock className="text-purple-600 text-3xl" />, title: '24/7 Service', desc: 'Emergency support available around the clock' },
               { icon: <FaUsers className="text-orange-600 text-3xl" />, title: 'Easy Booking', desc: 'Book appointments in 60 seconds' }
@@ -579,7 +553,6 @@ const HomePage = () => {
               </motion.div>
             </AnimatePresence>
 
-            {/* Navigation Dots */}
             <div className="flex justify-center gap-2 mt-6">
               {testimonials.map((_, index) => (
                 <button
@@ -638,7 +611,6 @@ const HomePage = () => {
       <footer className="bg-gray-900 text-white pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-            {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <h3 className="text-xl font-bold text-white">🏥 HealthCare Hub</h3>
               <p className="text-gray-400 text-sm mt-2">
@@ -647,7 +619,6 @@ const HomePage = () => {
               <p className="text-gray-500 text-xs mt-4">© 2024 All Rights Reserved</p>
             </div>
 
-            {/* For Patients */}
             <div>
               <h4 className="font-semibold text-white mb-3">For Patients</h4>
               <ul className="space-y-2 text-sm text-gray-400">
@@ -658,7 +629,6 @@ const HomePage = () => {
               </ul>
             </div>
 
-            {/* For Providers */}
             <div>
               <h4 className="font-semibold text-white mb-3">For Providers</h4>
               <ul className="space-y-2 text-sm text-gray-400">
@@ -668,7 +638,6 @@ const HomePage = () => {
               </ul>
             </div>
 
-            {/* About */}
             <div>
               <h4 className="font-semibold text-white mb-3">About Us</h4>
               <ul className="space-y-2 text-sm text-gray-400">
@@ -679,7 +648,6 @@ const HomePage = () => {
               </ul>
             </div>
 
-            {/* Contact */}
             <div>
               <h4 className="font-semibold text-white mb-3">Contact Us</h4>
               <ul className="space-y-2 text-sm text-gray-400">
@@ -690,7 +658,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Social Links */}
           <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex gap-4">
               <a href="#" className="text-gray-400 hover:text-white transition"><FaFacebook size={20} /></a>
