@@ -128,9 +128,31 @@ const HospitalsList = () => {
     }
   }, []);
 
+  // ============================================
+  // SMART SEARCH - No refresh on every keystroke
+  // ============================================
+
+  // Search only on button click or sort change (INSTANT)
   useEffect(() => {
     fetchHospitals();
-  }, [searchQuery, city, userLocation, sortBy, filters]);
+  }, [searchQuery, userLocation, sortBy]);
+
+  // Dropdowns & toggles - 500ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchHospitals();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [filters.scheme, filters.insurance, filters.accreditation, filters.specialty, 
+      filters.minRating, filters.emergency, filters.cashless, filters.bedsAvailable]);
+
+  // City & OPD Fee typing - 1000ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchHospitals();
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [filters.opdFeeMin, filters.opdFeeMax, city]);
 
   const fetchHospitals = async () => {
     setLoading(true);
@@ -155,7 +177,11 @@ const HospitalsList = () => {
     finally { setLoading(false); }
   };
 
-  const handleSearch = (e) => { e.preventDefault(); setSearchQuery(inputQuery); setCurrentPage(1); };
+  const handleSearch = (e) => { 
+    e.preventDefault(); 
+    setSearchQuery(inputQuery); 
+    setCurrentPage(1); 
+  };
 
   const clearFilters = () => {
     setFilters({ scheme: '', insurance: '', accreditation: '', specialty: '', minRating: 0, opdFeeMin: '', opdFeeMax: '', emergency: false, cashless: false, bedsAvailable: false });
