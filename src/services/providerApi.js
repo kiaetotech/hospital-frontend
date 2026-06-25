@@ -34,7 +34,7 @@ providerApi.interceptors.response.use(
 );
 
 // ============================================
-// HOSPITAL API
+// 🆕 HOSPITAL API - ENHANCED
 // ============================================
 
 export const hospitalApi = {
@@ -83,11 +83,73 @@ export const hospitalApi = {
   getPatient: (id) => providerApi.get(`/hospitals/patients/${id}`),
   
   // Stats
-  getStats: () => providerApi.get('/hospitals/stats')
+  getStats: () => providerApi.get('/hospitals/stats'),
+
+  // 🆕 Bed Management
+  updateBedStatus: (data) => providerApi.put('/hospitals/bed-status', data),
+  getBedStatus: () => providerApi.get('/hospitals/bed-status'),
+  
+  // 🆕 WhatsApp Bed Update
+  whatsappBedUpdate: (data) => providerApi.post('/hospitals/whatsapp-update', data),
+  
+  // 🆕 Schemes Management
+  getSchemes: () => providerApi.get('/hospitals/schemes'),
+  updateSchemes: (data) => providerApi.put('/hospitals/schemes', data),
+  
+  // 🆕 Insurance Management
+  getInsurance: () => providerApi.get('/hospitals/insurance'),
+  updateInsurance: (data) => providerApi.put('/hospitals/insurance', data),
+  
+  // 🆕 Facilities Management
+  getFacilities: () => providerApi.get('/hospitals/facilities'),
+  updateFacilities: (data) => providerApi.put('/hospitals/facilities', data),
+  
+  // 🆕 Excel Upload
+  uploadDoctorsExcel: (formData) => providerApi.post('/hospitals/upload-doctors', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  uploadHospitalDataExcel: (formData) => providerApi.post('/hospitals/upload-data', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadDoctorTemplate: () => providerApi.get('/hospitals/template/download', { 
+    responseType: 'blob' 
+  }),
+  
+  // 🆕 Dashboard Stats (Detailed)
+  getDashboardStats: () => providerApi.get('/hospitals/dashboard/stats'),
+  
+  // 🆕 Analytics
+  getAnalytics: (params) => providerApi.get('/hospitals/analytics', { params }),
+  
+  // 🆕 OPD Management
+  getOPDSchedule: () => providerApi.get('/hospitals/opd-schedule'),
+  updateOPDSchedule: (data) => providerApi.put('/hospitals/opd-schedule', data),
+  
+  // 🆕 Pricing Management
+  updatePricing: (data) => providerApi.put('/hospitals/pricing', data),
+  
+  // 🆕 Health Packages
+  getPackages: () => providerApi.get('/hospitals/packages'),
+  addPackage: (data) => providerApi.post('/hospitals/packages', data),
+  updatePackage: (id, data) => providerApi.put(`/hospitals/packages/${id}`, data),
+  deletePackage: (id) => providerApi.delete(`/hospitals/packages/${id}`),
+  
+  // 🆕 Offers Management
+  getOffers: () => providerApi.get('/hospitals/offers'),
+  addOffer: (data) => providerApi.post('/hospitals/offers', data),
+  updateOffer: (id, data) => providerApi.put(`/hospitals/offers/${id}`, data),
+  deleteOffer: (id) => providerApi.delete(`/hospitals/offers/${id}`),
+  
+  // 🆕 Activity & Ranking
+  getActivityScore: () => providerApi.get('/hospitals/activity-score'),
+  
+  // 🆕 Notifications
+  getNotifications: () => providerApi.get('/hospitals/notifications'),
+  markNotificationRead: (id) => providerApi.put(`/hospitals/notifications/${id}/read`)
 };
 
 // ============================================
-// AMBULANCE API
+// AMBULANCE API (PRESERVED)
 // ============================================
 
 export const ambulanceApi = {
@@ -117,7 +179,7 @@ export const ambulanceApi = {
 };
 
 // ============================================
-// CAREGIVER API
+// CAREGIVER API (PRESERVED)
 // ============================================
 
 export const caregiverApi = {
@@ -142,7 +204,7 @@ export const caregiverApi = {
 };
 
 // ============================================
-// DIAGNOSTICS API
+// DIAGNOSTICS API (PRESERVED)
 // ============================================
 
 export const diagnosticsApi = {
@@ -173,7 +235,7 @@ export const diagnosticsApi = {
 };
 
 // ============================================
-// LENDER API
+// LENDER API (PRESERVED)
 // ============================================
 
 export const lenderApi = {
@@ -198,7 +260,7 @@ export const lenderApi = {
 };
 
 // ============================================
-// INSURANCE API
+// INSURANCE API (PRESERVED)
 // ============================================
 
 export const insuranceApi = {
@@ -226,7 +288,7 @@ export const insuranceApi = {
 };
 
 // ============================================
-// PROVIDER AUTH (Common)
+// PROVIDER AUTH (Common) - PRESERVED
 // ============================================
 
 export const providerAuth = {
