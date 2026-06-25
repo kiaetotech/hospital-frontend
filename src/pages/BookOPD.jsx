@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { getHospitalById, bookOPD, createPaymentOrder, verifyPayment } from '../../services/api';
+import { getHospitalById, bookOPD, createPaymentOrder, verifyPayment } from '../services/api';
 
 const BookOPD = () => {
   const { id } = useParams();
