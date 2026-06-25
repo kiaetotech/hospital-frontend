@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ProviderDashboardLayout from '../../components/ProviderDashboardLayout';
-import ProviderStatsCards from '../../components/ProviderStatsCards';
-import ProviderTable from '../../components/ProviderTable';
-import { hospitalApi } from '../../services/providerApi';
-import ProviderAuth from '../../components/ProviderAuth';
+import ProviderDashboardLayout from '../../../components/ProviderDashboardLayout';
+import ProviderStatsCards from '../../../components/ProviderStatsCards';
+import ProviderTable from '../../../components/ProviderTable';
+import { hospitalApi } from '../../../services/providerApi';
+import ProviderAuth from '../../../components/ProviderAuth';
 import { 
   updateBedStatus, 
   uploadDoctorsExcel, 
@@ -19,7 +19,7 @@ import {
   removeDoctor,
   getHospitalDashboardStats,
   getHospitalBookings
-} from '../../services/api';
+} from '../../../services/api';
 
 const HospitalDashboard = () => {
   const navigate = useNavigate();

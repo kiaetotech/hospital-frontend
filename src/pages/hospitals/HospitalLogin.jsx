@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { hospitalApi } from '../../services/providerApi';
-import { sendOTP, verifyOTP } from '../../services/api';
+import { hospitalApi } from '../../../services/providerApi';
+import { sendOTP, verifyOTP } from '../../../services/api';
 
 const HospitalLogin = () => {
   const navigate = useNavigate();

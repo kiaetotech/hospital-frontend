@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProviderRegistrationLayout from '../../components/ProviderRegistrationLayout';
 import api from '../../services/api';
-import { sendOTP, verifyOTP } from '../../services/api';
+import { sendOTP, verifyOTP } from '../../../services/api';
 
 const HospitalRegister = () => {
   const navigate = useNavigate();
