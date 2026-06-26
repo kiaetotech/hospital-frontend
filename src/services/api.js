@@ -365,6 +365,33 @@ export const updateProviderProfile = (data) => api.put('/provider-auth/profile',
 export const getProviderStats = () => api.get('/provider-auth/stats');
 
 // ============================================
+// 🆕 ONLINE DOCTOR (NEW)
+// ============================================
+
+// Patient endpoints
+export const searchOnlineDoctors = (params) => api.get('/online-doctor/search', { params });
+export const getFeaturedOnlineDoctors = () => api.get('/online-doctor/doctors/featured');
+export const getOnlineDoctorById = (id) => api.get(`/online-doctor/doctor/${id}`);
+export const bookOnlineConsult = (data) => api.post('/online-doctor/book', data);
+export const getOnlineConsultations = () => api.get('/online-doctor/my-bookings');
+export const getOnlineConsultById = (id) => api.get(`/online-doctor/booking/${id}`);
+export const cancelOnlineConsult = (id, reason) => api.put(`/online-doctor/booking/${id}/cancel`, { reason });
+export const submitOnlineReview = (data) => api.post('/online-doctor/review', data);
+
+// Doctor endpoints
+export const onlineDoctorRegister = (data) => api.post('/online-doctor/doctor/register', data);
+export const onlineDoctorLogin = (data) => api.post('/online-doctor/doctor/login', data);
+export const getOnlineDoctorProfile = () => api.get('/online-doctor/doctor/profile');
+export const updateOnlineDoctorProfile = (data) => api.put('/online-doctor/doctor/profile', data);
+export const updateOnlineDoctorAvailability = (data) => api.put('/online-doctor/doctor/availability', data);
+export const getOnlineDoctorDashboard = () => api.get('/online-doctor/doctor/dashboard');
+
+// Admin endpoints
+export const getPendingOnlineDoctors = () => api.get('/online-doctor/admin/doctors/pending');
+export const getAllOnlineDoctors = () => api.get('/online-doctor/admin/doctors');
+export const verifyOnlineDoctor = (id, data) => api.put(`/online-doctor/admin/doctor/${id}/verify`, data);
+
+// ============================================
 // EXPORT DEFAULT (PRESERVED)
 // ============================================
 

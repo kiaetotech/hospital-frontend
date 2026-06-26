@@ -152,7 +152,7 @@ import DiagnosticsLogin from './pages/diagnostics/DiagnosticsLogin';
 import DiagnosticsDashboard from './pages/diagnostics/DiagnosticsDashboard';
 
 // ============================================
-// 🆕 MENTAL HEALTH & COUNSELING IMPORTS
+// MENTAL HEALTH & COUNSELING IMPORTS
 // ============================================
 import MentalHealthHub from './pages/mentalhealth/MentalHealthHub';
 import MentalHealthTherapists from './pages/mentalhealth/MentalHealthTherapists';
@@ -170,6 +170,18 @@ import TherapistRegister from './pages/mentalhealth/TherapistRegister';
 import TherapistLogin from './pages/mentalhealth/TherapistLogin';
 import TherapistDashboard from './pages/mentalhealth/TherapistDashboard';
 import TherapistEarnings from './pages/mentalhealth/TherapistEarnings';
+
+// ============================================
+// 🆕 ONLINE DOCTOR MODULE IMPORTS (NEW - 8 Lines)
+// ============================================
+import OnlineDoctorHub from './pages/online-doctor/OnlineDoctorHub';
+import DoctorSearch from './pages/online-doctor/DoctorSearch';
+import DoctorProfile from './pages/online-doctor/DoctorProfile';
+import BookOnlineConsult from './pages/online-doctor/BookOnlineConsult';
+import VideoConsult from './pages/online-doctor/VideoConsult';
+import OnlineDoctorRegister from './pages/online-doctor/DoctorRegister';
+import OnlineDoctorLogin from './pages/online-doctor/DoctorLogin';
+import OnlineDoctorDashboard from './pages/online-doctor/DoctorDashboard';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -304,9 +316,9 @@ function App() {
           <Route path="/admin/diagnostics" element={<AdminDiagnostics />} />
           <Route path="/admin/financing" element={<AdminFinancing />} />
           <Route path="/admin/users" element={<AdminUsers />} />
-	  <Route path="/admin/insurance-claims" element={<AdminInsuranceClaims />} />
-	  <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
-	  <Route path="/admin/corporate" element={<AdminCorporate />} />
+          <Route path="/admin/insurance-claims" element={<AdminInsuranceClaims />} />
+          <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
+          <Route path="/admin/corporate" element={<AdminCorporate />} />
 
           {/* ============================================
               INSURANCE MODULE ROUTES
@@ -353,7 +365,7 @@ function App() {
           <Route path="/diagnostics/dashboard" element={<DiagnosticsDashboard />} />
 
           {/* ============================================
-              🆕 MENTAL HEALTH & COUNSELING ROUTES
+              MENTAL HEALTH & COUNSELING ROUTES
           ============================================ */}
           <Route path="/mentalhealth" element={<MentalHealthHub />} />
           <Route path="/mentalhealth/therapists" element={<MentalHealthTherapists />} />
@@ -371,6 +383,18 @@ function App() {
           <Route path="/mentalhealth/therapist/login" element={<TherapistLogin />} />
           <Route path="/mentalhealth/therapist/dashboard" element={<TherapistDashboard />} />
           <Route path="/mentalhealth/therapist/earnings" element={<TherapistEarnings />} />
+
+          {/* ============================================
+              🆕 ONLINE DOCTOR ROUTES (NEW - 8 Lines)
+          ============================================ */}
+          <Route path="/online-doctor" element={<OnlineDoctorHub />} />
+          <Route path="/online-doctor/search" element={<DoctorSearch />} />
+          <Route path="/online-doctor/doctor/:id" element={<DoctorProfile />} />
+          <Route path="/online-doctor/book/:doctorId" element={<BookOnlineConsult />} />
+          <Route path="/online-doctor/consult/:bookingId" element={<VideoConsult />} />
+          <Route path="/online-doctor/register" element={<OnlineDoctorRegister />} />
+          <Route path="/online-doctor/login" element={<OnlineDoctorLogin />} />
+          <Route path="/online-doctor/dashboard" element={<OnlineDoctorDashboard />} />
 
           {/* ============================================
               OTHER TAGS (Coming Soon)
