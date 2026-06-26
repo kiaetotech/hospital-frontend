@@ -172,7 +172,7 @@ import TherapistDashboard from './pages/mentalhealth/TherapistDashboard';
 import TherapistEarnings from './pages/mentalhealth/TherapistEarnings';
 
 // ============================================
-// 🆕 ONLINE DOCTOR MODULE IMPORTS (NEW - 8 Lines)
+// 🆕 ONLINE DOCTOR MODULE IMPORTS
 // ============================================
 import OnlineDoctorHub from './pages/online-doctor/OnlineDoctorHub';
 import DoctorSearch from './pages/online-doctor/DoctorSearch';
@@ -193,34 +193,22 @@ function App() {
     <BrowserRouter>
       <LenderProvider>
         <Routes>
-          {/* ============================================
-              MAIN PAGE
-          ============================================ */}
+          {/* MAIN PAGE */}
           <Route path="/" element={<HomePage />} />
 
-          {/* ============================================
-              HOSPITALS TAG
-          ============================================ */}
+          {/* HOSPITALS TAG */}
           <Route path="/hospitals" element={<HospitalsList />} />
           <Route path="/hospital-info/:id" element={<HospitalSimpleDetails />} />
           <Route path="/emergency-search" element={<EmergencySearch />} />
-
-          {/* ============================================
-              BOOKING PAGES
-          ============================================ */}
           <Route path="/book-opd/:id" element={<BookOPD />} />
           <Route path="/book-admission/:id" element={<BookAdmission />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/my-bookings" element={<MyBookings />} />
 
-          {/* ============================================
-              AMBULANCE TAG
-          ============================================ */}
+          {/* AMBULANCE TAG */}
           <Route path="/ambulance" element={<Ambulance />} />
 
-          {/* ============================================
-              AYURVEDA & WELLNESS HUB TAG
-          ============================================ */}
+          {/* AYURVEDA TAG */}
           <Route path="/ayurveda" element={<AyurvedaHub />} />
           <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
           <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
@@ -242,9 +230,7 @@ function App() {
           <Route path="/ayurveda/prescription/write/:bookingId" element={<WritePrescription />} />
           <Route path="/ayurveda/prescription/:prescriptionId" element={<ViewPrescription />} />
 
-          {/* ============================================
-              HOMEOPATHY & NATUROPATHY TAG
-          ============================================ */}
+          {/* HOMEOPATHY TAG */}
           <Route path="/homeopathy" element={<HomeopathyHub />} />
           <Route path="/homeopathy/doctors" element={<HomeopathyDoctors />} />
           <Route path="/homeopathy/pharmacy" element={<HomeopathyPharmacy />} />
@@ -256,24 +242,18 @@ function App() {
           <Route path="/homeopathy/pharmacy/register" element={<HomeoPharmacyRegistration />} />
           <Route path="/homeopathy/centers" element={<NaturopathyCenters />} />
 
-          {/* ============================================
-              LEGAL PAGES
-          ============================================ */}
+          {/* LEGAL PAGES */}
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/refund" element={<RefundPolicy />} />
 
-          {/* ============================================
-              CAREGIVER TAG
-          ============================================ */}
+          {/* CAREGIVER TAG */}
           <Route path="/caregivers" element={<Caregivers />} />
           <Route path="/caregiver-profile/:id" element={<CaregiverProfile />} />
           <Route path="/book-caregiver/:id" element={<BookCaregiver />} />
           <Route path="/login" element={<Login />} />
 
-          {/* ============================================
-              DIAGNOSTICS TAG
-          ============================================ */}
+          {/* DIAGNOSTICS TAG */}
           <Route path="/diagnostics-list" element={<DiagnosticsList />} />
           <Route path="/diagnostics-compare-providers" element={<DiagnosticsCompareProviders />} />
           <Route path="/diagnostics-custom-package" element={<DiagnosticsCustomPackage />} />
@@ -285,23 +265,17 @@ function App() {
           <Route path="/provider-dashboard" element={<ProviderDashboard />} />
           <Route path="/admin-panel" element={<AdminPanel />} />
 
-          {/* ============================================
-              HEALTH EMI / LOAN TAG
-          ============================================ */}
+          {/* HEALTH EMI / LOAN TAG */}
           <Route path="/financing" element={<Financing />} />
 
-          {/* ============================================
-              LENDER PORTAL ROUTES
-          ============================================ */}
+          {/* LENDER PORTAL */}
           <Route path="/lender/login" element={<LenderLogin />} />
           <Route path="/lender/dashboard" element={<LenderDashboard />} />
           <Route path="/lender/applications" element={<LenderApplications />} />
           <Route path="/lender/applications/:id" element={<LenderApplicationDetail />} />
           <Route path="/lender/register" element={<LenderRegister />} />
 
-          {/* ============================================
-              ADMIN PANEL ROUTES
-          ============================================ */}
+          {/* ADMIN PANEL */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
@@ -320,9 +294,7 @@ function App() {
           <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
           <Route path="/admin/corporate" element={<AdminCorporate />} />
 
-          {/* ============================================
-              INSURANCE MODULE ROUTES
-          ============================================ */}
+          {/* INSURANCE TAG */}
           <Route path="/insurance" element={<InsuranceHub />} />
           <Route path="/insurance/list" element={<InsuranceList />} />
           <Route path="/insurance/compare" element={<InsuranceCompare />} />
@@ -334,9 +306,7 @@ function App() {
           <Route path="/insurance/company/login" element={<InsuranceCompanyLogin />} />
           <Route path="/insurance/company/dashboard" element={<InsuranceCompanyDashboard />} />
 
-          {/* ============================================
-              CORPORATE MODULE ROUTES
-          ============================================ */}
+          {/* CORPORATE TAG */}
           <Route path="/corporate" element={<CorporateHub />} />
           <Route path="/corporate/plans" element={<CorporatePlans />} />
           <Route path="/corporate/plan/:id" element={<CorporatePlanDetail />} />
@@ -348,9 +318,7 @@ function App() {
           <Route path="/corporate/employee/login" element={<EmployeeLogin />} />
           <Route path="/corporate/employee/dashboard" element={<EmployeePortal />} />
 
-          {/* ============================================
-              PROVIDER REGISTRATION ROUTES
-          ============================================ */}
+          {/* PROVIDER REGISTRATION */}
           <Route path="/hospital/register" element={<HospitalRegister />} />
           <Route path="/hospital/login" element={<HospitalLogin />} />
           <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
@@ -364,9 +332,7 @@ function App() {
           <Route path="/diagnostics/login" element={<DiagnosticsLogin />} />
           <Route path="/diagnostics/dashboard" element={<DiagnosticsDashboard />} />
 
-          {/* ============================================
-              MENTAL HEALTH & COUNSELING ROUTES
-          ============================================ */}
+          {/* MENTAL HEALTH TAG */}
           <Route path="/mentalhealth" element={<MentalHealthHub />} />
           <Route path="/mentalhealth/therapists" element={<MentalHealthTherapists />} />
           <Route path="/mentalhealth/therapist/:id" element={<MentalHealthTherapistDetail />} />
@@ -384,9 +350,7 @@ function App() {
           <Route path="/mentalhealth/therapist/dashboard" element={<TherapistDashboard />} />
           <Route path="/mentalhealth/therapist/earnings" element={<TherapistEarnings />} />
 
-          {/* ============================================
-              🆕 ONLINE DOCTOR ROUTES (NEW - 8 Lines)
-          ============================================ */}
+          {/* 🆕 ONLINE DOCTOR TAG */}
           <Route path="/online-doctor" element={<OnlineDoctorHub />} />
           <Route path="/online-doctor/search" element={<DoctorSearch />} />
           <Route path="/online-doctor/doctor/:id" element={<DoctorProfile />} />
@@ -396,12 +360,11 @@ function App() {
           <Route path="/online-doctor/login" element={<OnlineDoctorLogin />} />
           <Route path="/online-doctor/dashboard" element={<OnlineDoctorDashboard />} />
 
-          {/* ============================================
-              OTHER TAGS (Coming Soon)
-          ============================================ */}
+          {/* OLD ROUTES - Redirected */}
+          <Route path="/teleconsult" element={<OnlineDoctorHub />} />
+
+          {/* OTHER */}
           <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
-          <Route path="/teleconsult" element={<ComingSoon title="Teleconsultation" />} />
-          <Route path="/corporate" element={<ComingSoon title="Corporate Health" />} />
           <Route path="/admin/upload" element={<AdminUpload />} />
         </Routes>
       </LenderProvider>
