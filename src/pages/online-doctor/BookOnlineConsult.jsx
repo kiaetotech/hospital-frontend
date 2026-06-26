@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { getDoctorById, bookConsultation } from '../../services/onlineDoctorApi';
+import { getOnlineDoctorById, bookOnlineConsult } from '../../services/api';
 
 const BookOnlineConsult = () => {
   const { doctorId } = useParams();
@@ -30,7 +30,7 @@ const BookOnlineConsult = () => {
 
   const fetchDoctor = async () => {
     try {
-      const response = await getDoctorById(doctorId);
+      const response = await getOnlineDoctorById(doctorId);
       setDoctor(response.data?.data);
     } catch (error) {
       console.error('Error:', error);
@@ -67,7 +67,7 @@ const BookOnlineConsult = () => {
     setBooking(true);
     setError('');
     try {
-      const response = await bookConsultation({
+      const response = await bookOnlineConsult({
         doctorId,
         appointmentDate: selectedDate,
         timeSlot: selectedSlot,

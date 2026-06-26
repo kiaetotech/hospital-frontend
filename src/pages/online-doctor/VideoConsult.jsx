@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
-import { getConsultationById, submitReview } from '../../services/onlineDoctorApi';
+import { getOnlineConsultById, submitOnlineReview } from '../../services/api';
 
 const VideoConsult = () => {
   const { bookingId } = useParams();
@@ -18,7 +18,7 @@ const VideoConsult = () => {
 
   const fetchBooking = async () => {
     try {
-      const response = await getConsultationById(bookingId);
+      const response = await getOnlineConsultById(bookingId);
       setBooking(response.data?.data);
     } catch (error) {
       console.error('Error:', error);
@@ -40,7 +40,7 @@ const VideoConsult = () => {
   const handleSubmitReview = async () => {
     if (rating === 0) return;
     try {
-      await submitReview({ bookingId, rating, comment });
+      await submitOnlineReview({ bookingId, rating, comment });
       setSubmitted(true);
     } catch (error) {
       console.error('Review error:', error);

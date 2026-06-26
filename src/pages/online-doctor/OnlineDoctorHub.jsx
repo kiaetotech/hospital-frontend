@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getFeaturedDoctors } from '../../services/onlineDoctorApi';
+import { getFeaturedOnlineDoctors } from '../../services/api';
 
 const OnlineDoctorHub = () => {
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ const OnlineDoctorHub = () => {
 
   const fetchFeaturedDoctors = async () => {
     try {
-      const response = await getFeaturedDoctors();
+      const response = await getFeaturedOnlineDoctors();
       setFeaturedDoctors(response.data?.data || []);
     } catch (error) {
       console.error('Error:', error);

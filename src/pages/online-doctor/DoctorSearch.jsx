@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { searchDoctors } from '../../services/onlineDoctorApi';
+import { searchOnlineDoctors } from '../../services/api';
 
 const DoctorSearch = () => {
   const [searchParams] = useSearchParams();
@@ -40,7 +40,7 @@ const DoctorSearch = () => {
       if (filters.sort) params.sort = filters.sort;
       params.page = filters.page;
 
-      const response = await searchDoctors(params);
+      const response = await searchOnlineDoctors(params);
       setDoctors(response.data?.data || []);
       setPagination(response.data?.pagination || { page: 1, total: 0, pages: 1 });
     } catch (error) {

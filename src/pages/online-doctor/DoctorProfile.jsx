@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getDoctorById } from '../../services/onlineDoctorApi';
-
+import { getOnlineDoctorById } from '../../services/api';
 const DoctorProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -15,7 +14,7 @@ const DoctorProfile = () => {
 
   const fetchDoctor = async () => {
     try {
-      const response = await getDoctorById(id);
+      const response = await getOnlineDoctorById(id);
       setDoctor(response.data?.data);
     } catch (error) {
       console.error('Error:', error);

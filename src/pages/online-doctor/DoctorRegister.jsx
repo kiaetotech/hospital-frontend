@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { doctorRegister } from '../../services/onlineDoctorApi';
+import { onlineDoctorRegister } from '../../services/api';
 
 const DoctorRegister = () => {
   const navigate = useNavigate();
@@ -59,7 +59,7 @@ const DoctorRegister = () => {
         languages: form.languages.split(',').map(l => l.trim()).filter(l => l),
         gender: form.gender, about: form.about
       };
-      await doctorRegister(data);
+      await onlineDoctorRegister(data);
       setSuccess('Registration submitted! Redirecting to login...');
       setTimeout(() => navigate('/online-doctor/login'), 2000);
     } catch (err) {

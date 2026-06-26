@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { doctorLogin } from '../../services/onlineDoctorApi';
+import { onlineDoctorLogin } from '../../services/api';
 
 const DoctorLogin = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const DoctorLogin = () => {
     setError('');
     setLoading(true);
     try {
-      const response = await doctorLogin(form);
+      const response = await onlineDoctorLogin(form);
       localStorage.setItem('doctorToken', response.data?.token);
       localStorage.setItem('doctorData', JSON.stringify(response.data?.doctor));
       navigate('/online-doctor/dashboard');
@@ -39,20 +39,45 @@ const DoctorLogin = () => {
           {error && <div className="bg-red-50 text-red-600 p-4 rounded-2xl mb-4 text-sm">{error}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="Email Address" className="w-full border-2 rounded-2xl px-5 py-4 outline-none focus:border-blue-400 transition" required />
-            <input name="password" type="password" value={form.password} onChange={handleChange} placeholder="Password" className="w-full border-2 rounded-2xl px-5 py-4 outline-none focus:border-blue-400 transition" required />
-            <button type="submit" disabled={loading} className={`w-full py-4 rounded-2xl font-bold text-white transition shadow-lg ${
-              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-            }`}>
+            <input
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Email Address"
+              className="w-full border-2 rounded-2xl px-5 py-4 outline-none focus:border-blue-400 transition"
+              required
+            />
+            <input
+              name="password"
+              type="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Password"
+              className="w-full border-2 rounded-2xl px-5 py-4 outline-none focus:border-blue-400 transition"
+              required
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-4 rounded-2xl font-bold text-white transition shadow-lg ${
+                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
           <p className="text-center text-gray-500 mt-6">
-            Not registered? <Link to="/online-doctor/register" className="text-blue-600 hover:underline font-medium">Register as Doctor</Link>
+            Not registered?{' '}
+            <Link to="/online-doctor/register" className="text-blue-600 hover:underline font-medium">
+              Register as Doctor
+            </Link>
           </p>
           <p className="text-center mt-2">
-            <Link to="/online-doctor" className="text-gray-400 text-sm hover:underline">← Back to Online Doctor</Link>
+            <Link to="/online-doctor" className="text-gray-400 text-sm hover:underline">
+              ← Back to Online Doctor
+            </Link>
           </p>
         </div>
       </div>
