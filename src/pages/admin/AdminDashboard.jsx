@@ -32,12 +32,12 @@ const AdminDashboard = () => {
     ambulance: 0,
     caregivers: 0,
     diagnostics: 0,
-    mentalHealth: 0
+    mentalHealth: 0,
+    onlineDoctor: 0,
+    insurance: 0,
+    users: 0
   });
 
-  // ============================================
-  // MENTAL HEALTH STATE
-  // ============================================
   const [mentalHealthStats, setMentalHealthStats] = useState({
     therapists: { total: 0, pending: 0, approved: 0, rejected: 0 },
     screenings: { total: 0, requiresEmergency: 0 },
@@ -151,12 +151,14 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('adminToken');
       const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
-      const [hospitalsRes, ambulanceRes, caregiversRes, diagnosticsRes, mentalHealthRes] = await Promise.all([
+      const [hospitalsRes, ambulanceRes, caregiversRes, diagnosticsRes, mentalHealthRes, onlineDoctorRes, usersRes] = await Promise.all([
         axios.get('/api/hospitals/admin/stats', config).catch(() => ({ data: { data: {} } })),
         axios.get('/api/ambulance/admin/stats', config).catch(() => ({ data: { data: {} } })),
         axios.get('/api/caregivers/admin/stats', config).catch(() => ({ data: { data: {} } })),
         axios.get('/api/diagnostics/admin/stats', config).catch(() => ({ data: { data: {} } })),
-        axios.get('/api/mentalhealth/admin/stats', config).catch(() => ({ data: { data: {} } }))
+        axios.get('/api/mentalhealth/admin/stats', config).catch(() => ({ data: { data: {} } })),
+        axios.get('/api/online-doctor/admin/doctors', config).catch(() => ({ data: { data: [] } })),
+        axios.get('/api/admin/users', config).catch(() => ({ data: { data: [] } }))
       ]);
 
       setModuleStats({
@@ -164,7 +166,10 @@ const AdminDashboard = () => {
         ambulance: ambulanceRes.data?.data?.totalAmbulances || 0,
         caregivers: caregiversRes.data?.data?.totalCaregivers || 0,
         diagnostics: diagnosticsRes.data?.data?.totalLabs || 0,
-        mentalHealth: mentalHealthRes.data?.data?.totalTherapists || 0
+        mentalHealth: mentalHealthRes.data?.data?.totalTherapists || 0,
+        onlineDoctor: onlineDoctorRes.data?.data?.length || 0,
+        insurance: insuranceStats.companies.total || 0,
+        users: usersRes.data?.data?.length || 0
       });
 
     } catch (error) {
@@ -172,9 +177,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ============================================
-  // FETCH MENTAL HEALTH DATA
-  // ============================================
   const fetchMentalHealthData = async () => {
     try {
       const token = localStorage.getItem('adminToken');
@@ -233,65 +235,27 @@ const AdminDashboard = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Admin Dashboard</h1>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => navigate('/admin/verify-lenders')}
-              style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-            >
-              Verify Lenders
-            </button>
-            <button
-              onClick={() => navigate('/admin/commission')}
-              style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-            >
-              Commission Report
-            </button>
-            <button
-              onClick={() => navigate('/admin/finance')}
-              style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-            >
-              💰 Finance
-            </button>
-            <button
-              onClick={() => navigate('/admin/ayurveda')}
-              style={{ backgroundColor: '#4CAF50', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-            >
-              🧘 Ayurveda
-            </button>
-            <button
-              onClick={() => navigate('/admin/homeopathy')}
-              style={{ backgroundColor: '#7C3AED', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-            >
-              🌿 Homeopathy
-            </button>
-            <button
-              onClick={() => navigate('/admin/corporate')}
-              style={{ backgroundColor: '#1e3a5f', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-            >
-              🏢 Corporate
-            </button>
-            {/* 🆕 MENTAL HEALTH BUTTON */}
-            <button
-              onClick={() => navigate('/admin/mentalhealth')}
-              style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-            >
-              🧠 Mental Health
-            </button>
-            <button
-              onClick={handleLogout}
-              style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-            >
-              Logout
-            </button>
+            <button onClick={() => navigate('/admin/verify-lenders')} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>Verify Lenders</button>
+            <button onClick={() => navigate('/admin/commission')} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>Commission Report</button>
+            <button onClick={() => navigate('/admin/finance')} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>💰 Finance</button>
+            <button onClick={() => navigate('/admin/ayurveda')} style={{ backgroundColor: '#4CAF50', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🧘 Ayurveda</button>
+            <button onClick={() => navigate('/admin/homeopathy')} style={{ backgroundColor: '#7C3AED', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🌿 Homeopathy</button>
+            <button onClick={() => navigate('/admin/corporate')} style={{ backgroundColor: '#1e3a5f', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🏢 Corporate</button>
+            <button onClick={() => navigate('/admin/mentalhealth')} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🧠 Mental Health</button>
+            <button onClick={() => navigate('/admin/online-doctor')} style={{ backgroundColor: '#0891b2', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>📱 Online Doctor</button>
+            <button onClick={() => navigate('/admin/diagnostics')} style={{ backgroundColor: '#06b6d4', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🔬 Diagnostics</button>
+            <button onClick={() => navigate('/admin/insurance-claims')} style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🛡️ Insurance</button>
+            <button onClick={() => navigate('/admin/hospitals')} style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🏥 Hospitals</button>
+            <button onClick={() => navigate('/admin/ambulance')} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🚑 Ambulance</button>
+            <button onClick={() => navigate('/admin/caregivers')} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>🏠 Caregivers</button>
+            <button onClick={() => navigate('/admin/financing')} style={{ backgroundColor: '#059669', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>💰 Financing</button>
+            <button onClick={() => navigate('/admin/users')} style={{ backgroundColor: '#4b5563', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>👥 Users</button>
+            <button onClick={handleLogout} style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>Logout</button>
           </div>
         </div>
 
-        {/* Module Stats Cards - Added Mental Health */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
-          gap: '1rem',
-          marginBottom: '2rem'
-        }}>
+        {/* Module Stats Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
           <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #2563eb' }}>
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏥 Hospitals</p>
             <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.hospitals || 0}</p>
@@ -312,72 +276,30 @@ const AdminDashboard = () => {
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🏢 Corporate</p>
             <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{corporateStats.totalPlans || 0}</p>
           </div>
-          {/* 🆕 MENTAL HEALTH CARD */}
           <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #8b5cf6' }}>
             <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🧠 Mental Health</p>
             <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.mentalHealth || 0}</p>
           </div>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #0891b2' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>📱 Online Doctor</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.onlineDoctor || 0}</p>
+          </div>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #2563eb' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>🛡️ Insurance</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.insurance || 0}</p>
+          </div>
+          <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #4b5563' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>👥 Users</p>
+            <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{moduleStats.users || 0}</p>
+          </div>
         </div>
 
-        {/* Tab Navigation - Added Mental Health Tab */}
+        {/* Tab Navigation */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setActiveTab('lenders')}
-            style={{
-              padding: '0.5rem 1.5rem',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              backgroundColor: activeTab === 'lenders' ? '#3b82f6' : 'transparent',
-              color: activeTab === 'lenders' ? 'white' : '#6b7280',
-              fontWeight: activeTab === 'lenders' ? 'bold' : 'normal'
-            }}
-          >
-            💰 Lenders & Commission
-          </button>
-          <button
-            onClick={() => setActiveTab('insurance')}
-            style={{
-              padding: '0.5rem 1.5rem',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              backgroundColor: activeTab === 'insurance' ? '#2563eb' : 'transparent',
-              color: activeTab === 'insurance' ? 'white' : '#6b7280',
-              fontWeight: activeTab === 'insurance' ? 'bold' : 'normal'
-            }}
-          >
-            🛡️ Insurance Module
-          </button>
-          <button
-            onClick={() => setActiveTab('corporate')}
-            style={{
-              padding: '0.5rem 1.5rem',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              backgroundColor: activeTab === 'corporate' ? '#1e3a5f' : 'transparent',
-              color: activeTab === 'corporate' ? 'white' : '#6b7280',
-              fontWeight: activeTab === 'corporate' ? 'bold' : 'normal'
-            }}
-          >
-            🏢 Corporate Health & Insurance
-          </button>
-          {/* 🆕 MENTAL HEALTH TAB */}
-          <button
-            onClick={() => setActiveTab('mentalhealth')}
-            style={{
-              padding: '0.5rem 1.5rem',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              backgroundColor: activeTab === 'mentalhealth' ? '#8b5cf6' : 'transparent',
-              color: activeTab === 'mentalhealth' ? 'white' : '#6b7280',
-              fontWeight: activeTab === 'mentalhealth' ? 'bold' : 'normal'
-            }}
-          >
-            🧠 Mental Health
-          </button>
+          <button onClick={() => setActiveTab('lenders')} style={{ padding: '0.5rem 1.5rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', backgroundColor: activeTab === 'lenders' ? '#3b82f6' : 'transparent', color: activeTab === 'lenders' ? 'white' : '#6b7280', fontWeight: activeTab === 'lenders' ? 'bold' : 'normal' }}>💰 Lenders & Commission</button>
+          <button onClick={() => setActiveTab('insurance')} style={{ padding: '0.5rem 1.5rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', backgroundColor: activeTab === 'insurance' ? '#2563eb' : 'transparent', color: activeTab === 'insurance' ? 'white' : '#6b7280', fontWeight: activeTab === 'insurance' ? 'bold' : 'normal' }}>🛡️ Insurance Module</button>
+          <button onClick={() => setActiveTab('corporate')} style={{ padding: '0.5rem 1.5rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', backgroundColor: activeTab === 'corporate' ? '#1e3a5f' : 'transparent', color: activeTab === 'corporate' ? 'white' : '#6b7280', fontWeight: activeTab === 'corporate' ? 'bold' : 'normal' }}>🏢 Corporate Health & Insurance</button>
+          <button onClick={() => setActiveTab('mentalhealth')} style={{ padding: '0.5rem 1.5rem', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', backgroundColor: activeTab === 'mentalhealth' ? '#8b5cf6' : 'transparent', color: activeTab === 'mentalhealth' ? 'white' : '#6b7280', fontWeight: activeTab === 'mentalhealth' ? 'bold' : 'normal' }}>🧠 Mental Health</button>
         </div>
 
         {/* TAB 1: LENDERS & COMMISSION */}
@@ -432,23 +354,10 @@ const AdminDashboard = () => {
                         <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{lender.businessName}</td>
                         <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{lender.email}</td>
                         <td style={{ padding: '0.75rem' }}>
-                          <span style={{ 
-                            backgroundColor: lender.status === 'active' ? '#10b981' : lender.status === 'pending' ? '#f59e0b' : '#ef4444',
-                            color: 'white',
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.75rem'
-                          }}>
-                            {lender.status}
-                          </span>
+                          <span style={{ backgroundColor: lender.status === 'active' ? '#10b981' : lender.status === 'pending' ? '#f59e0b' : '#ef4444', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>{lender.status}</span>
                         </td>
                         <td style={{ padding: '0.75rem' }}>
-                          <button
-                            onClick={() => navigate(`/admin/lenders/${lender.lenderId}`)}
-                            style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
-                          >
-                            View
-                          </button>
+                          <button onClick={() => navigate(`/admin/lenders/${lender.lenderId}`)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>View</button>
                         </td>
                       </tr>
                     ))}
@@ -521,9 +430,7 @@ const AdminDashboard = () => {
                         <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{company.email}</td>
                         <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{company.irdaRegistration || 'N/A'}</td>
                         <td style={{ padding: '0.75rem' }}>
-                          <span style={{ backgroundColor: company.isVerified ? '#10b981' : '#f59e0b', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
-                            {company.isVerified ? '✅ Verified' : '⏳ Pending'}
-                          </span>
+                          <span style={{ backgroundColor: company.isVerified ? '#10b981' : '#f59e0b', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>{company.isVerified ? '✅ Verified' : '⏳ Pending'}</span>
                         </td>
                         <td style={{ padding: '0.75rem' }}>
                           <button onClick={() => navigate(`/admin/insurance/companies/${company._id}`)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>View</button>
@@ -623,9 +530,7 @@ const AdminDashboard = () => {
                         <td style={{ padding: '0.75rem' }}>Sample Corp</td>
                         <td style={{ padding: '0.75rem' }}>Group Health Plan</td>
                         <td style={{ padding: '0.75rem' }}>50</td>
-                        <td style={{ padding: '0.75rem' }}>
-                          <span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>Pending</span>
-                        </td>
+                        <td style={{ padding: '0.75rem' }}><span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>Pending</span></td>
                       </tr>
                     </tbody>
                   </table>
@@ -635,7 +540,7 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {/* 🆕 TAB 4: MENTAL HEALTH */}
+        {/* TAB 4: MENTAL HEALTH */}
         {activeTab === 'mentalhealth' && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
@@ -689,25 +594,10 @@ const AdminDashboard = () => {
                         <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{therapist.specializations?.join(', ') || 'N/A'}</td>
                         <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{therapist.phone}</td>
                         <td style={{ padding: '0.75rem' }}>
-                          <span style={{ 
-                            backgroundColor: therapist.verificationStatus === 'approved' ? '#10b981' : 
-                                          therapist.verificationStatus === 'pending' ? '#f59e0b' : '#ef4444',
-                            color: 'white',
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.75rem'
-                          }}>
-                            {therapist.verificationStatus === 'approved' ? '✅ Approved' : 
-                             therapist.verificationStatus === 'pending' ? '⏳ Pending' : '❌ Rejected'}
-                          </span>
+                          <span style={{ backgroundColor: therapist.verificationStatus === 'approved' ? '#10b981' : therapist.verificationStatus === 'pending' ? '#f59e0b' : '#ef4444', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>{therapist.verificationStatus === 'approved' ? '✅ Approved' : therapist.verificationStatus === 'pending' ? '⏳ Pending' : '❌ Rejected'}</span>
                         </td>
                         <td style={{ padding: '0.75rem' }}>
-                          <button 
-                            onClick={() => navigate(`/admin/mentalhealth/therapist/${therapist._id}`)}
-                            style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
-                          >
-                            View
-                          </button>
+                          <button onClick={() => navigate(`/admin/mentalhealth/therapist/${therapist._id}`)} style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>View</button>
                         </td>
                       </tr>
                     ))}
