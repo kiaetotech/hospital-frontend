@@ -184,6 +184,7 @@ import OnlineDoctorRegister from './pages/online-doctor/DoctorRegister';
 import OnlineDoctorLogin from './pages/online-doctor/DoctorLogin';
 import OnlineDoctorDashboard from './pages/online-doctor/DoctorDashboard';
 import ConsultHistory from './pages/online-doctor/ConsultHistory';
+import ResetPassword from './pages/online-doctor/ResetPassword';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -363,6 +364,8 @@ function App() {
           <Route path="/online-doctor/login" element={<OnlineDoctorLogin />} />
           <Route path="/online-doctor/dashboard" element={<OnlineDoctorDashboard />} />
           <Route path="/online-doctor/history" element={<ConsultHistory />} />
+	  <Route path="/online-doctor/reset-password/:token" element={<ResetPassword />} />
+
 
           {/* OLD ROUTES - Redirected */}
           <Route path="/teleconsult" element={<OnlineDoctorHub />} />

@@ -56,12 +56,13 @@ const VideoConsult = () => {
   };
 
   const handleJoinCall = () => {
-    checkNetworkQuality();
-    setShowVideo(true);
-    setStatus('in-call');
+  checkNetworkQuality();
+  setShowVideo(true);
+  setStatus('in-call');
 
-    setTimeout(() => {
-      if (jitsiContainerRef.current && !jitsiApiRef.current) {
+  setTimeout(() => {
+    if (jitsiContainerRef.current) {
+      try {
         const roomName = `HealthCareHub_${bookingId}`;
         const domain = 'meet.jit.si';
         const options = {
@@ -71,11 +72,6 @@ const VideoConsult = () => {
             prejoinPageEnabled: false,
             startWithAudioMuted: false,
             startWithVideoMuted: false,
-            disableDeepLinking: true,
-          },
-          interfaceConfigOverrides: {
-            TOOLBAR_ALWAYS_VISIBLE: true,
-            DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
           },
           userInfo: { displayName: booking?.patientName || 'Patient' }
         };
@@ -83,10 +79,20 @@ const VideoConsult = () => {
         if (window.JitsiMeetExternalAPI) {
           jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
           jitsiApiRef.current.addListener('readyToClose', () => handleEndCall());
+        } else {
+          // Fallback: open in new window
+          window.open(`https://meet.jit.si/${roomName}`, '_blank', 'width=1024,height=768');
+          setShowVideo(false);
         }
+      } catch (err) {
+        // Ultimate fallback
+        const roomName = `HealthCareHub_${bookingId}`;
+        window.open(`https://meet.jit.si/${roomName}`, '_blank', 'width=1024,height=768');
+        setShowVideo(false);
       }
-    }, 1000);
-  };
+    }
+  }, 1000);
+};
 
   const handleEndCall = () => {
     if (jitsiApiRef.current) {
