@@ -43,7 +43,10 @@ const DoctorDashboard = () => {
         const response = await uploadFile(file, 'doctor-documents');
         const url = response.data?.url;
         const token = localStorage.getItem('doctorToken');
-        await api.put('/online-doctor/doctor/documents', { documents: { [type]: url } }, { headers: { Authorization: `Bearer ${token}` } });
+        await api.put('/online-doctor/doctor/documents', 
+          { documents: { [type]: url } }, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         alert('Document uploaded!');
         fetchDashboard();
       } catch (error) {
@@ -71,6 +74,7 @@ const DoctorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -104,7 +108,7 @@ const DoctorDashboard = () => {
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="border-b flex overflow-x-auto">
-            {['overview', 'appointments', 'earnings', 'documents'].map((tab) => (
+            {['overview', 'appointments', 'earnings', 'documents', 'analytics'].map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-6 py-4 font-medium text-sm capitalize whitespace-nowrap transition ${activeTab === tab ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
                 {tab}
@@ -113,6 +117,7 @@ const DoctorDashboard = () => {
           </div>
 
           <div className="p-6">
+            {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
               <div className="text-center py-12">
                 <div className="text-5xl mb-4">👋</div>
@@ -132,6 +137,7 @@ const DoctorDashboard = () => {
               </div>
             )}
 
+            {/* APPOINTMENTS TAB */}
             {activeTab === 'appointments' && (
               <div>
                 <h3 className="font-bold text-gray-800 mb-4">Today's Appointments</h3>
@@ -158,6 +164,7 @@ const DoctorDashboard = () => {
               </div>
             )}
 
+            {/* EARNINGS TAB */}
             {activeTab === 'earnings' && (
               <div>
                 <h3 className="font-bold text-gray-800 mb-6">Earnings Overview</h3>
@@ -181,6 +188,7 @@ const DoctorDashboard = () => {
               </div>
             )}
 
+            {/* DOCUMENTS TAB */}
             {activeTab === 'documents' && (
               <div>
                 <h3 className="font-bold text-gray-800 mb-4">Upload Documents</h3>
@@ -199,6 +207,54 @@ const DoctorDashboard = () => {
                       <p className="text-xs text-gray-400 mt-1">Click to upload</p>
                     </button>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* ANALYTICS TAB */}
+            {activeTab === 'analytics' && (
+              <div>
+                <h3 className="font-bold text-gray-800 mb-6">Performance Analytics</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  <div className="bg-white rounded-xl p-4 text-center border">
+                    <p className="text-2xl font-bold text-green-600">{dashboard?.todayCount || 0}</p>
+                    <p className="text-xs text-gray-500">Today's Bookings</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center border">
+                    <p className="text-2xl font-bold text-blue-600">{dashboard?.totalConsultations || 0}</p>
+                    <p className="text-xs text-gray-500">Total Consultations</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center border">
+                    <p className="text-2xl font-bold text-purple-600">{dashboard?.completedConsultations || 0}</p>
+                    <p className="text-xs text-gray-500">Completed</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center border">
+                    <p className="text-2xl font-bold text-orange-600">₹{dashboard?.totalEarnings || 0}</p>
+                    <p className="text-xs text-gray-500">Total Revenue</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <h4 className="font-semibold text-gray-700 mb-4">Commission Progress</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Current Tier</span>
+                      <span className="font-bold text-blue-600">{(dashboard?.commissionSlab || 'default').toUpperCase()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Current Rate</span>
+                      <span className="font-bold">{dashboard?.commissionPercentage || 25}%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Next Tier</span>
+                      <span className="font-bold text-green-600">
+                        {dashboard?.commissionSlab === 'default' && 'Silver (22%)'}
+                        {dashboard?.commissionSlab === 'silver' && 'Gold (20%)'}
+                        {dashboard?.commissionSlab === 'gold' && 'Platinum (15%)'}
+                        {dashboard?.commissionSlab === 'platinum' && 'Diamond (12%)'}
+                        {dashboard?.commissionSlab === 'diamond' && '🏆 Max Tier'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
