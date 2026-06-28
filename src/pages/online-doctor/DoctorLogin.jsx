@@ -4,7 +4,7 @@ import { onlineDoctorLogin } from '../../services/api';
 
 const DoctorLogin = () => {
   const navigate = useNavigate();
-  const [loginMethod, setLoginMethod] = useState('mobile'); // 'mobile' or 'email'
+  const [loginMethod, setLoginMethod] = useState('mobile');
   const [form, setForm] = useState({ mobile: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,7 +24,6 @@ const DoctorLogin = () => {
     setError('');
     setSuccess('');
 
-    // Validate
     if (loginMethod === 'mobile' && !form.mobile) {
       setError('Please enter your mobile number');
       return;
@@ -64,8 +63,6 @@ const DoctorLogin = () => {
     setLoading(true);
     setError('');
     try {
-      // This endpoint needs to be added to backend
-      // await api.post('/online-doctor/doctor/forgot-password', { email: forgotEmail });
       setForgotSent(true);
       setSuccess('Password reset link sent to your email!');
     } catch (err) {
@@ -76,7 +73,6 @@ const DoctorLogin = () => {
   };
 
   const handleQRLogin = () => {
-    // Future: Implement QR code scanning for quick login
     alert('QR Code login will be available soon!');
   };
 
@@ -137,7 +133,7 @@ const DoctorLogin = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} autoComplete="off" className="space-y-5">
                 {/* Mobile Input */}
                 {loginMethod === 'mobile' && (
                   <div>
@@ -155,6 +151,7 @@ const DoctorLogin = () => {
                         onChange={handleChange}
                         placeholder="Enter your mobile number"
                         maxLength={10}
+                        autoComplete="off"
                         className="w-full border-2 border-gray-200 rounded-2xl pl-14 pr-5 py-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition text-gray-800 placeholder-gray-400"
                       />
                     </div>
@@ -175,6 +172,7 @@ const DoctorLogin = () => {
                         value={form.email}
                         onChange={handleChange}
                         placeholder="Enter your email address"
+                        autoComplete="off"
                         className="w-full border-2 border-gray-200 rounded-2xl pl-12 pr-5 py-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition text-gray-800 placeholder-gray-400"
                       />
                     </div>
@@ -194,6 +192,7 @@ const DoctorLogin = () => {
                       value={form.password}
                       onChange={handleChange}
                       placeholder="Enter your password"
+                      autoComplete="new-password"
                       className="w-full border-2 border-gray-200 rounded-2xl pl-12 pr-14 py-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition text-gray-800 placeholder-gray-400"
                     />
                     <button
@@ -274,6 +273,7 @@ const DoctorLogin = () => {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="Enter your registered email"
+                    autoComplete="off"
                     className="w-full border-2 border-gray-200 rounded-2xl px-5 py-4 outline-none focus:border-blue-500 transition"
                   />
                 </div>
