@@ -211,51 +211,58 @@ const DoctorDashboard = () => {
               </div>
             )}
 
+            {/* ANALYTICS TAB */}
             {activeTab === 'analytics' && (
-  <div>
-    <h3 className="font-bold text-gray-800 mb-6">Performance Analytics</h3>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div className="bg-white rounded-xl p-4 text-center border">
-        <p className="text-2xl font-bold text-green-600">{dashboard?.todayCount || 0}</p>
-        <p className="text-xs text-gray-500">Today's Bookings</p>
-      </div>
-      <div className="bg-white rounded-xl p-4 text-center border">
-        <p className="text-2xl font-bold text-blue-600">{dashboard?.totalConsultations || 0}</p>
-        <p className="text-xs text-gray-500">Total Consultations</p>
-      </div>
-      <div className="bg-white rounded-xl p-4 text-center border">
-        <p className="text-2xl font-bold text-purple-600">{dashboard?.completedConsultations || 0}</p>
-        <p className="text-xs text-gray-500">Completed</p>
-      </div>
-      <div className="bg-white rounded-xl p-4 text-center border">
-        <p className="text-2xl font-bold text-orange-600">₹{dashboard?.totalEarnings || 0}</p>
-        <p className="text-xs text-gray-500">Total Revenue</p>
+              <div>
+                <h3 className="font-bold text-gray-800 mb-6">Performance Analytics</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  <div className="bg-white rounded-xl p-4 text-center border">
+                    <p className="text-2xl font-bold text-green-600">{dashboard?.todayCount || 0}</p>
+                    <p className="text-xs text-gray-500">Today's Bookings</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center border">
+                    <p className="text-2xl font-bold text-blue-600">{dashboard?.totalConsultations || 0}</p>
+                    <p className="text-xs text-gray-500">Total Consultations</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center border">
+                    <p className="text-2xl font-bold text-purple-600">{dashboard?.completedConsultations || 0}</p>
+                    <p className="text-xs text-gray-500">Completed</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center border">
+                    <p className="text-2xl font-bold text-orange-600">₹{dashboard?.totalEarnings || 0}</p>
+                    <p className="text-xs text-gray-500">Total Revenue</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <h4 className="font-semibold text-gray-700 mb-4">Commission Progress</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Current Tier</span>
+                      <span className="font-bold text-blue-600">{(dashboard?.commissionSlab || 'default').toUpperCase()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Current Rate</span>
+                      <span className="font-bold">{dashboard?.commissionPercentage || 25}%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Next Tier</span>
+                      <span className="font-bold text-green-600">
+                        {dashboard?.commissionSlab === 'default' && 'Silver (22%) - Need 50+ consults & 4.2+ rating'}
+                        {dashboard?.commissionSlab === 'silver' && 'Gold (20%) - Need 200+ consults & 4.5+ rating'}
+                        {dashboard?.commissionSlab === 'gold' && 'Platinum (15%) - Need 500+ consults & 4.8+ rating'}
+                        {dashboard?.commissionSlab === 'platinum' && 'Diamond (12%) - Need 1000+ consults & 4.9+ rating'}
+                        {dashboard?.commissionSlab === 'diamond' && '🏆 Maximum tier achieved!'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
-    <div className="bg-gray-50 rounded-2xl p-6">
-      <h4 className="font-semibold text-gray-700 mb-4">Commission Progress</h4>
-      <div className="space-y-3">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Current Tier</span>
-          <span className="font-bold text-blue-600">{(dashboard?.commissionSlab || 'default').toUpperCase()}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Current Rate</span>
-          <span className="font-bold">{dashboard?.commissionPercentage || 25}%</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Next Tier</span>
-          <span className="font-bold text-green-600">
-            {dashboard?.commissionSlab === 'default' && 'Silver (22%) - Need 50+ consults & 4.2+ rating'}
-            {dashboard?.commissionSlab === 'silver' && 'Gold (20%) - Need 200+ consults & 4.5+ rating'}
-            {dashboard?.commissionSlab === 'gold' && 'Platinum (15%) - Need 500+ consults & 4.8+ rating'}
-            {dashboard?.commissionSlab === 'platinum' && 'Diamond (12%) - Need 1000+ consults & 4.9+ rating'}
-            {dashboard?.commissionSlab === 'diamond' && '🏆 Maximum tier achieved!'}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+  );
+};
 
 export default DoctorDashboard;
