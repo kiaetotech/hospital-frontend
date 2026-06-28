@@ -106,6 +106,7 @@ import AdminDiagnostics from './pages/admin/AdminDiagnostics';
 import AdminFinancing from './pages/admin/AdminFinancing';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminInsuranceClaims from './pages/admin/AdminInsuranceClaims';
+import AdminOnlineDoctor from './pages/admin/AdminOnlineDoctor';
 
 // ============================================
 // INSURANCE MODULE IMPORTS
@@ -293,6 +294,7 @@ function App() {
           <Route path="/admin/insurance-claims" element={<AdminInsuranceClaims />} />
           <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
           <Route path="/admin/corporate" element={<AdminCorporate />} />
+          <Route path="/admin/online-doctor" element={<AdminOnlineDoctor />} />
 
           {/* INSURANCE TAG */}
           <Route path="/insurance" element={<InsuranceHub />} />
