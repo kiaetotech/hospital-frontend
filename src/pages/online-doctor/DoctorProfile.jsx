@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getOnlineDoctorById } from '../../services/api';
+import { getOnlineDoctorById, getReviews } from '../../services/api';
+
 const DoctorProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('about');
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   useEffect(() => {
     fetchDoctor();
   }, [id]);
+
+  useEffect(() => {
+    if (selectedTab === 'reviews' && doctor) {
+      fetchReviews();
+    }
+  }, [selectedTab, doctor]);
 
   const fetchDoctor = async () => {
     try {
@@ -23,13 +32,22 @@ const DoctorProfile = () => {
     }
   };
 
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const response = await getReviews({ providerId: doctor._id });
+      setReviews(response.data?.data || []);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin text-5xl mb-4">⏳</div>
-          <p className="text-gray-500">Loading doctor profile...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -51,7 +69,6 @@ const DoctorProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-5xl mx-auto px-4 py-3">
           <Link to="/online-doctor/search" className="text-blue-600 hover:underline text-sm">← Back to Search</Link>
@@ -60,7 +77,6 @@ const DoctorProfile = () => {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="bg-white rounded-3xl shadow-md overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white p-8 md:p-10">
             <div className="flex flex-col md:flex-row items-start gap-6">
               <div className="w-28 h-28 bg-white rounded-3xl flex items-center justify-center text-5xl flex-shrink-0 shadow-lg">
@@ -78,39 +94,25 @@ const DoctorProfile = () => {
                   <span className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
                     ⭐ {doctor.ratingSummary?.averageRating || 'New'} ({doctor.ratingSummary?.totalReviews || 0} reviews)
                   </span>
-                  <span className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
-                    📅 {doctor.experience} Years Exp
-                  </span>
-                  <span className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
-                    🎓 {doctor.qualification}
-                  </span>
+                  <span className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">📅 {doctor.experience} Years Exp</span>
+                  <span className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">🎓 {doctor.qualification}</span>
                 </div>
-                <p className="text-sm text-blue-200 mt-2">Reg. No: {doctor.registrationNumber} | {doctor.medicalCouncil || 'MCI'}</p>
+                <p className="text-sm text-blue-200 mt-2">Reg. No: {doctor.registrationNumber}</p>
               </div>
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="border-b flex overflow-x-auto">
             {['about', 'availability', 'reviews'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSelectedTab(tab)}
-                className={`px-6 py-4 font-medium text-sm transition capitalize whitespace-nowrap ${
-                  selectedTab === tab
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
+              <button key={tab} onClick={() => setSelectedTab(tab)}
+                className={`px-6 py-4 font-medium text-sm transition capitalize whitespace-nowrap ${selectedTab === tab ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
                 {tab}
               </button>
             ))}
           </div>
 
-          {/* Tab Content + Booking Card */}
           <div className="p-6 md:p-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Main Content */}
               <div className="lg:col-span-2">
                 {selectedTab === 'about' && (
                   <div className="space-y-6">
@@ -123,12 +125,9 @@ const DoctorProfile = () => {
                     <div>
                       <h3 className="text-lg font-bold text-gray-800 mb-2">Qualification</h3>
                       <p className="text-gray-600 font-medium">{doctor.qualification}</p>
-                      {doctor.subSpecialization && (
-                        <p className="text-gray-500 text-sm mt-1">Sub-specialization: {doctor.subSpecialization}</p>
-                      )}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-gray-800 mb-2">Languages Spoken</h3>
+                      <h3 className="text-lg font-bold text-gray-800 mb-2">Languages</h3>
                       <div className="flex flex-wrap gap-2">
                         {doctor.languages?.map((lang) => (
                           <span key={lang} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-medium">{lang}</span>
@@ -139,10 +138,10 @@ const DoctorProfile = () => {
                       <h3 className="text-lg font-bold text-gray-800 mb-2">Consultation Modes</h3>
                       <div className="flex gap-4">
                         {doctor.consultationModes?.video && (
-                          <span className="bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">🎥 Video Call</span>
+                          <span className="bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-medium">🎥 Video Call</span>
                         )}
                         {doctor.consultationModes?.audio && (
-                          <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">📞 Audio Call</span>
+                          <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-medium">📞 Audio Call</span>
                         )}
                       </div>
                     </div>
@@ -181,9 +180,7 @@ const DoctorProfile = () => {
                           <div key={day.day} className={`rounded-xl p-4 ${day.isAvailable ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
                             <div className="flex justify-between items-center">
                               <span className="font-bold text-gray-700">{day.day}</span>
-                              <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-                                day.isAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
-                              }`}>
+                              <span className={`text-sm font-medium px-3 py-1 rounded-full ${day.isAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}>
                                 {day.isAvailable ? 'Available' : 'Not Available'}
                               </span>
                             </div>
@@ -200,20 +197,39 @@ const DoctorProfile = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-500">Availability not set yet. Please check back.</p>
+                      <p className="text-gray-500">Availability not set yet.</p>
                     )}
                   </div>
                 )}
 
                 {selectedTab === 'reviews' && (
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">
-                      Patient Reviews ({doctor.ratingSummary?.totalReviews || 0})
-                    </h3>
-                    <div className="text-center py-8 text-gray-500">
-                      <div className="text-4xl mb-2">⭐</div>
-                      <p>Reviews will appear here after consultations.</p>
-                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Patient Reviews ({doctor.ratingSummary?.totalReviews || 0})</h3>
+                    {reviewsLoading ? (
+                      <div className="text-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>
+                    ) : reviews.length > 0 ? (
+                      <div className="space-y-4">
+                        {reviews.map((review) => (
+                          <div key={review._id} className="bg-gray-50 rounded-xl p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-gray-700">{review.patientName}</span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-yellow-500">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
+                                <span className="text-xs text-gray-400 ml-2">
+                                  {new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                              </div>
+                            </div>
+                            {review.comment && <p className="text-gray-600 text-sm">{review.comment}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <div className="text-4xl mb-2">⭐</div>
+                        <p>No reviews yet. Be the first to review!</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -223,50 +239,22 @@ const DoctorProfile = () => {
                 <div className="bg-gray-50 rounded-2xl p-6 sticky top-24 border-2 border-gray-100">
                   <div className="text-center mb-6">
                     <p className="text-4xl font-bold text-green-600">₹{doctor.consultationFee}</p>
-                    <p className="text-gray-500 text-sm">{doctor.consultationDuration} minutes consultation</p>
+                    <p className="text-gray-500 text-sm">{doctor.consultationDuration} minutes</p>
                   </div>
-
                   <div className="space-y-3 mb-6 text-sm">
-                    <div className="flex justify-between text-gray-600">
-                      <span>Consultation Fee</span>
-                      <span className="font-medium">₹{doctor.consultationFee}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Platform Fee</span>
-                      <span className="font-medium">₹{platformFee}</span>
-                    </div>
+                    <div className="flex justify-between text-gray-600"><span>Consultation Fee</span><span className="font-medium">₹{doctor.consultationFee}</span></div>
+                    <div className="flex justify-between text-gray-600"><span>Platform Fee</span><span className="font-medium">₹{platformFee}</span></div>
                     <hr className="border-gray-200" />
-                    <div className="flex justify-between font-bold text-lg text-gray-800">
-                      <span>Total</span>
-                      <span>₹{total}</span>
-                    </div>
+                    <div className="flex justify-between font-bold text-lg text-gray-800"><span>Total</span><span>₹{total}</span></div>
                   </div>
-
-                  <button
-                    onClick={() => navigate(`/online-doctor/book/${doctor._id}`)}
-                    disabled={!doctor.isAvailable}
-                    className={`w-full py-4 rounded-xl font-bold text-lg transition shadow-lg ${
-                      doctor.isAvailable
-                        ? 'bg-green-500 hover:bg-green-600 text-white'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
+                  <button onClick={() => navigate(`/online-doctor/book/${doctor._id}`)} disabled={!doctor.isAvailable}
+                    className={`w-full py-4 rounded-xl font-bold text-lg transition shadow-lg ${doctor.isAvailable ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
                     {doctor.isAvailable ? '📅 Book Consultation' : 'Currently Unavailable'}
                   </button>
-
                   {doctor.isAvailable && (
-                    <button
-                      onClick={() => navigate(`/online-doctor/book/${doctor._id}?instant=true`)}
-                      className="w-full mt-3 py-3 rounded-xl font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition"
-                    >
-                      ⚡ Instant Consult
-                    </button>
+                    <button onClick={() => navigate(`/online-doctor/book/${doctor._id}?instant=true`)}
+                      className="w-full mt-3 py-3 rounded-xl font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition">⚡ Instant Consult</button>
                   )}
-
-                  <div className="mt-4 text-center text-xs text-gray-400">
-                    <p>🔒 Secure payment via Razorpay</p>
-                    <p>↩️ Free cancellation before 2 hours</p>
-                  </div>
                 </div>
               </div>
             </div>

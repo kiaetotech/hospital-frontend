@@ -183,6 +183,7 @@ import VideoConsult from './pages/online-doctor/VideoConsult';
 import OnlineDoctorRegister from './pages/online-doctor/DoctorRegister';
 import OnlineDoctorLogin from './pages/online-doctor/DoctorLogin';
 import OnlineDoctorDashboard from './pages/online-doctor/DoctorDashboard';
+import ConsultHistory from './pages/online-doctor/ConsultHistory';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -361,6 +362,7 @@ function App() {
           <Route path="/online-doctor/register" element={<OnlineDoctorRegister />} />
           <Route path="/online-doctor/login" element={<OnlineDoctorLogin />} />
           <Route path="/online-doctor/dashboard" element={<OnlineDoctorDashboard />} />
+          <Route path="/online-doctor/history" element={<ConsultHistory />} />
 
           {/* OLD ROUTES - Redirected */}
           <Route path="/teleconsult" element={<OnlineDoctorHub />} />
