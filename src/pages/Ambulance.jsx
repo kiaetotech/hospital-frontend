@@ -1,147 +1,202 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getNearbyAmbulances, getAmbulanceFareEstimate } from '../services/api';
 
 const Ambulance = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [location, setLocation] = useState(null);
+  const [nearbyAmbulances, setNearbyAmbulances] = useState([]);
+  const [bookingStep, setBookingStep] = useState('hub');
+  const [selectedType, setSelectedType] = useState('basic');
+  const [form, setForm] = useState({ patientName: '', patientPhone: '', patientAge: '', pickupAddress: '', destination: '', scheduledDate: '', scheduledTime: '10:00', requiresOxygen: false });
+  const [fareEstimate, setFareEstimate] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    if (token && userData) {
+      try { setUser(JSON.parse(userData)); } catch(e) {}
+    }
+    getLocation();
+  }, []);
+
+  const getLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          fetchNearbyAmbulances(pos.coords.latitude, pos.coords.longitude);
+        },
+        () => setError('Location access needed for nearby ambulances')
+      );
+    }
+  };
+
+  const fetchNearbyAmbulances = async (lat, lng) => {
+    try {
+      const res = await getNearbyAmbulances({ lat, lng, radius: 10 });
+      if (res.data?.data) setNearbyAmbulances(res.data.data);
+    } catch(err) {}
+  };
+
+  const fetchFare = async () => {
+    try {
+      const res = await getAmbulanceFareEstimate({ distance: 10, ambulanceType: selectedType, isEmergency: 'false' });
+      if (res.data?.data) setFareEstimate(res.data.data);
+    } catch(err) {}
+  };
+
+  const handleBookNow = () => {
+    if (!user) {
+      navigate('/login?redirect=/ambulance');
+      return;
+    }
+    setBookingStep('book');
+    fetchFare();
+  };
+
+  const handleSubmitBooking = async () => {
+    if (!form.patientName || !form.patientPhone || !form.pickupAddress || !form.scheduledDate) {
+      setError('Please fill all required fields');
+      return;
+    }
+    navigate('/payment', { 
+      state: { 
+        bookingType: 'ambulance',
+        amount: fareEstimate?.total || 500,
+        bookingData: { ...form, ambulanceType: selectedType, emergencyType: 'scheduled' }
+      } 
+    });
+  };
+
+  const isLoggedIn = !!user;
 
   return (
-    <div style={styles.page}>
-      {/* EMERGENCY HERO */}
-      <div style={styles.emergencyHero}>
-        <button style={styles.emergencyBtn} onClick={() => navigate('/ambulance/emergency')}>
-          <span style={styles.emergencyIcon}>🚨</span>
-          <span style={styles.emergencyText}>EMERGENCY</span>
-          <span style={styles.emergencySub}>Press for Immediate Ambulance</span>
-        </button>
-        <p style={styles.emergencyFallback}>Or call <strong style={{ color: '#fff', fontSize: '18px', display: 'block', marginTop: '4px' }}>108</strong> directly</p>
+    <div style={{ minHeight: '100vh', background: '#f5f5f5', fontFamily: 'Arial, sans-serif' }}>
+      
+      {/* ===== HEADER ===== */}
+      <div style={{ background: '#fff', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
+        <h1 style={{ margin: 0, fontSize: '20px', color: '#e53935' }}>🚑 Ambulance</h1>
+        {isLoggedIn ? (
+          <span style={{ fontSize: '14px', color: '#333' }}>👤 {user?.name || 'User'}</span>
+        ) : (
+          <button onClick={() => navigate('/login?redirect=/ambulance')} style={{ padding: '8px 16px', background: '#e53935', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Login</button>
+        )}
       </div>
 
-      {/* QUICK BOOK */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionHeading}>Quick Book Ambulance</h2>
-        <div style={styles.quickBookGrid}>
-          <button style={{ ...styles.quickBookCard, borderColor: '#e53935', background: '#fff5f5' }} onClick={() => navigate('/ambulance/emergency')}>
-            <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#e53935', color: '#fff', padding: '3px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 700 }}>Priority</span>
-            <span style={styles.cardIcon}>🚨</span>
-            <span style={styles.cardTitle}>Emergency Now</span>
-            <span style={styles.cardDesc}>Immediate dispatch to your location</span>
-          </button>
-          <button style={styles.quickBookCard} onClick={() => navigate('/ambulance/schedule')}>
-            <span style={styles.cardIcon}>📅</span>
-            <span style={styles.cardTitle}>Schedule Later</span>
-            <span style={styles.cardDesc}>Book for a future date & time</span>
-          </button>
-        </div>
-      </div>
-
-      {/* AMBULANCE TYPES */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionHeading}>Select Ambulance Type</h2>
-        <div style={styles.typesGrid}>
-          {ambulanceTypes.map((type, i) => (
-            <button key={i} style={styles.typeCard} onClick={() => navigate(`/ambulance/schedule?type=${type.value}`)}>
-              <span style={styles.typeIcon}>{type.icon}</span>
-              <span style={styles.typeName}>{type.name}</span>
-              <span style={styles.typeDesc}>{type.desc}</span>
-              <span style={styles.typePrice}>From ₹{type.price}</span>
+      {/* ===== HUB VIEW ===== */}
+      {bookingStep === 'hub' && (
+        <>
+          {/* EMERGENCY BUTTON */}
+          <div style={{ background: 'linear-gradient(180deg, #d32f2f, #b71c1c)', padding: '30px 20px', textAlign: 'center' }}>
+            <button onClick={() => navigate('/ambulance/emergency')} style={{ width: '100%', maxWidth: '350px', padding: '30px', background: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+              <span style={{ display: 'block', fontSize: '50px' }}>🚨</span>
+              <span style={{ display: 'block', fontSize: '24px', fontWeight: 900, color: '#e53935', letterSpacing: '2px', marginTop: '8px' }}>EMERGENCY</span>
+              <span style={{ display: 'block', fontSize: '12px', color: '#888', marginTop: '4px' }}>Tap for immediate ambulance dispatch</span>
             </button>
-          ))}
-        </div>
-      </div>
+            <p style={{ color: '#fff', fontSize: '14px', marginTop: '14px' }}>Or dial <strong style={{ fontSize: '20px' }}>108</strong></p>
+          </div>
 
-      {/* FIND HOSPITAL */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionHeading}>Find Destination Hospital</h2>
-        <div style={styles.searchBox} onClick={() => navigate('/hospitals')}>
-          <span>🔍</span>
-          <span style={{ color: '#999', fontSize: '14px' }}>Search hospitals by name, city, or specialty...</span>
-        </div>
-        <div style={styles.nearbyGrid}>
-          <button style={styles.nearbyBtn} onClick={() => navigate('/hospitals?emergency=true')}>🏥 Hospitals with Emergency</button>
-          <button style={styles.nearbyBtn} onClick={() => navigate('/hospitals?beds_available=true')}>🛏️ Hospitals with Available Beds</button>
-        </div>
-      </div>
+          {/* NEARBY AMBULANCES */}
+          <div style={{ margin: '16px' }}>
+            <h3 style={{ fontSize: '16px', color: '#333', marginBottom: '10px' }}>📍 {nearbyAmbulances.length} Ambulances Nearby</h3>
+            {nearbyAmbulances.slice(0, 3).map((amb, i) => (
+              <div key={i} style={{ background: '#fff', padding: '14px', borderRadius: '10px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #eee' }}>
+                <div>
+                  <strong>{amb.vehicleType?.toUpperCase() || 'Basic'} Ambulance</strong>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#888' }}>{amb.distance}km away • ETA {amb.estimatedETA} min</p>
+                </div>
+                <span style={{ fontSize: '18px', fontWeight: 700, color: '#4caf50' }}>⭐ {amb.rating || '4.5'}</span>
+              </div>
+            ))}
+          </div>
 
-      {/* MANAGE */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionHeading}>Manage</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button style={styles.manageCard} onClick={() => navigate('/ambulance/emergency-contacts')}>
-            <span style={{ fontSize: '28px', flexShrink: 0 }}>🛡️</span>
-            <div style={{ textAlign: 'left' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#222', display: 'block' }}>Emergency Contacts</span>
-              <span style={{ fontSize: '11px', color: '#999', display: 'block', marginTop: '2px' }}>Add contacts & medical info shared during emergency</span>
+          {/* AMBULANCE TYPES */}
+          <div style={{ margin: '16px' }}>
+            <h3 style={{ fontSize: '16px', color: '#333', marginBottom: '10px' }}>Select Ambulance Type</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {[{ icon: '🚑', name: 'Basic', price: 500, value: 'basic' }, { icon: '❤️', name: 'Cardiac', price: 750, value: 'cardiac' }, { icon: '🫁', name: 'Ventilator', price: 900, value: 'ventilator' }, { icon: '👶', name: 'Neonatal', price: 1000, value: 'neonatal' }].map((t, i) => (
+                <div key={i} onClick={() => { setSelectedType(t.value); fetchFare(); }} style={{ padding: '14px', border: selectedType === t.value ? '2px solid #e53935' : '1px solid #eee', borderRadius: '10px', textAlign: 'center', cursor: 'pointer', background: selectedType === t.value ? '#fff5f5' : '#fff' }}>
+                  <span style={{ fontSize: '30px', display: 'block' }}>{t.icon}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, display: 'block', marginTop: '4px' }}>{t.name}</span>
+                  <span style={{ fontSize: '12px', color: '#e53935', fontWeight: 700, display: 'block', marginTop: '2px' }}>₹{t.price}</span>
+                </div>
+              ))}
             </div>
-          </button>
-          <button style={styles.manageCard} onClick={() => navigate('/my-bookings')}>
-            <span style={{ fontSize: '28px', flexShrink: 0 }}>📋</span>
-            <div style={{ textAlign: 'left' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#222', display: 'block' }}>My Bookings</span>
-              <span style={{ fontSize: '11px', color: '#999', display: 'block', marginTop: '2px' }}>Track active & past ambulance bookings</span>
+          </div>
+
+          {/* BOOK NOW BUTTON */}
+          <div style={{ margin: '16px', display: 'flex', gap: '10px' }}>
+            <button onClick={handleBookNow} style={{ flex: 1, padding: '16px', background: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>📅 Book {selectedType.toUpperCase()} Ambulance</button>
+            <button onClick={() => navigate('/ambulance/emergency-contacts')} style={{ padding: '16px', background: '#fff', border: '2px solid #e53935', borderRadius: '10px', color: '#e53935', fontWeight: 700, cursor: 'pointer' }}>🛡️</button>
+          </div>
+
+          {/* QUICK LINKS */}
+          <div style={{ margin: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button onClick={() => navigate('/my-bookings')} style={{ padding: '14px', background: '#fff', border: '1px solid #eee', borderRadius: '10px', cursor: 'pointer', fontSize: '13px' }}>📋 My Bookings</button>
+            <button onClick={() => navigate('/ambulance/schedule')} style={{ padding: '14px', background: '#fff', border: '1px solid #eee', borderRadius: '10px', cursor: 'pointer', fontSize: '13px' }}>📅 Schedule</button>
+            <button onClick={() => navigate('/ambulance/driver/app')} style={{ padding: '14px', background: '#fff', border: '1px solid #eee', borderRadius: '10px', cursor: 'pointer', fontSize: '13px' }}>👨‍⚕️ Driver App</button>
+            <button onClick={() => navigate('/hospitals')} style={{ padding: '14px', background: '#fff', border: '1px solid #eee', borderRadius: '10px', cursor: 'pointer', fontSize: '13px' }}>🏥 Hospitals</button>
+          </div>
+        </>
+      )}
+
+      {/* ===== BOOKING FORM ===== */}
+      {bookingStep === 'book' && (
+        <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
+          <button onClick={() => setBookingStep('hub')} style={{ background: 'none', border: 'none', color: '#e53935', fontSize: '14px', cursor: 'pointer', marginBottom: '15px' }}>← Back</button>
+          
+          <h2 style={{ fontSize: '20px', color: '#333', marginBottom: '20px' }}>Book {selectedType.toUpperCase()} Ambulance</h2>
+
+          {error && <div style={{ background: '#ffebee', color: '#c62828', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '14px' }}>{error}</div>}
+
+          <input placeholder="Patient Name *" value={form.patientName} onChange={e => setForm({...form, patientName: e.target.value})} style={inputStyle} />
+          <input placeholder="Phone Number *" type="tel" value={form.patientPhone} onChange={e => setForm({...form, patientPhone: e.target.value})} style={inputStyle} />
+          <input placeholder="Age" type="number" value={form.patientAge} onChange={e => setForm({...form, patientAge: e.target.value})} style={inputStyle} />
+          <input placeholder="Pickup Address *" value={form.pickupAddress} onChange={e => setForm({...form, pickupAddress: e.target.value})} style={inputStyle} />
+          <input placeholder="Destination Hospital" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} style={inputStyle} />
+          
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+            <input type="date" value={form.scheduledDate} onChange={e => setForm({...form, scheduledDate: e.target.value})} style={{...inputStyle, flex: 1}} min={new Date().toISOString().split('T')[0]} />
+            <input type="time" value={form.scheduledTime} onChange={e => setForm({...form, scheduledTime: e.target.value})} style={{...inputStyle, width: '120px'}} />
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px', fontSize: '14px', color: '#555' }}>
+            <input type="checkbox" checked={form.requiresOxygen} onChange={e => setForm({...form, requiresOxygen: e.target.checked})} />
+            Requires Oxygen Support
+          </label>
+
+          {fareEstimate && (
+            <div style={{ background: '#e8f5e9', padding: '14px', borderRadius: '10px', marginBottom: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '16px' }}>
+                <span>Estimated Total</span>
+                <span style={{ color: '#2e7d32' }}>₹{fareEstimate.total || fareEstimate.fareBreakdown?.total || '500'}</span>
+              </div>
+              <p style={{ fontSize: '11px', color: '#888', margin: '4px 0 0' }}>Includes GST & platform fee</p>
             </div>
-          </button>
-          <button style={styles.manageCard} onClick={() => navigate('/ambulance/driver/app')}>
-            <span style={{ fontSize: '28px', flexShrink: 0 }}>👨‍⚕️</span>
-            <div style={{ textAlign: 'left' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#222', display: 'block' }}>Driver App</span>
-              <span style={{ fontSize: '11px', color: '#999', display: 'block', marginTop: '2px' }}>For ambulance drivers - accept emergencies</span>
-            </div>
+          )}
+
+          <button onClick={handleSubmitBooking} style={{ width: '100%', padding: '16px', background: '#4caf50', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>
+            💳 Proceed to Payment - ₹{fareEstimate?.total || 500}
           </button>
         </div>
-      </div>
-
-      {/* PROVIDERS */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionHeading}>For Ambulance Providers</h2>
-        <div style={styles.providerGrid}>
-          <button style={styles.providerCard} onClick={() => navigate('/ambulance/register')}>📝 Register Your Fleet</button>
-          <button style={styles.providerCard} onClick={() => navigate('/ambulance/login')}>🔐 Provider Login</button>
-        </div>
-      </div>
-
-      {/* FOOTER */}
-      <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '12px' }}>
-        <p>⚠️ For life-threatening emergencies, always call <strong>108</strong> first.</p>
-      </div>
+      )}
     </div>
   );
 };
 
-const ambulanceTypes = [
-  { icon: '🚑', name: 'Basic Life Support', desc: 'Oxygen, first aid, stretcher', price: '500', value: 'basic' },
-  { icon: '❤️', name: 'Cardiac Ambulance', desc: 'Defibrillator, ECG monitor', price: '750', value: 'cardiac' },
-  { icon: '🫁', name: 'Ventilator Ambulance', desc: 'ICU setup, ventilator', price: '900', value: 'ventilator' },
-  { icon: '👶', name: 'Neonatal Ambulance', desc: 'Newborn & infant care', price: '1,000', value: 'neonatal' },
-  { icon: '♿', name: 'Wheelchair Transport', desc: 'Non-emergency mobility', price: '400', value: 'wheelchair' },
-];
-
-const styles = {
-  page: { minHeight: '100vh', background: '#f0f2f5', paddingBottom: '40px' },
-  emergencyHero: { background: 'linear-gradient(180deg, #e53935 0%, #c62828 100%)', padding: '30px 20px 25px', textAlign: 'center' },
-  emergencyBtn: { width: '100%', maxWidth: '360px', padding: '28px 20px', background: '#fff', color: '#e53935', border: 'none', borderRadius: '20px', cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' },
-  emergencyIcon: { display: 'block', fontSize: '52px', marginBottom: '6px' },
-  emergencyText: { display: 'block', fontSize: '26px', fontWeight: 900, letterSpacing: '3px', color: '#e53935' },
-  emergencySub: { display: 'block', fontSize: '13px', color: '#888', marginTop: '4px' },
-  emergencyFallback: { color: 'rgba(255,255,255,0.75)', fontSize: '13px', marginTop: '14px' },
-  section: { background: '#fff', margin: '14px 16px', padding: '18px', borderRadius: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
-  sectionHeading: { fontSize: '17px', fontWeight: 700, color: '#222', margin: '0 0 14px 0' },
-  quickBookGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
-  quickBookCard: { padding: '18px 14px', border: '2px solid #e8e8e8', borderRadius: '12px', background: '#fff', cursor: 'pointer', textAlign: 'center', position: 'relative' },
-  cardIcon: { display: 'block', fontSize: '34px', marginBottom: '6px' },
-  cardTitle: { display: 'block', fontSize: '14px', fontWeight: 700, color: '#222', marginBottom: '2px' },
-  cardDesc: { display: 'block', fontSize: '11px', color: '#888' },
-  typesGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
-  typeCard: { padding: '14px 10px', border: '1px solid #eee', borderRadius: '10px', background: '#fff', cursor: 'pointer', textAlign: 'center' },
-  typeIcon: { display: 'block', fontSize: '28px', marginBottom: '4px' },
-  typeName: { display: 'block', fontSize: '13px', fontWeight: 700, color: '#333' },
-  typeDesc: { display: 'block', fontSize: '10px', color: '#999', margin: '2px 0' },
-  typePrice: { display: 'block', fontSize: '12px', fontWeight: 700, color: '#e53935', marginTop: '4px' },
-  searchBox: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', border: '2px solid #e0e0e0', borderRadius: '10px', cursor: 'pointer', background: '#fafafa' },
-  nearbyGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' },
-  nearbyBtn: { padding: '12px', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#444', textAlign: 'center' },
-  manageCard: { display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', border: '1px solid #eee', borderRadius: '10px', background: '#fff', cursor: 'pointer', textAlign: 'left' },
-  providerGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
-  providerCard: { padding: '16px', border: '2px dashed #ddd', borderRadius: '10px', background: '#fafafa', cursor: 'pointer', textAlign: 'center', fontSize: '13px', fontWeight: 600, color: '#555' },
+const inputStyle = {
+  width: '100%',
+  padding: '12px',
+  border: '1px solid #ddd',
+  borderRadius: '8px',
+  fontSize: '14px',
+  marginBottom: '12px',
+  boxSizing: 'border-box',
+  outline: 'none'
 };
 
 export default Ambulance;
