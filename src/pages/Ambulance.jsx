@@ -1,311 +1,404 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
 
 const Ambulance = () => {
-  const [step, setStep] = useState('search');
-  const [hospitalSearch, setHospitalSearch] = useState('');
-  const [hospitals, setHospitals] = useState([]);
-  const [selectedHospital, setSelectedHospital] = useState(null);
-  const [selectedAmbulance, setSelectedAmbulance] = useState(null);
-  const [selectedAmbulanceType, setSelectedAmbulanceType] = useState({});
-  const [userLocation, setUserLocation] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState('distance');
-  const itemsPerPage = 5;
-  
-  // Booking form state
-  const [patientName, setPatientName] = useState('');
-  const [patientPhone, setPatientPhone] = useState('');
-  const [pickupAddress, setPickupAddress] = useState('');
-  const [requiresAttendant, setRequiresAttendant] = useState(false);const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Ambulance types with pricing
-  const ambulanceTypes = {
-    basic: { name: 'Basic Ambulance', basePrice: 500, perKm: 20, icon: '🚑', description: 'Basic life support, first aid' },
-    icu: { name: 'ICU Ambulance', basePrice: 800, perKm: 30, icon: '🚨', description: 'ICU equipped, ventilator' },
-    cardiac: { name: 'Cardiac Ambulance', basePrice: 1000, perKm: 40, icon: '❤️', description: 'Cardiac care, defibrillator' }
-  };
-
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        () => {}
-      );
-    }
-  }, []);
-
-  // Search hospitals
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      if (hospitalSearch.length > 2) {
-        searchHospitals();
-      } else {
-        setHospitals([]);
-      }
-    }, 500);
-    return () => clearTimeout(delayDebounce);
-  }, [hospitalSearch]);
-
-  const searchHospitals = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get(`/hospitals/search?q=${hospitalSearch}`);
-      setHospitals(res.data.data || []);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/hospitals?search=${encodeURIComponent(searchQuery)}`);
     }
   };
 
-  // Mock ambulances based on hospital city
-  const getAmbulancesByCity = (city) => {
-    const ambulancesByCity = {
-      'Mumbai': [
-        { id: 1, name: 'City Ambulance Service', rating: 4.8, totalTrips: 1240, types: ['basic', 'icu'], vehicles: { basic: { driver: 'Ramesh', phone: '9876543210', vehicle: 'MH-01-AB-1234', eta: 4 }, icu: { driver: 'Suresh', phone: '9876543211', vehicle: 'MH-01-AB-1235', eta: 6 } } },
-        { id: 2, name: 'LifeLine Ambulance', rating: 4.9, totalTrips: 890, types: ['basic', 'icu', 'cardiac'], vehicles: { basic: { driver: 'Rajesh', phone: '9876543212', vehicle: 'MH-02-CD-5678', eta: 8 }, icu: { driver: 'Mahesh', phone: '9876543213', vehicle: 'MH-02-CD-5679', eta: 10 }, cardiac: { driver: 'Sanjay', phone: '9876543214', vehicle: 'MH-02-CD-5680', eta: 12 } } },
-        { id: 3, name: 'Medic Rescue', rating: 4.9, totalTrips: 720, types: ['basic', 'icu', 'cardiac'], vehicles: { basic: { driver: 'Santosh', phone: '9876543219', vehicle: 'MH-03-IJ-7890', eta: 18 }, icu: { driver: 'Dinesh', phone: '9876543220', vehicle: 'MH-03-IJ-7891', eta: 20 }, cardiac: { driver: 'Ashok', phone: '9876543221', vehicle: 'MH-03-IJ-7892', eta: 22 } } }
-      ],
-      'Delhi': [
-        { id: 4, name: 'FastTrack Ambulance', rating: 4.7, totalTrips: 560, types: ['basic', 'cardiac'], vehicles: { basic: { driver: 'Vikram', phone: '9876543215', vehicle: 'DL-01-EF-9012', eta: 12 }, cardiac: { driver: 'Ravi', phone: '9876543216', vehicle: 'DL-01-EF-9013', eta: 15 } } }
-      ],
-      'Bangalore': [
-        { id: 5, name: 'Saver Ambulance', rating: 4.6, totalTrips: 340, types: ['basic', 'icu'], vehicles: { basic: { driver: 'Prakash', phone: '9876543217', vehicle: 'KA-01-GH-3456', eta: 15 }, icu: { driver: 'Naveen', phone: '9876543218', vehicle: 'KA-01-GH-3457', eta: 18 } } }
-      ],
-      'Hyderabad': [
-        { id: 6, name: 'Care Ambulance', rating: 4.7, totalTrips: 450, types: ['basic', 'icu'], vehicles: { basic: { driver: 'Kiran', phone: '9876543222', vehicle: 'TS-01-AB-1234', eta: 10 }, icu: { driver: 'Pavan', phone: '9876543223', vehicle: 'TS-01-AB-1235', eta: 12 } } }
-      ],
-      'Kolkata': [
-        { id: 7, name: 'HelpLine Ambulance', rating: 4.5, totalTrips: 320, types: ['basic'], vehicles: { basic: { driver: 'Sourav', phone: '9876543224', vehicle: 'WB-01-AB-1234', eta: 14 } } }
-      ]
-    };
-    return ambulancesByCity[city] || [];
-  };
-
-  const handleSelectHospital = (hospital) => {
-    setSelectedHospital(hospital);
-    const city = hospital.address?.city;
-    const ambulances = getAmbulancesByCity(city);
-    setSelectedAmbulance(ambulances.length > 0 ? ambulances[0] : null);
-    setStep('ambulance');
-  };
-
-  const handleTypeSelect = (ambulanceId, type) => {
-    setSelectedAmbulanceType(prev => ({ ...prev, [ambulanceId]: type }));
-  };
-
-  const handleSelectAmbulanceForBooking = (ambulance) => {
-    const selectedType = selectedAmbulanceType[ambulance.id] || ambulance.types[0];
-    setSelectedAmbulance({ ...ambulance, selectedType });
-    setStep('booking');
-  };
-
-  const calculateFare = (type, distance = 5) => {
-    const t = ambulanceTypes[type];
-    const total = t.basePrice + (distance * t.perKm);
-    const discount = Math.round(total * 0.1);
-    return { total, discount, final: total - discount };
-  };
-
-  const handleBookingSubmit = () => {
-    if (!patientName || !patientPhone || !pickupAddress) {
-      alert('Please fill all required fields');
-      return;
-    }
-    const fare = calculateFare(selectedAmbulance.selectedType);
-    alert(`✅ Ambulance Booked Successfully!\n\nHospital: ${selectedHospital.name}\nAmbulance: ${selectedAmbulance.name}\nType: ${selectedAmbulance.selectedType.toUpperCase()}\nDriver: ${selectedAmbulance.vehicles[selectedAmbulance.selectedType].driver}\nPhone: ${selectedAmbulance.vehicles[selectedAmbulance.selectedType].phone}\nPickup: ${pickupAddress}\nTotal Amount: ₹${fare.final} (10% discount applied)`);
-    window.location.href = '/';
-  };
-
-  // Step 1: Search Hospital
-  if (step === 'search') {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a' }}>🚑 Book Ambulance</h1>
-          <p style={{ marginBottom: '1rem' }}>Search for the hospital you want to go to</p>
-
-          <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem' }}>
-            <input
-              type="text"
-              placeholder="Search hospital by name..."
-              value={hospitalSearch}
-              onChange={(e) => setHospitalSearch(e.target.value)}
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ccc', borderRadius: '0.375rem', marginBottom: '1rem' }}
-            />
-            
-            {loading && <p>Searching hospitals...</p>}
-            
-            {hospitals.length > 0 && (
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {hospitals.map(h => (
-                  <div
-                    key={h._id}
-                    onClick={() => handleSelectHospital(h)}
-                    style={{ padding: '0.75rem', borderBottom: '1px solid #eee', cursor: 'pointer', hover: { backgroundColor: '#f3f4f6' } }}
-                  >
-                    <strong>{h.name}</strong>
-                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>{h.address?.city}, {h.address?.state}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {hospitalSearch.length > 2 && hospitals.length === 0 && !loading && (
-              <p>No hospitals found. Try a different name.</p>
-            )}
-          </div>
-        </div>
+  return (
+    <div style={styles.page}>
+      {/* Hero Section */}
+      <div style={styles.hero}>
+        <h1 style={styles.heroTitle}>🚑 Ambulance Services</h1>
+        <p style={styles.heroSubtitle}>Emergency & Non-Emergency Medical Transport</p>
       </div>
-    );
-  }
 
-  // Step 2: Select Ambulance
-  if (step === 'ambulance' && selectedHospital) {
-    const city = selectedHospital.address?.city;
-    let ambulances = getAmbulancesByCity(city);
-    
-    // Sort by rating
-    if (sortBy === 'rating') {
-      ambulances.sort((a, b) => b.rating - a.rating);
-    } else if (sortBy === 'price') {
-      ambulances.sort((a, b) => ambulanceTypes[a.types[0]].basePrice - ambulanceTypes[b.types[0]].basePrice);
-    }
-    
-    const paginatedAmbulances = ambulances.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-    const totalPages = Math.ceil(ambulances.length / itemsPerPage);
-
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <button onClick={() => setStep('search')} style={{ marginBottom: '1rem', backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>← Back to Hospitals</button>
-          
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Select Ambulance</h2>
-          <p>Hospital: <strong>{selectedHospital.name}</strong> ({city})</p>
-          <p>Your location: {userLocation ? `${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}` : 'Detecting...'}</p>
-
-          {/* Sort Options */}
-          <div style={{ backgroundColor: 'white', padding: '0.5rem', borderRadius: '0.5rem', margin: '1rem 0', display: 'flex', gap: '1rem' }}>
-            <span>Sort by:</span>
-            <button onClick={() => setSortBy('rating')} style={{ backgroundColor: sortBy === 'rating' ? '#10b981' : '#e5e7eb', color: sortBy === 'rating' ? 'white' : 'black', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer' }}>Rating</button>
-            <button onClick={() => setSortBy('price')} style={{ backgroundColor: sortBy === 'price' ? '#10b981' : '#e5e7eb', color: sortBy === 'price' ? 'white' : 'black', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer' }}>Price (Low to High)</button>
-          </div>
-
-          {/* Ambulance Cards */}
-          {paginatedAmbulances.map(amb => {
-            const defaultType = selectedAmbulanceType[amb.id] || amb.types[0];
-            return (
-              <div key={amb.id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{amb.name}</h3>
-                  <div>⭐ {amb.rating} ({amb.totalTrips} trips)</div>
-                </div>
-
-                {/* Radio buttons for ambulance type */}
-                <div style={{ margin: '0.5rem 0' }}>
-                  <strong>Select Type:</strong>
-                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                    {amb.types.map(type => {
-                      const fare = calculateFare(type);
-                      const isSelected = (selectedAmbulanceType[amb.id] || amb.types[0]) === type;
-                      return (
-                        <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: isSelected ? '#d1fae5' : '#f3f4f6', borderRadius: '0.375rem', cursor: 'pointer' }}>
-                          <input
-                            type="radio"
-                            name={`type_${amb.id}`}
-                            checked={isSelected}
-                            onChange={() => handleTypeSelect(amb.id, type)}
-                          />
-                          <div>
-                            <strong>{ambulanceTypes[type].icon} {ambulanceTypes[type].name}</strong>
-                            <p style={{ margin: 0, fontSize: '0.75rem' }}>Base: ₹{ambulanceTypes[type].basePrice} + ₹{ambulanceTypes[type].perKm}/km</p>
-                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#10b981' }}>Est. ₹{fare.final} (Save ₹{fare.discount})</p>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Driver details for selected type */}
-                {amb.vehicles[defaultType] && (
-                  <div style={{ marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '0.375rem' }}>
-                    <p><strong>Driver:</strong> {amb.vehicles[defaultType].driver} | 📞 {amb.vehicles[defaultType].phone}</p>
-                    <p><strong>Vehicle:</strong> {amb.vehicles[defaultType].vehicle} | ETA: {amb.vehicles[defaultType].eta} min</p>
-                  </div>
-                )}
-
-                <button onClick={() => handleSelectAmbulanceForBooking(amb)} style={{ marginTop: '0.5rem', width: '100%', backgroundColor: '#10b981', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-                  Select & Book
-                </button>
-              </div>
-            );
-          })}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === 1 ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Previous</button>
-              <span>Page {currentPage} of {totalPages}</span>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === totalPages ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Next</button>
-            </div>
-          )}
-        </div>
+      {/* Emergency Button - Most Prominent */}
+      <div style={styles.emergencySection}>
+        <button
+          onClick={() => navigate('/ambulance/emergency')}
+          style={styles.emergencyButton}
+        >
+          <span style={styles.emergencyIcon}>🚨</span>
+          <span style={styles.emergencyText}>EMERGENCY</span>
+          <span style={styles.emergencyHint}>Tap for immediate ambulance dispatch</span>
+        </button>
+        <p style={styles.emergencyNote}>
+          For life-threatening emergencies, also call <strong>108</strong>
+        </p>
       </div>
-    );
-  }
 
-  // Step 3: Booking Form
-  if (step === 'booking' && selectedAmbulance && selectedHospital) {
-    const fare = calculateFare(selectedAmbulance.selectedType);
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem' }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: 'white', borderRadius: '0.5rem', padding: '2rem' }}>
-          <button onClick={() => setStep('ambulance')} style={{ marginBottom: '1rem', backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>← Back</button>
-          
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Patient Details</h2>
-          
-          <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f3f4f6', borderRadius: '0.5rem' }}>
-            <p><strong>Hospital:</strong> {selectedHospital.name}</p>
-            <p><strong>Ambulance:</strong> {selectedAmbulance.name} ({selectedAmbulance.selectedType.toUpperCase()})</p>
-            <p><strong>Driver:</strong> {selectedAmbulance.vehicles[selectedAmbulance.selectedType].driver}</p>
-            <p><strong>Amount:</strong> ₹{fare.final} (10% discount applied)</p>
-          </div>
+      {/* Quick Actions Grid */}
+      <div style={styles.quickActions}>
+        <h2 style={styles.sectionTitle}>Quick Actions</h2>
+        <div style={styles.actionsGrid}>
+          <button onClick={() => navigate('/ambulance/schedule')} style={styles.actionCard}>
+            <span style={styles.actionIcon}>📅</span>
+            <span style={styles.actionLabel}>Schedule Transport</span>
+            <span style={styles.actionDesc}>Book non-emergency ambulance in advance</span>
+          </button>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>Patient Name *</label>
-            <input type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
-          </div>
+          <button onClick={() => navigate('/ambulance/emergency-contacts')} style={styles.actionCard}>
+            <span style={styles.actionIcon}>🛡️</span>
+            <span style={styles.actionLabel}>Emergency Contacts</span>
+            <span style={styles.actionDesc}>Manage contacts & medical info</span>
+          </button>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>Phone Number *</label>
-            <input type="tel" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
-          </div>
+          <button onClick={() => navigate('/my-bookings')} style={styles.actionCard}>
+            <span style={styles.actionIcon}>📋</span>
+            <span style={styles.actionLabel}>My Bookings</span>
+            <span style={styles.actionDesc}>View active & past ambulance bookings</span>
+          </button>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>Pickup Address *</label>
-            <textarea value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} rows="2" style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>Require Medical Attendant?</label>
-            <label style={{ marginRight: '1rem' }}><input type="radio" name="attendant" checked={requiresAttendant === true} onChange={() => setRequiresAttendant(true)} /> Yes</label>
-            <label><input type="radio" name="attendant" checked={requiresAttendant === false} onChange={() => setRequiresAttendant(false)} /> No</label>
-          </div>
-
-          <button onClick={handleBookingSubmit} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
-            Confirm Booking - ₹{fare.final}
+          <button onClick={() => navigate('/ambulance/driver/app')} style={styles.actionCard}>
+            <span style={styles.actionIcon}>👨‍⚕️</span>
+            <span style={styles.actionLabel}>Driver App</span>
+            <span style={styles.actionDesc}>For ambulance drivers & providers</span>
           </button>
         </div>
       </div>
-    );
-  }
 
-  return null;
+      {/* Ambulance Types */}
+      <div style={styles.typesSection}>
+        <h2 style={styles.sectionTitle}>Available Ambulance Types</h2>
+        <div style={styles.typesGrid}>
+          {ambulanceTypes.map((type, index) => (
+            <div key={index} style={styles.typeCard}>
+              <span style={styles.typeIcon}>{type.icon}</span>
+              <h3 style={styles.typeName}>{type.name}</h3>
+              <p style={styles.typeDesc}>{type.desc}</p>
+              <span style={styles.typePrice}>From ₹{type.price}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Search Hospital */}
+      <div style={styles.searchSection}>
+        <h2 style={styles.sectionTitle}>Find Destination Hospital</h2>
+        <form onSubmit={handleSearch} style={styles.searchForm}>
+          <input
+            type="text"
+            placeholder="Search hospital by name, specialty, or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={styles.searchInput}
+          />
+          <button type="submit" style={styles.searchBtn}>🔍 Search</button>
+        </form>
+      </div>
+
+      {/* Fare Estimate CTA */}
+      <div style={styles.fareSection}>
+        <h2 style={styles.sectionTitle}>💰 Fare Estimate</h2>
+        <p style={styles.fareText}>Get an instant estimate before booking</p>
+        <button onClick={() => navigate('/ambulance/schedule')} style={styles.fareBtn}>
+          Calculate Fare
+        </button>
+      </div>
+
+      {/* Info Cards */}
+      <div style={styles.infoSection}>
+        <div style={styles.infoCard}>
+          <span style={styles.infoIcon}>⚡</span>
+          <h3 style={styles.infoTitle}>Fast Response</h3>
+          <p style={styles.infoText}>Average response time under 5 minutes in metro cities</p>
+        </div>
+        <div style={styles.infoCard}>
+          <span style={styles.infoIcon}>💰</span>
+          <h3 style={styles.infoTitle}>Transparent Pricing</h3>
+          <p style={styles.infoText}>Know the fare before you book. No hidden charges.</p>
+        </div>
+        <div style={styles.infoCard}>
+          <span style={styles.infoIcon}>🏥</span>
+          <h3 style={styles.infoTitle}>Hospital Connected</h3>
+          <p style={styles.infoText}>We alert the hospital ER before you arrive.</p>
+        </div>
+      </div>
+
+      {/* Provider Section */}
+      <div style={styles.providerSection}>
+        <h2 style={styles.sectionTitle}>For Ambulance Providers</h2>
+        <div style={styles.providerGrid}>
+          <button onClick={() => navigate('/ambulance/register')} style={styles.providerCard}>
+            <span style={styles.actionIcon}>📝</span>
+            <span style={styles.actionLabel}>Register Fleet</span>
+          </button>
+          <button onClick={() => navigate('/ambulance/login')} style={styles.providerCard}>
+            <span style={styles.actionIcon}>🔐</span>
+            <span style={styles.actionLabel}>Provider Login</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Footer Note */}
+      <div style={styles.footer}>
+        <p style={styles.footerText}>
+          ⚠️ In case of life-threatening emergencies, always call <strong>108</strong> (National Ambulance) immediately.
+        </p>
+        <p style={styles.footerText}>
+          Our service complements emergency response systems and helps you find the nearest available private ambulance.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const ambulanceTypes = [
+  { icon: '🚑', name: 'Basic Life Support', desc: 'Standard ambulance with basic medical equipment', price: '500' },
+  { icon: '❤️', name: 'Cardiac Ambulance', desc: 'Equipped with defibrillator & cardiac monitor', price: '750' },
+  { icon: '🫁', name: 'Ventilator Ambulance', desc: 'Advanced life support with ventilator', price: '900' },
+  { icon: '👶', name: 'Neonatal Ambulance', desc: 'Specialized for newborn & infant transport', price: '1,000' },
+  { icon: '♿', name: 'Wheelchair Transport', desc: 'Non-emergency transport for mobility patients', price: '400' },
+  { icon: '🚐', name: 'Mortuary Transport', desc: 'Dignified transport with refrigeration', price: '600' },
+];
+
+const styles = {
+  page: {
+    minHeight: '100vh',
+    background: '#f5f5f5',
+    paddingBottom: '40px'
+  },
+  hero: {
+    background: 'linear-gradient(135deg, #e53935, #c62828)',
+    padding: '40px 20px',
+    textAlign: 'center'
+  },
+  heroTitle: {
+    color: '#fff',
+    fontSize: '28px',
+    margin: '0 0 8px 0'
+  },
+  heroSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: '14px',
+    margin: 0
+  },
+  emergencySection: {
+    padding: '20px',
+    textAlign: 'center',
+    marginTop: '-20px'
+  },
+  emergencyButton: {
+    width: '100%',
+    maxWidth: '400px',
+    padding: '30px',
+    background: 'linear-gradient(135deg, #e53935, #c62828)',
+    color: '#fff',
+    border: '4px solid #fff',
+    borderRadius: '20px',
+    cursor: 'pointer',
+    boxShadow: '0 8px 30px rgba(229,57,53,0.4)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  emergencyIcon: {
+    fontSize: '50px'
+  },
+  emergencyText: {
+    fontSize: '24px',
+    fontWeight: 'bold',
+    letterSpacing: '2px'
+  },
+  emergencyHint: {
+    fontSize: '12px',
+    color: 'rgba(255,255,255,0.7)'
+  },
+  emergencyNote: {
+    color: '#666',
+    fontSize: '12px',
+    marginTop: '10px'
+  },
+  quickActions: {
+    padding: '0 20px',
+    marginBottom: '30px'
+  },
+  sectionTitle: {
+    fontSize: '18px',
+    color: '#333',
+    margin: '0 0 15px 0'
+  },
+  actionsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px'
+  },
+  actionCard: {
+    background: '#fff',
+    padding: '20px 15px',
+    borderRadius: '12px',
+    border: '1px solid #e0e0e0',
+    cursor: 'pointer',
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+    transition: 'all 0.2s'
+  },
+  actionIcon: {
+    fontSize: '32px'
+  },
+  actionLabel: {
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#333'
+  },
+  actionDesc: {
+    fontSize: '11px',
+    color: '#888'
+  },
+  typesSection: {
+    padding: '0 20px',
+    marginBottom: '30px'
+  },
+  typesGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px'
+  },
+  typeCard: {
+    background: '#fff',
+    padding: '16px',
+    borderRadius: '12px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  },
+  typeIcon: {
+    fontSize: '36px',
+    display: 'block',
+    marginBottom: '8px'
+  },
+  typeName: {
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#333',
+    margin: '0 0 4px 0'
+  },
+  typeDesc: {
+    fontSize: '11px',
+    color: '#888',
+    margin: '0 0 8px 0'
+  },
+  typePrice: {
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: '#e53935'
+  },
+  searchSection: {
+    padding: '0 20px',
+    marginBottom: '30px'
+  },
+  searchForm: {
+    display: 'flex',
+    gap: '10px'
+  },
+  searchInput: {
+    flex: 1,
+    padding: '14px',
+    border: '2px solid #e0e0e0',
+    borderRadius: '10px',
+    fontSize: '14px',
+    outline: 'none'
+  },
+  searchBtn: {
+    padding: '14px 20px',
+    background: '#e53935',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '14px'
+  },
+  fareSection: {
+    padding: '0 20px',
+    marginBottom: '30px',
+    textAlign: 'center'
+  },
+  fareText: {
+    color: '#666',
+    fontSize: '14px',
+    marginBottom: '12px'
+  },
+  fareBtn: {
+    padding: '14px 40px',
+    background: '#2196f3',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '16px',
+    cursor: 'pointer'
+  },
+  infoSection: {
+    padding: '0 20px',
+    marginBottom: '30px',
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
+    gap: '10px'
+  },
+  infoCard: {
+    background: '#fff',
+    padding: '16px',
+    borderRadius: '12px',
+    textAlign: 'center'
+  },
+  infoIcon: {
+    fontSize: '28px',
+    display: 'block',
+    marginBottom: '8px'
+  },
+  infoTitle: {
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: '#333',
+    margin: '0 0 5px 0'
+  },
+  infoText: {
+    fontSize: '11px',
+    color: '#888',
+    margin: 0,
+    lineHeight: '1.4'
+  },
+  providerSection: {
+    padding: '0 20px',
+    marginBottom: '30px'
+  },
+  providerGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px'
+  },
+  providerCard: {
+    background: '#fff',
+    padding: '20px 15px',
+    borderRadius: '12px',
+    border: '2px dashed #e0e0e0',
+    cursor: 'pointer',
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  footer: {
+    padding: '20px',
+    textAlign: 'center'
+  },
+  footerText: {
+    fontSize: '12px',
+    color: '#999',
+    margin: '5px 0',
+    lineHeight: '1.5'
+  }
 };
 
 export default Ambulance;
