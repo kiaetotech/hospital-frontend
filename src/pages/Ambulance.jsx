@@ -1,149 +1,147 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Ambulance.css';
 
 const Ambulance = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="ambulance-page">
-      {/* ============================================ */}
-      {/* PRIORITY 1: EMERGENCY BUTTON - ALWAYS VISIBLE */}
-      {/* ============================================ */}
-      <div className="emergency-hero">
-        <button className="emergency-btn" onClick={() => navigate('/ambulance/emergency')}>
-          <span className="emergency-btn-icon">🚨</span>
-          <span className="emergency-btn-text">EMERGENCY</span>
-          <span className="emergency-btn-sub">Press for Immediate Ambulance</span>
+    <div style={styles.page}>
+      {/* EMERGENCY HERO */}
+      <div style={styles.emergencyHero}>
+        <button style={styles.emergencyBtn} onClick={() => navigate('/ambulance/emergency')}>
+          <span style={styles.emergencyIcon}>🚨</span>
+          <span style={styles.emergencyText}>EMERGENCY</span>
+          <span style={styles.emergencySub}>Press for Immediate Ambulance</span>
         </button>
-        <p className="emergency-fallback">Or call <strong>108</strong> directly</p>
+        <p style={styles.emergencyFallback}>Or call <strong style={{ color: '#fff', fontSize: '18px', display: 'block', marginTop: '4px' }}>108</strong> directly</p>
       </div>
 
-      {/* ============================================ */}
-      {/* PRIORITY 2: QUICK BOOKING FORM */}
-      {/* ============================================ */}
-      <div className="quick-book-section">
-        <h2 className="section-heading">Quick Book Ambulance</h2>
-        <div className="quick-book-grid">
-          <button className="quick-book-card emergency-card" onClick={() => navigate('/ambulance/emergency')}>
-            <span className="card-icon">🚨</span>
-            <span className="card-title">Emergency Now</span>
-            <span className="card-desc">Immediate dispatch to your location</span>
-            <span className="card-badge">Priority</span>
+      {/* QUICK BOOK */}
+      <div style={styles.section}>
+        <h2 style={styles.sectionHeading}>Quick Book Ambulance</h2>
+        <div style={styles.quickBookGrid}>
+          <button style={{ ...styles.quickBookCard, borderColor: '#e53935', background: '#fff5f5' }} onClick={() => navigate('/ambulance/emergency')}>
+            <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#e53935', color: '#fff', padding: '3px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 700 }}>Priority</span>
+            <span style={styles.cardIcon}>🚨</span>
+            <span style={styles.cardTitle}>Emergency Now</span>
+            <span style={styles.cardDesc}>Immediate dispatch to your location</span>
           </button>
-          <button className="quick-book-card" onClick={() => navigate('/ambulance/schedule')}>
-            <span className="card-icon">📅</span>
-            <span className="card-title">Schedule Later</span>
-            <span className="card-desc">Book for a future date & time</span>
+          <button style={styles.quickBookCard} onClick={() => navigate('/ambulance/schedule')}>
+            <span style={styles.cardIcon}>📅</span>
+            <span style={styles.cardTitle}>Schedule Later</span>
+            <span style={styles.cardDesc}>Book for a future date & time</span>
           </button>
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* PRIORITY 3: SELECT AMBULANCE TYPE */}
-      {/* ============================================ */}
-      <div className="types-section">
-        <h2 className="section-heading">Select Ambulance Type</h2>
-        <div className="types-grid">
-          <button className="type-card" onClick={() => navigate('/ambulance/schedule?type=basic')}>
-            <span className="type-icon">🚑</span>
-            <span className="type-name">Basic Life Support</span>
-            <span className="type-desc">Oxygen, first aid, stretcher</span>
-            <span className="type-price">From ₹500</span>
+      {/* AMBULANCE TYPES */}
+      <div style={styles.section}>
+        <h2 style={styles.sectionHeading}>Select Ambulance Type</h2>
+        <div style={styles.typesGrid}>
+          {ambulanceTypes.map((type, i) => (
+            <button key={i} style={styles.typeCard} onClick={() => navigate(`/ambulance/schedule?type=${type.value}`)}>
+              <span style={styles.typeIcon}>{type.icon}</span>
+              <span style={styles.typeName}>{type.name}</span>
+              <span style={styles.typeDesc}>{type.desc}</span>
+              <span style={styles.typePrice}>From ₹{type.price}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* FIND HOSPITAL */}
+      <div style={styles.section}>
+        <h2 style={styles.sectionHeading}>Find Destination Hospital</h2>
+        <div style={styles.searchBox} onClick={() => navigate('/hospitals')}>
+          <span>🔍</span>
+          <span style={{ color: '#999', fontSize: '14px' }}>Search hospitals by name, city, or specialty...</span>
+        </div>
+        <div style={styles.nearbyGrid}>
+          <button style={styles.nearbyBtn} onClick={() => navigate('/hospitals?emergency=true')}>🏥 Hospitals with Emergency</button>
+          <button style={styles.nearbyBtn} onClick={() => navigate('/hospitals?beds_available=true')}>🛏️ Hospitals with Available Beds</button>
+        </div>
+      </div>
+
+      {/* MANAGE */}
+      <div style={styles.section}>
+        <h2 style={styles.sectionHeading}>Manage</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <button style={styles.manageCard} onClick={() => navigate('/ambulance/emergency-contacts')}>
+            <span style={{ fontSize: '28px', flexShrink: 0 }}>🛡️</span>
+            <div style={{ textAlign: 'left' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#222', display: 'block' }}>Emergency Contacts</span>
+              <span style={{ fontSize: '11px', color: '#999', display: 'block', marginTop: '2px' }}>Add contacts & medical info shared during emergency</span>
+            </div>
           </button>
-          <button className="type-card" onClick={() => navigate('/ambulance/schedule?type=cardiac')}>
-            <span className="type-icon">❤️</span>
-            <span className="type-name">Cardiac Ambulance</span>
-            <span className="type-desc">Defibrillator, ECG monitor</span>
-            <span className="type-price">From ₹750</span>
+          <button style={styles.manageCard} onClick={() => navigate('/my-bookings')}>
+            <span style={{ fontSize: '28px', flexShrink: 0 }}>📋</span>
+            <div style={{ textAlign: 'left' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#222', display: 'block' }}>My Bookings</span>
+              <span style={{ fontSize: '11px', color: '#999', display: 'block', marginTop: '2px' }}>Track active & past ambulance bookings</span>
+            </div>
           </button>
-          <button className="type-card" onClick={() => navigate('/ambulance/schedule?type=ventilator')}>
-            <span className="type-icon">🫁</span>
-            <span className="type-name">Ventilator Ambulance</span>
-            <span className="type-desc">ICU setup, ventilator</span>
-            <span className="type-price">From ₹900</span>
-          </button>
-          <button className="type-card" onClick={() => navigate('/ambulance/schedule?type=neonatal')}>
-            <span className="type-icon">👶</span>
-            <span className="type-name">Neonatal Ambulance</span>
-            <span className="type-desc">Newborn & infant care</span>
-            <span className="type-price">From ₹1,000</span>
-          </button>
-          <button className="type-card" onClick={() => navigate('/ambulance/schedule?type=wheelchair')}>
-            <span className="type-icon">♿</span>
-            <span className="type-name">Wheelchair Transport</span>
-            <span className="type-desc">Non-emergency mobility</span>
-            <span className="type-price">From ₹400</span>
+          <button style={styles.manageCard} onClick={() => navigate('/ambulance/driver/app')}>
+            <span style={{ fontSize: '28px', flexShrink: 0 }}>👨‍⚕️</span>
+            <div style={{ textAlign: 'left' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#222', display: 'block' }}>Driver App</span>
+              <span style={{ fontSize: '11px', color: '#999', display: 'block', marginTop: '2px' }}>For ambulance drivers - accept emergencies</span>
+            </div>
           </button>
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* PRIORITY 4: FIND HOSPITAL */}
-      {/* ============================================ */}
-      <div className="search-section">
-        <h2 className="section-heading">Find Destination Hospital</h2>
-        <div className="search-box" onClick={() => navigate('/hospitals')}>
-          <span className="search-icon">🔍</span>
-          <span className="search-text">Search hospitals by name, city, or specialty...</span>
-        </div>
-        <div className="nearby-hospitals">
-          <button className="nearby-btn" onClick={() => navigate('/hospitals?emergency=true')}>
-            🏥 Hospitals with Emergency
-          </button>
-          <button className="nearby-btn" onClick={() => navigate('/hospitals?beds_available=true')}>
-            🛏️ Hospitals with Available Beds
-          </button>
+      {/* PROVIDERS */}
+      <div style={styles.section}>
+        <h2 style={styles.sectionHeading}>For Ambulance Providers</h2>
+        <div style={styles.providerGrid}>
+          <button style={styles.providerCard} onClick={() => navigate('/ambulance/register')}>📝 Register Your Fleet</button>
+          <button style={styles.providerCard} onClick={() => navigate('/ambulance/login')}>🔐 Provider Login</button>
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* PRIORITY 5: MANAGE PROFILE */}
-      {/* ============================================ */}
-      <div className="manage-section">
-        <h2 className="section-heading">Manage</h2>
-        <div className="manage-grid">
-          <button className="manage-card" onClick={() => navigate('/ambulance/emergency-contacts')}>
-            <span className="manage-icon">🛡️</span>
-            <span className="manage-title">Emergency Contacts</span>
-            <span className="manage-desc">Add contacts & medical info shared during emergency</span>
-          </button>
-          <button className="manage-card" onClick={() => navigate('/my-bookings')}>
-            <span className="manage-icon">📋</span>
-            <span className="manage-title">My Bookings</span>
-            <span className="manage-desc">Track active & past ambulance bookings</span>
-          </button>
-          <button className="manage-card" onClick={() => navigate('/ambulance/driver/app')}>
-            <span className="manage-icon">👨‍⚕️</span>
-            <span className="manage-title">Driver App</span>
-            <span className="manage-desc">For ambulance drivers - accept emergencies</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ============================================ */}
-      {/* PRIORITY 6: FOR PROVIDERS */}
-      {/* ============================================ */}
-      <div className="provider-section">
-        <h2 className="section-heading">For Ambulance Providers</h2>
-        <div className="provider-grid">
-          <button className="provider-card" onClick={() => navigate('/ambulance/register')}>
-            <span>📝 Register Your Fleet</span>
-          </button>
-          <button className="provider-card" onClick={() => navigate('/ambulance/login')}>
-            <span>🔐 Provider Login</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ============================================ */}
       {/* FOOTER */}
-      {/* ============================================ */}
-      <div className="ambulance-footer">
+      <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '12px' }}>
         <p>⚠️ For life-threatening emergencies, always call <strong>108</strong> first.</p>
       </div>
     </div>
   );
+};
+
+const ambulanceTypes = [
+  { icon: '🚑', name: 'Basic Life Support', desc: 'Oxygen, first aid, stretcher', price: '500', value: 'basic' },
+  { icon: '❤️', name: 'Cardiac Ambulance', desc: 'Defibrillator, ECG monitor', price: '750', value: 'cardiac' },
+  { icon: '🫁', name: 'Ventilator Ambulance', desc: 'ICU setup, ventilator', price: '900', value: 'ventilator' },
+  { icon: '👶', name: 'Neonatal Ambulance', desc: 'Newborn & infant care', price: '1,000', value: 'neonatal' },
+  { icon: '♿', name: 'Wheelchair Transport', desc: 'Non-emergency mobility', price: '400', value: 'wheelchair' },
+];
+
+const styles = {
+  page: { minHeight: '100vh', background: '#f0f2f5', paddingBottom: '40px' },
+  emergencyHero: { background: 'linear-gradient(180deg, #e53935 0%, #c62828 100%)', padding: '30px 20px 25px', textAlign: 'center' },
+  emergencyBtn: { width: '100%', maxWidth: '360px', padding: '28px 20px', background: '#fff', color: '#e53935', border: 'none', borderRadius: '20px', cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' },
+  emergencyIcon: { display: 'block', fontSize: '52px', marginBottom: '6px' },
+  emergencyText: { display: 'block', fontSize: '26px', fontWeight: 900, letterSpacing: '3px', color: '#e53935' },
+  emergencySub: { display: 'block', fontSize: '13px', color: '#888', marginTop: '4px' },
+  emergencyFallback: { color: 'rgba(255,255,255,0.75)', fontSize: '13px', marginTop: '14px' },
+  section: { background: '#fff', margin: '14px 16px', padding: '18px', borderRadius: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
+  sectionHeading: { fontSize: '17px', fontWeight: 700, color: '#222', margin: '0 0 14px 0' },
+  quickBookGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
+  quickBookCard: { padding: '18px 14px', border: '2px solid #e8e8e8', borderRadius: '12px', background: '#fff', cursor: 'pointer', textAlign: 'center', position: 'relative' },
+  cardIcon: { display: 'block', fontSize: '34px', marginBottom: '6px' },
+  cardTitle: { display: 'block', fontSize: '14px', fontWeight: 700, color: '#222', marginBottom: '2px' },
+  cardDesc: { display: 'block', fontSize: '11px', color: '#888' },
+  typesGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
+  typeCard: { padding: '14px 10px', border: '1px solid #eee', borderRadius: '10px', background: '#fff', cursor: 'pointer', textAlign: 'center' },
+  typeIcon: { display: 'block', fontSize: '28px', marginBottom: '4px' },
+  typeName: { display: 'block', fontSize: '13px', fontWeight: 700, color: '#333' },
+  typeDesc: { display: 'block', fontSize: '10px', color: '#999', margin: '2px 0' },
+  typePrice: { display: 'block', fontSize: '12px', fontWeight: 700, color: '#e53935', marginTop: '4px' },
+  searchBox: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', border: '2px solid #e0e0e0', borderRadius: '10px', cursor: 'pointer', background: '#fafafa' },
+  nearbyGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' },
+  nearbyBtn: { padding: '12px', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#444', textAlign: 'center' },
+  manageCard: { display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', border: '1px solid #eee', borderRadius: '10px', background: '#fff', cursor: 'pointer', textAlign: 'left' },
+  providerGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
+  providerCard: { padding: '16px', border: '2px dashed #ddd', borderRadius: '10px', background: '#fafafa', cursor: 'pointer', textAlign: 'center', fontSize: '13px', fontWeight: 600, color: '#555' },
 };
 
 export default Ambulance;
