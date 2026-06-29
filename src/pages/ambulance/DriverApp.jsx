@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 import {
   getDriverDashboard,
   toggleDriverAvailability,
-  ambulanceAcceptEmergency,
+  acceptEmergency,
   ambulanceTripStart,
   ambulancePatientOnboard,
   ambulanceArrivedHospital,
@@ -23,7 +23,7 @@ const DriverApp = () => {
   const [acceptTimer, setAcceptTimer] = useState(15);
   const [dashboard, setDashboard] = useState(null);
   const [location, setLocation] = useState(null);
-  const [step, setStep] = useState('idle'); // idle | emergency_alert | accepted | arrived_pickup | onboard | arrived_hospital | completed
+  const [step, setStep] = useState('idle');
   const [otp, setOtp] = useState('');
   const [vitals, setVitals] = useState({ bloodPressure: '', pulse: '', spo2: '', temperature: '' });
   const [tripNotes, setTripNotes] = useState('');
@@ -151,12 +151,12 @@ const DriverApp = () => {
     if (locationInterval.current) clearInterval(locationInterval.current);
   };
 
-  const acceptEmergency = async () => {
+  const handleAcceptEmergency = async () => {
     if (!emergencyRequest) return;
     clearInterval(timerInterval.current);
 
     try {
-      await ambulanceAcceptEmergency(emergencyRequest.bookingId, {});
+      await acceptEmergency(emergencyRequest.bookingId, {});
       setCurrentTrip(emergencyRequest);
       setStep('accepted');
       socketRef.current?.emit('driver:accept_emergency', { bookingId: emergencyRequest.bookingId });
@@ -241,7 +241,6 @@ const DriverApp = () => {
 
   return (
     <div style={styles.page}>
-      {/* Header */}
       <div style={styles.header}>
         <button onClick={() => navigate('/ambulance')} style={styles.backBtn}>← Exit</button>
         <h1 style={styles.title}>🚑 Driver App</h1>
@@ -251,15 +250,11 @@ const DriverApp = () => {
         </div>
       </div>
 
-      {/* Online Toggle */}
       {step === 'idle' && (
         <div style={styles.toggleSection}>
           <button
             onClick={handleToggleOnline}
-            style={{
-              ...styles.toggleBtn,
-              background: isOnline ? '#4caf50' : '#e53935'
-            }}
+            style={{ ...styles.toggleBtn, background: isOnline ? '#4caf50' : '#e53935' }}
           >
             {isOnline ? '🟢 Go Offline' : '🔴 Go Online'}
           </button>
@@ -267,7 +262,6 @@ const DriverApp = () => {
         </div>
       )}
 
-      {/* Dashboard Stats */}
       {step === 'idle' && dashboard && (
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
@@ -288,7 +282,6 @@ const DriverApp = () => {
         </div>
       )}
 
-      {/* Emergency Alert */}
       {step === 'emergency_alert' && emergencyRequest && (
         <div style={styles.alertCard}>
           <div style={styles.alertHeader}>
@@ -305,13 +298,12 @@ const DriverApp = () => {
             <p><strong>Est. Fare:</strong> ₹{emergencyRequest.estimatedFare}</p>
           </div>
           <div style={styles.alertActions}>
-            <button onClick={acceptEmergency} style={styles.acceptBtn}>✅ Accept</button>
+            <button onClick={handleAcceptEmergency} style={styles.acceptBtn}>✅ Accept</button>
             <button onClick={rejectEmergency} style={styles.rejectBtn}>❌ Decline</button>
           </div>
         </div>
       )}
 
-      {/* Trip Progress */}
       {(step === 'accepted' || step === 'arrived_pickup' || step === 'onboard' || step === 'arrived_hospital') && (
         <div style={styles.tripCard}>
           <div style={{ ...styles.tripStatus, borderColor: getStatusColor() }}>
@@ -330,14 +322,7 @@ const DriverApp = () => {
 
             {step === 'arrived_pickup' && (
               <>
-                <input
-                  type="text"
-                  placeholder="Enter OTP from patient"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  style={styles.otpInput}
-                  maxLength={4}
-                />
+                <input type="text" placeholder="Enter OTP from patient" value={otp} onChange={(e) => setOtp(e.target.value)} style={styles.otpInput} maxLength={4} />
                 <button onClick={patientOnboard} style={styles.actionBtn}>✅ Confirm & Start Trip</button>
               </>
             )}
@@ -359,13 +344,7 @@ const DriverApp = () => {
 
             {step === 'arrived_hospital' && (
               <>
-                <textarea
-                  placeholder="Trip notes..."
-                  value={tripNotes}
-                  onChange={(e) => setTripNotes(e.target.value)}
-                  style={styles.textarea}
-                  rows={3}
-                />
+                <textarea placeholder="Trip notes..." value={tripNotes} onChange={(e) => setTripNotes(e.target.value)} style={styles.textarea} rows={3} />
                 <button onClick={completeTrip} style={{ ...styles.actionBtn, background: '#4caf50' }}>✅ Complete Trip</button>
               </>
             )}
@@ -373,7 +352,6 @@ const DriverApp = () => {
         </div>
       )}
 
-      {/* Completed */}
       {step === 'completed' && (
         <div style={styles.completedCard}>
           <span style={styles.completedIcon}>✅</span>
@@ -382,17 +360,12 @@ const DriverApp = () => {
         </div>
       )}
 
-      {/* Trip History Button */}
       {step === 'idle' && (
-        <button
-          onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchTripHistory(); }}
-          style={styles.historyToggle}
-        >
+        <button onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchTripHistory(); }} style={styles.historyToggle}>
           📋 {showHistory ? 'Hide' : 'View'} Trip History
         </button>
       )}
 
-      {/* Trip History */}
       {showHistory && (
         <div style={styles.historySection}>
           {tripHistory.length === 0 ? (
@@ -410,7 +383,6 @@ const DriverApp = () => {
         </div>
       )}
 
-      {/* Footer */}
       {location && (
         <div style={styles.locationFooter}>
           <span>📍 GPS Active</span>
@@ -422,301 +394,53 @@ const DriverApp = () => {
 };
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#0f0f1a',
-    padding: '20px',
-    maxWidth: '500px',
-    margin: '0 auto',
-    fontFamily: 'Arial, sans-serif'
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '20px'
-  },
-  backBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#e53935',
-    fontSize: '14px',
-    cursor: 'pointer'
-  },
-  title: {
-    color: '#fff',
-    fontSize: '20px',
-    margin: 0
-  },
-  onlineIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px'
-  },
-  dot: {
-    width: '10px',
-    height: '10px',
-    borderRadius: '50%',
-    display: 'inline-block'
-  },
-  onlineText: {
-    color: '#aaa',
-    fontSize: '12px'
-  },
-  toggleSection: {
-    textAlign: 'center',
-    marginBottom: '20px'
-  },
-  toggleBtn: {
-    width: '100%',
-    padding: '16px',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '18px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
-  },
-  toggleHint: {
-    color: '#888',
-    fontSize: '12px',
-    marginTop: '8px'
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr',
-    gap: '10px',
-    marginBottom: '20px'
-  },
-  statCard: {
-    background: '#1a1a2e',
-    borderRadius: '12px',
-    padding: '16px',
-    textAlign: 'center'
-  },
-  statIcon: {
-    fontSize: '24px',
-    display: 'block',
-    marginBottom: '6px'
-  },
-  statValue: {
-    color: '#fff',
-    fontSize: '20px',
-    display: 'block'
-  },
-  statLabel: {
-    color: '#888',
-    fontSize: '11px'
-  },
-  alertCard: {
-    background: '#1a0000',
-    border: '2px solid #e53935',
-    borderRadius: '16px',
-    padding: '20px',
-    marginBottom: '20px'
-  },
-  alertHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '15px'
-  },
-  alertIcon: {
-    fontSize: '40px'
-  },
-  alertTitle: {
-    color: '#e53935',
-    fontSize: '20px',
-    margin: 0
-  },
-  timerBar: {
-    height: '4px',
-    borderRadius: '2px',
-    transition: 'width 1s linear',
-    marginBottom: '5px'
-  },
-  timerText: {
-    color: '#ff9800',
-    fontSize: '14px',
-    textAlign: 'center',
-    margin: '5px 0 15px 0'
-  },
-  alertDetails: {
-    color: '#ccc',
-    fontSize: '14px',
-    lineHeight: '1.8',
-    marginBottom: '20px'
-  },
-  alertActions: {
-    display: 'flex',
-    gap: '10px'
-  },
-  acceptBtn: {
-    flex: 1,
-    padding: '14px',
-    background: '#4caf50',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
-  },
-  rejectBtn: {
-    flex: 1,
-    padding: '14px',
-    background: '#e53935',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
-  },
-  tripCard: {
-    background: '#1a1a2e',
-    borderRadius: '16px',
-    padding: '20px',
-    marginBottom: '20px'
-  },
-  tripStatus: {
-    border: '2px solid #333',
-    borderRadius: '10px',
-    padding: '16px',
-    textAlign: 'center',
-    marginBottom: '20px'
-  },
-  tripActions: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px'
-  },
-  actionBtn: {
-    width: '100%',
-    padding: '14px',
-    background: '#2196f3',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
-  },
-  otpInput: {
-    width: '100%',
-    padding: '14px',
-    border: '2px solid #333',
-    borderRadius: '10px',
-    fontSize: '20px',
-    textAlign: 'center',
-    letterSpacing: '10px',
-    background: '#0f0f1a',
-    color: '#fff',
-    boxSizing: 'border-box'
-  },
-  vitalsForm: {
-    marginBottom: '10px'
-  },
-  vitalsTitle: {
-    color: '#ccc',
-    fontSize: '14px',
-    margin: '0 0 10px 0'
-  },
-  vitalsGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '8px'
-  },
-  vitalInput: {
-    padding: '10px',
-    border: '1px solid #333',
-    borderRadius: '8px',
-    background: '#0f0f1a',
-    color: '#fff',
-    fontSize: '14px',
-    boxSizing: 'border-box'
-  },
-  textarea: {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #333',
-    borderRadius: '8px',
-    background: '#0f0f1a',
-    color: '#fff',
-    fontSize: '14px',
-    resize: 'vertical',
-    boxSizing: 'border-box'
-  },
-  completedCard: {
-    background: '#1a3a1a',
-    borderRadius: '16px',
-    padding: '40px',
-    textAlign: 'center',
-    marginBottom: '20px'
-  },
-  completedIcon: {
-    fontSize: '60px',
-    display: 'block',
-    marginBottom: '15px'
-  },
-  completedTitle: {
-    color: '#4caf50',
-    fontSize: '22px',
-    margin: '0 0 10px 0'
-  },
-  completedText: {
-    color: '#aaa',
-    fontSize: '14px'
-  },
-  historyToggle: {
-    width: '100%',
-    padding: '12px',
-    background: '#333',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '14px',
-    cursor: 'pointer',
-    marginBottom: '15px'
-  },
+  page: { minHeight: '100vh', background: '#0f0f1a', padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: 'Arial, sans-serif' },
+  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' },
+  backBtn: { background: 'none', border: 'none', color: '#e53935', fontSize: '14px', cursor: 'pointer' },
+  title: { color: '#fff', fontSize: '20px', margin: 0 },
+  onlineIndicator: { display: 'flex', alignItems: 'center', gap: '6px' },
+  dot: { width: '10px', height: '10px', borderRadius: '50%', display: 'inline-block' },
+  onlineText: { color: '#aaa', fontSize: '12px' },
+  toggleSection: { textAlign: 'center', marginBottom: '20px' },
+  toggleBtn: { width: '100%', padding: '16px', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer' },
+  toggleHint: { color: '#888', fontSize: '12px', marginTop: '8px' },
+  statsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '20px' },
+  statCard: { background: '#1a1a2e', borderRadius: '12px', padding: '16px', textAlign: 'center' },
+  statIcon: { fontSize: '24px', display: 'block', marginBottom: '6px' },
+  statValue: { color: '#fff', fontSize: '20px', display: 'block' },
+  statLabel: { color: '#888', fontSize: '11px' },
+  alertCard: { background: '#1a0000', border: '2px solid #e53935', borderRadius: '16px', padding: '20px', marginBottom: '20px' },
+  alertHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' },
+  alertIcon: { fontSize: '40px' },
+  alertTitle: { color: '#e53935', fontSize: '20px', margin: 0 },
+  timerBar: { height: '4px', borderRadius: '2px', transition: 'width 1s linear', marginBottom: '5px' },
+  timerText: { color: '#ff9800', fontSize: '14px', textAlign: 'center', margin: '5px 0 15px 0' },
+  alertDetails: { color: '#ccc', fontSize: '14px', lineHeight: '1.8', marginBottom: '20px' },
+  alertActions: { display: 'flex', gap: '10px' },
+  acceptBtn: { flex: 1, padding: '14px', background: '#4caf50', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' },
+  rejectBtn: { flex: 1, padding: '14px', background: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' },
+  tripCard: { background: '#1a1a2e', borderRadius: '16px', padding: '20px', marginBottom: '20px' },
+  tripStatus: { border: '2px solid #333', borderRadius: '10px', padding: '16px', textAlign: 'center', marginBottom: '20px' },
+  tripActions: { display: 'flex', flexDirection: 'column', gap: '10px' },
+  actionBtn: { width: '100%', padding: '14px', background: '#2196f3', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' },
+  otpInput: { width: '100%', padding: '14px', border: '2px solid #333', borderRadius: '10px', fontSize: '20px', textAlign: 'center', letterSpacing: '10px', background: '#0f0f1a', color: '#fff', boxSizing: 'border-box' },
+  vitalsForm: { marginBottom: '10px' },
+  vitalsTitle: { color: '#ccc', fontSize: '14px', margin: '0 0 10px 0' },
+  vitalsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
+  vitalInput: { padding: '10px', border: '1px solid #333', borderRadius: '8px', background: '#0f0f1a', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
+  textarea: { width: '100%', padding: '12px', border: '1px solid #333', borderRadius: '8px', background: '#0f0f1a', color: '#fff', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' },
+  completedCard: { background: '#1a3a1a', borderRadius: '16px', padding: '40px', textAlign: 'center', marginBottom: '20px' },
+  completedIcon: { fontSize: '60px', display: 'block', marginBottom: '15px' },
+  completedTitle: { color: '#4caf50', fontSize: '22px', margin: '0 0 10px 0' },
+  completedText: { color: '#aaa', fontSize: '14px' },
+  historyToggle: { width: '100%', padding: '12px', background: '#333', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', cursor: 'pointer', marginBottom: '15px' },
   historySection: {},
-  emptyText: {
-    color: '#888',
-    textAlign: 'center',
-    padding: '20px'
-  },
-  historyCard: {
-    background: '#1a1a2e',
-    borderRadius: '8px',
-    padding: '12px',
-    marginBottom: '8px'
-  },
-  historyRow: {
-    display: 'flex',
-    justifyContent: 'space-between'
-  },
-  historyLabel: {
-    color: '#ccc',
-    fontSize: '13px'
-  },
-  historyValue: {
-    color: '#4caf50',
-    fontSize: '14px',
-    fontWeight: 'bold'
-  },
-  locationFooter: {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    background: '#1a1a2e',
-    padding: '10px 20px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    color: '#4caf50',
-    fontSize: '12px',
-    borderTop: '1px solid #333'
-  }
+  emptyText: { color: '#888', textAlign: 'center', padding: '20px' },
+  historyCard: { background: '#1a1a2e', borderRadius: '8px', padding: '12px', marginBottom: '8px' },
+  historyRow: { display: 'flex', justifyContent: 'space-between' },
+  historyLabel: { color: '#ccc', fontSize: '13px' },
+  historyValue: { color: '#4caf50', fontSize: '14px', fontWeight: 'bold' },
+  locationFooter: { position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a1a2e', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', color: '#4caf50', fontSize: '12px', borderTop: '1px solid #333' }
 };
 
 export default DriverApp;
