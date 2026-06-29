@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNearbyAmbulances } from '../services/api';
+import { getNearbyAmbulances, getHospitals } from '../services/api';
 
 const Ambulance = () => {
   const navigate = useNavigate();
@@ -9,57 +9,66 @@ const Ambulance = () => {
   const [nearbyAmbulances, setNearbyAmbulances] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFilter, setSearchFilter] = useState('name');
-  const [bookingStep, setBookingStep] = useState('hub');
   const [selectedType, setSelectedType] = useState('basic');
-  const [form, setForm] = useState({
-    patientName: '', patientPhone: '', patientAge: '',
-    pickupAddress: '', destination: '',
-    scheduledDate: '', scheduledTime: '10:00',
-    requiresOxygen: false, requiresAttendant: false
-  });
-  const [fareEstimate, setFareEstimate] = useState(null);
-  const [error, setError] = useState('');
+  const [showNearbyHospitals, setShowNearbyHospitals] = useState(false);
 
   useEffect(() => {
+    checkUserLogin();
+    getUserLocation();
+  }, []);
+
+  const checkUserLogin = () => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     if (token && userData) {
       try { setUser(JSON.parse(userData)); } catch(e) {}
     }
-    getLocation();
-  }, []);
+  };
 
-  const getLocation = () => {
+  const getUserLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          fetchNearbyAmbulances(pos.coords.latitude, pos.coords.longitude);
+          loadNearbyAmbulances(pos.coords.latitude, pos.coords.longitude);
         },
-        () => {}
+        () => setNearbyAmbulances([])
       );
     }
   };
 
-  const fetchNearbyAmbulances = async (lat, lng) => {
+  const loadNearbyAmbulances = async (lat, lng) => {
     try {
       const res = await getNearbyAmbulances({ lat, lng, radius: 10 });
       if (res.data?.data) setNearbyAmbulances(res.data.data);
-    } catch(err) {}
+    } catch(err) {
+      setNearbyAmbulances([]);
+    }
   };
 
-  const handleSearch = () => {
+  const executeSearch = () => {
+    if (['nearby', 'rated'].includes(searchFilter)) {
+      const params = new URLSearchParams();
+      if (searchFilter === 'nearby') params.append('emergency', 'true');
+      if (searchFilter === 'rated') { params.append('min_rating', '4'); params.append('sort', 'rating'); }
+      navigate(`/hospitals?${params.toString()}`);
+      return;
+    }
     if (!searchQuery.trim()) return;
     const params = new URLSearchParams();
-    if (searchFilter === 'name') params.append('q', searchQuery);
-    else if (searchFilter === 'city') params.append('city', searchQuery);
-    else if (searchFilter === 'specialty') params.append('specialty', searchQuery);
-    else if (searchFilter === 'nearby') params.append('emergency', 'true');
-    else if (searchFilter === 'rated') params.append('min_rating', '4');
+    const paramMap = { name: 'q', city: 'city', specialty: 'specialty' };
+    params.append(paramMap[searchFilter] || 'q', searchQuery);
     navigate(`/hospitals?${params.toString()}`);
   };
 
-  const handleBookNow = () => {
+  const handleFilterClick = (filter) => {
+    setSearchFilter(filter);
+    setSearchQuery('');
+    if (filter === 'nearby') navigate('/hospitals?emergency=true');
+    else if (filter === 'rated') navigate('/hospitals?min_rating=4&sort=rating');
+  };
+
+  const startBooking = () => {
     if (!user) {
       navigate('/login?redirect=/ambulance');
       return;
@@ -67,7 +76,9 @@ const Ambulance = () => {
     navigate(`/ambulance/schedule?type=${selectedType}`);
   };
 
-  const isLoggedIn = !!user;
+  const startEmergency = () => {
+    navigate('/ambulance/emergency');
+  };
 
   const ambulanceTypes = [
     { icon: '🚑', name: 'Basic Life Support', desc: 'Oxygen, first aid, stretcher', value: 'basic' },
@@ -77,76 +88,70 @@ const Ambulance = () => {
     { icon: '♿', name: 'Wheelchair', desc: 'Non-emergency transport', value: 'wheelchair' },
   ];
 
-  const searchFilters = [
-    { value: 'name', label: '🏥 Name' },
-    { value: 'nearby', label: '📍 Nearby' },
-    { value: 'rated', label: '⭐ Top Rated' },
-    { value: 'specialty', label: '🔬 Specialty' },
-    { value: 'city', label: '🏙️ City' },
+  const filterOptions = [
+    { value: 'name', label: 'Name' },
+    { value: 'nearby', label: 'Nearby' },
+    { value: 'rated', label: 'Top Rated' },
+    { value: 'specialty', label: 'Specialty' },
+    { value: 'city', label: 'City' },
   ];
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#f0f2f5', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
+  const placeholderText = {
+    name: 'Search hospital name...',
+    nearby: 'Showing nearby hospitals...',
+    rated: 'Showing top rated hospitals...',
+    specialty: 'Search by specialty (e.g., Cardiology)...',
+    city: 'Search by city (e.g., Mumbai)...',
+  };
 
-      {/* ===== TOP BAR ===== */}
-      <div style={{ background: '#fff', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8e8e8' }}>
-        <h1 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#1a1a1a' }}>🚑 Ambulance</h1>
-        {isLoggedIn ? (
-          <span style={{ fontSize: '13px', color: '#555', fontWeight: 600 }}>👤 {user?.name?.split(' ')[0]}</span>
+  return (
+    <div style={styles.container}>
+      
+      {/* HEADER */}
+      <div style={styles.header}>
+        <button onClick={() => navigate('/')} style={styles.backBtn}>←</button>
+        <h1 style={styles.headerTitle}>Ambulance</h1>
+        {user ? (
+          <span style={styles.userBadge}>{user.name?.charAt(0)?.toUpperCase()}</span>
         ) : (
-          <button onClick={() => navigate('/login?redirect=/ambulance')} style={loginBtnStyle}>Patient Login</button>
+          <button onClick={() => navigate('/login?redirect=/ambulance')} style={styles.loginBtn}>Login</button>
         )}
       </div>
 
-      {/* ===== EMERGENCY HERO ===== */}
-      <div style={{ background: 'linear-gradient(180deg, #c62828 0%, #8e0000 100%)', padding: '28px 20px', textAlign: 'center' }}>
-        <button onClick={() => navigate('/ambulance/emergency')} style={emergencyBtnStyle}>
-          <span style={{ display: 'block', fontSize: '48px' }}>🚨</span>
-          <span style={{ display: 'block', fontSize: '22px', fontWeight: 900, color: '#c62828', letterSpacing: '2px', marginTop: '6px' }}>EMERGENCY</span>
-          <span style={{ display: 'block', fontSize: '11px', color: '#888', marginTop: '3px' }}>Press for immediate ambulance dispatch</span>
+      {/* EMERGENCY SECTION */}
+      <div style={styles.emergencySection}>
+        <button onClick={startEmergency} style={styles.emergencyBtn}>
+          <span style={styles.emergencyIcon}>🚨</span>
+          <span style={styles.emergencyLabel}>EMERGENCY</span>
+          <span style={styles.emergencyHint}>Tap for immediate ambulance</span>
         </button>
-        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginTop: '12px' }}>
-          For life-threatening emergencies, call <span style={{ color: '#fff', fontWeight: 700, fontSize: '16px' }}>108</span>
-        </p>
+        <p style={styles.emergencyNote}>Or dial <strong>108</strong></p>
       </div>
 
-      {/* ===== SEARCH BAR ===== */}
-      <div style={{ margin: '16px', background: '#fff', borderRadius: '14px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+      {/* SEARCH SECTION */}
+      <div style={styles.searchSection}>
+        <div style={styles.searchRow}>
           <input
             type="text"
-            placeholder={searchFilter === 'nearby' ? 'Showing nearby hospitals...' : searchFilter === 'rated' ? 'Showing top rated hospitals...' : 'Search hospitals...'}
+            placeholder={placeholderText[searchFilter]}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            disabled={searchFilter === 'nearby' || searchFilter === 'rated'}
-            style={{
-              flex: 1, padding: '13px 16px', border: '2px solid #e0e0e0', borderRadius: '10px',
-              fontSize: '14px', outline: 'none', background: searchFilter === 'nearby' || searchFilter === 'rated' ? '#f5f5f5' : '#fff'
-            }}
+            onKeyDown={(e) => e.key === 'Enter' && executeSearch()}
+            disabled={['nearby', 'rated'].includes(searchFilter)}
+            style={styles.searchInput}
           />
-          <button onClick={handleSearch} style={{
-            padding: '13px 20px', background: '#e53935', color: '#fff', border: 'none',
-            borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer'
-          }}>🔍</button>
+          <button onClick={executeSearch} style={styles.searchBtn}>Search</button>
         </div>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {searchFilters.map(f => (
+        <div style={styles.filterRow}>
+          {filterOptions.map(f => (
             <button
               key={f.value}
-              onClick={() => {
-                setSearchFilter(f.value);
-                if (f.value === 'nearby' || f.value === 'rated') {
-                  const params = new URLSearchParams();
-                  if (f.value === 'nearby') params.append('emergency', 'true');
-                  if (f.value === 'rated') params.append('min_rating', '4');
-                  navigate(`/hospitals?${params.toString()}`);
-                }
-              }}
+              onClick={() => handleFilterClick(f.value)}
               style={{
-                padding: '7px 14px', borderRadius: '20px', border: searchFilter === f.value ? '2px solid #e53935' : '1px solid #ddd',
-                background: searchFilter === f.value ? '#fff5f5' : '#fff', color: searchFilter === f.value ? '#e53935' : '#555',
-                fontSize: '12px', fontWeight: 600, cursor: 'pointer'
+                ...styles.filterBtn,
+                backgroundColor: searchFilter === f.value ? '#e53935' : '#fff',
+                color: searchFilter === f.value ? '#fff' : '#555',
+                borderColor: searchFilter === f.value ? '#e53935' : '#ddd'
               }}
             >
               {f.label}
@@ -155,118 +160,362 @@ const Ambulance = () => {
         </div>
       </div>
 
-      {/* ===== NEARBY AMBULANCES ===== */}
-      <div style={{ margin: '0 16px 16px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#333', marginBottom: '10px' }}>
-          📍 {nearbyAmbulances.length > 0 ? `${nearbyAmbulances.length} Ambulances Available Nearby` : 'Searching nearby ambulances...'}
-        </h3>
-        {nearbyAmbulances.length > 0 && (
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+      {/* NEARBY AMBULANCES */}
+      {nearbyAmbulances.length > 0 && (
+        <div style={styles.sectionCard}>
+          <h3 style={styles.sectionTitle}>{nearbyAmbulances.length} ambulances available nearby</h3>
+          <div style={styles.horizontalScroll}>
             {nearbyAmbulances.slice(0, 5).map((amb, i) => (
-              <div key={i} style={{
-                minWidth: '140px', background: '#fff', padding: '12px', borderRadius: '12px',
-                border: '1px solid #e8e8e8', textAlign: 'center', flexShrink: 0
-              }}>
-                <span style={{ fontSize: '28px', display: 'block' }}>🚑</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#333', display: 'block', marginTop: '4px' }}>{amb.vehicleType?.toUpperCase() || 'BASIC'}</span>
-                <span style={{ fontSize: '11px', color: '#888', display: 'block' }}>{amb.distance}km • {amb.estimatedETA} min</span>
+              <div key={i} style={styles.ambulanceCard}>
+                <span style={styles.ambulanceIcon}>🚑</span>
+                <span style={styles.ambulanceType}>{amb.vehicleType?.toUpperCase() || 'BASIC'}</span>
+                <span style={styles.ambulanceMeta}>{amb.distance}km • ~{amb.estimatedETA}min</span>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* ===== SELECT AMBULANCE TYPE ===== */}
-      <div style={{ margin: '0 16px 16px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#333', marginBottom: '10px' }}>Select Ambulance Type</h3>
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+      {/* SELECT TYPE */}
+      <div style={styles.sectionCard}>
+        <h3 style={styles.sectionTitle}>Select ambulance type</h3>
+        <div style={styles.horizontalScroll}>
           {ambulanceTypes.map((t, i) => (
             <button
               key={i}
               onClick={() => setSelectedType(t.value)}
               style={{
-                minWidth: '110px', padding: '14px 12px', borderRadius: '12px', textAlign: 'center', cursor: 'pointer',
-                border: selectedType === t.value ? '2px solid #e53935' : '1px solid #e0e0e0',
-                background: selectedType === t.value ? '#fff5f5' : '#fff', flexShrink: 0
+                ...styles.typeCard,
+                borderColor: selectedType === t.value ? '#e53935' : '#e8e8e8',
+                backgroundColor: selectedType === t.value ? '#fff5f5' : '#fff'
               }}
             >
-              <span style={{ fontSize: '30px', display: 'block' }}>{t.icon}</span>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#333', display: 'block', marginTop: '4px' }}>{t.name}</span>
-              <span style={{ fontSize: '10px', color: '#888', display: 'block', marginTop: '2px' }}>{t.desc}</span>
+              <span style={styles.typeIcon}>{t.icon}</span>
+              <span style={styles.typeName}>{t.name}</span>
+              <span style={styles.typeDesc}>{t.desc}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* ===== ACTION BUTTONS ===== */}
-      <div style={{ margin: '0 16px 16px' }}>
-        <button onClick={handleBookNow} style={actionBtnStyle}>
-          📅 Book {ambulanceTypes.find(t => t.value === selectedType)?.name} Ambulance
+      {/* BOOK BUTTON */}
+      <button onClick={startBooking} style={styles.bookBtn}>
+        Book {ambulanceTypes.find(t => t.value === selectedType)?.name}
+      </button>
+
+      {/* MENU LINKS */}
+      <div style={styles.menuSection}>
+        <button onClick={() => navigate('/ambulance/emergency-contacts')} style={styles.menuItem}>
+          <span>🛡️</span><span>Emergency Contacts</span><span style={styles.arrow}>›</span>
+        </button>
+        <button onClick={() => navigate('/my-bookings')} style={styles.menuItem}>
+          <span>📋</span><span>My Bookings</span><span style={styles.arrow}>›</span>
+        </button>
+        <button onClick={() => navigate('/ambulance/schedule')} style={styles.menuItem}>
+          <span>📅</span><span>Schedule Transport</span><span style={styles.arrow}>›</span>
         </button>
       </div>
 
-      {/* ===== QUICK LINKS ===== */}
-      <div style={{ margin: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <button onClick={() => navigate('/ambulance/emergency-contacts')} style={linkBtnStyle}>
-          <span style={{ fontSize: '18px' }}>🛡️</span>
-          <span style={{ flex: 1, textAlign: 'left' }}>Emergency Contacts</span>
-          <span style={{ color: '#ccc' }}>›</span>
+      {/* FOR DRIVERS */}
+      <div style={styles.sectionCard}>
+        <h3 style={styles.sectionTitle}>For Ambulance Drivers</h3>
+        <button onClick={() => navigate('/ambulance/driver/app')} style={styles.menuItem}>
+          <span>🌐</span><span>Driver Web App</span><span style={styles.arrow}>›</span>
         </button>
-        <button onClick={() => navigate('/my-bookings')} style={linkBtnStyle}>
-          <span style={{ fontSize: '18px' }}>📋</span>
-          <span style={{ flex: 1, textAlign: 'left' }}>My Bookings</span>
-          <span style={{ color: '#ccc' }}>›</span>
+        <a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" style={styles.storeLink}>
+          <span>📱</span><span>Download for Android</span><span style={styles.storeBadge}>Play Store</span>
+        </a>
+        <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer" style={styles.storeLink}>
+          <span>🍎</span><span>Download for iOS</span><span style={styles.storeBadge}>App Store</span>
+        </a>
+        <button onClick={() => navigate('/ambulance/register')} style={styles.menuItem}>
+          <span>📝</span><span>Register Fleet</span><span style={styles.arrow}>›</span>
         </button>
-        <button onClick={() => navigate('/ambulance/schedule')} style={linkBtnStyle}>
-          <span style={{ fontSize: '18px' }}>📅</span>
-          <span style={{ flex: 1, textAlign: 'left' }}>Schedule Transport</span>
-          <span style={{ color: '#ccc' }}>›</span>
-        </button>
-        <button onClick={() => navigate('/ambulance/driver/app')} style={linkBtnStyle}>
-          <span style={{ fontSize: '18px' }}>👨‍⚕️</span>
-          <span style={{ flex: 1, textAlign: 'left' }}>Driver App</span>
-          <span style={{ color: '#ccc' }}>›</span>
-        </button>
-        <button onClick={() => navigate('/ambulance/login')} style={linkBtnStyle}>
-          <span style={{ fontSize: '18px' }}>🔐</span>
-          <span style={{ flex: 1, textAlign: 'left' }}>Provider Login</span>
-          <span style={{ color: '#ccc' }}>›</span>
+        <button onClick={() => navigate('/ambulance/login')} style={styles.menuItem}>
+          <span>🔐</span><span>Provider Login</span><span style={styles.arrow}>›</span>
         </button>
       </div>
 
-      {/* ===== FOOTER ===== */}
-      <div style={{ textAlign: 'center', padding: '20px', color: '#aaa', fontSize: '11px', borderTop: '1px solid #eee', margin: '0 16px' }}>
-        <p>⚠️ For life-threatening emergencies, always call <strong style={{ color: '#e53935' }}>108</strong> first.</p>
+      {/* FOOTER */}
+      <div style={styles.footer}>
+        <p>⚠️ For life-threatening emergencies, always call <strong>108</strong> first.</p>
       </div>
     </div>
   );
 };
 
-const loginBtnStyle = {
-  padding: '8px 18px', background: '#e53935', color: '#fff', border: 'none',
-  borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700
-};
-
-const emergencyBtnStyle = {
-  width: '100%', maxWidth: '320px', padding: '24px 20px', background: '#fff',
-  border: 'none', borderRadius: '18px', cursor: 'pointer',
-  boxShadow: '0 6px 24px rgba(0,0,0,0.25)'
-};
-
-const actionBtnStyle = {
-  width: '100%', padding: '16px', background: '#e53935', color: '#fff',
-  border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer'
-};
-
-const linkBtnStyle = {
-  width: '100%', padding: '14px 16px', background: '#fff', border: '1px solid #eee',
-  borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px',
-  fontSize: '14px', fontWeight: 600, color: '#333', cursor: 'pointer'
-};
-
-const inputStyle = {
-  width: '100%', padding: '13px', border: '1px solid #ddd', borderRadius: '8px',
-  fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box', outline: 'none'
+const styles = {
+  container: {
+    minHeight: '100vh',
+    backgroundColor: '#f2f4f7',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    paddingBottom: '40px'
+  },
+  header: {
+    backgroundColor: '#fff',
+    padding: '14px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
+    borderBottom: '1px solid #e8e8e8'
+  },
+  backBtn: {
+    fontSize: '20px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    color: '#333'
+  },
+  headerTitle: {
+    fontSize: '18px',
+    fontWeight: 700,
+    color: '#1a1a1a',
+    margin: 0
+  },
+  userBadge: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    backgroundColor: '#e53935',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 700,
+    fontSize: '14px'
+  },
+  loginBtn: {
+    padding: '6px 14px',
+    backgroundColor: '#e53935',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer'
+  },
+  emergencySection: {
+    background: 'linear-gradient(180deg, #c62828, #8e0000)',
+    padding: '30px 20px',
+    textAlign: 'center'
+  },
+  emergencyBtn: {
+    width: '100%',
+    maxWidth: '300px',
+    padding: '24px',
+    backgroundColor: '#fff',
+    border: 'none',
+    borderRadius: '16px',
+    cursor: 'pointer',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+  },
+  emergencyIcon: {
+    fontSize: '48px',
+    display: 'block'
+  },
+  emergencyLabel: {
+    fontSize: '20px',
+    fontWeight: 900,
+    color: '#c62828',
+    letterSpacing: '2px',
+    display: 'block',
+    marginTop: '4px'
+  },
+  emergencyHint: {
+    fontSize: '11px',
+    color: '#888',
+    display: 'block',
+    marginTop: '2px'
+  },
+  emergencyNote: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: '13px',
+    marginTop: '12px'
+  },
+  searchSection: {
+    margin: '12px 14px',
+    backgroundColor: '#fff',
+    borderRadius: '14px',
+    padding: '14px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+  },
+  searchRow: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '10px'
+  },
+  searchInput: {
+    flex: 1,
+    padding: '12px',
+    border: '2px solid #e0e0e0',
+    borderRadius: '10px',
+    fontSize: '14px',
+    outline: 'none'
+  },
+  searchBtn: {
+    padding: '12px 18px',
+    backgroundColor: '#e53935',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '10px',
+    fontWeight: 700,
+    fontSize: '14px',
+    cursor: 'pointer'
+  },
+  filterRow: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+  filterBtn: {
+    padding: '6px 14px',
+    borderRadius: '20px',
+    border: '1px solid #ddd',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer'
+  },
+  sectionCard: {
+    margin: '0 14px 14px',
+    backgroundColor: '#fff',
+    borderRadius: '14px',
+    padding: '16px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+  },
+  sectionTitle: {
+    fontSize: '15px',
+    fontWeight: 700,
+    color: '#333',
+    margin: '0 0 12px 0'
+  },
+  horizontalScroll: {
+    display: 'flex',
+    gap: '8px',
+    overflowX: 'auto',
+    paddingBottom: '4px'
+  },
+  ambulanceCard: {
+    minWidth: '120px',
+    padding: '14px 10px',
+    backgroundColor: '#fafafa',
+    borderRadius: '12px',
+    textAlign: 'center',
+    flexShrink: 0,
+    border: '1px solid #eee'
+  },
+  ambulanceIcon: {
+    fontSize: '28px',
+    display: 'block'
+  },
+  ambulanceType: {
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#333',
+    display: 'block',
+    marginTop: '4px'
+  },
+  ambulanceMeta: {
+    fontSize: '10px',
+    color: '#888',
+    display: 'block',
+    marginTop: '2px'
+  },
+  typeCard: {
+    minWidth: '95px',
+    padding: '12px 8px',
+    borderRadius: '12px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    flexShrink: 0,
+    border: '2px solid #e8e8e8'
+  },
+  typeIcon: {
+    fontSize: '26px',
+    display: 'block'
+  },
+  typeName: {
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#333',
+    display: 'block',
+    marginTop: '4px'
+  },
+  typeDesc: {
+    fontSize: '9px',
+    color: '#888',
+    display: 'block',
+    marginTop: '2px'
+  },
+  bookBtn: {
+    margin: '0 14px 14px',
+    width: 'calc(100% - 28px)',
+    padding: '15px',
+    backgroundColor: '#e53935',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '15px',
+    fontWeight: 700,
+    cursor: 'pointer'
+  },
+  menuSection: {
+    margin: '0 14px 14px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1px',
+    backgroundColor: '#fff',
+    borderRadius: '14px',
+    overflow: 'hidden'
+  },
+  menuItem: {
+    width: '100%',
+    padding: '14px 16px',
+    backgroundColor: '#fff',
+    border: 'none',
+    borderBottom: '1px solid #f0f0f0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    fontSize: '14px',
+    color: '#333',
+    cursor: 'pointer',
+    textAlign: 'left'
+  },
+  arrow: {
+    marginLeft: 'auto',
+    color: '#ccc',
+    fontSize: '18px'
+  },
+  storeLink: {
+    width: '100%',
+    padding: '14px 16px',
+    backgroundColor: '#fff',
+    borderBottom: '1px solid #f0f0f0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    fontSize: '14px',
+    color: '#333',
+    textDecoration: 'none'
+  },
+  storeBadge: {
+    marginLeft: 'auto',
+    color: '#4caf50',
+    fontSize: '11px',
+    fontWeight: 600
+  },
+  footer: {
+    textAlign: 'center',
+    padding: '16px',
+    color: '#999',
+    fontSize: '12px',
+    borderTop: '1px solid #eee',
+    margin: '0 14px'
+  }
 };
 
 export default Ambulance;
