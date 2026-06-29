@@ -173,7 +173,7 @@ import TherapistDashboard from './pages/mentalhealth/TherapistDashboard';
 import TherapistEarnings from './pages/mentalhealth/TherapistEarnings';
 
 // ============================================
-// 🆕 ONLINE DOCTOR MODULE IMPORTS
+// ONLINE DOCTOR MODULE IMPORTS
 // ============================================
 import OnlineDoctorHub from './pages/online-doctor/OnlineDoctorHub';
 import DoctorSearch from './pages/online-doctor/DoctorSearch';
@@ -185,6 +185,16 @@ import OnlineDoctorLogin from './pages/online-doctor/DoctorLogin';
 import OnlineDoctorDashboard from './pages/online-doctor/DoctorDashboard';
 import ConsultHistory from './pages/online-doctor/ConsultHistory';
 import ResetPassword from './pages/online-doctor/ResetPassword';
+
+// ============================================
+// 🚑 AMBULANCE BLITZ RESPONSE IMPORTS (NEW)
+// ============================================
+import EmergencyRequest from './pages/ambulance/EmergencyRequest';
+import LiveTracking from './pages/ambulance/LiveTracking';
+import ScheduleTransport from './pages/ambulance/ScheduleTransport';
+import DriverApp from './pages/ambulance/DriverApp';
+import EmergencyContacts from './pages/ambulance/EmergencyContacts';
+import DigitalTripSheet from './pages/ambulance/DigitalTripSheet';
 
 // ============================================
 // CONTEXT PROVIDERS
@@ -208,8 +218,17 @@ function App() {
           <Route path="/payment" element={<Payment />} />
           <Route path="/my-bookings" element={<MyBookings />} />
 
-          {/* AMBULANCE TAG */}
+          {/* 🚑 AMBULANCE TAG (ENHANCED) */}
           <Route path="/ambulance" element={<Ambulance />} />
+          <Route path="/ambulance/emergency" element={<EmergencyRequest />} />
+          <Route path="/ambulance/tracking/:bookingId" element={<LiveTracking />} />
+          <Route path="/ambulance/schedule" element={<ScheduleTransport />} />
+          <Route path="/ambulance/driver/app" element={<DriverApp />} />
+          <Route path="/ambulance/emergency-contacts" element={<EmergencyContacts />} />
+          <Route path="/ambulance/trip-sheet/:bookingId" element={<DigitalTripSheet />} />
+          <Route path="/ambulance/register" element={<AmbulanceRegister />} />
+          <Route path="/ambulance/login" element={<AmbulanceLogin />} />
+          <Route path="/ambulance/dashboard" element={<AmbulanceDashboard />} />
 
           {/* AYURVEDA TAG */}
           <Route path="/ayurveda" element={<AyurvedaHub />} />
@@ -262,7 +281,6 @@ function App() {
           <Route path="/diagnostics-custom-package" element={<DiagnosticsCustomPackage />} />
           <Route path="/diagnostics" element={<Diagnostics />} />
           <Route path="/health-packages" element={<HealthPackages />} />
-          <Route path="/health-packages" element={<HealthPackagesPage />} />
           <Route path="/package-detail/:id" element={<PackageDetail />} />
           <Route path="/test-compare" element={<SimpleCompareTest />} />
           <Route path="/provider-dashboard" element={<ProviderDashboard />} />
@@ -326,9 +344,6 @@ function App() {
           <Route path="/hospital/register" element={<HospitalRegister />} />
           <Route path="/hospital/login" element={<HospitalLogin />} />
           <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
-          <Route path="/ambulance/register" element={<AmbulanceRegister />} />
-          <Route path="/ambulance/login" element={<AmbulanceLogin />} />
-          <Route path="/ambulance/dashboard" element={<AmbulanceDashboard />} />
           <Route path="/caregiver/register" element={<CaregiverRegister />} />
           <Route path="/caregiver/login" element={<CaregiverLogin />} />
           <Route path="/caregiver/dashboard" element={<CaregiverDashboard />} />
@@ -354,7 +369,7 @@ function App() {
           <Route path="/mentalhealth/therapist/dashboard" element={<TherapistDashboard />} />
           <Route path="/mentalhealth/therapist/earnings" element={<TherapistEarnings />} />
 
-          {/* 🆕 ONLINE DOCTOR TAG */}
+          {/* ONLINE DOCTOR TAG */}
           <Route path="/online-doctor" element={<OnlineDoctorHub />} />
           <Route path="/online-doctor/search" element={<DoctorSearch />} />
           <Route path="/online-doctor/doctor/:id" element={<DoctorProfile />} />
@@ -364,8 +379,7 @@ function App() {
           <Route path="/online-doctor/login" element={<OnlineDoctorLogin />} />
           <Route path="/online-doctor/dashboard" element={<OnlineDoctorDashboard />} />
           <Route path="/online-doctor/history" element={<ConsultHistory />} />
-	  <Route path="/online-doctor/reset-password/:token" element={<ResetPassword />} />
-
+          <Route path="/online-doctor/reset-password/:token" element={<ResetPassword />} />
 
           {/* OLD ROUTES - Redirected */}
           <Route path="/teleconsult" element={<OnlineDoctorHub />} />

@@ -41,76 +41,29 @@ export const getProfile = () => api.get('/auth/profile');
 export const updateProfile = (data) => api.put('/auth/profile', data);
 
 // ============================================
-// 🆕 HOSPITALS - ENHANCED (UPDATED)
+// HOSPITALS (PRESERVED)
 // ============================================
 
-// Search with advanced filters
 export const searchHospitals = (params) => api.get('/hospitals/search', { params });
-
-// Get single hospital
 export const getHospitalById = (id) => api.get(`/hospitals/${id}`);
-
-// Get all hospitals (simple listing)
 export const getHospitals = (params) => api.get('/hospitals', { params });
-
-// Get hospital doctors
 export const getHospitalDoctors = (hospitalId) => api.get(`/hospitals/${hospitalId}/doctors`);
-
-// 🆕 Get doctors by specialization
 export const getDoctorsBySpecialization = (hospitalId, specialization) => 
   api.get(`/hospitals/${hospitalId}/doctors`, { params: { specialization } });
-
-// 🆕 Get hospital schemes
-export const getHospitalSchemes = (hospitalId) => 
-  api.get(`/hospitals/${hospitalId}/schemes`);
-
-// 🆕 Get hospital facilities
-export const getHospitalFacilities = (hospitalId) => 
-  api.get(`/hospitals/${hospitalId}/facilities`);
-
-// 🆕 Get hospital reviews
-export const getHospitalReviews = (hospitalId, params) => 
-  api.get(`/hospitals/${hospitalId}/reviews`, { params });
-
-// 🆕 Get hospital bed status
-export const getHospitalBedStatus = (hospitalId) => 
-  api.get(`/hospitals/${hospitalId}/bed-status`);
-
-// 🆕 Get nearby hospitals
-export const getNearbyHospitals = (lat, lng, radius = 50) => 
-  api.get('/hospitals/search', { params: { lat, lng, radius } });
-
-// 🆕 Emergency search
-export const emergencySearch = (params) => 
-  api.get('/hospitals/search', { params: { ...params, emergency: 'true' } });
-
-// 🆕 Filter by scheme
-export const searchByScheme = (scheme, params = {}) => 
-  api.get('/hospitals/search', { params: { ...params, scheme } });
-
-// 🆕 Filter by insurance
-export const searchByInsurance = (insurance, params = {}) => 
-  api.get('/hospitals/search', { params: { ...params, insurance } });
-
-// OPD Booking
+export const getHospitalSchemes = (hospitalId) => api.get(`/hospitals/${hospitalId}/schemes`);
+export const getHospitalFacilities = (hospitalId) => api.get(`/hospitals/${hospitalId}/facilities`);
+export const getHospitalReviews = (hospitalId, params) => api.get(`/hospitals/${hospitalId}/reviews`, { params });
+export const getHospitalBedStatus = (hospitalId) => api.get(`/hospitals/${hospitalId}/bed-status`);
+export const getNearbyHospitals = (lat, lng, radius = 50) => api.get('/hospitals/search', { params: { lat, lng, radius } });
+export const emergencySearch = (params) => api.get('/hospitals/search', { params: { ...params, emergency: 'true' } });
+export const searchByScheme = (scheme, params = {}) => api.get('/hospitals/search', { params: { ...params, scheme } });
+export const searchByInsurance = (insurance, params = {}) => api.get('/hospitals/search', { params: { ...params, insurance } });
 export const bookOPD = (data) => api.post('/hospitals/book-opd', data);
-
-// Admission Booking
 export const bookAdmission = (data) => api.post('/hospitals/book-admission', data);
 
-// ============================================
-// 🆕 HOSPITAL PROVIDER FUNCTIONS (NEW)
-// ============================================
-
-// Update bed status (Web portal)
-export const updateBedStatus = (hospitalId, data) => 
-  api.put(`/hospitals/${hospitalId}/bed-status`, data);
-
-// WhatsApp bed update
-export const whatsappBedUpdate = (data) => 
-  api.post('/hospitals/whatsapp-update', data);
-
-// Upload doctors via Excel
+// Hospital Provider
+export const updateBedStatus = (hospitalId, data) => api.put(`/hospitals/${hospitalId}/bed-status`, data);
+export const whatsappBedUpdate = (data) => api.post('/hospitals/whatsapp-update', data);
 export const uploadDoctorsExcel = (hospitalId, file) => {
   const formData = new FormData();
   formData.append('file', file);
@@ -118,8 +71,6 @@ export const uploadDoctorsExcel = (hospitalId, file) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 };
-
-// Upload hospital data via Excel (beds, pricing)
 export const uploadHospitalDataExcel = (hospitalId, file) => {
   const formData = new FormData();
   formData.append('file', file);
@@ -127,55 +78,65 @@ export const uploadHospitalDataExcel = (hospitalId, file) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 };
-
-// Download Excel template
-export const downloadDoctorTemplate = () => 
-  api.get('/hospitals/template/download', { responseType: 'blob' });
-
-// Update hospital profile
-export const updateHospitalProfile = (hospitalId, data) => 
-  api.put(`/hospitals/${hospitalId}`, data);
-
-// Update hospital schemes
-export const updateHospitalSchemes = (hospitalId, data) => 
-  api.put(`/hospitals/${hospitalId}/schemes`, data);
-
-// Update hospital insurance
-export const updateHospitalInsurance = (hospitalId, data) => 
-  api.put(`/hospitals/${hospitalId}/insurance`, data);
-
-// Update hospital facilities
-export const updateHospitalFacilities = (hospitalId, data) => 
-  api.put(`/hospitals/${hospitalId}/facilities`, data);
-
-// Add single doctor
-export const addDoctor = (hospitalId, data) => 
-  api.post(`/hospitals/${hospitalId}/doctors`, data);
-
-// Update doctor
-export const updateDoctor = (hospitalId, doctorId, data) => 
-  api.put(`/hospitals/${hospitalId}/doctors/${doctorId}`, data);
-
-// Remove doctor
-export const removeDoctor = (hospitalId, doctorId) => 
-  api.delete(`/hospitals/${hospitalId}/doctors/${doctorId}`);
-
-// Get hospital dashboard stats (provider)
-export const getHospitalDashboardStats = () => 
-  api.get('/hospitals/dashboard/stats');
-
-// Get hospital bookings (provider)
-export const getHospitalBookings = (params) => 
-  api.get('/hospitals/bookings', { params });
-
-// Get hospital analytics
-export const getHospitalAnalytics = (params) => 
-  api.get('/hospitals/analytics', { params });
+export const downloadDoctorTemplate = () => api.get('/hospitals/template/download', { responseType: 'blob' });
+export const updateHospitalProfile = (hospitalId, data) => api.put(`/hospitals/${hospitalId}`, data);
+export const updateHospitalSchemes = (hospitalId, data) => api.put(`/hospitals/${hospitalId}/schemes`, data);
+export const updateHospitalInsurance = (hospitalId, data) => api.put(`/hospitals/${hospitalId}/insurance`, data);
+export const updateHospitalFacilities = (hospitalId, data) => api.put(`/hospitals/${hospitalId}/facilities`, data);
+export const addDoctor = (hospitalId, data) => api.post(`/hospitals/${hospitalId}/doctors`, data);
+export const updateDoctor = (hospitalId, doctorId, data) => api.put(`/hospitals/${hospitalId}/doctors/${doctorId}`, data);
+export const removeDoctor = (hospitalId, doctorId) => api.delete(`/hospitals/${hospitalId}/doctors/${doctorId}`);
+export const getHospitalDashboardStats = () => api.get('/hospitals/dashboard/stats');
+export const getHospitalBookings = (params) => api.get('/hospitals/bookings', { params });
+export const getHospitalAnalytics = (params) => api.get('/hospitals/analytics', { params });
 
 // ============================================
-// AMBULANCE (PRESERVED)
+// 🚑 AMBULANCE - BLITZ RESPONSE (ENHANCED)
 // ============================================
 
+// Emergency Dispatch
+export const emergencyDispatch = (data) => api.post('/ambulance/emergency-dispatch', data);
+export const acceptEmergency = (bookingId, data) => api.post(`/ambulance/accept-emergency/${bookingId}`, data);
+
+// Trip Management
+export const ambulanceTripStart = (bookingId) => api.post(`/ambulance/trip-start/${bookingId}`);
+export const ambulancePatientOnboard = (bookingId, data) => api.post(`/ambulance/patient-onboard/${bookingId}`, data);
+export const ambulanceArrivedHospital = (bookingId, data) => api.post(`/ambulance/arrived-hospital/${bookingId}`, data);
+export const ambulanceTripComplete = (bookingId, data) => api.post(`/ambulance/trip-complete/${bookingId}`, data);
+export const ambulanceCancelEmergency = (bookingId, data) => api.post(`/ambulance/cancel-emergency/${bookingId}`, data);
+
+// Location & Tracking
+export const ambulanceUpdateLocation = (data) => api.post('/ambulance/update-location', data);
+export const getNearbyAmbulances = (params) => api.get('/ambulance/nearby-ambulances', { params });
+export const getActiveEmergency = (bookingId) => api.get(`/ambulance/active-emergency/${bookingId}`);
+export const getSurgeCheck = (params) => api.get('/ambulance/surge-check', { params });
+
+// Scheduled Transport
+export const scheduleTransport = (data) => api.post('/ambulance/schedule-transport', data);
+export const getScheduledBookings = () => api.get('/ambulance/scheduled-bookings');
+
+// Booking History
+export const getAmbulanceBookings = (params) => api.get('/ambulance/my-bookings', { params });
+export const getAmbulanceBookingById = (bookingId) => api.get(`/ambulance/booking/${bookingId}`);
+export const getTripSheet = (bookingId) => api.get(`/ambulance/trip-sheet/${bookingId}`);
+
+// Driver Endpoints
+export const getDriverDashboard = () => api.get('/ambulance/driver/dashboard');
+export const toggleDriverAvailability = (data) => api.post('/ambulance/driver/toggle-availability', data);
+export const getDriverTripHistory = (params) => api.get('/ambulance/driver/trip-history', { params });
+
+// Fare
+export const getAmbulanceFareEstimate = (params) => api.get('/ambulance/fare-estimate', { params });
+
+// Emergency Contacts
+export const getEmergencyContacts = () => api.get('/ambulance/emergency-contacts');
+export const updateEmergencyContacts = (data) => api.post('/ambulance/emergency-contacts', data);
+
+// SOS
+export const sendSOSSMS = (data) => api.post('/ambulance/send-sos-sms', data);
+export const notifyHospital = (data) => api.post('/ambulance/notify-hospital', data);
+
+// Legacy (preserved)
 export const getAmbulances = (params) => api.get('/ambulance', { params });
 export const bookAmbulance = (data) => api.post('/ambulance/book', data);
 export const trackAmbulance = (bookingId) => api.get(`/ambulance/track/${bookingId}`);
@@ -365,10 +326,9 @@ export const updateProviderProfile = (data) => api.put('/provider-auth/profile',
 export const getProviderStats = () => api.get('/provider-auth/stats');
 
 // ============================================
-// 🆕 ONLINE DOCTOR (NEW)
+// ONLINE DOCTOR (PRESERVED)
 // ============================================
 
-// Patient endpoints
 export const searchOnlineDoctors = (params) => api.get('/online-doctor/search', { params });
 export const getFeaturedOnlineDoctors = () => api.get('/online-doctor/doctors/featured');
 export const getOnlineDoctorById = (id) => api.get(`/online-doctor/doctor/${id}`);
@@ -377,16 +337,12 @@ export const getOnlineConsultations = () => api.get('/online-doctor/my-bookings'
 export const getOnlineConsultById = (id) => api.get(`/online-doctor/booking/${id}`);
 export const cancelOnlineConsult = (id, reason) => api.put(`/online-doctor/booking/${id}/cancel`, { reason });
 export const submitOnlineReview = (data) => api.post('/online-doctor/review', data);
-
-// Doctor endpoints
 export const onlineDoctorRegister = (data) => api.post('/online-doctor/doctor/register', data);
 export const onlineDoctorLogin = (data) => api.post('/online-doctor/doctor/login', data);
 export const getOnlineDoctorProfile = () => api.get('/online-doctor/doctor/profile');
 export const updateOnlineDoctorProfile = (data) => api.put('/online-doctor/doctor/profile', data);
 export const updateOnlineDoctorAvailability = (data) => api.put('/online-doctor/doctor/availability', data);
 export const getOnlineDoctorDashboard = () => api.get('/online-doctor/doctor/dashboard');
-
-// Admin endpoints
 export const getPendingOnlineDoctors = () => api.get('/online-doctor/admin/doctors/pending');
 export const getAllOnlineDoctors = () => api.get('/online-doctor/admin/doctors');
 export const verifyOnlineDoctor = (id, data) => api.put(`/online-doctor/admin/doctor/${id}/verify`, data);
