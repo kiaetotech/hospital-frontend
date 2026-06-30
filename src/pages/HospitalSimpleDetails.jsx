@@ -8,13 +8,14 @@ const HospitalSimpleDetails = () => {
   const [hospital, setHospital] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [hospitalStatus, setHospitalStatus] = useState(null);
 
   useEffect(() => {
     const fetchHospital = async () => {
       try {
         const res = await api.get(`/hospitals/${id}`);
         setHospital(res.data.data);
+        fetchStatus();
       } catch (error) {
         console.error(error);
       } finally {
@@ -24,59 +25,67 @@ const HospitalSimpleDetails = () => {
     fetchHospital();
   }, [id]);
 
-  const getBedUpdateBadge = (lastUpdated) => {
-    if (!lastUpdated) return { text: 'Unknown', color: '#9ca3af', bg: '#f3f4f6' };
-    const hours = (new Date() - new Date(lastUpdated)) / (1000 * 60 * 60);
-    if (hours < 1) return { text: '🟢 Live Updated', color: '#10b981', bg: '#d1fae5' };
-    if (hours < 4) return { text: '🟡 Updated Recently', color: '#f59e0b', bg: '#fef3c7' };
-    if (hours < 12) return { text: '🟠 Updated Today', color: '#f97316', bg: '#ffedd5' };
-    return { text: '🔴 May not be current', color: '#ef4444', bg: '#fee2e2' };
+  const fetchStatus = async () => {
+    try {
+      const res = await api.get(`/hospital-status/${id}`);
+      if (res.data?.data) setHospitalStatus(res.data.data);
+    } catch(e) {}
   };
 
-  const getAvailabilityBadge = (status) => {
-    switch(status) {
-      case 'available': return { text: '🟢 Available Today', color: '#10b981', bg: '#d1fae5' };
-      case 'limited': return { text: '🟡 Few Slots Left', color: '#f59e0b', bg: '#fef3c7' };
-      case 'full': return { text: '🔴 Full Today', color: '#ef4444', bg: '#fee2e2' };
-      case 'leave': return { text: '⚫ On Leave', color: '#6b7280', bg: '#f3f4f6' };
-      default: return { text: 'Check Availability', color: '#6b7280', bg: '#f3f4f6' };
-    }
+  const statusConfig = {
+    accepting: { icon: '🟢', label: 'Accepting Patients', color: '#10b981', bg: '#d1fae5' },
+    limited: { icon: '🟡', label: 'Limited Availability', color: '#f59e0b', bg: '#fef3c7' },
+    full: { icon: '🔴', label: 'Currently Full', color: '#ef4444', bg: '#fee2e2' },
+    unknown: { icon: '❓', label: 'Call to Confirm', color: '#6b7280', bg: '#f3f4f6' }
   };
+  const cfg = statusConfig[hospitalStatus?.status] || statusConfig.unknown;
+  const isStale = hospitalStatus?.isStale !== false;
 
   const schemeDisplayNames = {
-    'ayushman': 'Ayushman Bharat (PM-JAY)',
-    'cghs': 'CGHS',
-    'esi': 'ESI',
-    'echs': 'ECHS',
-    'state_scheme': 'State Health Scheme',
-    'pmjay': 'PM-JAY',
-    'rsby': 'RSBY',
-    'senior_citizen': 'Senior Citizen Scheme',
-    'disability': 'Disability Scheme'
+    'ayushman': 'Ayushman Bharat (PM-JAY)', 'cghs': 'CGHS', 'esi': 'ESI',
+    'echs': 'ECHS', 'state_scheme': 'State Health Scheme', 'pmjay': 'PM-JAY',
+    'rsby': 'RSBY', 'senior_citizen': 'Senior Citizen', 'disability': 'Disability Scheme'
   };
 
   const handleBookOPD = (doctor = null) => {
-    const url = doctor 
-      ? `/book-opd/${hospital._id}?doctor=${doctor.name}`
-      : `/book-opd/${hospital._id}`;
+    const url = doctor ? `/book-opd/${hospital._id}?doctor=${encodeURIComponent(doctor.name)}` : `/book-opd/${hospital._id}`;
     navigate(url);
   };
 
-  const handleBookAdmission = () => {
-    navigate(`/book-admission/${hospital._id}`);
+  const handleBookAdmission = () => navigate(`/book-admission/${hospital._id}`);
+  const handleBookAmbulance = () => navigate('/ambulance');
+
+  // Get ALL room types hospital has
+  const getAllRoomTypes = () => {
+    const p = hospital?.pricing || {};
+    const rooms = [];
+    const bedCategories = hospital?.beds?.categories || {};
+    
+    if (p.general_bed_per_day) rooms.push({ name: 'General Ward', price: p.general_bed_per_day, beds: bedCategories.general_ward?.available || hospital?.beds?.available || 0, ac: 'Non-AC' });
+    if (p.semi_private_per_day) rooms.push({ name: 'Semi-Private', price: p.semi_private_per_day, beds: bedCategories.semi_private?.available || 0, ac: 'AC' });
+    if (p.private_per_day) rooms.push({ name: 'Private Room', price: p.private_per_day, beds: bedCategories.private?.available || 0, ac: 'AC' });
+    if (p.deluxe_per_day) rooms.push({ name: 'Deluxe Room', price: p.deluxe_per_day, beds: bedCategories.deluxe?.available || 0, ac: 'AC' });
+    if (p.suite_per_day) rooms.push({ name: 'Suite', price: p.suite_per_day, beds: bedCategories.suite?.available || 0, ac: 'AC' });
+    if (p.icu_bed_per_day) rooms.push({ name: 'ICU', price: p.icu_bed_per_day, beds: hospital?.beds?.icu_available || 0, ac: 'AC' });
+    if (p.nicu_per_day) rooms.push({ name: 'NICU', price: p.nicu_per_day, beds: 0, ac: 'AC' });
+    if (p.emergency_bed_per_day) rooms.push({ name: 'Emergency', price: p.emergency_bed_per_day, beds: hospital?.beds?.emergency_beds || 0, ac: 'N/A' });
+    
+    // Add any custom bed categories
+    Object.entries(bedCategories).forEach(([key, val]) => {
+      if (val.price_per_day && !rooms.find(r => r.name.toLowerCase().includes(key.replace('_',' ')))) {
+        rooms.push({ name: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), price: val.price_per_day, beds: val.available || 0, ac: 'N/A' });
+      }
+    });
+    
+    return rooms;
   };
 
-  const handleBookAmbulance = () => {
-    navigate('/ambulance');
-  };
+  const roomTypes = getAllRoomTypes();
 
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🏥</div>
-          <p style={{ color: '#6b7280' }}>Loading hospital details...</p>
-        </div>
+        <div style={{ textAlign: 'center' }}><div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🏥</div><p>Loading...</p></div>
       </div>
     );
   }
@@ -85,70 +94,53 @@ const HospitalSimpleDetails = () => {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem', textAlign: 'center' }}>
         <p>Hospital not found</p>
-        <button onClick={() => navigate('/hospitals')} style={{ marginTop: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>
-          Back to Hospitals
-        </button>
+        <button onClick={() => navigate('/hospitals')} style={{ marginTop: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Back</button>
       </div>
     );
   }
 
-  const bedBadge = getBedUpdateBadge(hospital.beds?.last_updated);
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', paddingBottom: '80px' }}>
       
       {/* HEADER */}
       <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', marginRight: '1rem' }}>
-              ← Back
-            </button>
-            <h1 style={{ display: 'inline', fontSize: '1.5rem', fontWeight: 'bold' }}>{hospital.name}</h1>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
-              {hospital.accreditations?.map(acc => (
-                <span key={acc} style={{ backgroundColor: '#e0e7ff', color: '#3730a3', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                  {acc}
-                </span>
-              ))}
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem 2rem' }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', marginBottom: '0.5rem' }}>← Back</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+            <div>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{hospital.name}</h1>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                {(hospital.accreditations || []).map(acc => <span key={acc} style={{ backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 'bold' }}>{acc}</span>)}
+              </div>
+              <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: '4px 0' }}>📍 {hospital.address?.city}, {hospital.address?.state}</p>
+              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem' }}>
+                <span>⭐ {hospital.ratings?.average || 'N/A'} ({hospital.ratings?.count || 0})</span>
+                <span>👨‍⚕️ {hospital.doctors?.length || 0} Doctors</span>
+              </div>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button onClick={() => handleBookOPD()} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-              📋 Book OPD
-            </button>
-            <button onClick={handleBookAdmission} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-              🏥 Book Admission
-            </button>
-            <button onClick={handleBookAmbulance} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-              🚑 Ambulance
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <a href={`tel:${hospital.contact?.emergency_phone || hospital.contact?.phone || ''}`} style={{ padding: '0.5rem 1rem', backgroundColor: '#fef3c7', color: '#92400e', border: '2px solid #f59e0b', borderRadius: '0.5rem', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.85rem' }}>📞 Call</a>
+              <button onClick={() => handleBookOPD()} style={{ padding: '0.5rem 1rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>📋 Book OPD</button>
+              <button onClick={handleBookAdmission} style={{ padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>🏥 Book Admission</button>
+              <button onClick={handleBookAmbulance} style={{ padding: '0.5rem 1rem', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>🚑 Ambulance</button>
+            </div>
           </div>
         </div>
         
         {/* TABS */}
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', display: 'flex', gap: '0', borderBottom: 'none' }}>
-          {['overview', 'doctors', 'facilities', 'schemes', 'reviews'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                padding: '0.75rem 1.5rem',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                fontWeight: activeTab === tab ? 'bold' : 'normal',
-                color: activeTab === tab ? '#3b82f6' : '#6b7280',
-                borderBottom: activeTab === tab ? '3px solid #3b82f6' : '3px solid transparent',
-                textTransform: 'capitalize'
-              }}
-            >
-              {tab === 'overview' ? '📋 Overview' : 
-               tab === 'doctors' ? '👨‍⚕️ Doctors' :
-               tab === 'facilities' ? '🏗️ Facilities' :
-               tab === 'schemes' ? '💠 Schemes & Insurance' :
-               '⭐ Reviews'}
-            </button>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', display: 'flex', gap: 0, overflowX: 'auto' }}>
+          {[
+            { id: 'overview', label: '📋 Overview' },
+            { id: 'rooms', label: '🛏️ Rooms & Pricing' },
+            { id: 'doctors', label: '👨‍⚕️ Doctors' },
+            { id: 'facilities', label: '🏗️ Facilities' },
+            { id: 'lab', label: '🧪 Lab Tests' },
+            { id: 'packages', label: '📦 Packages' },
+            { id: 'ambulance', label: '🚑 Ambulance' },
+            { id: 'insurance', label: '🛡️ Insurance' },
+            { id: 'reviews', label: '⭐ Reviews' }
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: '0.75rem 1rem', border: 'none', background: 'none', cursor: 'pointer', fontWeight: activeTab === tab.id ? 'bold' : 'normal', color: activeTab === tab.id ? '#3b82f6' : '#6b7280', borderBottom: activeTab === tab.id ? '3px solid #3b82f6' : '3px solid transparent', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{tab.label}</button>
           ))}
         </div>
       </div>
@@ -156,51 +148,28 @@ const HospitalSimpleDetails = () => {
       {/* CONTENT */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
         
-        {/* OVERVIEW TAB */}
+        {/* OVERVIEW */}
         {activeTab === 'overview' && (
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             
-            {/* Quick Info Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem' }}>⭐</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{hospital.ratings?.average || 'N/A'}</div>
-                <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>({hospital.ratings?.count || 0} reviews)</div>
-              </div>
-              
-              <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem' }}>🛏️</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{hospital.beds?.available || 0}</div>
-                <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Beds Available</div>
-                <div style={{ 
-                  backgroundColor: bedBadge.bg, 
-                  color: bedBadge.color, 
-                  padding: '0.15rem 0.5rem', 
-                  borderRadius: '9999px', 
-                  fontSize: '0.65rem',
-                  marginTop: '0.25rem',
-                  display: 'inline-block'
-                }}>
-                  {bedBadge.text}
-                </div>
-              </div>
-              
-              <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem' }}>👨‍⚕️</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{hospital.doctors?.length || 0}</div>
-                <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Doctors Available</div>
-              </div>
-              
-              <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem' }}>💰</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>₹{hospital.pricing?.consultation || 0}</div>
-                <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>OPD Consultation</div>
-              </div>
+            {/* Status Bar */}
+            <div style={{ backgroundColor: isStale ? '#fef3c7' : cfg.bg, padding: '1rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span style={{ fontWeight: 'bold', color: isStale ? '#92400e' : cfg.color, fontSize: '1rem' }}>{isStale ? '⚠️ Status Unverified' : `${cfg.icon} ${cfg.label}`}</span>
+              {hospitalStatus?.updatedAt && <span style={{ fontSize: '0.8rem', color: '#888' }}>Updated: {new Date(hospitalStatus.updatedAt).toLocaleString('en-IN')}</span>}
             </div>
 
-            {/* Contact & Location */}
-            <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>📍 Location & Contact</h3>
+            {/* Quick Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+              <div style={statCard}><div style={statIcon}>⭐</div><div style={statValue}>{hospital.ratings?.average || 'N/A'}</div><div style={statLabel}>Rating</div></div>
+              <div style={statCard}><div style={statIcon}>🛏️</div><div style={statValue}>{hospital.beds?.available || 0}</div><div style={statLabel}>Beds Available</div></div>
+              <div style={statCard}><div style={statIcon}>👨‍⚕️</div><div style={statValue}>{hospital.doctors?.length || 0}</div><div style={statLabel}>Doctors</div></div>
+              <div style={statCard}><div style={statIcon}>💰</div><div style={statValue}>₹{hospital.pricing?.consultation || 0}</div><div style={statLabel}>OPD Fee</div></div>
+              <div style={statCard}><div style={statIcon}>🏗️</div><div style={statValue}>{(hospital.facilities || []).length}</div><div style={statLabel}>Facilities</div></div>
+            </div>
+
+            {/* Contact */}
+            <div style={sectionStyle}>
+              <h3 style={sectionTitle}>📍 Contact & Location</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <p><strong>Address:</strong><br />{hospital.address?.street || ''} {hospital.address?.city}, {hospital.address?.state} - {hospital.address?.pincode || ''}</p>
@@ -215,411 +184,250 @@ const HospitalSimpleDetails = () => {
               </div>
             </div>
 
-            {/* Pricing Details */}
-            <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>💰 Pricing</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                <div style={{ padding: '0.75rem', backgroundColor: '#f0fdf4', borderRadius: '0.375rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>OPD Consultation</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#10b981' }}>₹{hospital.pricing?.consultation}</div>
-                  {hospital.pricing?.online_booking_discount > 0 && (
-                    <div style={{ fontSize: '0.75rem', color: '#059669' }}>
-                      Save {hospital.pricing.online_booking_discount}% online
-                    </div>
-                  )}
+            {/* Diseases & Procedures */}
+            <div style={sectionStyle}>
+              <h3 style={sectionTitle}>🦠 Diseases & Procedures</h3>
+              {(hospital.diseases_treated || []).length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {hospital.diseases_treated.map((d, i) => <span key={i} style={tag}>{d.replace(/_/g, ' ')}</span>)}
                 </div>
-                
-                <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '0.375rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>ICU (Per Day)</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#3b82f6' }}>₹{hospital.pricing?.icu_bed_per_day}</div>
-                </div>
-                
-                <div style={{ padding: '0.75rem', backgroundColor: '#fef3c7', borderRadius: '0.375rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>General Ward (Per Day)</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b' }}>₹{hospital.pricing?.general_bed_per_day}</div>
-                </div>
-
-                {hospital.pricing?.private_per_day && (
-                  <div style={{ padding: '0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.375rem' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Private Room (Per Day)</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#ef4444' }}>₹{hospital.pricing.private_per_day}</div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Bed Categories */}
-              {hospital.beds?.categories && (
-                <div style={{ marginTop: '1.5rem' }}>
-                  <h4 style={{ marginBottom: '0.5rem' }}>🛏️ Bed Categories & Pricing</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
-                    {Object.entries(hospital.beds.categories).map(([key, value]) => (
-                      value.price_per_day > 0 && (
-                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: '0.25rem' }}>
-                          <span style={{ textTransform: 'capitalize' }}>{key.replace('_', ' ')}</span>
-                          <span style={{ fontWeight: 'bold' }}>₹{value.price_per_day}/day</span>
-                        </div>
-                      )
-                    ))}
+              ) : <p style={{ color: '#888' }}>Not specified</p>}
+              {(hospital.procedures_available || []).length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <strong>Procedures:</strong>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {hospital.procedures_available.map((p, i) => <span key={i} style={{ ...tag, backgroundColor: '#eff6ff', color: '#1e40af' }}>{p.replace(/_/g, ' ')}</span>)}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Offers */}
-            {hospital.pricing?.offers?.length > 0 && (
-              <div style={{ backgroundColor: '#fff7ed', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #fed7aa' }}>
-                <h3 style={{ marginBottom: '0.5rem' }}>🔥 Special Offers</h3>
-                {hospital.pricing.offers.map((offer, idx) => (
-                  <div key={idx} style={{ marginBottom: '0.5rem' }}>
-                    <strong>{offer.title}</strong> - {offer.discount_percentage}% off
-                    {offer.valid_till && <span style={{ fontSize: '0.75rem', color: '#6b7280' }}> (Valid till {new Date(offer.valid_till).toLocaleDateString()})</span>}
+            {/* Featured Review */}
+            {hospital.featured_review?.text && (
+              <div style={sectionStyle}>
+                <h3 style={sectionTitle}>💬 What Patients Say</h3>
+                <p style={{ fontStyle: 'italic' }}>"{hospital.featured_review.text}"</p>
+                <p style={{ color: '#888', fontSize: '0.85rem' }}>- {hospital.featured_review.author}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ROOMS & PRICING */}
+        {activeTab === 'rooms' && (
+          <div style={sectionStyle}>
+            <h3 style={sectionTitle}>🛏️ All Room Types & Pricing</h3>
+            {roomTypes.length === 0 ? (
+              <p style={{ color: '#888' }}>No room pricing available</p>
+            ) : (
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                {roomTypes.map((room, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <strong>{room.name}</strong>
+                      <span style={{ fontSize: '0.8rem', color: '#888', marginLeft: '8px' }}>{room.ac}</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 'bold', color: '#10b981', fontSize: '1.1rem' }}>₹{room.price}/day</div>
+                      {room.beds > 0 && <div style={{ fontSize: '0.75rem', color: '#888' }}>🛏️ {room.beds} beds</div>}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
-
-            {/* Health Packages */}
-            {hospital.pricing?.health_packages?.length > 0 && (
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-                <h3 style={{ marginBottom: '1rem' }}>📦 Health Packages</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                  {hospital.pricing.health_packages.map((pkg, idx) => (
-                    <div key={idx} style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
-                      <h4>{pkg.name}</h4>
-                      <div style={{ margin: '0.5rem 0' }}>
-                        <span style={{ textDecoration: 'line-through', color: '#6b7280' }}>₹{pkg.original_price}</span>
-                        <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#10b981', marginLeft: '0.5rem' }}>₹{pkg.discounted_price}</span>
-                      </div>
-                      {pkg.includes?.length > 0 && (
-                        <ul style={{ fontSize: '0.875rem', paddingLeft: '1.25rem' }}>
-                          {pkg.includes.map((item, i) => <li key={i}>{item}</li>)}
-                        </ul>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Featured Review */}
-            {hospital.featured_review?.text && (
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-                <h3 style={{ marginBottom: '0.5rem' }}>💬 What Patients Say</h3>
-                <p style={{ fontStyle: 'italic', color: '#374151' }}>"{hospital.featured_review.text}"</p>
-                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>- {hospital.featured_review.author}</p>
-              </div>
+            {hospital.pricing?.online_booking_discount > 0 && (
+              <p style={{ marginTop: '1rem', color: '#10b981', fontWeight: 'bold' }}>
+                🎉 {hospital.pricing.online_booking_discount}% discount on online booking
+              </p>
             )}
           </div>
         )}
 
-        {/* DOCTORS TAB */}
+        {/* DOCTORS */}
         {activeTab === 'doctors' && (
           <div>
-            <h2 style={{ marginBottom: '1rem' }}>👨‍⚕️ Doctors ({hospital.doctors?.length || 0})</h2>
+            <h2 style={{ marginBottom: '1rem' }}>👨‍⚕️ All Doctors ({hospital.doctors?.length || 0})</h2>
             <div style={{ display: 'grid', gap: '1rem' }}>
-              {hospital.doctors?.map((doc, idx) => {
-                const availBadge = getAvailabilityBadge(doc.availability?.status);
-                return (
-                  <div key={idx} style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              {(hospital.doctors || []).map((doc, idx) => (
+                <div key={idx} style={sectionStyle}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <h3 style={{ marginBottom: '0.25rem' }}>{doc.name}</h3>
-                      <p style={{ color: '#3b82f6', fontWeight: '500' }}>{doc.specialization}</p>
-                      {doc.sub_specialization && <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Sub-specialty: {doc.sub_specialization}</p>}
-                      <p style={{ fontSize: '0.875rem' }}>📜 {doc.qualification || 'N/A'}</p>
-                      <p style={{ fontSize: '0.875rem' }}>📅 {doc.experience || 'N/A'} experience</p>
-                      {doc.languages?.length > 0 && (
-                        <p style={{ fontSize: '0.875rem' }}>🗣️ {doc.languages.join(', ')}</p>
-                      )}
-                      <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                        <span>⭐ {doc.rating || 'N/A'}</span>
-                        {doc.reviewCount > 0 && <span>({doc.reviewCount} reviews)</span>}
-                      </div>
+                      <h3>{doc.name}</h3>
+                      <p style={{ color: '#3b82f6' }}>{doc.specialization}</p>
+                      <p style={{ fontSize: '0.85rem' }}>📜 {doc.qualification || 'N/A'} • 📅 {doc.experience || 'N/A'}</p>
+                      {(doc.languages || []).length > 0 && <p style={{ fontSize: '0.85rem' }}>🗣️ {doc.languages.join(', ')}</p>}
+                      <span>⭐ {doc.rating || 'N/A'} ({doc.reviewCount || 0})</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</div>
-                      <div style={{ 
-                        backgroundColor: availBadge.bg, 
-                        color: availBadge.color, 
-                        padding: '0.25rem 0.75rem', 
-                        borderRadius: '9999px', 
-                        fontSize: '0.75rem',
-                        display: 'inline-block',
-                        margin: '0.5rem 0'
-                      }}>
-                        {availBadge.text}
-                      </div>
-                      {doc.availability?.slots_available > 0 && (
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                          {doc.availability.slots_available} slots
-                        </div>
-                      )}
-                      <button 
-                        onClick={() => handleBookOPD(doc)}
-                        disabled={doc.availability?.status === 'leave' || doc.availability?.status === 'full'}
-                        style={{ 
-                          marginTop: '0.5rem',
-                          backgroundColor: (doc.availability?.status === 'leave' || doc.availability?.status === 'full') ? '#d1d5db' : '#10b981', 
-                          color: 'white', 
-                          padding: '0.5rem 1.5rem', 
-                          borderRadius: '0.375rem', 
-                          border: 'none', 
-                          cursor: (doc.availability?.status === 'leave' || doc.availability?.status === 'full') ? 'not-allowed' : 'pointer',
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {doc.availability?.status === 'leave' ? 'On Leave' : 
-                         doc.availability?.status === 'full' ? 'Booked Full' : 
-                         'Select Doctor'}
-                      </button>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</div>
+                      <button onClick={() => handleBookOPD(doc)} style={{ marginTop: '0.5rem', padding: '0.5rem 1.5rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>Book Appointment</button>
                     </div>
                   </div>
-                );
-              })}
-              {(!hospital.doctors || hospital.doctors.length === 0) && (
-                <p style={{ color: '#6b7280' }}>No doctors listed yet.</p>
-              )}
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* FACILITIES TAB */}
+        {/* FACILITIES */}
         {activeTab === 'facilities' && (
           <div style={{ display: 'grid', gap: '1.5rem' }}>
-            
-            {/* Technology */}
-            {hospital.technology?.length > 0 && (
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-                <h3 style={{ marginBottom: '1rem' }}>🔬 Technology & Equipment</h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {hospital.technology.map((tech, idx) => (
-                    <span key={idx} style={{ backgroundColor: '#eff6ff', color: '#1e40af', padding: '0.5rem 1rem', borderRadius: '9999px', fontSize: '0.875rem' }}>
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Operation Theaters */}
-            {hospital.operation_theaters?.total > 0 && (
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-                <h3 style={{ marginBottom: '1rem' }}>🏥 Operation Theaters</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                  <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{hospital.operation_theaters.total}</div>
-                    <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total OTs</div>
-                  </div>
-                  {hospital.operation_theaters.modular > 0 && (
-                    <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem' }}>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{hospital.operation_theaters.modular}</div>
-                      <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Modular OTs</div>
-                    </div>
-                  )}
-                  {hospital.operation_theaters.robotic && (
-                    <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#f0fdf4', borderRadius: '0.375rem' }}>
-                      <div style={{ fontSize: '2rem' }}>🤖</div>
-                      <div style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: 'bold' }}>Robotic Surgery</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Amenities */}
-            {hospital.amenities?.length > 0 && (
-              <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-                <h3 style={{ marginBottom: '1rem' }}>🎯 Amenities</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
-                  {hospital.amenities.map((amenity, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span>✅</span>
-                      <span>{amenity}</span>
+            <div style={sectionStyle}>
+              <h3 style={sectionTitle}>🏗️ All Facilities</h3>
+              {(hospital.facilities || []).length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '0.5rem' }}>
+                  {(hospital.facilities || []).map((f, i) => (
+                    <div key={i} style={{ padding: '0.5rem 0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>{typeof f === 'string' ? f : f.name}</span>
+                      {typeof f !== 'string' && f.available_24x7 && <span style={{ color: '#10b981', fontSize: '0.75rem' }}>🟢 24x7</span>}
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Quick Status */}
-            <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>📊 Quick Status</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                <div>
-                  <strong>🧪 Lab Tests:</strong> {hospital.lab_tests_available ? '✅ Available' : '🔗 Linked'}
-                </div>
-                <div>
-                  <strong>💊 Pharmacy:</strong> {hospital.in_house_pharmacy ? (hospital.pharmacy_24x7 ? '✅ 24x7' : '✅ Available') : '❌ Not Available'}
-                </div>
-                <div>
-                  <strong>🚑 Ambulance:</strong> {hospital.ambulance_available ? `✅ ${hospital.ambulance_count || ''} Vehicles` : '❌ Not Available'}
-                </div>
-                <div>
-                  <strong>🚨 Emergency:</strong> {hospital.has24x7ER ? '✅ 24/7 Open' : '❌ Not Available'}
-                </div>
-                {hospital.trauma_center && <div><strong>🏥 Trauma Center:</strong> ✅ Yes</div>}
-                {hospital.stroke_ready && <div><strong>🧠 Stroke Ready:</strong> ✅ Yes</div>}
-                {hospital.cardiac_emergency && <div><strong>❤️ Cardiac Emergency:</strong> ✅ Yes</div>}
+              ) : <p style={{ color: '#888' }}>No facilities listed</p>}
+            </div>
+            <div style={sectionStyle}>
+              <h3 style={sectionTitle}>📊 Quick Status</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                <div>🧪 Lab: {hospital.lab_tests_available ? '✅ In-house' : '🔗 Partner'}</div>
+                <div>💊 Pharmacy: {hospital.pharmacy_24x7 ? '✅ 24x7' : hospital.in_house_pharmacy ? '✅ Available' : '❌'}</div>
+                <div>🚑 Ambulance: {hospital.ambulance_available ? `✅ ${hospital.ambulance_count || ''} Vehicles` : '❌'}</div>
+                <div>🚨 ER: {hospital.has24x7ER ? '✅ 24/7' : '❌'}</div>
+                {hospital.trauma_center && <div>🏥 Trauma Center: ✅</div>}
+                {hospital.stroke_ready && <div>🧠 Stroke Ready: ✅</div>}
+                {hospital.cardiac_emergency && <div>❤️ Cardiac Emergency: ✅</div>}
               </div>
             </div>
           </div>
         )}
 
-        {/* SCHEMES & INSURANCE TAB */}
-        {activeTab === 'schemes' && (
+        {/* LAB TESTS */}
+        {activeTab === 'lab' && (
+          <div style={sectionStyle}>
+            <h3 style={sectionTitle}>🧪 Lab Tests Available</h3>
+            {(hospital.diagnostics?.tests || []).length > 0 ? (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                <thead><tr style={{ backgroundColor: '#f3f4f6' }}><th style={{ padding: '8px', textAlign: 'left' }}>Test Name</th><th style={{ padding: '8px' }}>Category</th><th style={{ padding: '8px' }}>Price</th><th style={{ padding: '8px' }}>Home Collection</th><th style={{ padding: '8px' }}>Report Time</th></tr></thead>
+                <tbody>
+                  {(hospital.diagnostics.tests || []).map((t, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={{ padding: '8px' }}><strong>{t.name}</strong></td>
+                      <td style={{ padding: '8px', textAlign: 'center' }}>{t.category}</td>
+                      <td style={{ padding: '8px', textAlign: 'center', color: '#10b981', fontWeight: 'bold' }}>₹{t.price}</td>
+                      <td style={{ padding: '8px', textAlign: 'center' }}>{t.home_collection ? '✅' : '❌'}</td>
+                      <td style={{ padding: '8px', textAlign: 'center' }}>{t.report_time}h</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p style={{ color: '#888' }}>No lab tests listed</p>}
+          </div>
+        )}
+
+        {/* HEALTH PACKAGES */}
+        {activeTab === 'packages' && (
+          <div style={sectionStyle}>
+            <h3 style={sectionTitle}>📦 Health Packages</h3>
+            {(hospital.pricing?.health_packages || []).length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                {(hospital.pricing.health_packages || []).map((pkg, i) => (
+                  <div key={i} style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+                    <h4>{pkg.name}</h4>
+                    <div style={{ margin: '0.5rem 0' }}>
+                      <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#10b981' }}>₹{pkg.price || pkg.discounted_price}</span>
+                      {pkg.original_price && <span style={{ textDecoration: 'line-through', color: '#888', marginLeft: '8px', fontSize: '0.85rem' }}>₹{pkg.original_price}</span>}
+                      {pkg.discount > 0 && <span style={{ color: '#10b981', marginLeft: '8px', fontSize: '0.8rem' }}>({pkg.discount}% off)</span>}
+                    </div>
+                    {(pkg.includes || pkg.included_tests || []).length > 0 && (
+                      <ul style={{ fontSize: '0.85rem', paddingLeft: '1.25rem' }}>
+                        {(pkg.includes || pkg.included_tests || []).map((item, j) => <li key={j}>{item}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : <p style={{ color: '#888' }}>No packages available</p>}
+          </div>
+        )}
+
+        {/* AMBULANCE FLEET */}
+        {activeTab === 'ambulance' && (
+          <div style={sectionStyle}>
+            <h3 style={sectionTitle}>🚑 Ambulance Fleet</h3>
+            {(hospital.ambulance_fleet || []).length > 0 ? (
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
+                {(hospital.ambulance_fleet || []).map((v, i) => (
+                  <div key={i} style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <strong>{v.vehicle_number}</strong> - {v.type?.toUpperCase()}
+                      <div style={{ fontSize: '0.85rem', color: '#888' }}>Driver: {v.driver_name} ({v.driver_phone})</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 'bold' }}>₹{v.base_fare} + ₹{v.per_km}/km</div>
+                      {v.available_24x7 && <span style={{ color: '#10b981', fontSize: '0.75rem' }}>🟢 24x7</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : <p style={{ color: '#888' }}>No ambulance fleet listed</p>}
+          </div>
+        )}
+
+        {/* INSURANCE */}
+        {activeTab === 'insurance' && (
           <div style={{ display: 'grid', gap: '1.5rem' }}>
-            
-            {/* Government Schemes */}
-            <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>💠 Government Schemes Accepted</h3>
-              {hospital.schemes_accepted?.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '0.75rem' }}>
-                  {hospital.schemes_accepted.map((scheme, idx) => (
-                    <div key={idx} style={{ 
-                      padding: '0.75rem', 
-                      backgroundColor: '#f0fdf4', 
-                      borderRadius: '0.375rem',
-                      border: '1px solid #bbf7d0'
-                    }}>
-                      <span style={{ fontWeight: 'bold' }}>✅ {schemeDisplayNames[scheme] || scheme.toUpperCase()}</span>
-                      {hospital.scheme_details?.find(s => s.scheme_name === scheme)?.beds_allocated > 0 && (
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                          🛏️ {hospital.scheme_details.find(s => s.scheme_name === scheme).beds_allocated} beds allocated
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ color: '#6b7280' }}>No government schemes accepted.</p>
-              )}
-            </div>
-
-            {/* Insurance Accepted */}
-            <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>🛡️ Insurance Accepted</h3>
-              {hospital.insurance_accepted?.length > 0 ? (
+            <div style={sectionStyle}>
+              <h3 style={sectionTitle}>💠 Government Schemes</h3>
+              {(hospital.schemes_accepted || []).length > 0 ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {hospital.insurance_accepted.map((ins, idx) => (
-                    <span key={idx} style={{ 
-                      backgroundColor: '#eff6ff', 
-                      color: '#1e40af', 
-                      padding: '0.5rem 1rem', 
-                      borderRadius: '9999px', 
-                      fontSize: '0.875rem' 
-                    }}>
-                      {ins}
-                    </span>
-                  ))}
+                  {(hospital.schemes_accepted || []).map((s, i) => <span key={i} style={{ ...tag, backgroundColor: '#f0fdf4', color: '#065f46' }}>✅ {schemeDisplayNames[s] || s}</span>)}
                 </div>
-              ) : (
-                <p style={{ color: '#6b7280' }}>No insurance information available.</p>
-              )}
+              ) : <p style={{ color: '#888' }}>None</p>}
             </div>
-
-            {/* Cashless & TPA */}
-            <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>💳 Payment & Cashless</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <div style={{ padding: '1rem', backgroundColor: hospital.cashless_available ? '#f0fdf4' : '#fef2f2', borderRadius: '0.375rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '2rem' }}>{hospital.cashless_available ? '✅' : '❌'}</div>
-                  <div style={{ fontWeight: 'bold' }}>Cashless Available</div>
+            <div style={sectionStyle}>
+              <h3 style={sectionTitle}>🛡️ Insurance Partners</h3>
+              {(hospital.insurance_accepted || []).length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {(hospital.insurance_accepted || []).map((ins, i) => <span key={i} style={{ ...tag, backgroundColor: '#eff6ff', color: '#1e40af' }}>{ins}</span>)}
                 </div>
-                <div style={{ padding: '1rem', backgroundColor: hospital.tpa_desk_available ? '#f0fdf4' : '#fef2f2', borderRadius: '0.375rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '2rem' }}>{hospital.tpa_desk_available ? '✅' : '❌'}</div>
-                  <div style={{ fontWeight: 'bold' }}>TPA Desk</div>
-                </div>
-                <div style={{ padding: '1rem', backgroundColor: hospital.reimbursement_accepted ? '#f0fdf4' : '#fef2f2', borderRadius: '0.375rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '2rem' }}>{hospital.reimbursement_accepted ? '✅' : '❌'}</div>
-                  <div style={{ fontWeight: 'bold' }}>Reimbursement</div>
-                </div>
+              ) : <p style={{ color: '#888' }}>None</p>}
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                <span>💳 Cashless: {hospital.cashless_available ? '✅' : '❌'}</span>
+                <span>🏧 TPA Desk: {hospital.tpa_desk_available ? '✅' : '❌'}</span>
               </div>
-              
-              {hospital.tpa_partners?.length > 0 && (
-                <div style={{ marginTop: '1rem' }}>
-                  <strong>TPA Partners:</strong>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    {hospital.tpa_partners.map((tpa, idx) => (
-                      <span key={idx} style={{ backgroundColor: '#fef3c7', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem' }}>
-                        {tpa}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {hospital.payment_methods?.length > 0 && (
-                <div style={{ marginTop: '1rem' }}>
-                  <strong>Payment Methods:</strong>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    {hospital.payment_methods.map((method, idx) => (
-                      <span key={idx} style={{ backgroundColor: '#f3f4f6', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem' }}>
-                        {method}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
 
-        {/* REVIEWS TAB */}
+        {/* REVIEWS */}
         {activeTab === 'reviews' && (
           <div style={{ display: 'grid', gap: '1.5rem' }}>
-            
-            {/* Rating Breakdown */}
-            <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>⭐ Rating Breakdown</h3>
+            <div style={sectionStyle}>
+              <h3 style={sectionTitle}>⭐ Rating Breakdown</h3>
               {hospital.ratings?.breakdown && (
                 <div style={{ display: 'grid', gap: '0.75rem' }}>
                   {Object.entries(hospital.ratings.breakdown).map(([key, value]) => (
                     <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <span style={{ width: '180px', textTransform: 'capitalize', fontSize: '0.875rem' }}>
-                        {key.replace('_', ' ')}:
-                      </span>
-                      <div style={{ flex: 1, height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ width: `${(value / 5) * 100}%`, height: '100%', backgroundColor: '#f59e0b', borderRadius: '4px' }}></div>
-                      </div>
-                      <span style={{ fontWeight: 'bold', fontSize: '0.875rem' }}>{value}/5</span>
+                      <span style={{ width: '150px', textTransform: 'capitalize', fontSize: '0.85rem' }}>{key.replace(/_/g, ' ')}:</span>
+                      <div style={{ flex: 1, height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px' }}><div style={{ width: `${(value/5)*100}%`, height: '100%', backgroundColor: '#f59e0b', borderRadius: '4px' }} /></div>
+                      <span style={{ fontWeight: 'bold' }}>{value}/5</span>
                     </div>
                   ))}
                 </div>
-              )}
-              {hospital.ratings?.avg_wait_time > 0 && (
-                <p style={{ marginTop: '1rem' }}>
-                  <strong>⏱️ Average Wait Time:</strong> {hospital.ratings.avg_wait_time} minutes
-                </p>
               )}
             </div>
-
-            {/* Recent Reviews */}
-            <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>💬 Patient Reviews ({hospital.reviews?.length || 0})</h3>
-              {hospital.reviews?.length > 0 ? (
+            <div style={sectionStyle}>
+              <h3 style={sectionTitle}>💬 Patient Reviews ({(hospital.reviews || []).length})</h3>
+              {(hospital.reviews || []).length > 0 ? (
                 <div style={{ display: 'grid', gap: '1rem' }}>
-                  {hospital.reviews.slice(0, 10).map((review, idx) => (
-                    <div key={idx} style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        <div>
-                          <strong>{review.patientName}</strong>
-                          {review.verified && <span style={{ color: '#10b981', fontSize: '0.75rem', marginLeft: '0.5rem' }}>✅ Verified</span>}
-                        </div>
-                        <div>
-                          <span>⭐ {review.rating}/5</span>
-                          <span style={{ color: '#6b7280', fontSize: '0.75rem', marginLeft: '1rem' }}>
-                            {new Date(review.date).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      {review.doctorName && <p style={{ fontSize: '0.875rem', color: '#3b82f6' }}>Doctor: {review.doctorName}</p>}
-                      {review.treatment && <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Treatment: {review.treatment}</p>}
-                      <p style={{ marginTop: '0.5rem' }}>{review.review}</p>
+                  {(hospital.reviews || []).slice(0, 10).map((r, i) => (
+                    <div key={i} style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><strong>{r.patientName}</strong><span>⭐ {r.rating}</span></div>
+                      <p style={{ marginTop: '0.5rem' }}>{r.review}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#888' }}>{new Date(r.date).toLocaleDateString()}</p>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p style={{ color: '#6b7280' }}>No reviews yet.</p>
-              )}
+              ) : <p style={{ color: '#888' }}>No reviews yet</p>}
             </div>
           </div>
         )}
@@ -627,33 +435,22 @@ const HospitalSimpleDetails = () => {
       </div>
 
       {/* MOBILE BOTTOM BAR */}
-      <div style={{ 
-        position: 'fixed', 
-        bottom: 0, 
-        left: 0, 
-        right: 0, 
-        backgroundColor: 'white', 
-        borderTop: '1px solid #e5e7eb', 
-        padding: '1rem',
-        display: 'flex',
-        gap: '0.5rem',
-        justifyContent: 'center',
-        zIndex: 100
-      }}>
-        <button onClick={() => handleBookOPD()} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', flex: 1, maxWidth: '200px' }}>
-          📋 Book OPD
-        </button>
-        <button onClick={handleBookAdmission} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', flex: 1, maxWidth: '200px' }}>
-          🏥 Book Admission
-        </button>
-        {hospital.has24x7ER && (
-          <a href={`tel:${hospital.contact?.emergency_phone || hospital.contact?.phone}`} style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.75rem', borderRadius: '0.5rem', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-            🚨
-          </a>
-        )}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: 'white', borderTop: '1px solid #e5e7eb', padding: '0.75rem', display: 'flex', gap: '0.5rem', justifyContent: 'center', zIndex: 100 }}>
+        <button onClick={() => handleBookOPD()} style={bottomBtn('#10b981')}>📋 Book OPD</button>
+        <button onClick={handleBookAdmission} style={bottomBtn('#3b82f6')}>🏥 Admission</button>
+        {hospital.has24x7ER && <a href={`tel:${hospital.contact?.emergency_phone || hospital.contact?.phone}`} style={{ ...bottomBtn('#ef4444'), textDecoration: 'none', flex: '0 0 auto', padding: '0.75rem' }}>🚨</a>}
       </div>
     </div>
   );
 };
+
+const statCard = { backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' };
+const statIcon = { fontSize: '1.5rem' };
+const statValue = { fontSize: '1.5rem', fontWeight: 'bold', margin: '0.25rem 0' };
+const statLabel = { color: '#888', fontSize: '0.8rem' };
+const sectionStyle = { backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' };
+const sectionTitle = { marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 'bold' };
+const tag = { padding: '4px 10px', backgroundColor: '#f3e8ff', color: '#5b21b6', borderRadius: '9999px', fontSize: '0.75rem' };
+const bottomBtn = (bg) => ({ backgroundColor: bg, color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', flex: 1, maxWidth: '200px', fontSize: '0.9rem' });
 
 export default HospitalSimpleDetails;
