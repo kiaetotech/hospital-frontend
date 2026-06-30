@@ -1,436 +1,203 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import ProviderRegistrationLayout from '../../components/ProviderRegistrationLayout';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 
 const AmbulanceRegister = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [formData, setFormData] = useState({
-    // Step 1: Vehicle Details
-    vehicleNumber: '',
-    type: 'basic',
-    model: '',
-    year: '',
-    capacity: 1,
-    
-    // Step 2: Equipment
+    vehicleNumber: '', type: 'basic', model: '', year: '', capacity: 1,
     equipment: [],
-    
-    // Step 3: Driver
-    driverName: '',
-    driverPhone: '',
-    driverLicense: '',
-    driverExperience: '',
-    
-    // Step 4: Pricing
-    baseFare: '',
-    perKmRate: '',
-    waitingCharge: '',
-    nightCharge: '',
-    
-    // Step 5: Service Area
+    driverName: '', driverPhone: '', driverLicense: '', driverExperience: '',
+    baseFare: '', perKmRate: '', waitingCharge: '', nightCharge: '',
     serviceArea: [],
-    
-    // Step 6: Documents
-    documents: [],
-    
-    // Step 7: Password
-    password: '',
-    confirmPassword: ''
+    password: '', confirmPassword: '', email: ''
   });
 
-  const steps = [
-    'Vehicle Details',
-    'Equipment',
-    'Driver Details',
-    'Pricing',
-    'Service Area',
-    'Documents',
-    'Password'
-  ];
+  const steps = ['Vehicle', 'Equipment', 'Driver', 'Pricing', 'Area', 'Account'];
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setError('');
   };
 
-  const handleArrayAdd = (field, item) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: [...prev[field], item]
-    }));
+  const addItem = (field, inputId) => {
+    const input = document.getElementById(inputId);
+    if (input?.value?.trim()) {
+      setFormData(prev => ({ ...prev, [field]: [...prev[field], input.value.trim()] }));
+      input.value = '';
+    }
   };
 
-  const handleArrayRemove = (field, index) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].filter((_, i) => i !== index)
-    }));
+  const removeItem = (field, index) => {
+    setFormData(prev => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
   };
 
   const handleSubmit = async () => {
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
     setLoading(true);
+    setError('');
     try {
-      const response = await api.post('/ambulance/register', formData);
-      if (response.data.success) {
-        alert('Ambulance registration submitted! Please wait for verification.');
-        navigate('/ambulance/login');
+      const res = await api.post('/ambulance/register', formData);
+      if (res.data?.success) {
+        setSuccess('Registration submitted! Redirecting to login...');
+        setTimeout(() => navigate('/ambulance/login'), 2000);
+      } else {
+        setError(res.data?.message || 'Registration failed');
       }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Registration failed');
+    } catch (err) {
+      setError('Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const ambulanceTypes = [
+    { value: 'basic', label: 'Basic Life Support' },
+    { value: 'cardiac', label: 'Cardiac' },
+    { value: 'ventilator', label: 'Ventilator' },
+    { value: 'neonatal', label: 'Neonatal' },
+    { value: 'wheelchair', label: 'Wheelchair' },
+  ];
+
   const renderStep = () => {
     switch(currentStep) {
-      case 0:
-        return (
-          <div>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>🚑 Vehicle Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Vehicle Number *</label>
-                <input
-                  type="text"
-                  name="vehicleNumber"
-                  value={formData.vehicleNumber}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Ambulance Type *</label>
-                <select name="type" value={formData.type} onChange={handleChange} style={inputStyle}>
-                  <option value="basic">Basic Ambulance</option>
-                  <option value="oxygen">Oxygen Ambulance</option>
-                  <option value="icu">ICU Ambulance</option>
-                  <option value="advanced">Advanced Life Support</option>
-                  <option value="neonatal">Neonatal Ambulance</option>
-                  <option value="bariatric">Bariatric Ambulance</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Model</label>
-                <input
-                  type="text"
-                  name="model"
-                  value={formData.model}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  placeholder="e.g., Mercedes-Benz Sprinter"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Year</label>
-                <input
-                  type="number"
-                  name="year"
-                  value={formData.year}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  placeholder="e.g., 2023"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Patient Capacity</label>
-                <input
-                  type="number"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  min="1"
-                  max="4"
-                />
-              </div>
-            </div>
+      case 0: return (
+        <div>
+          <h3 style={stepTitleStyle}>🚑 Vehicle Details</h3>
+          <div style={gridStyle}>
+            <input placeholder="Vehicle Number *" value={formData.vehicleNumber} onChange={e => handleChange('vehicleNumber', e.target.value)} style={inputStyle} />
+            <select value={formData.type} onChange={e => handleChange('type', e.target.value)} style={inputStyle}>
+              {ambulanceTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+            <input placeholder="Model (e.g., Force Traveller)" value={formData.model} onChange={e => handleChange('model', e.target.value)} style={inputStyle} />
+            <input placeholder="Year (e.g., 2024)" value={formData.year} onChange={e => handleChange('year', e.target.value)} style={inputStyle} />
           </div>
-        );
-
-      case 1:
-        return (
-          <div>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>🛠️ Equipment</h3>
-            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>List equipment available in your ambulance</p>
-            
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-              <input
-                type="text"
-                placeholder="Equipment Name"
-                id="equipment"
-                style={{ ...inputStyle, flex: 1 }}
-              />
-              <button
-                onClick={() => {
-                  const name = document.getElementById('equipment').value;
-                  if (name) {
-                    handleArrayAdd('equipment', name);
-                    document.getElementById('equipment').value = '';
-                  }
-                }}
-                style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}
-              >
-                Add
-              </button>
-            </div>
-
-            {formData.equipment.length > 0 && (
-              <div style={{ marginTop: '0.5rem' }}>
-                {formData.equipment.map((item, index) => (
-                  <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', marginBottom: '0.25rem' }}>
-                    <span>✅ {item}</span>
-                    <button onClick={() => handleArrayRemove('equipment', index)} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
-                  </div>
-                ))}
-              </div>
-            )}
+        </div>
+      );
+      case 1: return (
+        <div>
+          <h3 style={stepTitleStyle}>🛠️ Equipment</h3>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <input id="equipInput" placeholder="Equipment name" style={{ ...inputStyle, flex: 1 }} />
+            <button onClick={() => addItem('equipment', 'equipInput')} style={addBtnStyle}>Add</button>
           </div>
-        );
-
-      case 2:
-        return (
-          <div>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>👨‍✈️ Driver Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Driver Name *</label>
-                <input
-                  type="text"
-                  name="driverName"
-                  value={formData.driverName}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Phone *</label>
-                <input
-                  type="tel"
-                  name="driverPhone"
-                  value={formData.driverPhone}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>License Number *</label>
-                <input
-                  type="text"
-                  name="driverLicense"
-                  value={formData.driverLicense}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Experience (years)</label>
-                <input
-                  type="number"
-                  name="driverExperience"
-                  value={formData.driverExperience}
-                  onChange={handleChange}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
+          {formData.equipment.map((item, i) => (
+            <div key={i} style={tagStyle}>{item} <span onClick={() => removeItem('equipment', i)} style={{ cursor: 'pointer', color: '#e53935' }}>✕</span></div>
+          ))}
+        </div>
+      );
+      case 2: return (
+        <div>
+          <h3 style={stepTitleStyle}>👨‍✈️ Driver Details</h3>
+          <div style={gridStyle}>
+            <input placeholder="Driver Name *" value={formData.driverName} onChange={e => handleChange('driverName', e.target.value)} style={inputStyle} />
+            <input placeholder="Phone *" value={formData.driverPhone} onChange={e => handleChange('driverPhone', e.target.value)} style={inputStyle} />
+            <input placeholder="License Number *" value={formData.driverLicense} onChange={e => handleChange('driverLicense', e.target.value)} style={inputStyle} />
+            <input placeholder="Experience (years)" value={formData.driverExperience} onChange={e => handleChange('driverExperience', e.target.value)} style={inputStyle} />
           </div>
-        );
-
-      case 3:
-        return (
-          <div>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>💰 Pricing</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Base Fare (₹) *</label>
-                <input
-                  type="number"
-                  name="baseFare"
-                  value={formData.baseFare}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  required
-                  placeholder="e.g., 500"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Per KM Rate (₹) *</label>
-                <input
-                  type="number"
-                  name="perKmRate"
-                  value={formData.perKmRate}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  required
-                  placeholder="e.g., 50"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Waiting Charge (₹ per 30 min)</label>
-                <input
-                  type="number"
-                  name="waitingCharge"
-                  value={formData.waitingCharge}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  placeholder="e.g., 100"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Night Charge (₹) (10 PM - 6 AM)</label>
-                <input
-                  type="number"
-                  name="nightCharge"
-                  value={formData.nightCharge}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  placeholder="e.g., 150"
-                />
-              </div>
-            </div>
+        </div>
+      );
+      case 3: return (
+        <div>
+          <h3 style={stepTitleStyle}>💰 Pricing (You Set Your Own Rates)</h3>
+          <div style={gridStyle}>
+            <input placeholder="Base Fare (₹) *" type="number" value={formData.baseFare} onChange={e => handleChange('baseFare', e.target.value)} style={inputStyle} />
+            <input placeholder="Per KM Rate (₹) *" type="number" value={formData.perKmRate} onChange={e => handleChange('perKmRate', e.target.value)} style={inputStyle} />
+            <input placeholder="Waiting Charge (₹)" type="number" value={formData.waitingCharge} onChange={e => handleChange('waitingCharge', e.target.value)} style={inputStyle} />
+            <input placeholder="Night Charge (₹)" type="number" value={formData.nightCharge} onChange={e => handleChange('nightCharge', e.target.value)} style={inputStyle} />
           </div>
-        );
-
-      case 4:
-        return (
-          <div>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📍 Service Area</h3>
-            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>List cities/areas where you provide service</p>
-            
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-              <input
-                type="text"
-                placeholder="City/Area"
-                id="serviceArea"
-                style={{ ...inputStyle, flex: 1 }}
-              />
-              <button
-                onClick={() => {
-                  const name = document.getElementById('serviceArea').value;
-                  if (name) {
-                    handleArrayAdd('serviceArea', name);
-                    document.getElementById('serviceArea').value = '';
-                  }
-                }}
-                style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}
-              >
-                Add
-              </button>
-            </div>
-
-            {formData.serviceArea.length > 0 && (
-              <div style={{ marginTop: '0.5rem' }}>
-                {formData.serviceArea.map((item, index) => (
-                  <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', marginBottom: '0.25rem' }}>
-                    <span>📍 {item}</span>
-                    <button onClick={() => handleArrayRemove('serviceArea', index)} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
-                  </div>
-                ))}
-              </div>
-            )}
+        </div>
+      );
+      case 4: return (
+        <div>
+          <h3 style={stepTitleStyle}>📍 Service Areas</h3>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <input id="areaInput" placeholder="City or area name" style={{ ...inputStyle, flex: 1 }} />
+            <button onClick={() => addItem('serviceArea', 'areaInput')} style={addBtnStyle}>Add</button>
           </div>
-        );
-
-      case 5:
-        return (
-          <div>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📄 Documents</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Vehicle Registration</label>
-                <input type="file" style={inputStyle} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Insurance Certificate</label>
-                <input type="file" style={inputStyle} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Pollution Certificate</label>
-                <input type="file" style={inputStyle} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Driver License</label>
-                <input type="file" style={inputStyle} />
-              </div>
-            </div>
+          {formData.serviceArea.map((item, i) => (
+            <div key={i} style={tagStyle}>📍 {item} <span onClick={() => removeItem('serviceArea', i)} style={{ cursor: 'pointer', color: '#e53935' }}>✕</span></div>
+          ))}
+        </div>
+      );
+      case 5: return (
+        <div>
+          <h3 style={stepTitleStyle}>🔑 Account Setup</h3>
+          <div style={gridStyle}>
+            <input placeholder="Email *" type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} style={inputStyle} />
+            <input placeholder="Password *" type="password" value={formData.password} onChange={e => handleChange('password', e.target.value)} style={inputStyle} />
+            <input placeholder="Confirm Password *" type="password" value={formData.confirmPassword} onChange={e => handleChange('confirmPassword', e.target.value)} style={inputStyle} />
           </div>
-        );
-
-      case 6:
-        return (
-          <div>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>🔑 Account Setup</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Password *</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Confirm Password *</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  style={inputStyle}
-                  required
-                />
-                {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                  <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.25rem' }}>Passwords do not match</p>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return <div>Unknown step</div>;
+          {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
+            <p style={{ color: '#e53935', fontSize: '12px' }}>Passwords do not match</p>
+          )}
+        </div>
+      );
+      default: return null;
     }
   };
 
   return (
-    <ProviderRegistrationLayout
-      title="Ambulance Registration"
-      subtitle="Register your ambulance service"
-      icon="🚑"
-      steps={steps}
-      currentStep={currentStep}
-      onStepChange={setCurrentStep}
-      loading={loading}
-      onSubmit={handleSubmit}
-    >
-      {renderStep()}
-    </ProviderRegistrationLayout>
+    <div style={{ minHeight: '100vh', background: '#f5f5f5', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
+      <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <button onClick={() => navigate('/ambulance')} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>←</button>
+          <h2 style={{ margin: 0, fontSize: '20px', color: '#1a1a1a' }}>🚑 Ambulance Registration</h2>
+        </div>
+
+        {/* Step Indicator */}
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '20px' }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{
+              flex: 1, textAlign: 'center', padding: '8px 4px',
+              borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+              background: i <= currentStep ? '#e53935' : '#e0e0e0',
+              color: i <= currentStep ? '#fff' : '#888'
+            }}>{s}</div>
+          ))}
+        </div>
+
+        {/* Error / Success */}
+        {error && <div style={{ background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px' }}>{error}</div>}
+        {success && <div style={{ background: '#e8f5e9', color: '#2e7d32', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px' }}>{success}</div>}
+
+        {/* Step Content */}
+        <div style={{ background: '#fff', borderRadius: '14px', padding: '20px', marginBottom: '15px' }}>
+          {renderStep()}
+        </div>
+
+        {/* Navigation */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {currentStep > 0 && (
+            <button onClick={() => setCurrentStep(prev => prev - 1)} style={{ flex: 1, padding: '14px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>← Previous</button>
+          )}
+          {currentStep < steps.length - 1 ? (
+            <button onClick={() => setCurrentStep(prev => prev + 1)} style={{ flex: 1, padding: '14px', background: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Next →</button>
+          ) : (
+            <button onClick={handleSubmit} disabled={loading} style={{ flex: 1, padding: '14px', background: '#4caf50', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>{loading ? 'Submitting...' : 'Submit Registration'}</button>
+          )}
+        </div>
+
+        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#888' }}>
+          Already registered? <Link to="/ambulance/login" style={{ color: '#e53935', fontWeight: 600, textDecoration: 'none' }}>Login here</Link>
+        </p>
+      </div>
+    </div>
   );
 };
 
-const inputStyle = {
-  width: '100%',
-  padding: '0.6rem',
-  borderRadius: '0.5rem',
-  border: '1px solid #e5e7eb',
-  fontSize: '0.9rem',
-  backgroundColor: 'white',
-  outline: 'none',
-  transition: 'border-color 0.2s'
-};
+const stepTitleStyle = { fontSize: '16px', fontWeight: 700, color: '#333', marginBottom: '14px' };
+const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' };
+const inputStyle = { width: '100%', padding: '12px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
+const addBtnStyle = { padding: '12px 16px', background: '#2196f3', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' };
+const tagStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f0f0f0', borderRadius: '8px', marginBottom: '6px', fontSize: '13px' };
 
 export default AmbulanceRegister;
