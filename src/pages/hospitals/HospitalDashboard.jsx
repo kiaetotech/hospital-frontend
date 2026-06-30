@@ -331,6 +331,59 @@ const HospitalDashboard = () => {
         </div>
       );
 
+            case 'settings':
+        return (
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>⚙️ Account Settings</h2>
+            
+            <div style={{ display: 'grid', gap: '1rem', maxWidth: '500px' }}>
+              <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                <h3 style={{ color: '#92400e', marginBottom: '0.5rem' }}>⚠️ Deactivate Account</h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
+                  Your hospital will be hidden from search results. You can reactivate later by contacting support.
+                </p>
+                <button 
+                  onClick={async () => {
+                    if (window.confirm('Deactivate your hospital account? Patients will not be able to find you.')) {
+                      try {
+                        await api.put('/hospitals/provider/deactivate', { reason: 'Requested from dashboard' });
+                        alert('Account deactivated. Redirecting to login.');
+                        handleLogout();
+                      } catch(e) { alert('Failed to deactivate'); }
+                    }
+                  }}
+                  style={{ padding: '0.75rem 1.5rem', backgroundColor: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '0.5rem', cursor: 'pointer', color: '#92400e', fontWeight: 'bold', fontSize: '0.9rem' }}
+                >
+                  ⚠️ Deactivate My Account
+                </button>
+              </div>
+
+              <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                <h3 style={{ color: '#dc2626', marginBottom: '0.5rem' }}>🗑️ Delete Account Permanently</h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
+                  This will permanently delete your hospital data. Data will be retained for 30 days before permanent removal.
+                </p>
+                <button 
+                  onClick={async () => {
+                    if (window.confirm('PERMANENTLY delete your hospital account? This cannot be undone.')) {
+                      if (window.confirm('Are you absolutely sure? All your data will be deleted in 30 days.')) {
+                        try {
+                          await api.delete('/hospitals/provider/delete');
+                          alert('Account deletion requested. Data will be removed in 30 days.');
+                          handleLogout();
+                        } catch(e) { alert('Failed to delete'); }
+                      }
+                    }
+                  }}
+                  style={{ padding: '0.75rem 1.5rem', backgroundColor: '#fee2e2', border: '2px solid #ef4444', borderRadius: '0.5rem', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold', fontSize: '0.9rem' }}
+                >
+                  🗑️ Delete Account Permanently
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
       default: return <div>Coming soon...</div>;
     }
   };
