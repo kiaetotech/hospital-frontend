@@ -325,153 +325,238 @@ const HospitalsList = () => {
             <button type="button" onClick={clearFilters} style={{ padding: '0.6rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>Clear All Filters</button>
           </div>
         ) : (
-          paginatedHospitals.map(h => {
-            const distance = userLocation && h.location ? calculateDistance(userLocation.lat, userLocation.lng, h.location.lat, h.location.lng) : null;
-            const insuranceList = h.insurance_accepted || [];
-            const schemesList = h.schemes_accepted || [];
-            const showAllInsurance = expandedInsurance[h._id];
-            const showAllSchemes = expandedSchemes[h._id];
-            const matchingDoctors = getMatchingDoctors(h);
-            const selectedDoc = matchingDoctors.find(d => d.name === selectedDoctor[h._id]) || matchingDoctors[0] || null;
-            const opdFee = selectedDoc ? selectedDoc.consultation_fee : (h.pricing?.consultation || 0);
-            const status = hospitalStatuses[h._id];
-            const isStale = status?.isStale !== false;
-            const statusConfig = {
-              accepting: { icon: '🟢', label: 'Accepting', color: '#10b981', bg: '#d1fae5' },
-              limited: { icon: '🟡', label: 'Limited', color: '#f59e0b', bg: '#fef3c7' },
-              full: { icon: '🔴', label: 'Full', color: '#ef4444', bg: '#fee2e2' },
-              unknown: { icon: '❓', label: 'Call Hospital', color: '#6b7280', bg: '#f3f4f6' }
-            };
-            const config = statusConfig[status?.status] || statusConfig.unknown;
+          {paginatedHospitals.map(h => {
+  const distance = userLocation && h.location ? calculateDistance(userLocation.lat, userLocation.lng, h.location.lat, h.location.lng) : null;
+  const insuranceList = h.insurance_accepted || [];
+  const schemesList = h.schemes_accepted || [];
+  const showAllInsurance = expandedInsurance[h._id];
+  const showAllSchemes = expandedSchemes[h._id];
+  const matchingDoctors = getMatchingDoctors(h);
+  const selectedDoc = matchingDoctors.find(d => d.name === selectedDoctor[h._id]) || matchingDoctors[0] || null;
+  const opdFee = selectedDoc ? selectedDoc.consultation_fee : (h.pricing?.consultation || 0);
+  const status = hospitalStatuses[h._id];
+  const isStale = status?.isStale !== false;
+  const statusConfig = {
+    accepting: { icon: '🟢', label: 'Accepting Patients', color: '#10b981', bg: '#d1fae5' },
+    limited: { icon: '🟡', label: 'Limited', color: '#f59e0b', bg: '#fef3c7' },
+    full: { icon: '🔴', label: 'Not Accepting', color: '#ef4444', bg: '#fee2e2' },
+    unknown: { icon: '❓', label: 'Call to Confirm', color: '#6b7280', bg: '#f3f4f6' }
+  };
+  const config = statusConfig[status?.status] || statusConfig.unknown;
+  const roomTypes = h.pricing || {};
+  const roomSummary = [];
+  if (roomTypes.general_bed_per_day) roomSummary.push(`General ₹${roomTypes.general_bed_per_day}`);
+  if (roomTypes.semi_private_per_day) roomSummary.push(`Semi-Pvt ₹${roomTypes.semi_private_per_day}`);
+  if (roomTypes.private_per_day) roomSummary.push(`Private ₹${roomTypes.private_per_day}`);
+  if (roomTypes.icu_bed_per_day) roomSummary.push(`ICU ₹${roomTypes.icu_bed_per_day}`);
+  const moreRooms = Object.keys(roomTypes).filter(k => k.endsWith('_per_day') && !['general_bed_per_day','semi_private_per_day','private_per_day','icu_bed_per_day'].includes(k)).length;
+  const facilities = h.facilities || [];
+  const topFacilities = facilities.slice(0, 4).map(f => f.name || f).join(' • ');
+  const moreFacilities = facilities.length > 4 ? facilities.length - 4 : 0;
 
-            return (
-              <div key={h._id} style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' }}>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                  <div>
-                    <h2 style={{ fontSize: '1.15rem', fontWeight: 'bold', margin: 0 }}>{h.name}</h2>
-                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
-                      {h.accreditations?.map(acc => (<span key={acc} style={{ backgroundColor: '#e0e7ff', color: '#3730a3', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 'bold' }}>{acc}</span>))}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>⭐ {h.ratings?.average || 'N/A'}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>({h.ratings?.count || 0} reviews)</div>
-                    {h.cashless_available && (<span style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '0.1rem 0.5rem', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 'bold', marginTop: '0.25rem', display: 'inline-block' }}>💳 Cashless</span>)}
-                  </div>
-                </div>
-
-                <p style={{ color: '#6b7280', margin: '0.25rem 0', fontSize: '0.85rem' }}>📍 {h.address?.city}, {h.address?.state} {distance && <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>• {distance} km</span>}</p>
-
-                {schemesList.length > 0 && (
-                  <div style={{ margin: '0.5rem 0' }}>
-                    <button type="button" onClick={() => toggleSchemes(h._id)} style={{ cursor: 'pointer', fontSize: '0.8rem', color: '#8b5cf6', fontWeight: '600', background: 'none', border: 'none', padding: 0 }}>💠 {schemesList.length} Scheme{schemesList.length > 1 ? 's' : ''} {showAllSchemes ? '▲' : '▼'}</button>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.2rem' }}>
-                      {(showAllSchemes ? schemesList : schemesList.slice(0, 3)).map((scheme, idx) => (<span key={idx} style={{ backgroundColor: '#f3e8ff', color: '#5b21b6', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontSize: '0.65rem' }}>{schemeDisplayNames[scheme] || scheme}</span>))}
-                      {!showAllSchemes && schemesList.length > 3 && (<button type="button" onClick={() => toggleSchemes(h._id)} style={{ color: '#8b5cf6', fontSize: '0.65rem', cursor: 'pointer', padding: '0.15rem 0.5rem', background: 'none', border: 'none' }}>+{schemesList.length - 3} more</button>)}
-                    </div>
-                  </div>
-                )}
-
-                {searchQuery && matchingDoctors.length > 1 && (
-                  <div style={{ margin: '0.75rem 0', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
-                    <strong style={{ fontSize: '0.85rem' }}>👨‍⚕️ Select Doctor ({matchingDoctors.length}):</strong>
-                    {matchingDoctors.map(doc => {
-                      return (
-                        <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : 'white', borderRadius: '0.5rem', marginTop: '0.4rem', cursor: 'pointer', border: selectedDoctor[h._id] === doc.name ? '2px solid #10b981' : '1px solid #e5e7eb' }}>
-                          <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
-                          <div style={{ flex: 1 }}><strong>{doc.name}</strong> - {doc.specialization}<br /><span style={{ fontSize: '0.7rem', color: '#6b7280' }}>📜 {doc.qualification} {doc.experience && `• 📅 ${doc.experience}`}</span><br /><span style={{ fontSize: '0.7rem' }}>⭐ {doc.rating} ({doc.reviewCount}) {doc.languages?.length > 0 && `• 🗣️ ${doc.languages.join(', ')}`}</span></div>
-                          <div style={{ textAlign: 'right' }}><span style={{ fontWeight: 'bold', color: '#10b981', fontSize: '1rem' }}>₹{doc.consultation_fee}</span></div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {searchQuery && matchingDoctors.length === 1 && (
-                  <div style={{ margin: '0.5rem 0', padding: '0.6rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', fontSize: '0.85rem' }}><strong>👨‍⚕️ {matchingDoctors[0].name}</strong> - {matchingDoctors[0].specialization}<br /><span style={{ fontSize: '0.75rem' }}>📜 {matchingDoctors[0].qualification} • ⭐ {matchingDoctors[0].rating} • 💰 ₹{matchingDoctors[0].consultation_fee}</span></div>
-                )}
-
-                <div style={{ display: 'flex', gap: '1.5rem', margin: '0.5rem 0', fontSize: '0.8rem', flexWrap: 'wrap' }}>
-                  <span>🧪 Lab: {h.lab_tests_available ? '✅ Yes' : '🔗 Partner'}</span>
-                  <button type="button" onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer', background: 'none', border: 'none', fontSize: '0.8rem', padding: 0 }}>🛡️ Insurance: <span style={{ color: '#3b82f6' }}>{insuranceList.length} {showAllInsurance ? '▲' : '▼'}</span></button>
-                </div>
-
-                {/* STATUS + PRICING + WAIT TIME ROW */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', margin: '0.6rem 0', backgroundColor: '#f9fafb', padding: '0.6rem', borderRadius: '0.5rem' }}>
-                  
-                  {/* Hospital Status (Green Light System) */}
-                  <div>
-                    <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '2px' }}>🏥 Status</div>
-                    <span style={{ 
-                      backgroundColor: isStale ? '#fef3c7' : config.bg, 
-                      color: isStale ? '#92400e' : config.color,
-                      padding: '0.25rem 0.5rem', borderRadius: '9999px', 
-                      fontSize: '0.7rem', fontWeight: 'bold', display: 'inline-block'
-                    }}>
-                      {isStale ? '⚠️ Unverified' : `${config.icon} ${config.label}`}
-                    </span>
-                    {status?.updatedAt && (
-                      <div style={{ fontSize: '0.6rem', color: '#9ca3af', marginTop: '2px' }}>
-                        {new Date(status.updatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* OPD Fee */}
-                  <div>
-                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>📋 OPD Fee</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#10b981' }}>₹{opdFee}</div>
-                  </div>
-
-                  {/* Patient-Reported Wait Time */}
-                  <div>
-                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>⏱️ Avg Wait</div>
-                    {waitTimes[h._id] ? (
-                      <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#6366f1' }}>{waitTimes[h._id]} min</div>
-                    ) : (
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const mins = prompt('How many minutes did you wait? (Optional - helps other patients)');
-                          if (mins && !isNaN(mins)) reportWaitTime(h._id, parseInt(mins));
-                        }}
-                        style={{ fontSize: '0.65rem', color: '#6366f1', background: 'none', border: '1px dashed #6366f1', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px' }}
-                      >
-                        + Report Wait
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* ACTION BUTTONS */}
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button type="button" onClick={() => handleBookOPD(h, selectedDoc)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>📋 Book OPD</button>
-                  <button type="button" onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🏥 Book Admission</button>
-                  
-                  {/* CALL HOSPITAL BUTTON */}
-                  <a href={`tel:${h.emergency_contact || h.phone || ''}`} style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.55rem 1rem', borderRadius: '0.4rem', border: '2px solid #f59e0b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>📞 Call Hospital</a>
-                  
-                  <button type="button" onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#fff', color: '#374151', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.85rem' }}>Details →</button>
-                  <button type="button" onClick={handleAmbulance} style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.55rem 0.8rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>🚑</button>
-                </div>
-
-                {h.has24x7ER && (<div style={{ marginTop: '0.5rem' }}><span style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 'bold' }}>🚨 24/7 Emergency</span></div>)}
-              </div>
-            );
-          })
-        )}
-
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1.5rem' }}>
-            <button type="button" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1.5rem', backgroundColor: currentPage === 1 ? '#e5e7eb' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>← Previous</button>
-            <span style={{ padding: '0.5rem', fontWeight: 'bold' }}>Page {currentPage} of {totalPages}</span>
-            <button type="button" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1.5rem', backgroundColor: currentPage === totalPages ? '#e5e7eb' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>Next →</button>
+  return (
+    <div key={h._id} style={cardStyles.container}>
+      
+      {/* HEADER ROW */}
+      <div style={cardStyles.header}>
+        <div>
+          <h2 style={cardStyles.name}>{h.name}</h2>
+          <div style={cardStyles.badges}>
+            {h.accreditations?.map(acc => <span key={acc} style={cardStyles.badge}>{acc}</span>)}
           </div>
-        )}
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>⭐ {h.ratings?.average || 'N/A'}</div>
+          <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>({h.ratings?.count || 0} reviews)</div>
+          {h.cashless_available && <span style={cardStyles.cashlessBadge}>💳 Cashless</span>}
+        </div>
       </div>
+
+      {/* LOCATION */}
+      <p style={{ color: '#6b7280', margin: '4px 0', fontSize: '0.85rem' }}>
+        📍 {h.address?.city}, {h.address?.state} {distance && <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>• {distance} km</span>}
+      </p>
+
+      {/* GREEN LIGHT STATUS */}
+      <div style={{ ...cardStyles.statusBar, backgroundColor: isStale ? '#fef3c7' : config.bg }}>
+        <span style={{ color: isStale ? '#92400e' : config.color, fontWeight: 'bold', fontSize: '0.8rem' }}>
+          {isStale ? '⚠️ Status Unverified' : `${config.icon} ${config.label}`}
+        </span>
+        {status?.updatedAt && (
+          <span style={{ fontSize: '0.65rem', color: '#888' }}>
+            Updated {new Date(status.updatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+        {waitTimes[h._id] && (
+          <span style={{ fontSize: '0.7rem', color: '#6366f1' }}>⏱️ Avg Wait: {waitTimes[h._id]} min</span>
+        )}
+        <a href={`tel:${h.emergency_contact || h.contact?.phone || ''}`} style={{ color: '#3b82f6', fontSize: '0.75rem', fontWeight: 'bold', textDecoration: 'none' }}>
+          📞 Call to Confirm
+        </a>
+      </div>
+
+      {/* SCHEMES */}
+      {schemesList.length > 0 && (
+        <div style={cardStyles.expandSection}>
+          <button type="button" onClick={() => toggleSchemes(h._id)} style={cardStyles.expandBtn}>
+            💠 {schemesList.length} Scheme{schemesList.length > 1 ? 's' : ''} {showAllSchemes ? '▲' : '▼'}
+          </button>
+          <div style={cardStyles.tagRow}>
+            {(showAllSchemes ? schemesList : schemesList.slice(0, 3)).map((s, i) => (
+              <span key={i} style={cardStyles.tag}>{schemeDisplayNames[s] || s}</span>
+            ))}
+            {!showAllSchemes && schemesList.length > 3 && (
+              <button type="button" onClick={() => toggleSchemes(h._id)} style={cardStyles.moreTag}>+{schemesList.length - 3} more</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* DOCTORS */}
+      {searchQuery && matchingDoctors.length > 0 && (
+        <div style={cardStyles.doctorSection}>
+          <strong style={{ fontSize: '0.85rem' }}>👨‍⚕️ {matchingDoctors.length} Doctor{matchingDoctors.length > 1 ? 's' : ''} matching</strong>
+          {matchingDoctors.map(doc => (
+            <label key={doc.name} style={{ ...cardStyles.doctorRow, border: selectedDoctor[h._id] === doc.name ? '2px solid #10b981' : '1px solid #e5e7eb', backgroundColor: selectedDoctor[h._id] === doc.name ? '#f0fdf4' : '#fff' }}>
+              <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
+              <div style={{ flex: 1 }}>
+                <strong>{doc.name}</strong> - {doc.specialization}
+                <br /><span style={{ fontSize: '0.7rem', color: '#6b7280' }}>📜 {doc.qualification} • ⭐ {doc.rating} ({doc.reviewCount}) • 🗣️ {doc.languages?.join(', ')}</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
+                {doc.availability?.slots_available > 0 ? (
+                  <div style={{ fontSize: '0.65rem', color: '#10b981' }}>🟢 {doc.availability.slots_available} slots</div>
+                ) : (
+                  <div style={{ fontSize: '0.65rem', color: '#f59e0b' }}>🟡 Limited</div>
+                )}
+              </div>
+            </label>
+          ))}
+        </div>
+      )}
+
+      {/* LAB */}
+      <div style={{ margin: '8px 0', fontSize: '0.8rem' }}>
+        🧪 Lab: {h.lab_tests_available ? '✅ In-house Available' : '🔗 Partner Lab'}
+      </div>
+
+      {/* INSURANCE */}
+      {insuranceList.length > 0 && (
+        <div style={cardStyles.expandSection}>
+          <button type="button" onClick={() => toggleInsurance(h._id)} style={cardStyles.expandBtn}>
+            🛡️ {insuranceList.length} Insurance {showAllInsurance ? '▲' : '▼'}
+          </button>
+          <div style={cardStyles.tagRow}>
+            {(showAllInsurance ? insuranceList : insuranceList.slice(0, 3)).map((ins, i) => (
+              <span key={i} style={{ ...cardStyles.tag, backgroundColor: '#eff6ff', color: '#1e40af' }}>{ins}</span>
+            ))}
+            {!showAllInsurance && insuranceList.length > 3 && (
+              <button type="button" onClick={() => toggleInsurance(h._id)} style={cardStyles.moreTag}>+{insuranceList.length - 3} more</button>
+            )}
+          </div>
+          {h.cashless_available && <span style={{ fontSize: '0.7rem', color: '#10b981' }}>💳 Cashless Available</span>}
+          {h.tpa_desk_available && <span style={{ fontSize: '0.7rem', color: '#3b82f6', marginLeft: '8px' }}>🏧 TPA Desk</span>}
+        </div>
+      )}
+
+      {/* ROOM TYPES SUMMARY */}
+      {roomSummary.length > 0 && (
+        <div style={cardStyles.summaryRow}>
+          <span style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>🛏️ Rooms: </span>
+          <span style={{ fontSize: '0.78rem', color: '#555' }}>
+            {roomSummary.slice(0, 4).join('  |  ')}
+            {(roomSummary.length > 4 || moreRooms > 0) && (
+              <button type="button" onClick={() => navigate(`/hospital-info/${h._id}`)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem' }}>
+                +{roomSummary.length - 4 + moreRooms} more
+              </button>
+            )}
+          </span>
+        </div>
+      )}
+
+      {/* FACILITIES SUMMARY */}
+      {topFacilities && (
+        <div style={cardStyles.summaryRow}>
+          <span style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>🏗️ Facilities: </span>
+          <span style={{ fontSize: '0.78rem', color: '#555' }}>
+            {topFacilities}
+            {moreFacilities > 0 && (
+              <button type="button" onClick={() => navigate(`/hospital-info/${h._id}`)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem' }}>
+                +{moreFacilities} more
+              </button>
+            )}
+          </span>
+        </div>
+      )}
+
+      {/* RATINGS */}
+      {h.ratings?.breakdown && (
+        <div style={cardStyles.ratingsRow}>
+          <span style={{ fontSize: '0.7rem' }}>Doctor: {h.ratings.breakdown.doctor_communication || h.ratings.breakdown.doctor || 'N/A'}</span>
+          <span style={{ fontSize: '0.7rem' }}>Staff: {h.ratings.breakdown.staff_behavior || h.ratings.breakdown.staff || 'N/A'}</span>
+          <span style={{ fontSize: '0.7rem' }}>Clean: {h.ratings.breakdown.cleanliness || h.ratings.breakdown.clean || 'N/A'}</span>
+          <span style={{ fontSize: '0.7rem' }}>Wait: {h.ratings.breakdown.wait_time || h.ratings.breakdown.wait || 'N/A'}</span>
+          <span style={{ fontSize: '0.7rem' }}>Value: {h.ratings.breakdown.value_for_money || h.ratings.breakdown.value || 'N/A'}</span>
+        </div>
+      )}
+
+      {/* REVIEW */}
+      {h.featured_review?.text && (
+        <div style={cardStyles.review}>
+          💬 "{h.featured_review.text}" - {h.featured_review.author}
+        </div>
+      )}
+
+      {/* ACTION BUTTONS */}
+      <div style={cardStyles.actions}>
+        <a href={`tel:${h.emergency_contact || h.contact?.phone || ''}`} style={cardStyles.callBtn}>📞 Call</a>
+        <button type="button" onClick={() => {
+          const doc = selectedDoctor[h._id] ? `?doctor=${encodeURIComponent(selectedDoctor[h._id])}` : '';
+          navigate(`/book-opd/${h._id}${doc}`);
+        }} style={cardStyles.opdBtn}>📋 Book OPD</button>
+        <button type="button" onClick={() => navigate(`/book-admission/${h._id}`)} style={cardStyles.admitBtn}>🏥 Book Admission</button>
+        <button type="button" onClick={() => navigate('/ambulance')} style={cardStyles.ambBtn}>🚑</button>
+        <button type="button" onClick={() => navigate(`/hospital-info/${h._id}`)} style={cardStyles.detailBtn}>View Details →</button>
+      </div>
+
+      {/* ER BADGE */}
+      {h.has24x7ER && (
+        <div style={{ marginTop: '8px' }}>
+          <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '2px 10px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 'bold' }}>🚨 24/7 Emergency</span>
+          <button type="button" onClick={() => {
+            const mins = prompt('How many minutes did you wait? (Optional - helps other patients)');
+            if (mins && !isNaN(mins)) reportWaitTime(h._id, parseInt(mins));
+          }} style={{ marginLeft: '8px', fontSize: '0.65rem', color: '#6366f1', background: 'none', border: '1px dashed #6366f1', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px' }}>+ Report Wait</button>
+        </div>
+      )}
     </div>
   );
-};
+})}
 
+const cardStyles = {
+  container: { backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' },
+  header: { display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: '4px' },
+  name: { fontSize: '1.15rem', fontWeight: 'bold', margin: 0 },
+  badges: { display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' },
+  badge: { backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 'bold' },
+  cashlessBadge: { backgroundColor: '#d1fae5', color: '#065f46', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 'bold', marginTop: '4px', display: 'inline-block' },
+  statusBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', margin: '8px 0', flexWrap: 'wrap', gap: '4px' },
+  expandSection: { margin: '6px 0' },
+  expandBtn: { cursor: 'pointer', fontSize: '0.8rem', color: '#6366f1', fontWeight: '600', background: 'none', border: 'none', padding: 0, marginBottom: '4px' },
+  tagRow: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
+  tag: { backgroundColor: '#f3e8ff', color: '#5b21b6', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem' },
+  moreTag: { color: '#6366f1', fontSize: '0.65rem', cursor: 'pointer', padding: '2px 8px', background: 'none', border: 'none' },
+  doctorSection: { margin: '8px 0', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '8px' },
+  doctorRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', borderRadius: '8px', marginTop: '6px', cursor: 'pointer' },
+  summaryRow: { margin: '6px 0', lineHeight: '1.5' },
+  ratingsRow: { display: 'flex', gap: '10px', flexWrap: 'wrap', margin: '6px 0', color: '#888' },
+  review: { backgroundColor: '#fef3c7', padding: '8px 12px', borderRadius: '8px', fontSize: '0.8rem', color: '#92400e', margin: '6px 0', fontStyle: 'italic' },
+  actions: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' },
+  callBtn: { padding: '8px 14px', backgroundColor: '#fef3c7', color: '#92400e', border: '2px solid #f59e0b', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'none' },
+  opdBtn: { padding: '8px 14px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' },
+  admitBtn: { padding: '8px 14px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' },
+  ambBtn: { padding: '8px 10px', backgroundColor: '#fef3c7', color: '#92400e', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' },
+  detailBtn: { padding: '8px 14px', backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer' }
+};
 export default HospitalsList;
