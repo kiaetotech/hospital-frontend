@@ -90,53 +90,38 @@ export const getHospitalDashboardStats = () => api.get('/hospitals/dashboard/sta
 export const getHospitalBookings = (params) => api.get('/hospitals/bookings', { params });
 export const getHospitalAnalytics = (params) => api.get('/hospitals/analytics', { params });
 
+// 🆕 Hospital Status (Green Light System)
+export const getBulkHospitalStatus = (hospitalIds) => api.post('/hospital-status/bulk', { hospitalIds });
+export const reportHospitalWaitTime = (hospitalId, waitMinutes) => api.post(`/hospital-status/${hospitalId}/wait-time`, { waitMinutes });
+
 // ============================================
 // 🚑 AMBULANCE - BLITZ RESPONSE (ENHANCED)
 // ============================================
 
-// Emergency Dispatch
 export const emergencyDispatch = (data) => api.post('/ambulance/emergency-dispatch', data);
 export const acceptEmergency = (bookingId, data) => api.post(`/ambulance/accept-emergency/${bookingId}`, data);
-
-// Trip Management
 export const ambulanceTripStart = (bookingId) => api.post(`/ambulance/trip-start/${bookingId}`);
 export const ambulancePatientOnboard = (bookingId, data) => api.post(`/ambulance/patient-onboard/${bookingId}`, data);
 export const ambulanceArrivedHospital = (bookingId, data) => api.post(`/ambulance/arrived-hospital/${bookingId}`, data);
 export const ambulanceTripComplete = (bookingId, data) => api.post(`/ambulance/trip-complete/${bookingId}`, data);
 export const ambulanceCancelEmergency = (bookingId, data) => api.post(`/ambulance/cancel-emergency/${bookingId}`, data);
-
-// Location & Tracking
 export const ambulanceUpdateLocation = (data) => api.post('/ambulance/update-location', data);
 export const getNearbyAmbulances = (params) => api.get('/ambulance/nearby-ambulances', { params });
 export const getActiveEmergency = (bookingId) => api.get(`/ambulance/active-emergency/${bookingId}`);
 export const getSurgeCheck = (params) => api.get('/ambulance/surge-check', { params });
-
-// Scheduled Transport
 export const scheduleTransport = (data) => api.post('/ambulance/schedule-transport', data);
 export const getScheduledBookings = () => api.get('/ambulance/scheduled-bookings');
-
-// Booking History
 export const getAmbulanceBookings = (params) => api.get('/ambulance/my-bookings', { params });
 export const getAmbulanceBookingById = (bookingId) => api.get(`/ambulance/booking/${bookingId}`);
 export const getTripSheet = (bookingId) => api.get(`/ambulance/trip-sheet/${bookingId}`);
-
-// Driver Endpoints
 export const getDriverDashboard = () => api.get('/ambulance/driver/dashboard');
 export const toggleDriverAvailability = (data) => api.post('/ambulance/driver/toggle-availability', data);
 export const getDriverTripHistory = (params) => api.get('/ambulance/driver/trip-history', { params });
-
-// Fare
 export const getAmbulanceFareEstimate = (params) => api.get('/ambulance/fare-estimate', { params });
-
-// Emergency Contacts
 export const getEmergencyContacts = () => api.get('/ambulance/emergency-contacts');
 export const updateEmergencyContacts = (data) => api.post('/ambulance/emergency-contacts', data);
-
-// SOS
 export const sendSOSSMS = (data) => api.post('/ambulance/send-sos-sms', data);
 export const notifyHospital = (data) => api.post('/ambulance/notify-hospital', data);
-
-// Legacy (preserved)
 export const getAmbulances = (params) => api.get('/ambulance', { params });
 export const bookAmbulance = (data) => api.post('/ambulance/book', data);
 export const trackAmbulance = (bookingId) => api.get(`/ambulance/track/${bookingId}`);
