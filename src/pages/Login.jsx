@@ -1,38 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { login, sendOTP, verifyOTP, register } from '../../services/api';
+import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 
-const Login = () => {
+const api = axios.create({ baseURL: 'https://hospital-backend-production-8de3.up.railway.app/api' });
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+const AmbulanceLogin = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/';
-
-  // Active tab
-  const [activeTab, setActiveTab] = useState('mobile');
-
-  // Form fields
-  const [mobile, setMobile] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-
-  // OTP state
-  const [otpMode, setOtpMode] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCountdown, setOtpCountdown] = useState(0);
-
-  // QR state
-  const [qrCode, setQrCode] = useState('');
-
-  // Loading & error
+  const [activeTab, setActiveTab] = useState('email');
+  const [form, setForm] = useState({ email: '', phone: '', password: '', otp: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  // Register mode
+  const [showPassword, setShowPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
   const [isRegister, setIsRegister] = useState(false);
-  const [registerForm, setRegisterForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
+  const [registerForm, setRegisterForm] = useState({
+    name: '', email: '', phone: '', password: '', confirmPassword: '',
+    vehicleNumber: '', ambulanceType: 'basic', driverName: '', driverPhone: ''
+  });
 
   useEffect(() => {
     if (otpCountdown > 0) {
@@ -41,91 +32,64 @@ const Login = () => {
     }
   }, [otpCountdown]);
 
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    setError('');
+  };
+
+  const handleRegisterChange = (field, value) => {
+    setRegisterForm(prev => ({ ...prev, [field]: value }));
+    setError('');
+  };
+
   const handleSendOTP = async () => {
-    if (!mobile || mobile.length < 10) {
-      setError('Please enter a valid 10-digit mobile number');
+    if (!form.phone || form.phone.length < 10) {
+      setError('Enter valid 10-digit mobile number');
       return;
     }
-    setLoading(true);
-    setError('');
     try {
-      await sendOTP({ phone: `+91${mobile}` });
+      await api.post('/otp/send', { phone: `+91${form.phone}` });
       setOtpSent(true);
       setOtpCountdown(30);
+      setError('');
     } catch (err) {
-      setError('Failed to send OTP. Please try again.');
-    } finally {
-      setLoading(false);
+      setError('Failed to send OTP');
     }
   };
 
-  const handleLoginWithOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      setError('Please enter a valid 6-digit OTP');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const res = await verifyOTP({ phone: `+91${mobile}`, otp });
-      if (res.data?.success) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
-        navigate(redirectPath);
-      } else {
-        setError(res.data?.message || 'Invalid OTP');
-      }
-    } catch (err) {
-      setError('Invalid OTP. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLoginWithPassword = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    if (activeTab === 'mobile' && (!mobile || mobile.length < 10)) {
-      setError('Please enter a valid mobile number');
-      setLoading(false);
-      return;
-    }
-    if (activeTab === 'email' && !email) {
-      setError('Please enter your email address');
-      setLoading(false);
-      return;
-    }
-    if (!password) {
-      setError('Please enter your password');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const loginData = activeTab === 'mobile'
-        ? { phone: `+91${mobile}`, password, role: 'patient' }
-        : { email, password, role: 'patient' };
-
-      const res = await login(loginData);
+      let res;
+      if (activeTab === 'email') {
+        if (!form.email || !form.password) {
+          setError('Please fill all fields');
+          setLoading(false);
+          return;
+        }
+        res = await api.post('/auth/login', { email: form.email, password: form.password, role: 'ambulance' });
+      } else {
+        if (!form.phone || !form.otp) {
+          setError('Please enter phone and OTP');
+          setLoading(false);
+          return;
+        }
+        res = await api.post('/otp/verify', { phone: `+91${form.phone}`, otp: form.otp });
+      }
       if (res.data?.success) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
-        navigate(redirectPath);
+        navigate('/ambulance/dashboard');
       } else {
         setError(res.data?.message || 'Login failed');
       }
     } catch (err) {
-      setError('Login failed. Please check your credentials.');
+      setError('Login failed. Check credentials.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGenerateQR = () => {
-    const sessionId = 'QR' + Date.now() + Math.random().toString(36).substr(2, 9);
-    setQrCode(sessionId);
   };
 
   const handleRegister = async (e) => {
@@ -137,216 +101,117 @@ const Login = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await register({
-        name: registerForm.name,
-        email: registerForm.email,
-        phone: `+91${registerForm.phone}`,
-        password: registerForm.password,
-        role: 'patient'
+      const res = await api.post('/auth/register', {
+        ...registerForm,
+        role: 'ambulance_provider',
+        phone: `+91${registerForm.phone}`
       });
       if (res.data?.success) {
         setSuccess('Registration successful! Redirecting to login...');
-        setTimeout(() => {
-          setIsRegister(false);
-          setSuccess('');
-        }, 2000);
+        setTimeout(() => { setIsRegister(false); setSuccess(''); }, 2000);
       } else {
         setError(res.data?.message || 'Registration failed');
       }
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      setError('Registration failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  // ============ REGISTER VIEW ============
   if (isRegister) {
     return (
       <div style={pageStyle}>
         <div style={cardStyle}>
-          <button onClick={() => navigate('/')} style={backBtnStyle}>←</button>
+          <button onClick={() => setIsRegister(false)} style={backBtnStyle}>← Back to Login</button>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <span style={{ fontSize: '40px', display: 'block' }}>📝</span>
-            <h2 style={{ margin: '8px 0 0', fontSize: '20px', fontWeight: 800, color: '#1a1a1a' }}>Create Account</h2>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#888' }}>Join HealthCare Hub</p>
+            <span style={{ fontSize: '40px', display: 'block' }}>🚑</span>
+            <h2 style={{ margin: '8px 0 0', fontSize: '20px', fontWeight: 800, color: '#1a1a1a' }}>Register Fleet</h2>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#888' }}>Quick registration for ambulance providers</p>
           </div>
-
           {error && <div style={errorStyle}>{error}</div>}
           {success && <div style={successStyle}>{success}</div>}
-
           <form onSubmit={handleRegister}>
-            <input placeholder="Full Name *" value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} style={inputStyle} required />
-            <input placeholder="Email Address *" type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} style={inputStyle} required />
+            <input placeholder="Company/Provider Name *" value={registerForm.name} onChange={e => handleRegisterChange('name', e.target.value)} style={inputStyle} required />
+            <input placeholder="Email Address *" type="email" value={registerForm.email} onChange={e => handleRegisterChange('email', e.target.value)} style={inputStyle} required />
             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-              <span style={{ padding: '13px 10px', background: '#f5f5f5', border: '2px solid #e0e0e0', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#555' }}>+91</span>
-              <input placeholder="Mobile Number *" value={registerForm.phone} onChange={e => setRegisterForm(p => ({ ...p, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))} style={{ ...inputStyle, flex: 1, marginBottom: 0 }} required />
+              <span style={countryCodeStyle}>+91</span>
+              <input placeholder="Mobile Number *" value={registerForm.phone} onChange={e => handleRegisterChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} style={{ ...inputStyle, flex: 1, marginBottom: 0 }} required />
             </div>
-            <input placeholder="Password *" type="password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} style={inputStyle} required />
-            <input placeholder="Confirm Password *" type="password" value={registerForm.confirmPassword} onChange={e => setRegisterForm(p => ({ ...p, confirmPassword: e.target.value }))} style={inputStyle} required />
-
-            <button type="submit" disabled={loading} style={submitBtnStyle}>
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </button>
+            <input placeholder="Vehicle Number" value={registerForm.vehicleNumber} onChange={e => handleRegisterChange('vehicleNumber', e.target.value)} style={inputStyle} />
+            <select value={registerForm.ambulanceType} onChange={e => handleRegisterChange('ambulanceType', e.target.value)} style={inputStyle}>
+              <option value="basic">Basic Life Support</option>
+              <option value="cardiac">Cardiac</option>
+              <option value="ventilator">Ventilator</option>
+              <option value="neonatal">Neonatal</option>
+              <option value="wheelchair">Wheelchair</option>
+            </select>
+            <input placeholder="Driver Name" value={registerForm.driverName} onChange={e => handleRegisterChange('driverName', e.target.value)} style={inputStyle} />
+            <input placeholder="Driver Phone" value={registerForm.driverPhone} onChange={e => handleRegisterChange('driverPhone', e.target.value)} style={inputStyle} />
+            <input placeholder="Password *" type="password" value={registerForm.password} onChange={e => handleRegisterChange('password', e.target.value)} style={inputStyle} required />
+            <input placeholder="Confirm Password *" type="password" value={registerForm.confirmPassword} onChange={e => handleRegisterChange('confirmPassword', e.target.value)} style={inputStyle} required />
+            <button type="submit" disabled={loading} style={submitBtnStyle}>{loading ? 'Registering...' : 'Register Fleet'}</button>
           </form>
-
-          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#888' }}>
-            Already have an account?{' '}
-            <span onClick={() => setIsRegister(false)} style={{ color: '#e53935', fontWeight: 700, cursor: 'pointer' }}>Login here</span>
-          </p>
         </div>
       </div>
     );
   }
 
-  // ============ LOGIN VIEW ============
   return (
     <div style={pageStyle}>
       <div style={cardStyle}>
-        <button onClick={() => navigate('/')} style={backBtnStyle}>←</button>
-
+        <button onClick={() => navigate('/ambulance')} style={backBtnStyle}>← Back</button>
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <span style={{ fontSize: '40px', display: 'block' }}>🏥</span>
-          <h2 style={{ margin: '8px 0 0', fontSize: '20px', fontWeight: 800, color: '#1a1a1a' }}>Patient Login</h2>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#888' }}>Access your healthcare services</p>
+          <span style={{ fontSize: '40px', display: 'block' }}>🚑</span>
+          <h2 style={{ margin: '8px 0 0', fontSize: '20px', fontWeight: 800, color: '#1a1a1a' }}>Ambulance Login</h2>
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#888' }}>Login to manage your fleet & accept emergencies</p>
         </div>
-
-        {/* Tabs */}
-        <div style={{
-          display: 'flex', background: '#f5f5f5', borderRadius: '12px',
-          padding: '4px', marginBottom: '20px'
-        }}>
-          {[
-            { key: 'mobile', icon: '📱', label: 'Mobile' },
-            { key: 'email', icon: '✉️', label: 'Email' },
-            { key: 'qr', icon: '📷', label: 'QR Code' }
-          ].map(tab => (
-            <button key={tab.key} onClick={() => { setActiveTab(tab.key); setError(''); setOtpMode(false); }}
-              style={{
-                flex: 1, padding: '12px 6px', border: 'none', borderRadius: '10px',
-                background: activeTab === tab.key ? '#e53935' : 'transparent',
-                color: activeTab === tab.key ? '#fff' : '#666',
-                fontWeight: 600, fontSize: '12px', cursor: 'pointer'
-              }}>
-              <span style={{ display: 'block', fontSize: '16px' }}>{tab.icon}</span>{tab.label}
-            </button>
-          ))}
+        <div style={tabContainerStyle}>
+          <button onClick={() => { setActiveTab('email'); setError(''); }} style={{ ...tabStyle, background: activeTab === 'email' ? '#e53935' : 'transparent', color: activeTab === 'email' ? '#fff' : '#666' }}>✉️ Email</button>
+          <button onClick={() => { setActiveTab('phone'); setError(''); }} style={{ ...tabStyle, background: activeTab === 'phone' ? '#e53935' : 'transparent', color: activeTab === 'phone' ? '#fff' : '#666' }}>📱 Mobile OTP</button>
         </div>
-
         {error && <div style={errorStyle}>{error}</div>}
         {success && <div style={successStyle}>{success}</div>}
-
-        {/* QR CODE */}
-        {activeTab === 'qr' && (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div onClick={handleGenerateQR} style={{
-              width: '160px', height: '160px', margin: '0 auto 15px',
-              background: qrCode ? '#1a1a1a' : '#f5f5f5',
-              borderRadius: '16px', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', cursor: 'pointer', border: '2px dashed #ddd'
-            }}>
-              {qrCode ? (
-                <div style={{ textAlign: 'center' }}>
-                  <span style={{ fontSize: '50px', display: 'block' }}>📱</span>
-                  <span style={{ fontSize: '10px', color: '#fff', display: 'block', marginTop: '6px' }}>Scan with app</span>
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center' }}>
-                  <span style={{ fontSize: '40px', display: 'block' }}>📷</span>
-                  <span style={{ fontSize: '12px', color: '#888', display: 'block', marginTop: '6px' }}>Tap to generate</span>
-                </div>
-              )}
-            </div>
-            <p style={{ fontSize: '13px', color: '#888' }}>Scan QR code from your phone for quick login</p>
-          </div>
-        )}
-
-        {/* MOBILE / EMAIL FORM */}
-        {(activeTab === 'mobile' || activeTab === 'email') && (
-          <form onSubmit={handleLoginWithPassword}>
-            {activeTab === 'mobile' && (
+        <form onSubmit={handleLogin}>
+          {activeTab === 'email' ? (
+            <>
               <div style={{ marginBottom: '14px' }}>
-                <label style={labelStyle}>📱 Mobile Number</label>
+                <label style={labelStyle}>Email Address</label>
+                <input type="email" placeholder="Enter your email" value={form.email} onChange={e => handleChange('email', e.target.value)} style={inputStyle} />
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={labelStyle}>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={form.password} onChange={e => handleChange('password', e.target.value)} style={{ ...inputStyle, paddingRight: '40px' }} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={passwordToggleStyle}>{showPassword ? '🙈' : '👁️'}</button>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', marginBottom: '16px' }}>
+                <Link to="/ambulance/forgot-password" style={{ fontSize: '12px', color: '#e53935', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={labelStyle}>Mobile Number</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <span style={{ padding: '13px 10px', background: '#f5f5f5', border: '2px solid #e0e0e0', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#555' }}>+91</span>
-                  <input type="tel" placeholder="Enter your mobile number" value={mobile}
-                    onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    style={{ ...inputStyle, flex: 1, marginBottom: 0 }} />
+                  <span style={countryCodeStyle}>+91</span>
+                  <input type="tel" placeholder="Enter mobile number" value={form.phone} onChange={e => handleChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} style={{ ...inputStyle, flex: 1, marginBottom: 0 }} />
                 </div>
               </div>
-            )}
-
-            {activeTab === 'email' && (
-              <div style={{ marginBottom: '14px' }}>
-                <label style={labelStyle}>✉️ Email ID</label>
-                <input type="email" placeholder="Enter your email address" value={email}
-                  onChange={e => setEmail(e.target.value)} style={inputStyle} />
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <button type="button" onClick={handleSendOTP} disabled={otpCountdown > 0} style={{ padding: '12px 16px', background: otpCountdown > 0 ? '#ccc' : '#2196f3', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: otpCountdown > 0 ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>{otpCountdown > 0 ? `Resend ${otpCountdown}s` : 'Send OTP'}</button>
+                {otpSent && (
+                  <input type="text" placeholder="6-digit OTP" value={form.otp} onChange={e => handleChange('otp', e.target.value.replace(/\D/g, '').slice(0, 6))} maxLength={6} style={{ ...inputStyle, flex: 1, letterSpacing: '6px', textAlign: 'center', fontSize: '18px', marginBottom: 0 }} />
+                )}
               </div>
-            )}
-
-            {!otpMode ? (
-              <>
-                <div style={{ marginBottom: '10px' }}>
-                  <label style={labelStyle}>🔒 Password</label>
-                  <div style={{ position: 'relative' }}>
-                    <input type={showPassword ? 'text' : 'password'} placeholder="Enter your password"
-                      value={password} onChange={e => setPassword(e.target.value)}
-                      style={{ ...inputStyle, paddingRight: '40px' }} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>
-                      {showPassword ? '🙈' : '👁️'}
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <button type="button" onClick={() => setOtpMode(true)}
-                    style={{ background: 'none', border: 'none', color: '#2196f3', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                    📱 Login with OTP
-                  </button>
-                  <Link to="/forgot-password" style={{ fontSize: '13px', color: '#e53935', fontWeight: 600, textDecoration: 'none' }}>
-                    Forgot password?
-                  </Link>
-                </div>
-
-                <button type="submit" disabled={loading} style={submitBtnStyle}>
-                  {loading ? 'Logging in...' : 'Login'}
-                </button>
-              </>
-            ) : (
-              <>
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={labelStyle}>📱 Enter OTP</label>
-                  <input type="text" placeholder="6-digit OTP" value={otp}
-                    onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    maxLength={6} style={{ ...inputStyle, letterSpacing: '8px', textAlign: 'center', fontSize: '20px' }} />
-                  {otpSent && <p style={{ fontSize: '12px', color: '#4caf50', margin: '6px 0 0' }}>✅ OTP sent to +91{mobile}</p>}
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                  <button type="button" onClick={handleSendOTP} disabled={otpCountdown > 0 || loading}
-                    style={{ flex: 1, padding: '12px', background: otpCountdown > 0 ? '#ccc' : '#2196f3', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: otpCountdown > 0 ? 'not-allowed' : 'pointer' }}>
-                    {otpCountdown > 0 ? `Resend in ${otpCountdown}s` : 'Send OTP'}
-                  </button>
-                  <button type="button" onClick={() => { setOtpMode(false); setOtpSent(false); setOtp(''); }}
-                    style={{ padding: '12px 16px', background: '#f5f5f5', color: '#666', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                    Use Password
-                  </button>
-                </div>
-
-                <button type="button" onClick={handleLoginWithOTP} disabled={loading || otp.length !== 6}
-                  style={{ ...submitBtnStyle, background: '#4caf50', opacity: (loading || otp.length !== 6) ? 0.7 : 1 }}>
-                  {loading ? 'Verifying...' : 'Login with OTP'}
-                </button>
-              </>
-            )}
-          </form>
-        )}
-
+            </>
+          )}
+          <button type="submit" disabled={loading} style={submitBtnStyle}>{loading ? 'Logging in...' : 'Login'}</button>
+        </form>
         <div style={{ textAlign: 'center', marginTop: '18px', paddingTop: '16px', borderTop: '1px solid #eee' }}>
           <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>
-            Don't have an account?{' '}
-            <span onClick={() => setIsRegister(true)} style={{ color: '#e53935', fontWeight: 700, cursor: 'pointer' }}>Register here</span>
+            Don't have an account? <span onClick={() => setIsRegister(true)} style={{ color: '#e53935', fontWeight: 700, cursor: 'pointer' }}>Register here</span>
           </p>
         </div>
       </div>
@@ -354,25 +219,17 @@ const Login = () => {
   );
 };
 
-// Styles
-const pageStyle = {
-  minHeight: '100vh',
-  background: 'linear-gradient(135deg, #e53935 0%, #c62828 50%, #8e0000 100%)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
-};
-const cardStyle = {
-  width: '100%', maxWidth: '420px', background: '#fff',
-  borderRadius: '20px', padding: '25px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-};
-const backBtnStyle = {
-  fontSize: '20px', background: 'none', border: 'none',
-  cursor: 'pointer', padding: '4px 8px', marginBottom: '10px', color: '#333'
-};
+const pageStyle = { minHeight: '100vh', background: 'linear-gradient(135deg, #e53935, #c62828)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' };
+const cardStyle = { width: '100%', maxWidth: '400px', background: '#fff', borderRadius: '20px', padding: '25px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' };
+const backBtnStyle = { fontSize: '16px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', marginBottom: '10px', color: '#333' };
+const tabContainerStyle = { display: 'flex', background: '#f5f5f5', borderRadius: '12px', padding: '4px', marginBottom: '20px' };
+const tabStyle = { flex: 1, padding: '12px', border: 'none', borderRadius: '10px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' };
 const labelStyle = { display: 'block', fontSize: '13px', fontWeight: 600, color: '#555', marginBottom: '6px' };
 const inputStyle = { width: '100%', padding: '13px', border: '2px solid #e0e0e0', borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' };
+const countryCodeStyle = { padding: '13px 10px', background: '#f5f5f5', border: '2px solid #e0e0e0', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#555' };
+const passwordToggleStyle = { position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' };
 const submitBtnStyle = { width: '100%', padding: '14px', background: '#e53935', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' };
 const errorStyle = { background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '8px', fontSize: '13px', marginBottom: '15px', textAlign: 'center' };
 const successStyle = { background: '#e8f5e9', color: '#2e7d32', padding: '10px', borderRadius: '8px', fontSize: '13px', marginBottom: '15px', textAlign: 'center' };
 
-export default Login;
+export default AmbulanceLogin;
