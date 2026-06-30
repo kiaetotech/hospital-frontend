@@ -22,40 +22,29 @@ const HospitalsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hospitalStatuses, setHospitalStatuses] = useState({});
   const [waitTimes, setWaitTimes] = useState({});
+  const [specialtyList, setSpecialtyList] = useState([]);
+  const [diseaseCategories, setDiseaseCategories] = useState({});
   const itemsPerPage = 5;
 
   const [filters, setFilters] = useState({
-    scheme: '',
-    insurance: '',
-    accreditation: '',
-    specialty: '',
-    minRating: 0,
-    opdFeeMin: '',
-    opdFeeMax: '',
-    emergency: false,
-    cashless: false,
-    bedsAvailable: false
+    scheme: '', insurance: '', accreditation: '', specialty: '', disease: '',
+    minRating: 0, opdFeeMin: '', opdFeeMax: '',
+    emergency: false, cashless: false, bedsAvailable: false
   });
 
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
   const schemeDisplayNames = {
     'ayushman': 'Ayushman Bharat (PM-JAY)',
-    'cghs': 'CGHS',
-    'esi': 'ESI',
-    'echs': 'ECHS',
-    'state_scheme': 'State Scheme',
-    'senior_citizen': 'Senior Citizen',
-    'disability': 'Disability Scheme'
+    'cghs': 'CGHS', 'esi': 'ESI', 'echs': 'ECHS',
+    'state_scheme': 'State Scheme', 'senior_citizen': 'Senior Citizen', 'disability': 'Disability Scheme'
   };
 
   const schemeOptions = [
     { value: '', label: 'All Schemes' },
     { value: 'ayushman', label: 'Ayushman Bharat (PM-JAY)' },
-    { value: 'cghs', label: 'CGHS' },
-    { value: 'esi', label: 'ESI' },
-    { value: 'echs', label: 'ECHS' },
-    { value: 'state_scheme', label: 'State Health Scheme' },
+    { value: 'cghs', label: 'CGHS' }, { value: 'esi', label: 'ESI' },
+    { value: 'echs', label: 'ECHS' }, { value: 'state_scheme', label: 'State Health Scheme' },
     { value: 'senior_citizen', label: 'Senior Citizen Scheme' }
   ];
 
@@ -86,44 +75,6 @@ const HospitalsList = () => {
     { value: 'ISO', label: 'ISO Certified' }
   ];
 
-  const specialtyOptions = [
-    { value: '', label: 'All Specialties' },
-    { value: 'Cardiology', label: '🫀 Cardiology' },
-    { value: 'Neurology', label: '🧠 Neurology' },
-    { value: 'Orthopedics', label: '🦴 Orthopedics' },
-    { value: 'Oncology', label: '🎗️ Oncology' },
-    { value: 'Nephrology', label: '🫘 Nephrology' },
-    { value: 'Gastroenterology', label: '🔬 Gastroenterology' },
-    { value: 'Pediatrics', label: '👶 Pediatrics' },
-    { value: 'Gynecology', label: '🤰 Gynecology' },
-    { value: 'Dermatology', label: '🧴 Dermatology' },
-    { value: 'ENT', label: '👂 ENT' },
-    { value: 'Ophthalmology', label: '👁️ Ophthalmology' },
-    { value: 'Psychiatry', label: '🧠 Psychiatry' },
-    { value: 'Dentistry', label: '🦷 Dentistry' }
-  ];
-
-  const getSpecializationFromQuery = (query) => {
-    const q = query.toLowerCase();
-    if (q.includes('heart') || q.includes('cardiac') || q.includes('chest')) return 'cardiologist';
-    if (q.includes('brain') || q.includes('stroke') || q.includes('neuro') || q.includes('migraine')) return 'neurologist';
-    if (q.includes('bone') || q.includes('joint') || q.includes('ortho') || q.includes('knee')) return 'orthopedic';
-    if (q.includes('kidney') || q.includes('stone') || q.includes('renal')) return 'nephrologist';
-    if (q.includes('cancer') || q.includes('tumor') || q.includes('oncology')) return 'oncologist';
-    return null;
-  };
-
-  const getMatchingDoctors = (hospital) => {
-    if (!searchQuery) return [];
-    const targetSpec = getSpecializationFromQuery(searchQuery);
-    if (!targetSpec) return hospital.doctors || [];
-    const doctors = hospital.doctors || [];
-    const matching = doctors.filter(doc => 
-      doc.specialization.toLowerCase().includes(targetSpec)
-    );
-    return matching.length > 0 ? matching : doctors;
-  };
-
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -131,21 +82,22 @@ const HospitalsList = () => {
         () => {}
       );
     }
+    fetchMedicalData();
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setCity(cityInput), 700);
-    return () => clearTimeout(timer);
-  }, [cityInput]);
+  useEffect(() => { const timer = setTimeout(() => setCity(cityInput), 700); return () => clearTimeout(timer); }, [cityInput]);
+  useEffect(() => { const timer = setTimeout(() => setDebouncedFilters(filters), 500); return () => clearTimeout(timer); }, [filters]);
+  useEffect(() => { fetchHospitals(); }, [searchQuery, city, userLocation, sortBy, debouncedFilters]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedFilters(filters), 500);
-    return () => clearTimeout(timer);
-  }, [filters]);
-
-  useEffect(() => {
-    fetchHospitals();
-  }, [searchQuery, city, userLocation, sortBy, debouncedFilters]);
+  const fetchMedicalData = async () => {
+    try {
+      const res = await api.get('/hospitals/medical-data');
+      if (res.data?.data) {
+        setSpecialtyList(res.data.data.specialties || []);
+        setDiseaseCategories(res.data.data.diseases || {});
+      }
+    } catch(e) {}
+  };
 
   const fetchHospitals = async () => {
     setLoading(true);
@@ -158,6 +110,7 @@ const HospitalsList = () => {
       if (debouncedFilters.insurance) params.append('insurance', debouncedFilters.insurance);
       if (debouncedFilters.accreditation) params.append('accreditation', debouncedFilters.accreditation);
       if (debouncedFilters.specialty) params.append('specialty', debouncedFilters.specialty);
+      if (debouncedFilters.disease) params.append('disease', debouncedFilters.disease);
       if (debouncedFilters.cashless) params.append('cashless', 'true');
       if (debouncedFilters.emergency) params.append('emergency', 'true');
       if (debouncedFilters.bedsAvailable) params.append('beds_available', 'true');
@@ -167,10 +120,7 @@ const HospitalsList = () => {
       const res = await api.get(`/hospitals/search?${params.toString()}`);
       const data = res.data.data || [];
       setHospitals(data);
-      if (data.length > 0) {
-        const ids = data.map(h => h._id);
-        fetchHospitalStatuses(ids);
-      }
+      if (data.length > 0) { fetchHospitalStatuses(data.map(h => h._id)); }
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
   };
@@ -189,17 +139,13 @@ const HospitalsList = () => {
     } catch (err) {}
   };
 
-  const handleSearch = (e) => { 
-    e.preventDefault(); 
-    setSearchQuery(inputQuery); 
-    setCurrentPage(1); 
-  };
+  const handleSearch = (e) => { e.preventDefault(); setSearchQuery(inputQuery); setCurrentPage(1); };
 
   const clearFilters = () => {
-    setFilters({ scheme: '', insurance: '', accreditation: '', specialty: '', minRating: 0, opdFeeMin: '', opdFeeMax: '', emergency: false, cashless: false, bedsAvailable: false });
+    setFilters({ scheme: '', insurance: '', accreditation: '', specialty: '', disease: '', minRating: 0, opdFeeMin: '', opdFeeMax: '', emergency: false, cashless: false, bedsAvailable: false });
   };
 
-  const activeFilterCount = [filters.scheme, filters.insurance, filters.accreditation, filters.specialty, filters.emergency, filters.cashless, filters.bedsAvailable, filters.minRating > 0, filters.opdFeeMin, filters.opdFeeMax].filter(v => v && v !== false && v !== 0 && v !== '').length;
+  const activeFilterCount = [filters.scheme, filters.insurance, filters.accreditation, filters.specialty, filters.disease, filters.emergency, filters.cashless, filters.bedsAvailable, filters.minRating > 0, filters.opdFeeMin, filters.opdFeeMax].filter(v => v && v !== false && v !== 0 && v !== '').length;
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
@@ -214,18 +160,39 @@ const HospitalsList = () => {
   const toggleInsurance = (id) => setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleSchemes = (id) => setExpandedSchemes(prev => ({ ...prev, [id]: !prev[id] }));
 
-  const handleBookOPD = (hospital, doctor = null) => {
-    window.location.href = doctor ? `/book-opd/${hospital._id}?doctor=${encodeURIComponent(doctor.name)}` : `/book-opd/${hospital._id}`;
+  const getSpecializationFromQuery = (query) => {
+    const q = query.toLowerCase();
+    if (q.includes('heart') || q.includes('cardiac') || q.includes('chest')) return 'cardiologist';
+    if (q.includes('brain') || q.includes('stroke') || q.includes('neuro') || q.includes('migraine')) return 'neurologist';
+    if (q.includes('bone') || q.includes('joint') || q.includes('ortho') || q.includes('knee')) return 'orthopedic';
+    if (q.includes('kidney') || q.includes('stone') || q.includes('renal')) return 'nephrologist';
+    if (q.includes('cancer') || q.includes('tumor') || q.includes('oncology')) return 'oncologist';
+    if (q.includes('skin') || q.includes('rash')) return 'dermatologist';
+    if (q.includes('eye') || q.includes('vision')) return 'ophthalmologist';
+    if (q.includes('ear') || q.includes('throat') || q.includes('nose')) return 'ent';
+    if (q.includes('pregnant') || q.includes('women') || q.includes('lady')) return 'gynecologist';
+    if (q.includes('child') || q.includes('baby') || q.includes('pediatric')) return 'pediatrician';
+    if (q.includes('diabetes') || q.includes('sugar')) return 'endocrinologist';
+    if (q.includes('lung') || q.includes('breathing') || q.includes('asthma')) return 'pulmonologist';
+    if (q.includes('mental') || q.includes('depression') || q.includes('anxiety')) return 'psychiatrist';
+    if (q.includes('stomach') || q.includes('gas') || q.includes('acidity')) return 'gastroenterologist';
+    if (q.includes('teeth') || q.includes('dental')) return 'dentist';
+    return null;
   };
-  const handleBookAdmission = (hospital) => window.location.href = `/book-admission/${hospital._id}`;
-  const handleViewDetails = (hospital) => window.location.href = `/hospital-info/${hospital._id}`;
-  const handleAmbulance = () => window.location.href = '/ambulance';
+
+  const getMatchingDoctors = (hospital) => {
+    if (!searchQuery) return [];
+    const targetSpec = getSpecializationFromQuery(searchQuery);
+    if (!targetSpec) return hospital.doctors || [];
+    const doctors = hospital.doctors || [];
+    const matching = doctors.filter(doc => doc.specialization.toLowerCase().includes(targetSpec));
+    return matching.length > 0 ? matching : doctors;
+  };
 
   const paginatedHospitals = hospitals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(hospitals.length / itemsPerPage);
 
   const selectStyle = { width: '100%', padding: '0.55rem 0.75rem', border: '2px solid #e5e7eb', borderRadius: '0.5rem', fontSize: '0.85rem', backgroundColor: 'white', outline: 'none', cursor: 'pointer' };
-
   const toggleStyle = (active) => ({ padding: '0.55rem 1rem', backgroundColor: active ? '#dbeafe' : '#f3f4f6', border: active ? '2px solid #3b82f6' : '2px solid #e5e7eb', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: active ? 'bold' : 'normal', color: active ? '#1e40af' : '#374151', transition: 'all 0.2s', whiteSpace: 'nowrap' });
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading hospitals...</div>;
@@ -290,7 +257,20 @@ const HospitalsList = () => {
             <div>
               <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🏥 Specialty</label>
               <select value={filters.specialty} onChange={(e) => setFilters(prev => ({...prev, specialty: e.target.value}))} style={selectStyle}>
-                {specialtyOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                <option value="">All Specialties</option>
+                {specialtyList.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.2rem', fontSize: '0.75rem', color: '#6b7280' }}>🦠 Disease/Condition</label>
+              <select value={filters.disease} onChange={(e) => setFilters(prev => ({...prev, disease: e.target.value}))} style={selectStyle}>
+                <option value="">All Diseases</option>
+                {Object.entries(diseaseCategories).map(([category, diseases]) => (
+                  <optgroup key={category} label={category}>
+                    {diseases.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                  </optgroup>
+                ))}
               </select>
             </div>
 
@@ -325,216 +305,144 @@ const HospitalsList = () => {
             <button type="button" onClick={clearFilters} style={{ padding: '0.6rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>Clear All Filters</button>
           </div>
         ) : (
-          {paginatedHospitals.map(h => {
-  const distance = userLocation && h.location ? calculateDistance(userLocation.lat, userLocation.lng, h.location.lat, h.location.lng) : null;
-  const insuranceList = h.insurance_accepted || [];
-  const schemesList = h.schemes_accepted || [];
-  const showAllInsurance = expandedInsurance[h._id];
-  const showAllSchemes = expandedSchemes[h._id];
-  const matchingDoctors = getMatchingDoctors(h);
-  const selectedDoc = matchingDoctors.find(d => d.name === selectedDoctor[h._id]) || matchingDoctors[0] || null;
-  const opdFee = selectedDoc ? selectedDoc.consultation_fee : (h.pricing?.consultation || 0);
-  const status = hospitalStatuses[h._id];
-  const isStale = status?.isStale !== false;
-  const statusConfig = {
-    accepting: { icon: '🟢', label: 'Accepting Patients', color: '#10b981', bg: '#d1fae5' },
-    limited: { icon: '🟡', label: 'Limited', color: '#f59e0b', bg: '#fef3c7' },
-    full: { icon: '🔴', label: 'Not Accepting', color: '#ef4444', bg: '#fee2e2' },
-    unknown: { icon: '❓', label: 'Call to Confirm', color: '#6b7280', bg: '#f3f4f6' }
-  };
-  const config = statusConfig[status?.status] || statusConfig.unknown;
-  const roomTypes = h.pricing || {};
-  const roomSummary = [];
-  if (roomTypes.general_bed_per_day) roomSummary.push(`General ₹${roomTypes.general_bed_per_day}`);
-  if (roomTypes.semi_private_per_day) roomSummary.push(`Semi-Pvt ₹${roomTypes.semi_private_per_day}`);
-  if (roomTypes.private_per_day) roomSummary.push(`Private ₹${roomTypes.private_per_day}`);
-  if (roomTypes.icu_bed_per_day) roomSummary.push(`ICU ₹${roomTypes.icu_bed_per_day}`);
-  const moreRooms = Object.keys(roomTypes).filter(k => k.endsWith('_per_day') && !['general_bed_per_day','semi_private_per_day','private_per_day','icu_bed_per_day'].includes(k)).length;
-  const facilities = h.facilities || [];
-  const topFacilities = facilities.slice(0, 4).map(f => f.name || f).join(' • ');
-  const moreFacilities = facilities.length > 4 ? facilities.length - 4 : 0;
+          paginatedHospitals.map(h => {
+            const distance = userLocation && h.location ? calculateDistance(userLocation.lat, userLocation.lng, h.location.lat, h.location.lng) : null;
+            const insList = h.insurance_accepted || [];
+            const schList = h.schemes_accepted || [];
+            const showIns = expandedInsurance[h._id];
+            const showSch = expandedSchemes[h._id];
+            const matchingDocs = getMatchingDoctors(h);
+            const selDoc = matchingDocs.find(d => d.name === selectedDoctor[h._id]) || matchingDocs[0] || null;
+            const status = hospitalStatuses[h._id];
+            const isStale = status?.isStale !== false;
+            const sc = { accepting: { icon: '🟢', label: 'Accepting', color: '#10b981', bg: '#d1fae5' }, limited: { icon: '🟡', label: 'Limited', color: '#f59e0b', bg: '#fef3c7' }, full: { icon: '🔴', label: 'Full', color: '#ef4444', bg: '#fee2e2' }, unknown: { icon: '❓', label: 'Call', color: '#6b7280', bg: '#f3f4f6' } };
+            const cfg = sc[status?.status] || sc.unknown;
+            const p = h.pricing || {};
+            const rooms = [];
+            if (p.general_bed_per_day) rooms.push(`Gen ₹${p.general_bed_per_day}`);
+            if (p.semi_private_per_day) rooms.push(`Semi ₹${p.semi_private_per_day}`);
+            if (p.private_per_day) rooms.push(`Pvt ₹${p.private_per_day}`);
+            if (p.icu_bed_per_day) rooms.push(`ICU ₹${p.icu_bed_per_day}`);
+            const facs = (h.facilities || []).slice(0, 4).map(f => typeof f === 'string' ? f : f.name).filter(Boolean).join(' • ');
+            const moreFacs = Math.max(0, (h.facilities || []).length - 4);
 
-  return (
-    <div key={h._id} style={cardStyles.container}>
-      
-      {/* HEADER ROW */}
-      <div style={cardStyles.header}>
-        <div>
-          <h2 style={cardStyles.name}>{h.name}</h2>
-          <div style={cardStyles.badges}>
-            {h.accreditations?.map(acc => <span key={acc} style={cardStyles.badge}>{acc}</span>)}
-          </div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>⭐ {h.ratings?.average || 'N/A'}</div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>({h.ratings?.count || 0} reviews)</div>
-          {h.cashless_available && <span style={cardStyles.cashlessBadge}>💳 Cashless</span>}
-        </div>
-      </div>
+            return (
+              <div key={h._id} style={card.container}>
+                <div style={card.header}>
+                  <div>
+                    <h2 style={card.name}>{h.name}</h2>
+                    <div style={card.badges}>{(h.accreditations || []).map(a => <span key={a} style={card.badge}>{a}</span>)}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>⭐ {h.ratings?.average || 'N/A'}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>({h.ratings?.count || 0} reviews)</div>
+                    {h.cashless_available && <span style={card.cashlessBadge}>💳 Cashless</span>}
+                  </div>
+                </div>
+                <p style={{ color: '#6b7280', margin: '4px 0', fontSize: '0.85rem' }}>📍 {h.address?.city}, {h.address?.state} {distance && <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>• {distance} km</span>}</p>
 
-      {/* LOCATION */}
-      <p style={{ color: '#6b7280', margin: '4px 0', fontSize: '0.85rem' }}>
-        📍 {h.address?.city}, {h.address?.state} {distance && <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>• {distance} km</span>}
-      </p>
+                <div style={{ ...card.statusBar, backgroundColor: isStale ? '#fef3c7' : cfg.bg }}>
+                  <span style={{ color: isStale ? '#92400e' : cfg.color, fontWeight: 'bold', fontSize: '0.8rem' }}>{isStale ? '⚠️ Unverified' : `${cfg.icon} ${cfg.label}`}</span>
+                  {status?.updatedAt && <span style={{ fontSize: '0.65rem', color: '#888' }}>{new Date(status.updatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>}
+                  {waitTimes[h._id] && <span style={{ fontSize: '0.7rem', color: '#6366f1' }}>⏱️ {waitTimes[h._id]}min</span>}
+                  <a href={`tel:${h.emergency_contact || h.contact?.phone || ''}`} style={{ color: '#3b82f6', fontSize: '0.75rem', fontWeight: 'bold', textDecoration: 'none' }}>📞 Call</a>
+                </div>
 
-      {/* GREEN LIGHT STATUS */}
-      <div style={{ ...cardStyles.statusBar, backgroundColor: isStale ? '#fef3c7' : config.bg }}>
-        <span style={{ color: isStale ? '#92400e' : config.color, fontWeight: 'bold', fontSize: '0.8rem' }}>
-          {isStale ? '⚠️ Status Unverified' : `${config.icon} ${config.label}`}
-        </span>
-        {status?.updatedAt && (
-          <span style={{ fontSize: '0.65rem', color: '#888' }}>
-            Updated {new Date(status.updatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
-        {waitTimes[h._id] && (
-          <span style={{ fontSize: '0.7rem', color: '#6366f1' }}>⏱️ Avg Wait: {waitTimes[h._id]} min</span>
-        )}
-        <a href={`tel:${h.emergency_contact || h.contact?.phone || ''}`} style={{ color: '#3b82f6', fontSize: '0.75rem', fontWeight: 'bold', textDecoration: 'none' }}>
-          📞 Call to Confirm
-        </a>
-      </div>
+                {schList.length > 0 && (
+                  <div style={card.expand}>
+                    <button onClick={() => toggleSchemes(h._id)} style={card.expandBtn}>💠 {schList.length} Schemes {showSch ? '▲' : '▼'}</button>
+                    <div style={card.tagRow}>
+                      {(showSch ? schList : schList.slice(0, 3)).map((s, i) => <span key={i} style={card.tag}>{schemeDisplayNames[s] || s}</span>)}
+                      {!showSch && schList.length > 3 && <button onClick={() => toggleSchemes(h._id)} style={card.moreTag}>+{schList.length - 3}</button>}
+                    </div>
+                  </div>
+                )}
 
-      {/* SCHEMES */}
-      {schemesList.length > 0 && (
-        <div style={cardStyles.expandSection}>
-          <button type="button" onClick={() => toggleSchemes(h._id)} style={cardStyles.expandBtn}>
-            💠 {schemesList.length} Scheme{schemesList.length > 1 ? 's' : ''} {showAllSchemes ? '▲' : '▼'}
-          </button>
-          <div style={cardStyles.tagRow}>
-            {(showAllSchemes ? schemesList : schemesList.slice(0, 3)).map((s, i) => (
-              <span key={i} style={cardStyles.tag}>{schemeDisplayNames[s] || s}</span>
-            ))}
-            {!showAllSchemes && schemesList.length > 3 && (
-              <button type="button" onClick={() => toggleSchemes(h._id)} style={cardStyles.moreTag}>+{schemesList.length - 3} more</button>
-            )}
-          </div>
-        </div>
-      )}
+                {searchQuery && matchingDocs.length > 0 && (
+                  <div style={card.doctorSection}>
+                    <strong style={{ fontSize: '0.85rem' }}>👨‍⚕️ {matchingDocs.length} Doctor{matchingDocs.length > 1 ? 's' : ''} matching</strong>
+                    {matchingDocs.map(doc => (
+                      <label key={doc.name} style={{ ...card.doctorRow, border: selectedDoctor[h._id] === doc.name ? '2px solid #10b981' : '1px solid #e5e7eb', backgroundColor: selectedDoctor[h._id] === doc.name ? '#f0fdf4' : '#fff' }}>
+                        <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
+                        <div style={{ flex: 1 }}><strong>{doc.name}</strong> - {doc.specialization}<br /><span style={{ fontSize: '0.7rem', color: '#6b7280' }}>📜 {doc.qualification} • ⭐ {doc.rating} ({doc.reviewCount}) • 🗣️ {(doc.languages || []).join(', ')}</span></div>
+                        <div style={{ textAlign: 'right' }}><span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span></div>
+                      </label>
+                    ))}
+                  </div>
+                )}
 
-      {/* DOCTORS */}
-      {searchQuery && matchingDoctors.length > 0 && (
-        <div style={cardStyles.doctorSection}>
-          <strong style={{ fontSize: '0.85rem' }}>👨‍⚕️ {matchingDoctors.length} Doctor{matchingDoctors.length > 1 ? 's' : ''} matching</strong>
-          {matchingDoctors.map(doc => (
-            <label key={doc.name} style={{ ...cardStyles.doctorRow, border: selectedDoctor[h._id] === doc.name ? '2px solid #10b981' : '1px solid #e5e7eb', backgroundColor: selectedDoctor[h._id] === doc.name ? '#f0fdf4' : '#fff' }}>
-              <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
-              <div style={{ flex: 1 }}>
-                <strong>{doc.name}</strong> - {doc.specialization}
-                <br /><span style={{ fontSize: '0.7rem', color: '#6b7280' }}>📜 {doc.qualification} • ⭐ {doc.rating} ({doc.reviewCount}) • 🗣️ {doc.languages?.join(', ')}</span>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{doc.consultation_fee}</span>
-                {doc.availability?.slots_available > 0 ? (
-                  <div style={{ fontSize: '0.65rem', color: '#10b981' }}>🟢 {doc.availability.slots_available} slots</div>
-                ) : (
-                  <div style={{ fontSize: '0.65rem', color: '#f59e0b' }}>🟡 Limited</div>
+                <div style={{ margin: '8px 0', fontSize: '0.8rem' }}>🧪 Lab: {h.lab_tests_available ? '✅ In-house Available' : '🔗 Partner Lab'}</div>
+
+                {insList.length > 0 && (
+                  <div style={card.expand}>
+                    <button onClick={() => toggleInsurance(h._id)} style={card.expandBtn}>🛡️ {insList.length} Insurance {showIns ? '▲' : '▼'}</button>
+                    <div style={card.tagRow}>
+                      {(showIns ? insList : insList.slice(0, 3)).map((ins, i) => <span key={i} style={{ ...card.tag, backgroundColor: '#eff6ff', color: '#1e40af' }}>{ins}</span>)}
+                      {!showIns && insList.length > 3 && <button onClick={() => toggleInsurance(h._id)} style={card.moreTag}>+{insList.length - 3}</button>}
+                    </div>
+                    {h.cashless_available && <span style={{ fontSize: '0.7rem', color: '#10b981' }}>💳 Cashless</span>}
+                    {h.tpa_desk_available && <span style={{ fontSize: '0.7rem', color: '#3b82f6', marginLeft: '8px' }}>🏧 TPA Desk</span>}
+                  </div>
+                )}
+
+                {rooms.length > 0 && (
+                  <div style={card.summaryRow}>
+                    <span style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>🛏️ Rooms: </span>
+                    <span style={{ fontSize: '0.78rem', color: '#555' }}>{rooms.join(' | ')}</span>
+                  </div>
+                )}
+                {facs && (
+                  <div style={card.summaryRow}>
+                    <span style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>🏗️ Facilities: </span>
+                    <span style={{ fontSize: '0.78rem', color: '#555' }}>{facs}{moreFacs > 0 && <button onClick={() => navigate(`/hospital-info/${h._id}`)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem' }}> +{moreFacs} more</button>}</span>
+                  </div>
+                )}
+
+                {h.ratings?.breakdown && (
+                  <div style={card.ratingsRow}>
+                    <span>Doc: {h.ratings.breakdown.doctor_communication || h.ratings.breakdown.doctor || 'N/A'}</span>
+                    <span>Staff: {h.ratings.breakdown.staff_behavior || h.ratings.breakdown.staff || 'N/A'}</span>
+                    <span>Clean: {h.ratings.breakdown.cleanliness || h.ratings.breakdown.clean || 'N/A'}</span>
+                    <span>Wait: {h.ratings.breakdown.wait_time || h.ratings.breakdown.wait || 'N/A'}</span>
+                    <span>Value: {h.ratings.breakdown.value_for_money || h.ratings.breakdown.value || 'N/A'}</span>
+                  </div>
+                )}
+                {h.featured_review?.text && (
+                  <div style={card.review}>💬 "{h.featured_review.text}" - {h.featured_review.author}</div>
+                )}
+
+                <div style={card.actions}>
+                  <a href={`tel:${h.emergency_contact || h.contact?.phone || ''}`} style={card.callBtn}>📞 Call</a>
+                  <button onClick={() => { const d = selectedDoctor[h._id] ? `?doctor=${encodeURIComponent(selectedDoctor[h._id])}` : ''; navigate(`/book-opd/${h._id}${d}`); }} style={card.opdBtn}>📋 Book OPD</button>
+                  <button onClick={() => navigate(`/book-admission/${h._id}`)} style={card.admitBtn}>🏥 Book Admission</button>
+                  <button onClick={() => navigate('/ambulance')} style={card.ambBtn}>🚑</button>
+                  <button onClick={() => navigate(`/hospital-info/${h._id}`)} style={card.detailBtn}>View Details →</button>
+                </div>
+
+                {h.has24x7ER && (
+                  <div style={{ marginTop: '8px' }}>
+                    <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '2px 10px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 'bold' }}>🚨 24/7 Emergency</span>
+                    <button onClick={() => { const m = prompt('How many minutes did you wait? (Optional - helps other patients)'); if (m && !isNaN(m)) reportWaitTime(h._id, parseInt(m)); }} style={{ marginLeft: '8px', fontSize: '0.65rem', color: '#6366f1', background: 'none', border: '1px dashed #6366f1', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px' }}>+ Report Wait</button>
+                  </div>
                 )}
               </div>
-            </label>
-          ))}
-        </div>
-      )}
+            );
+          })
+        )}
 
-      {/* LAB */}
-      <div style={{ margin: '8px 0', fontSize: '0.8rem' }}>
-        🧪 Lab: {h.lab_tests_available ? '✅ In-house Available' : '🔗 Partner Lab'}
-      </div>
-
-      {/* INSURANCE */}
-      {insuranceList.length > 0 && (
-        <div style={cardStyles.expandSection}>
-          <button type="button" onClick={() => toggleInsurance(h._id)} style={cardStyles.expandBtn}>
-            🛡️ {insuranceList.length} Insurance {showAllInsurance ? '▲' : '▼'}
-          </button>
-          <div style={cardStyles.tagRow}>
-            {(showAllInsurance ? insuranceList : insuranceList.slice(0, 3)).map((ins, i) => (
-              <span key={i} style={{ ...cardStyles.tag, backgroundColor: '#eff6ff', color: '#1e40af' }}>{ins}</span>
-            ))}
-            {!showAllInsurance && insuranceList.length > 3 && (
-              <button type="button" onClick={() => toggleInsurance(h._id)} style={cardStyles.moreTag}>+{insuranceList.length - 3} more</button>
-            )}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1.5rem' }}>
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1.5rem', backgroundColor: currentPage === 1 ? '#e5e7eb' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>← Previous</button>
+            <span style={{ padding: '0.5rem', fontWeight: 'bold' }}>Page {currentPage} of {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1.5rem', backgroundColor: currentPage === totalPages ? '#e5e7eb' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>Next →</button>
           </div>
-          {h.cashless_available && <span style={{ fontSize: '0.7rem', color: '#10b981' }}>💳 Cashless Available</span>}
-          {h.tpa_desk_available && <span style={{ fontSize: '0.7rem', color: '#3b82f6', marginLeft: '8px' }}>🏧 TPA Desk</span>}
-        </div>
-      )}
-
-      {/* ROOM TYPES SUMMARY */}
-      {roomSummary.length > 0 && (
-        <div style={cardStyles.summaryRow}>
-          <span style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>🛏️ Rooms: </span>
-          <span style={{ fontSize: '0.78rem', color: '#555' }}>
-            {roomSummary.slice(0, 4).join('  |  ')}
-            {(roomSummary.length > 4 || moreRooms > 0) && (
-              <button type="button" onClick={() => navigate(`/hospital-info/${h._id}`)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem' }}>
-                +{roomSummary.length - 4 + moreRooms} more
-              </button>
-            )}
-          </span>
-        </div>
-      )}
-
-      {/* FACILITIES SUMMARY */}
-      {topFacilities && (
-        <div style={cardStyles.summaryRow}>
-          <span style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>🏗️ Facilities: </span>
-          <span style={{ fontSize: '0.78rem', color: '#555' }}>
-            {topFacilities}
-            {moreFacilities > 0 && (
-              <button type="button" onClick={() => navigate(`/hospital-info/${h._id}`)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem' }}>
-                +{moreFacilities} more
-              </button>
-            )}
-          </span>
-        </div>
-      )}
-
-      {/* RATINGS */}
-      {h.ratings?.breakdown && (
-        <div style={cardStyles.ratingsRow}>
-          <span style={{ fontSize: '0.7rem' }}>Doctor: {h.ratings.breakdown.doctor_communication || h.ratings.breakdown.doctor || 'N/A'}</span>
-          <span style={{ fontSize: '0.7rem' }}>Staff: {h.ratings.breakdown.staff_behavior || h.ratings.breakdown.staff || 'N/A'}</span>
-          <span style={{ fontSize: '0.7rem' }}>Clean: {h.ratings.breakdown.cleanliness || h.ratings.breakdown.clean || 'N/A'}</span>
-          <span style={{ fontSize: '0.7rem' }}>Wait: {h.ratings.breakdown.wait_time || h.ratings.breakdown.wait || 'N/A'}</span>
-          <span style={{ fontSize: '0.7rem' }}>Value: {h.ratings.breakdown.value_for_money || h.ratings.breakdown.value || 'N/A'}</span>
-        </div>
-      )}
-
-      {/* REVIEW */}
-      {h.featured_review?.text && (
-        <div style={cardStyles.review}>
-          💬 "{h.featured_review.text}" - {h.featured_review.author}
-        </div>
-      )}
-
-      {/* ACTION BUTTONS */}
-      <div style={cardStyles.actions}>
-        <a href={`tel:${h.emergency_contact || h.contact?.phone || ''}`} style={cardStyles.callBtn}>📞 Call</a>
-        <button type="button" onClick={() => {
-          const doc = selectedDoctor[h._id] ? `?doctor=${encodeURIComponent(selectedDoctor[h._id])}` : '';
-          navigate(`/book-opd/${h._id}${doc}`);
-        }} style={cardStyles.opdBtn}>📋 Book OPD</button>
-        <button type="button" onClick={() => navigate(`/book-admission/${h._id}`)} style={cardStyles.admitBtn}>🏥 Book Admission</button>
-        <button type="button" onClick={() => navigate('/ambulance')} style={cardStyles.ambBtn}>🚑</button>
-        <button type="button" onClick={() => navigate(`/hospital-info/${h._id}`)} style={cardStyles.detailBtn}>View Details →</button>
+        )}
       </div>
-
-      {/* ER BADGE */}
-      {h.has24x7ER && (
-        <div style={{ marginTop: '8px' }}>
-          <span style={{ backgroundColor: '#dc2626', color: 'white', padding: '2px 10px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 'bold' }}>🚨 24/7 Emergency</span>
-          <button type="button" onClick={() => {
-            const mins = prompt('How many minutes did you wait? (Optional - helps other patients)');
-            if (mins && !isNaN(mins)) reportWaitTime(h._id, parseInt(mins));
-          }} style={{ marginLeft: '8px', fontSize: '0.65rem', color: '#6366f1', background: 'none', border: '1px dashed #6366f1', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px' }}>+ Report Wait</button>
-        </div>
-      )}
     </div>
   );
-})}
+};
 
-const cardStyles = {
+const card = {
   container: { backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' },
   header: { display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: '4px' },
   name: { fontSize: '1.15rem', fontWeight: 'bold', margin: 0 },
@@ -542,7 +450,7 @@ const cardStyles = {
   badge: { backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 'bold' },
   cashlessBadge: { backgroundColor: '#d1fae5', color: '#065f46', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 'bold', marginTop: '4px', display: 'inline-block' },
   statusBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', margin: '8px 0', flexWrap: 'wrap', gap: '4px' },
-  expandSection: { margin: '6px 0' },
+  expand: { margin: '6px 0' },
   expandBtn: { cursor: 'pointer', fontSize: '0.8rem', color: '#6366f1', fontWeight: '600', background: 'none', border: 'none', padding: 0, marginBottom: '4px' },
   tagRow: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
   tag: { backgroundColor: '#f3e8ff', color: '#5b21b6', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem' },
@@ -550,7 +458,7 @@ const cardStyles = {
   doctorSection: { margin: '8px 0', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '8px' },
   doctorRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', borderRadius: '8px', marginTop: '6px', cursor: 'pointer' },
   summaryRow: { margin: '6px 0', lineHeight: '1.5' },
-  ratingsRow: { display: 'flex', gap: '10px', flexWrap: 'wrap', margin: '6px 0', color: '#888' },
+  ratingsRow: { display: 'flex', gap: '10px', flexWrap: 'wrap', margin: '6px 0', color: '#888', fontSize: '0.7rem' },
   review: { backgroundColor: '#fef3c7', padding: '8px 12px', borderRadius: '8px', fontSize: '0.8rem', color: '#92400e', margin: '6px 0', fontStyle: 'italic' },
   actions: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' },
   callBtn: { padding: '8px 14px', backgroundColor: '#fef3c7', color: '#92400e', border: '2px solid #f59e0b', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'none' },
@@ -559,4 +467,5 @@ const cardStyles = {
   ambBtn: { padding: '8px 10px', backgroundColor: '#fef3c7', color: '#92400e', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' },
   detailBtn: { padding: '8px 14px', backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer' }
 };
+
 export default HospitalsList;
