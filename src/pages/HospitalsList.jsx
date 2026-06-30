@@ -20,6 +20,8 @@ const HospitalsList = () => {
   const [expandedInsurance, setExpandedInsurance] = useState({});
   const [expandedSchemes, setExpandedSchemes] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [hospitalStatuses, setHospitalStatuses] = useState({});
+  const [waitTimes, setWaitTimes] = useState({});
   const itemsPerPage = 5;
 
   const [filters, setFilters] = useState({
@@ -35,7 +37,6 @@ const HospitalsList = () => {
     bedsAvailable: false
   });
 
-  // Debounced filters - prevents multiple API calls
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
   const schemeDisplayNames = {
@@ -132,23 +133,16 @@ const HospitalsList = () => {
     }
   }, []);
 
-  // PROBLEM 5 FIXED: Debounce city input
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCity(cityInput);
-    }, 700);
+    const timer = setTimeout(() => setCity(cityInput), 700);
     return () => clearTimeout(timer);
   }, [cityInput]);
 
-  // PROBLEM 4 FIXED: Debounce filters
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedFilters(filters);
-    }, 500);
+    const timer = setTimeout(() => setDebouncedFilters(filters), 500);
     return () => clearTimeout(timer);
   }, [filters]);
 
-  // Single fetch trigger
   useEffect(() => {
     fetchHospitals();
   }, [searchQuery, city, userLocation, sortBy, debouncedFilters]);
@@ -171,9 +165,28 @@ const HospitalsList = () => {
       if (debouncedFilters.opdFeeMin) params.append('opd_fee_min', debouncedFilters.opdFeeMin);
       if (debouncedFilters.opdFeeMax) params.append('opd_fee_max', debouncedFilters.opdFeeMax);
       const res = await api.get(`/hospitals/search?${params.toString()}`);
-      setHospitals(res.data.data || []);
+      const data = res.data.data || [];
+      setHospitals(data);
+      if (data.length > 0) {
+        const ids = data.map(h => h._id);
+        fetchHospitalStatuses(ids);
+      }
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
+  };
+
+  const fetchHospitalStatuses = async (hospitalIds) => {
+    try {
+      const res = await api.post('/hospital-status/bulk', { hospitalIds });
+      if (res.data?.data) setHospitalStatuses(res.data.data);
+    } catch (err) {}
+  };
+
+  const reportWaitTime = async (hospitalId, waitMinutes) => {
+    try {
+      await api.post(`/hospital-status/${hospitalId}/wait-time`, { waitMinutes });
+      setWaitTimes(prev => ({ ...prev, [hospitalId]: waitMinutes }));
+    } catch (err) {}
   };
 
   const handleSearch = (e) => { 
@@ -182,7 +195,6 @@ const HospitalsList = () => {
     setCurrentPage(1); 
   };
 
-  // PROBLEM 3 FIXED: Functional state updates
   const clearFilters = () => {
     setFilters({ scheme: '', insurance: '', accreditation: '', specialty: '', minRating: 0, opdFeeMin: '', opdFeeMax: '', emergency: false, cashless: false, bedsAvailable: false });
   };
@@ -201,24 +213,6 @@ const HospitalsList = () => {
 
   const toggleInsurance = (id) => setExpandedInsurance(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleSchemes = (id) => setExpandedSchemes(prev => ({ ...prev, [id]: !prev[id] }));
-
-  const getBedUpdateBadge = (lastUpdated) => {
-    if (!lastUpdated) return { text: 'Unknown', color: '#9ca3af', bg: '#f3f4f6' };
-    const hours = (new Date() - new Date(lastUpdated)) / (1000 * 60 * 60);
-    if (hours < 1) return { text: '🟢 Live', color: '#10b981', bg: '#d1fae5' };
-    if (hours < 4) return { text: '🟡 Recent', color: '#f59e0b', bg: '#fef3c7' };
-    if (hours < 12) return { text: '🟠 Today', color: '#f97316', bg: '#ffedd5' };
-    return { text: '🔴 Old', color: '#ef4444', bg: '#fee2e2' };
-  };
-
-  const getAvailabilityBadge = (status) => {
-    switch(status) {
-      case 'available': return { text: '🟢 Available', color: '#10b981', bg: '#d1fae5' };
-      case 'limited': return { text: '🟡 Few Slots', color: '#f59e0b', bg: '#fef3c7' };
-      case 'full': return { text: '🔴 Full', color: '#ef4444', bg: '#fee2e2' };
-      default: return { text: 'Check', color: '#6b7280', bg: '#f3f4f6' };
-    }
-  };
 
   const handleBookOPD = (hospital, doctor = null) => {
     window.location.href = doctor ? `/book-opd/${hospital._id}?doctor=${encodeURIComponent(doctor.name)}` : `/book-opd/${hospital._id}`;
@@ -253,7 +247,6 @@ const HospitalsList = () => {
             </div>
           </form>
 
-          {/* PROBLEM 2 FIXED: All buttons have type="button" */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #f3f4f6' }}>
             <span style={{ fontWeight: '600', color: '#374151', fontSize: '0.85rem', marginRight: '0.25rem' }}>Sort:</span>
             {[{ value: 'distance', label: '📍 Nearest' },{ value: 'fee', label: '💰 Lowest Fee' },{ value: 'rating', label: '⭐ Highest Rated' },{ value: 'beds', label: '🛏️ Most Beds' }].map(opt => (
@@ -339,13 +332,17 @@ const HospitalsList = () => {
             const showAllInsurance = expandedInsurance[h._id];
             const showAllSchemes = expandedSchemes[h._id];
             const matchingDoctors = getMatchingDoctors(h);
-            const hasMultipleMatching = matchingDoctors.length > 1;
-            const bedBadge = getBedUpdateBadge(h.beds?.last_updated);
-            
-            // PROBLEM 1 FIXED: No setState during render
             const selectedDoc = matchingDoctors.find(d => d.name === selectedDoctor[h._id]) || matchingDoctors[0] || null;
             const opdFee = selectedDoc ? selectedDoc.consultation_fee : (h.pricing?.consultation || 0);
-            const discountAmount = Math.round(opdFee * 0.1);
+            const status = hospitalStatuses[h._id];
+            const isStale = status?.isStale !== false;
+            const statusConfig = {
+              accepting: { icon: '🟢', label: 'Accepting', color: '#10b981', bg: '#d1fae5' },
+              limited: { icon: '🟡', label: 'Limited', color: '#f59e0b', bg: '#fef3c7' },
+              full: { icon: '🔴', label: 'Full', color: '#ef4444', bg: '#fee2e2' },
+              unknown: { icon: '❓', label: 'Call Hospital', color: '#6b7280', bg: '#f3f4f6' }
+            };
+            const config = statusConfig[status?.status] || statusConfig.unknown;
 
             return (
               <div key={h._id} style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' }}>
@@ -380,12 +377,11 @@ const HospitalsList = () => {
                   <div style={{ margin: '0.75rem 0', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
                     <strong style={{ fontSize: '0.85rem' }}>👨‍⚕️ Select Doctor ({matchingDoctors.length}):</strong>
                     {matchingDoctors.map(doc => {
-                      const availBadge = getAvailabilityBadge(doc.availability?.status);
                       return (
                         <label key={doc.name} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.5rem', backgroundColor: selectedDoctor[h._id] === doc.name ? '#d1fae5' : 'white', borderRadius: '0.5rem', marginTop: '0.4rem', cursor: 'pointer', border: selectedDoctor[h._id] === doc.name ? '2px solid #10b981' : '1px solid #e5e7eb' }}>
                           <input type="radio" name={`doc_${h._id}`} checked={selectedDoctor[h._id] === doc.name} onChange={() => setSelectedDoctor(prev => ({ ...prev, [h._id]: doc.name }))} />
                           <div style={{ flex: 1 }}><strong>{doc.name}</strong> - {doc.specialization}<br /><span style={{ fontSize: '0.7rem', color: '#6b7280' }}>📜 {doc.qualification} {doc.experience && `• 📅 ${doc.experience}`}</span><br /><span style={{ fontSize: '0.7rem' }}>⭐ {doc.rating} ({doc.reviewCount}) {doc.languages?.length > 0 && `• 🗣️ ${doc.languages.join(', ')}`}</span></div>
-                          <div style={{ textAlign: 'right' }}><span style={{ fontWeight: 'bold', color: '#10b981', fontSize: '1rem' }}>₹{doc.consultation_fee}</span>{doc.availability?.slots_available > 0 && (<div style={{ fontSize: '0.65rem', color: availBadge.color, fontWeight: 'bold' }}>{availBadge.text}</div>)}</div>
+                          <div style={{ textAlign: 'right' }}><span style={{ fontWeight: 'bold', color: '#10b981', fontSize: '1rem' }}>₹{doc.consultation_fee}</span></div>
                         </label>
                       );
                     })}
@@ -401,15 +397,61 @@ const HospitalsList = () => {
                   <button type="button" onClick={() => toggleInsurance(h._id)} style={{ cursor: 'pointer', background: 'none', border: 'none', fontSize: '0.8rem', padding: 0 }}>🛡️ Insurance: <span style={{ color: '#3b82f6' }}>{insuranceList.length} {showAllInsurance ? '▲' : '▼'}</span></button>
                 </div>
 
+                {/* STATUS + PRICING + WAIT TIME ROW */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', margin: '0.6rem 0', backgroundColor: '#f9fafb', padding: '0.6rem', borderRadius: '0.5rem' }}>
-                  <div><div style={{ fontSize: '0.7rem', color: '#6b7280' }}>📋 OPD Fee</div><div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#10b981' }}>₹{opdFee}</div></div>
-                  <div><div style={{ fontSize: '0.7rem', color: '#6b7280' }}>🏥 Admission</div><div style={{ fontSize: '0.75rem' }}>ICU: ₹{h.pricing?.icu_bed_per_day?.toLocaleString() || 'N/A'}</div><div style={{ fontSize: '0.75rem' }}>Gen: ₹{h.pricing?.general_bed_per_day?.toLocaleString() || 'N/A'}</div></div>
-                  <div><div style={{ fontSize: '0.7rem', color: '#6b7280' }}>🛏️ Beds Available</div><div style={{ fontSize: '1rem', fontWeight: 'bold' }}>{h.beds?.available || 0}</div><span style={{ backgroundColor: bedBadge.bg, color: bedBadge.color, padding: '0.1rem 0.4rem', borderRadius: '9999px', fontSize: '0.6rem' }}>{bedBadge.text}</span></div>
+                  
+                  {/* Hospital Status (Green Light System) */}
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '2px' }}>🏥 Status</div>
+                    <span style={{ 
+                      backgroundColor: isStale ? '#fef3c7' : config.bg, 
+                      color: isStale ? '#92400e' : config.color,
+                      padding: '0.25rem 0.5rem', borderRadius: '9999px', 
+                      fontSize: '0.7rem', fontWeight: 'bold', display: 'inline-block'
+                    }}>
+                      {isStale ? '⚠️ Unverified' : `${config.icon} ${config.label}`}
+                    </span>
+                    {status?.updatedAt && (
+                      <div style={{ fontSize: '0.6rem', color: '#9ca3af', marginTop: '2px' }}>
+                        {new Date(status.updatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* OPD Fee */}
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>📋 OPD Fee</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#10b981' }}>₹{opdFee}</div>
+                  </div>
+
+                  {/* Patient-Reported Wait Time */}
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>⏱️ Avg Wait</div>
+                    {waitTimes[h._id] ? (
+                      <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#6366f1' }}>{waitTimes[h._id]} min</div>
+                    ) : (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const mins = prompt('How many minutes did you wait? (Optional - helps other patients)');
+                          if (mins && !isNaN(mins)) reportWaitTime(h._id, parseInt(mins));
+                        }}
+                        style={{ fontSize: '0.65rem', color: '#6366f1', background: 'none', border: '1px dashed #6366f1', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px' }}
+                      >
+                        + Report Wait
+                      </button>
+                    )}
+                  </div>
                 </div>
 
+                {/* ACTION BUTTONS */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <button type="button" onClick={() => handleBookOPD(h, selectedDoc)} style={{ backgroundColor: '#10b981', color: 'white', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>📋 Book OPD</button>
                   <button type="button" onClick={() => handleBookAdmission(h)} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🏥 Book Admission</button>
+                  
+                  {/* CALL HOSPITAL BUTTON */}
+                  <a href={`tel:${h.emergency_contact || h.phone || ''}`} style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.55rem 1rem', borderRadius: '0.4rem', border: '2px solid #f59e0b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>📞 Call Hospital</a>
+                  
                   <button type="button" onClick={() => handleViewDetails(h)} style={{ backgroundColor: '#fff', color: '#374151', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.85rem' }}>Details →</button>
                   <button type="button" onClick={handleAmbulance} style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.55rem 0.8rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>🚑</button>
                 </div>
