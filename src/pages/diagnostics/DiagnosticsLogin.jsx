@@ -43,7 +43,7 @@ const DiagnosticsLogin = () => {
         localStorage.setItem('providerToken', res.data.token);
         localStorage.setItem('providerId', res.data.user?._id || '');
         localStorage.setItem('providerType', 'diagnostics');
-        navigate('/diagnostics/dashboard');
+        res = await api.post('/auth/login', { email: form.email, password: form.password, role: 'diagnostics' });
       } else { setError(res.data?.message || 'Login failed'); }
     } catch (err) { setError('Login failed. Check credentials.'); }
     finally { setLoading(false); }
