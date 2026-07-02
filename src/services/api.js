@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // ============================================
-// AXIOS INSTANCE (PRESERVED)
+// AXIOS INSTANCE
 // ============================================
 
 const api = axios.create({
@@ -9,7 +9,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || localStorage.getItem('providerToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -17,22 +17,26 @@ api.interceptors.request.use((config) => {
 });
 
 // ============================================
-// RESPONSE INTERCEPTOR (PRESERVED)
+// RESPONSE INTERCEPTOR - FIXED
 // ============================================
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      const currentPath = window.location.pathname;
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('providerToken');
+      if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
 );
 
 // ============================================
-// AUTH (PRESERVED)
+// AUTH
 // ============================================
 
 export const register = (data) => api.post('/auth/register', data);
@@ -41,15 +45,14 @@ export const getProfile = () => api.get('/auth/profile');
 export const updateProfile = (data) => api.put('/auth/profile', data);
 
 // ============================================
-// HOSPITALS (PRESERVED)
+// HOSPITALS
 // ============================================
 
 export const searchHospitals = (params) => api.get('/hospitals/search', { params });
 export const getHospitalById = (id) => api.get(`/hospitals/${id}`);
 export const getHospitals = (params) => api.get('/hospitals', { params });
 export const getHospitalDoctors = (hospitalId) => api.get(`/hospitals/${hospitalId}/doctors`);
-export const getDoctorsBySpecialization = (hospitalId, specialization) => 
-  api.get(`/hospitals/${hospitalId}/doctors`, { params: { specialization } });
+export const getDoctorsBySpecialization = (hospitalId, specialization) => api.get(`/hospitals/${hospitalId}/doctors`, { params: { specialization } });
 export const getHospitalSchemes = (hospitalId) => api.get(`/hospitals/${hospitalId}/schemes`);
 export const getHospitalFacilities = (hospitalId) => api.get(`/hospitals/${hospitalId}/facilities`);
 export const getHospitalReviews = (hospitalId, params) => api.get(`/hospitals/${hospitalId}/reviews`, { params });
@@ -60,24 +63,10 @@ export const searchByScheme = (scheme, params = {}) => api.get('/hospitals/searc
 export const searchByInsurance = (insurance, params = {}) => api.get('/hospitals/search', { params: { ...params, insurance } });
 export const bookOPD = (data) => api.post('/hospitals/book-opd', data);
 export const bookAdmission = (data) => api.post('/hospitals/book-admission', data);
-
-// Hospital Provider
 export const updateBedStatus = (hospitalId, data) => api.put(`/hospitals/${hospitalId}/bed-status`, data);
 export const whatsappBedUpdate = (data) => api.post('/hospitals/whatsapp-update', data);
-export const uploadDoctorsExcel = (hospitalId, file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  return api.post(`/hospitals/${hospitalId}/upload-doctors`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
-};
-export const uploadHospitalDataExcel = (hospitalId, file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  return api.post(`/hospitals/${hospitalId}/upload-data`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
-};
+export const uploadDoctorsExcel = (hospitalId, file) => { const f = new FormData(); f.append('file', file); return api.post(`/hospitals/${hospitalId}/upload-doctors`, f, { headers: { 'Content-Type': 'multipart/form-data' } }); };
+export const uploadHospitalDataExcel = (hospitalId, file) => { const f = new FormData(); f.append('file', file); return api.post(`/hospitals/${hospitalId}/upload-data`, f, { headers: { 'Content-Type': 'multipart/form-data' } }); };
 export const downloadDoctorTemplate = () => api.get('/hospitals/template/download', { responseType: 'blob' });
 export const updateHospitalProfile = (hospitalId, data) => api.put(`/hospitals/${hospitalId}`, data);
 export const updateHospitalSchemes = (hospitalId, data) => api.put(`/hospitals/${hospitalId}/schemes`, data);
@@ -89,13 +78,11 @@ export const removeDoctor = (hospitalId, doctorId) => api.delete(`/hospitals/${h
 export const getHospitalDashboardStats = () => api.get('/hospitals/dashboard/stats');
 export const getHospitalBookings = (params) => api.get('/hospitals/bookings', { params });
 export const getHospitalAnalytics = (params) => api.get('/hospitals/analytics', { params });
-
-// 🆕 Hospital Status (Green Light System)
 export const getBulkHospitalStatus = (hospitalIds) => api.post('/hospital-status/bulk', { hospitalIds });
 export const reportHospitalWaitTime = (hospitalId, waitMinutes) => api.post(`/hospital-status/${hospitalId}/wait-time`, { waitMinutes });
 
 // ============================================
-// 🚑 AMBULANCE - BLITZ RESPONSE (ENHANCED)
+// AMBULANCE
 // ============================================
 
 export const emergencyDispatch = (data) => api.post('/ambulance/emergency-dispatch', data);
@@ -127,7 +114,7 @@ export const bookAmbulance = (data) => api.post('/ambulance/book', data);
 export const trackAmbulance = (bookingId) => api.get(`/ambulance/track/${bookingId}`);
 
 // ============================================
-// CAREGIVERS (PRESERVED)
+// CAREGIVERS
 // ============================================
 
 export const getCaregivers = (params) => api.get('/caregivers', { params });
@@ -135,7 +122,7 @@ export const getCaregiverById = (id) => api.get(`/caregivers/${id}`);
 export const bookCaregiver = (data) => api.post('/caregivers/book', data);
 
 // ============================================
-// DIAGNOSTICS (PRESERVED)
+// DIAGNOSTICS
 // ============================================
 
 export const getDiagnostics = (params) => api.get('/diagnostics', { params });
@@ -149,7 +136,7 @@ export const getLabReports = (bookingId) => api.get(`/diagnostics/reports/${book
 export const createCustomPackage = (data) => api.post('/diagnostics/custom-package', data);
 
 // ============================================
-// BOOKINGS (PRESERVED)
+// BOOKINGS
 // ============================================
 
 export const getMyBookings = (params) => api.get('/bookings/my-bookings', { params });
@@ -158,7 +145,7 @@ export const cancelBooking = (id) => api.put(`/bookings/${id}/cancel`);
 export const getBookingStatus = (id) => api.get(`/bookings/${id}/status`);
 
 // ============================================
-// PAYMENT (PRESERVED)
+// PAYMENT
 // ============================================
 
 export const createPaymentOrder = (data) => api.post('/payment/create-order', data);
@@ -166,7 +153,7 @@ export const verifyPayment = (data) => api.post('/payment/verify', data);
 export const getPaymentStatus = (orderId) => api.get(`/payment/status/${orderId}`);
 
 // ============================================
-// REVIEWS (PRESERVED)
+// REVIEWS
 // ============================================
 
 export const getReviews = (params) => api.get('/reviews', { params });
@@ -175,7 +162,7 @@ export const updateReview = (id, data) => api.put(`/reviews/${id}`, data);
 export const deleteReview = (id) => api.delete(`/reviews/${id}`);
 
 // ============================================
-// ADMIN (PRESERVED)
+// ADMIN
 // ============================================
 
 export const getDashboardStats = () => api.get('/admin/stats');
@@ -184,24 +171,14 @@ export const updateUser = (id, data) => api.put(`/admin/users/${id}`, data);
 export const deleteUser = (id) => api.delete(`/admin/users/${id}`);
 
 // ============================================
-// UPLOAD (PRESERVED)
+// UPLOAD
 // ============================================
 
-export const uploadFile = (file, folder) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('folder', folder);
-  return api.post('/upload', formData);
-};
-export const uploadMultipleFiles = (files, folder) => {
-  const formData = new FormData();
-  files.forEach(file => formData.append('files', file));
-  formData.append('folder', folder);
-  return api.post('/upload/multiple', formData);
-};
+export const uploadFile = (file, folder) => { const f = new FormData(); f.append('file', file); f.append('folder', folder); return api.post('/upload', f); };
+export const uploadMultipleFiles = (files, folder) => { const f = new FormData(); files.forEach(file => f.append('files', file)); f.append('folder', folder); return api.post('/upload/multiple', f); };
 
 // ============================================
-// AYURVEDA (PRESERVED)
+// AYURVEDA
 // ============================================
 
 export const getAyurvedaDoctors = (params) => api.get('/ayurveda/doctors', { params });
@@ -217,7 +194,7 @@ export const takePrakritiQuiz = (data) => api.post('/ayurveda/prakriti-quiz', da
 export const getPrakritiResult = (id) => api.get(`/ayurveda/prakriti-result/${id}`);
 
 // ============================================
-// HOMEOPATHY (PRESERVED)
+// HOMEOPATHY
 // ============================================
 
 export const getHomeopathyDoctors = (params) => api.get('/homeopathy/doctors', { params });
@@ -229,7 +206,7 @@ export const orderHomeopathyMedicine = (data) => api.post('/homeopathy/order-med
 export const getHomeopathyPrescription = (id) => api.get(`/homeopathy/prescriptions/${id}`);
 
 // ============================================
-// INSURANCE (PRESERVED)
+// INSURANCE
 // ============================================
 
 export const getInsurancePlans = (params) => api.get('/insurance/plans', { params });
@@ -250,7 +227,7 @@ export const getClaimById = (policyId, claimId) => api.get(`/insurance/claims/${
 export const getInsuranceStats = () => api.get('/insurance/stats');
 
 // ============================================
-// OTP (PRESERVED)
+// OTP
 // ============================================
 
 export const sendOTP = (data) => api.post('/otp/send', data);
@@ -259,7 +236,7 @@ export const resendOTP = (data) => api.post('/otp/resend', data);
 export const getOTPStatus = (params) => api.get('/otp/status', { params });
 
 // ============================================
-// INSURANCE ADMIN (PRESERVED)
+// INSURANCE ADMIN
 // ============================================
 
 export const getInsuranceCompaniesAdmin = (params) => api.get('/insurance-admin/companies', { params });
@@ -278,7 +255,7 @@ export const getCommissionReport = (params) => api.get('/insurance-admin/reports
 export const getSummaryReport = () => api.get('/insurance-admin/reports/summary');
 
 // ============================================
-// LOAN (PRESERVED)
+// LOAN
 // ============================================
 
 export const applyLoan = (data) => api.post('/loan/patient/apply', data);
@@ -291,7 +268,7 @@ export const getAdminLoans = (params) => api.get('/loan/admin/loans', { params }
 export const updateAdminLoan = (id, data) => api.put(`/loan/admin/loans/${id}`, data);
 
 // ============================================
-// LENDER (PRESERVED)
+// LENDER
 // ============================================
 
 export const lenderLogin = (data) => api.post('/lender/auth/login', data);
@@ -301,7 +278,7 @@ export const updateLenderProfile = (data) => api.put('/lender/profile', data);
 export const getLenderStats = () => api.get('/lender/stats');
 
 // ============================================
-// PROVIDER (PRESERVED)
+// PROVIDER
 // ============================================
 
 export const providerLogin = (data) => api.post('/provider-auth/login', data);
@@ -311,7 +288,7 @@ export const updateProviderProfile = (data) => api.put('/provider-auth/profile',
 export const getProviderStats = () => api.get('/provider-auth/stats');
 
 // ============================================
-// ONLINE DOCTOR (PRESERVED)
+// ONLINE DOCTOR
 // ============================================
 
 export const searchOnlineDoctors = (params) => api.get('/online-doctor/search', { params });
@@ -331,9 +308,5 @@ export const getOnlineDoctorDashboard = () => api.get('/online-doctor/doctor/das
 export const getPendingOnlineDoctors = () => api.get('/online-doctor/admin/doctors/pending');
 export const getAllOnlineDoctors = () => api.get('/online-doctor/admin/doctors');
 export const verifyOnlineDoctor = (id, data) => api.put(`/online-doctor/admin/doctor/${id}/verify`, data);
-
-// ============================================
-// EXPORT DEFAULT (PRESERVED)
-// ============================================
 
 export default api;
