@@ -41,9 +41,9 @@ const DiagnosticsLogin = () => {
       }
       if (res.data?.success) {
         localStorage.setItem('providerToken', res.data.token);
-        localStorage.setItem('providerId', res.data.user?._id || '');
+        localStorage.setItem('providerId', res.data.user?._id || res.data.hospitalId || '');
         localStorage.setItem('providerType', 'diagnostics');
-        res = await api.post('/auth/login', { email: form.email, password: form.password, role: 'diagnostics' });
+        navigate('/diagnostics/dashboard');
       } else { setError(res.data?.message || 'Login failed'); }
     } catch (err) { setError('Login failed. Check credentials.'); }
     finally { setLoading(false); }
@@ -69,7 +69,7 @@ const DiagnosticsLogin = () => {
           {activeTab === 'email' ? (
             <>
               <div style={{ marginBottom: '14px' }}><label style={ls}>Email Address</label><input type="email" placeholder="Enter your email" value={form.email} onChange={e => handleChange('email', e.target.value)} style={is} /></div>
-              <div style={{ marginBottom: '10px' }}><label style={ls}>Password</label><div style={{ position: 'relative' }}><input type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={form.password} onChange={e => handleChange('password', e.target.value)} style={{ ...is, paddingRight: '40px' }} /><button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>{showPassword ? '🙈' : '👁️'}</button></div></div>
+              <div style={{ marginBottom: '10px' }}><label style={ls}>Password</label><div style={{ position: 'relative' }}><input type={showPassword ? 'text' : 'password'} placeholder="Enter your password" autoComplete="new-password" value={form.password} onChange={e => handleChange('password', e.target.value)} style={{ ...is, paddingRight: '40px' }} /><button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>{showPassword ? '🙈' : '👁️'}</button></div></div>
               <div style={{ textAlign: 'right', marginBottom: '16px' }}><Link to="/diagnostics/forgot-password" style={{ fontSize: '12px', color: '#10b981', textDecoration: 'none', fontWeight: 600 }}>Forgot Password?</Link></div>
             </>
           ) : (
