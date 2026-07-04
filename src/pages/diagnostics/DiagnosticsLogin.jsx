@@ -38,6 +38,9 @@ const DiagnosticsLogin = () => {
       } else {
         if (!form.phone || !form.otp) { setError('Please enter phone and OTP'); setLoading(false); return; }
         res = await api.post('/otp/verify', { phone: `+91${form.phone}`, otp: form.otp });
+        if (res.data?.success) {
+          res = await api.post('/auth/login', { phone: `+91${form.phone}`, role: 'diagnostics', otpLogin: true });
+        }
       }
       if (res.data?.success) {
         localStorage.setItem('providerToken', res.data.token);
@@ -57,14 +60,11 @@ const DiagnosticsLogin = () => {
           <h2 style={{ margin: '8px 0 0', fontSize: '22px', fontWeight: 800, color: '#1a1a1a' }}>Diagnostics Login</h2>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#888' }}>Access your lab dashboard</p>
         </div>
-
         <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: '12px', padding: '4px', marginBottom: '20px' }}>
           <button onClick={() => { setActiveTab('email'); setError(''); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', background: activeTab === 'email' ? '#10b981' : 'transparent', color: activeTab === 'email' ? '#fff' : '#666', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>✉️ Email</button>
           <button onClick={() => { setActiveTab('phone'); setError(''); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', background: activeTab === 'phone' ? '#10b981' : 'transparent', color: activeTab === 'phone' ? '#fff' : '#666', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>📱 Mobile OTP</button>
         </div>
-
         {error && <div style={{ background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '8px', fontSize: '13px', marginBottom: '15px', textAlign: 'center' }}>{error}</div>}
-
         <form onSubmit={handleLogin}>
           {activeTab === 'email' ? (
             <>
@@ -80,7 +80,6 @@ const DiagnosticsLogin = () => {
           )}
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>{loading ? 'Logging in...' : 'Login'}</button>
         </form>
-
         <div style={{ textAlign: 'center', marginTop: '18px', paddingTop: '16px', borderTop: '1px solid #eee' }}>
           <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>Don't have an account? <Link to="/diagnostics/register" style={{ color: '#10b981', fontWeight: 700, textDecoration: 'none' }}>Register Your Lab</Link></p>
         </div>
