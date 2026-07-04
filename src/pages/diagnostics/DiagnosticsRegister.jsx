@@ -43,12 +43,12 @@ const DiagnosticsRegister = () => {
 
   const handleSendOTP = async () => {
     if (!formData.phone) { setError('Please enter phone number first'); return; }
-    try { await api.post('/otp/send', { phone: `+91${formData.phone}` }); setOtpSent(true); setResendTimer(30); const t = setInterval(() => { setResendTimer(p => { if (p <= 1) { clearInterval(t); return 0; } return p - 1; }); }, 1000); } catch (e) { setError('Failed to send OTP'); }
+    try { await api.post('/otp/send', { phone: `+91${formData.phone}`, type: 'registration' }); setOtpSent(true); setResendTimer(30); const t = setInterval(() => { setResendTimer(p => { if (p <= 1) { clearInterval(t); return 0; } return p - 1; }); }, 1000); } catch (e) { setError('Failed to send OTP'); }
   };
 
   const handleVerifyOTP = async () => {
     if (!otp) { setError('Enter OTP'); return; }
-    try { const r = await api.post('/otp/verify', { phone: `+91${formData.phone}`, otp }); if (r.data?.success) { setOtpVerified(true); setError(''); } else setError('Invalid OTP'); } catch (e) { setError('Invalid OTP'); }
+    try { const r = await api.post('/otp/verify', { phone: `+91${formData.phone}`, otp, type: 'registration' }); if (r.data?.success) { setOtpVerified(true); setError(''); } else setError('Invalid OTP'); } catch (e) { setError('Invalid OTP'); }
   };
 
   const handleSubmit = async () => {
