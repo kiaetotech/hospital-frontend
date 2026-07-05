@@ -36,10 +36,6 @@ const HomePage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ================================================================
-  // SERVICES ARRAY — 11 Tags with New Names & Sequence
-  // Row 1: 6 cards | Row 2: 5 cards centered
-  // ================================================================
   const services = [
     { id: 'hospitals', icon: <FaHospital />, label: 'Find Hospitals', desc: '1,200+ Providers', color: '#3b82f6', bg: '#eff6ff', path: '/hospitals' },
     { id: 'ambulance', icon: <FaAmbulance />, label: 'Book Ambulance', desc: '500+ Vehicles', color: '#f59e0b', bg: '#fffbeb', path: '/ambulance' },
@@ -92,8 +88,7 @@ const HomePage = () => {
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
       
       {/* ================================================================
-          NAVIGATION BAR — Clean, No Extra Links
-          Only: Logo + Search + Patient Login + Provider Login + Admin
+          NAVBAR - Clean, No Extra Links
       ================================================================ */}
       <nav style={{
         backgroundColor: 'white',
@@ -141,17 +136,8 @@ const HomePage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {/* Patient Login */}
             <Link to="/login" style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '7px 16px',
-              fontSize: '13px',
-              fontWeight: '600',
-              color: 'white',
-              background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-              borderRadius: '7px',
-              textDecoration: 'none',
-              whiteSpace: 'nowrap'
+              display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 16px', fontSize: '13px', fontWeight: '600',
+              color: 'white', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', borderRadius: '7px', textDecoration: 'none', whiteSpace: 'nowrap'
             }}>
               <FaUser size={12} /> Patient Login
             </Link>
@@ -159,18 +145,8 @@ const HomePage = () => {
             {/* Provider Login Dropdown */}
             <div style={{ position: 'relative' }} onMouseEnter={() => setShowProviderDropdown(true)} onMouseLeave={() => setShowProviderDropdown(false)}>
               <button style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '7px 16px',
-                fontSize: '13px',
-                fontWeight: '600',
-                color: '#7c3aed',
-                background: '#f5f3ff',
-                borderRadius: '7px',
-                border: '1.5px solid #7c3aed',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
+                display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 16px', fontSize: '13px', fontWeight: '600',
+                color: '#7c3aed', background: '#f5f3ff', borderRadius: '7px', border: '1.5px solid #7c3aed', cursor: 'pointer', whiteSpace: 'nowrap'
               }}>
                 <FaUserTie size={12} /> Provider <FaChevronDown style={{ fontSize: '9px' }} />
               </button>
@@ -187,18 +163,8 @@ const HomePage = () => {
 
             {/* Admin */}
             <Link to="/admin/login" style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '7px 14px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#dc2626',
-              background: '#fef2f2',
-              borderRadius: '6px',
-              textDecoration: 'none',
-              border: '1px solid #fecaca',
-              whiteSpace: 'nowrap'
+              display: 'flex', alignItems: 'center', gap: '4px', padding: '7px 14px', fontSize: '12px', fontWeight: '600',
+              color: '#dc2626', background: '#fef2f2', borderRadius: '6px', textDecoration: 'none', border: '1px solid #fecaca', whiteSpace: 'nowrap'
             }}>
               <FaLock size={11} /> Admin
             </Link>
@@ -220,7 +186,7 @@ const HomePage = () => {
       </nav>
 
       {/* ================================================================
-          HERO BANNER — Compact (140px)
+          HERO BANNER - Compact
       ================================================================ */}
       <section style={{
         background: 'linear-gradient(135deg, #1e40af 0%, #7c3aed 50%, #db2777 100%)',
@@ -229,11 +195,8 @@ const HomePage = () => {
         color: 'white'
       }}>
         <div style={{ maxWidth: '750px', margin: '0 auto' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <span style={{ background: '#ef4444', padding: '3px 14px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold' }}>
                 🚨 Emergency?
@@ -247,7 +210,7 @@ const HomePage = () => {
               India's Most Trusted Healthcare Marketplace
             </p>
 
-            {/* Search Bar + Location */}
+            {/* Search Bar */}
             <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', maxWidth: '600px', margin: '0 auto 10px', flexWrap: 'wrap', justifyContent: 'center' }}>
               <div style={{ flex: 2, minWidth: '180px', display: 'flex', alignItems: 'center', background: 'white', borderRadius: '8px', overflow: 'hidden' }}>
                 <FaSearch style={{ color: '#94a3b8', marginLeft: '12px', fontSize: '14px', flexShrink: 0 }} />
@@ -271,7 +234,7 @@ const HomePage = () => {
               </div>
             </form>
 
-            {/* 4 Quick Action Buttons — In a Row */}
+            {/* 4 Quick Action Buttons */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {[
                 { icon: '🚨', label: 'Emergency', path: '/emergency-search', color: '#DC2626' },
@@ -283,18 +246,9 @@ const HomePage = () => {
                   key={item.label}
                   onClick={() => navigate(item.path)}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 18px',
-                    background: item.color,
-                    color: 'white',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.2s ease'
+                    display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px',
+                    background: item.color, color: 'white', borderRadius: '8px', cursor: 'pointer',
+                    fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
@@ -308,8 +262,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          11 SERVICE CARDS — 2 Fixed Rows
-          Row 1: 6 cards | Row 2: 5 cards centered
+          11 SERVICE CARDS - 2 Rows (6 + 5 centered)
       ================================================================ */}
       <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
@@ -318,13 +271,7 @@ const HomePage = () => {
         </div>
 
         {/* Row 1: 6 Cards */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(6, 1fr)', 
-          gap: '12px', 
-          marginBottom: '12px',
-          '@media (max-width: 900px)': { gridTemplateColumns: 'repeat(3, 1fr)' }
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', marginBottom: '12px' }}>
           {services.slice(0, 6).map((service, index) => (
             <motion.div
               key={service.id}
@@ -333,15 +280,9 @@ const HomePage = () => {
               transition={{ duration: 0.3, delay: index * 0.04 }}
               onClick={() => navigate(service.path)}
               style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '14px 10px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
-                border: '1px solid #f1f5f9',
-                transition: 'all 0.3s ease',
-                position: 'relative'
+                background: 'white', borderRadius: '12px', padding: '14px 10px', textAlign: 'center',
+                cursor: 'pointer', boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                transition: 'all 0.3s ease', position: 'relative'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
@@ -357,18 +298,13 @@ const HomePage = () => {
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: service.color, borderRadius: '3px 3px 0 0' }} />
               <div style={{ fontSize: '28px', color: service.color, marginBottom: '4px' }}>{service.icon}</div>
               <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: '0' }}>{service.label}</h3>
-              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', margin: '2px 0 0 0' }}>{service.desc}</p>
+              <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0 0' }}>{service.desc}</p>
             </motion.div>
           ))}
         </div>
 
         {/* Row 2: 5 Cards Centered */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          gap: '12px',
-          flexWrap: 'wrap'
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
           {services.slice(6, 11).map((service, index) => (
             <motion.div
               key={service.id}
@@ -377,18 +313,10 @@ const HomePage = () => {
               transition={{ duration: 0.3, delay: (index + 6) * 0.04 }}
               onClick={() => navigate(service.path)}
               style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '14px 10px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
-                border: '1px solid #f1f5f9',
-                transition: 'all 0.3s ease',
-                position: 'relative',
-                width: 'calc((100% - 48px) / 5)',
-                minWidth: '130px',
-                maxWidth: '170px'
+                background: 'white', borderRadius: '12px', padding: '14px 10px', textAlign: 'center',
+                cursor: 'pointer', boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                transition: 'all 0.3s ease', position: 'relative',
+                width: 'calc((100% - 48px) / 5)', minWidth: '130px', maxWidth: '170px'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
@@ -404,14 +332,14 @@ const HomePage = () => {
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: service.color, borderRadius: '3px 3px 0 0' }} />
               <div style={{ fontSize: '28px', color: service.color, marginBottom: '4px' }}>{service.icon}</div>
               <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: '0' }}>{service.label}</h3>
-              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', margin: '2px 0 0 0' }}>{service.desc}</p>
+              <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0 0' }}>{service.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* ================================================================
-          WHY CHOOSE US — Compact
+          WHY CHOOSE US - Compact
       ================================================================ */}
       <section style={{ background: 'white', padding: '28px 20px' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
@@ -436,7 +364,7 @@ const HomePage = () => {
               >
                 <div style={{ marginBottom: '6px' }}>{item.icon}</div>
                 <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#1e293b', margin: '0' }}>{item.title}</h3>
-                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: '2px 0 0 0' }}>{item.desc}</p>
+                <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -444,7 +372,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          HOW IT WORKS — 4 Simple Steps
+          HOW IT WORKS - 4 Steps
       ================================================================ */}
       <section style={{ maxWidth: '1000px', margin: '0 auto', padding: '28px 20px' }}>
         <h2 style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold', color: '#1e293b', marginBottom: '16px' }}>
@@ -460,17 +388,14 @@ const HomePage = () => {
             <div key={i} style={{ textAlign: 'center', width: '140px' }}>
               <div style={{ fontSize: '32px', marginBottom: '6px' }}>{step.icon}</div>
               <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', margin: '0' }}>{step.title}</h4>
-              <p style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', margin: '2px 0 0 0' }}>{step.desc}</p>
-              {i < 3 && (
-                <div style={{ position: 'absolute', display: 'none' }}>→</div>
-              )}
+              <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 0 0' }}>{step.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* ================================================================
-          HEALTH INSIGHTS — Compact Blog Cards
+          HEALTH INSIGHTS - Compact Blog Cards
       ================================================================ */}
       <section style={{ background: 'white', padding: '28px 20px' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
@@ -493,12 +418,8 @@ const HomePage = () => {
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 onClick={() => navigate('/blog')}
                 style={{
-                  background: '#f8fafc',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  border: '1px solid #f1f5f9',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
+                  background: '#f8fafc', borderRadius: '12px', overflow: 'hidden',
+                  border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.3s ease'
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -508,8 +429,8 @@ const HomePage = () => {
                 </div>
                 <div style={{ padding: '12px 14px' }}>
                   <span style={{ fontSize: '10px', fontWeight: '600', color: '#2563eb', background: '#eff6ff', padding: '2px 10px', borderRadius: '8px' }}>{article.category}</span>
-                  <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginTop: '6px', margin: '6px 0 0 0' }}>{article.title}</h3>
-                  <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', margin: '3px 0 0 0' }}>By {article.author} • {article.date}</p>
+                  <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', margin: '6px 0 0 0' }}>{article.title}</h3>
+                  <p style={{ fontSize: '11px', color: '#94a3b8', margin: '3px 0 0 0' }}>By {article.author} • {article.date}</p>
                   <span style={{ display: 'inline-block', marginTop: '6px', color: '#2563eb', fontWeight: '600', fontSize: '12px' }}>Read More →</span>
                 </div>
               </motion.div>
@@ -519,7 +440,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          TESTIMONIALS — Compact Carousel
+          TESTIMONIALS - Compact Carousel
       ================================================================ */}
       <section style={{ background: 'linear-gradient(135deg, #1e40af, #7c3aed)', padding: '28px 20px' }}>
         <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
@@ -535,11 +456,8 @@ const HomePage = () => {
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.4 }}
                 style={{
-                  background: 'rgba(255,255,255,0.12)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '14px',
-                  padding: '20px 24px',
-                  border: '1px solid rgba(255,255,255,0.08)'
+                  background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)',
+                  borderRadius: '14px', padding: '20px 24px', border: '1px solid rgba(255,255,255,0.08)'
                 }}
               >
                 <div style={{ fontSize: '18px', color: '#fbbf24', marginBottom: '6px' }}>
@@ -564,14 +482,9 @@ const HomePage = () => {
                   key={index}
                   onClick={() => setCurrentTestimonial(index)}
                   style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    border: 'none',
+                    width: '8px', height: '8px', borderRadius: '50%', border: 'none',
                     background: index === currentTestimonial ? 'white' : 'rgba(255,255,255,0.3)',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s',
-                    padding: 0
+                    cursor: 'pointer', transition: 'all 0.3s', padding: 0
                   }}
                 />
               ))}
@@ -581,7 +494,7 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          DOWNLOAD APP — Small Banner
+          DOWNLOAD APP - Small Banner
       ================================================================ */}
       <section style={{ background: 'white', padding: '20px 20px' }}>
         <div style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -610,20 +523,18 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          FOOTER — Complete with All Links
-          Columns: For Patients | For Providers | Company+Support+Legal | Resources+Contact
-          Social Icons + Bottom Bar
+          FOOTER - 5 Parallel Columns + Social + Legal + Contact
       ================================================================ */}
-      <footer style={{ background: '#0f172a', color: 'white', padding: '28px 20px 16px' }}>
+      <footer style={{ background: '#0f172a', color: 'white', padding: '24px 20px 14px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           
-          {/* 4 Main Columns */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '16px' }}>
+          {/* 5 Equal Columns */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '16px' }}>
             
-            {/* For Patients */}
+            {/* Column 1: For Patients */}
             <div>
-              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>For Patients</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <h4 style={{ fontWeight: '600', margin: '0 0 8px 0', fontSize: '13px', color: '#e2e8f0' }}>For Patients</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <li><Link to="/hospitals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Find Hospitals</Link></li>
                 <li><Link to="/ambulance" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Book Ambulance</Link></li>
                 <li><Link to="/online-doctor" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Online Doctor</Link></li>
@@ -633,10 +544,10 @@ const HomePage = () => {
               </ul>
             </div>
 
-            {/* For Providers */}
+            {/* Column 2: For Providers */}
             <div>
-              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>For Providers</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <h4 style={{ fontWeight: '600', margin: '0 0 8px 0', fontSize: '13px', color: '#e2e8f0' }}>For Providers</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <li><Link to="/provider/choose-role" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Register</Link></li>
                 <li><Link to="/provider/login" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Login</Link></li>
                 <li><Link to="/provider/dashboard" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Dashboard</Link></li>
@@ -644,81 +555,71 @@ const HomePage = () => {
               </ul>
             </div>
 
-            {/* Company + Support + Legal Combined */}
+            {/* Column 3: Company */}
             <div>
-              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Company</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px 0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <h4 style={{ fontWeight: '600', margin: '0 0 8px 0', fontSize: '13px', color: '#e2e8f0' }}>Company</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <li><Link to="/about" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>About Us</Link></li>
                 <li><Link to="/blog" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Blog</Link></li>
                 <li><Link to="/contact" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Contact</Link></li>
                 <li><Link to="/careers" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Careers</Link></li>
                 <li><Link to="/press" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Press</Link></li>
               </ul>
-              
-              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Support</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px 0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            </div>
+
+            {/* Column 4: Support */}
+            <div>
+              <h4 style={{ fontWeight: '600', margin: '0 0 8px 0', fontSize: '13px', color: '#e2e8f0' }}>Support</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <li><Link to="/help" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Help Center</Link></li>
                 <li><Link to="/faq" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>FAQ</Link></li>
                 <li><a href="#" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Live Chat</a></li>
                 <li><Link to="/grievance" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Grievance</Link></li>
               </ul>
-
-              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Legal</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <li><Link to="/privacy" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Privacy Policy</Link></li>
-                <li><Link to="/terms" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Terms & Conditions</Link></li>
-                <li><Link to="/refund" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Refund Policy</Link></li>
-                <li><Link to="/cancellation" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Cancellation Policy</Link></li>
-                <li><Link to="/disclaimer" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Disclaimer</Link></li>
-              </ul>
             </div>
 
-            {/* Resources + Contact */}
+            {/* Column 5: Resources */}
             <div>
-              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Resources</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px 0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <h4 style={{ fontWeight: '600', margin: '0 0 8px 0', fontSize: '13px', color: '#e2e8f0' }}>Resources</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <li><Link to="/directory" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Healthcare Directory</Link></li>
                 <li><Link to="/pcs-terms" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>PCS T&C</Link></li>
                 <li><Link to="/developers" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Developers</Link></li>
                 <li><Link to="/api-docs" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>API Docs</Link></li>
               </ul>
-
-              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Contact</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '12px' }}>
-                  <FaPhoneAlt size={11} /> +91-XXXXXXXXXX
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '12px' }}>
-                  <FaEnvelope size={11} /> support@healthcarehub.com
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '12px' }}>
-                  <FaMapMarkerAlt size={11} /> Mumbai, India
-                </li>
-              </ul>
             </div>
           </div>
 
-          {/* Social Icons */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '12px', paddingTop: '12px', borderTop: '1px solid #1e293b' }}>
-            <a href="https://facebook.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaFacebook /></a>
-            <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaTwitter /></a>
-            <a href="https://linkedin.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaLinkedin /></a>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaInstagram /></a>
-            <a href="https://youtube.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaYoutube /></a>
-            <a href="https://github.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px', textDecoration: 'none' }}>🐙</a>
+          {/* Social Icons Row */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '18px', marginBottom: '12px', paddingTop: '12px', borderTop: '1px solid #1e293b' }}>
+            <a href="https://facebook.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '16px' }} title="Facebook"><FaFacebook /></a>
+            <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '16px' }} title="Twitter"><FaTwitter /></a>
+            <a href="https://linkedin.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '16px' }} title="LinkedIn"><FaLinkedin /></a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '16px' }} title="Instagram"><FaInstagram /></a>
+            <a href="https://youtube.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '16px' }} title="YouTube"><FaYoutube /></a>
+            <a href="https://github.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '16px', textDecoration: 'none' }} title="GitHub">🐙</a>
           </div>
 
-          {/* Bottom Bar */}
-          <div style={{ borderTop: '1px solid #1e293b', paddingTop: '10px', textAlign: 'center' }}>
-            <p style={{ color: '#64748b', fontSize: '12px', marginBottom: '4px', margin: '0 0 4px 0' }}>
-              🏥 HealthCare Hub — India's Most Trusted Healthcare Marketplace
+          {/* Legal Links Row */}
+          <div style={{ textAlign: 'center', paddingTop: '10px', borderTop: '1px solid #1e293b', marginBottom: '10px' }}>
+            <Link to="/privacy" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '11px', margin: '0 8px' }}>Privacy Policy</Link>
+            <span style={{ color: '#475569' }}>•</span>
+            <Link to="/terms" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '11px', margin: '0 8px' }}>Terms & Conditions</Link>
+            <span style={{ color: '#475569' }}>•</span>
+            <Link to="/refund" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '11px', margin: '0 8px' }}>Refund Policy</Link>
+            <span style={{ color: '#475569' }}>•</span>
+            <Link to="/cancellation" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '11px', margin: '0 8px' }}>Cancellation</Link>
+            <span style={{ color: '#475569' }}>•</span>
+            <Link to="/disclaimer" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '11px', margin: '0 8px' }}>Disclaimer</Link>
+          </div>
+
+          {/* Bottom Contact + Copyright */}
+          <div style={{ textAlign: 'center', paddingTop: '10px', borderTop: '1px solid #1e293b' }}>
+            <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 3px 0' }}>
+              📧 support@healthcarehub.com &nbsp;•&nbsp; 📞 +91-XXXXXXXXXX &nbsp;•&nbsp; 📍 Mumbai, India
             </p>
             <p style={{ color: '#475569', fontSize: '11px', margin: '0' }}>
-              © 2025 HealthCare Hub. All rights reserved. &nbsp;|&nbsp;
-              <Link to="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy Policy</Link> &nbsp;•&nbsp;
-              <Link to="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms & Conditions</Link> &nbsp;•&nbsp;
-              <Link to="/refund" style={{ color: '#94a3b8', textDecoration: 'none' }}>Refund Policy</Link> &nbsp;•&nbsp;
-              <Link to="/sitemap" style={{ color: '#94a3b8', textDecoration: 'none' }}>Sitemap</Link>
+              © 2025 HealthCare Hub — India's Most Trusted Healthcare Marketplace
             </p>
           </div>
         </div>
