@@ -7,10 +7,9 @@ import {
   FaUserMd, FaMoneyBillWave, FaVideo, FaBuilding, FaFlask,
   FaBrain, FaSearch, FaPhoneAlt, FaUser, FaUserTie, FaLock,
   FaBars, FaTimes, FaChevronDown, FaStar, FaArrowRight,
-  FaHeart, FaUsers, FaClock, FaThumbsUp, FaShieldAlt as FaShield,
+  FaHeart, FaUsers, FaClock, FaThumbsUp,
   FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube,
-  FaApple, FaGooglePlay, FaMapMarkerAlt, FaEnvelope, FaPhone as FaPhoneIcon,
-  FaCalendarAlt, FaQrcode, FaMobileAlt
+  FaApple, FaGooglePlay, FaMapMarkerAlt, FaEnvelope
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,7 +19,6 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
   const [showProviderDropdown, setShowProviderDropdown] = useState(false);
-  const [showServicesDropdown, setShowServicesDropdown] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -38,18 +36,22 @@ const HomePage = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // ================================================================
+  // SERVICES ARRAY — 11 Tags with New Names & Sequence
+  // Row 1: 6 cards | Row 2: 5 cards centered
+  // ================================================================
   const services = [
-    { id: 'hospitals', icon: <FaHospital />, label: 'Hospitals', desc: '1,200+ Providers', color: '#3b82f6', bg: '#eff6ff', path: '/hospitals', badge: null },
-    { id: 'ambulance', icon: <FaAmbulance />, label: 'Ambulance', desc: '500+ Vehicles', color: '#f59e0b', bg: '#fffbeb', path: '/ambulance', badge: 'Live' },
-    { id: 'insurance', icon: <FaShieldAlt />, label: 'Health Insurance', desc: 'Compare & Buy', color: '#10b981', bg: '#ecfdf5', path: '/insurance', badge: '⭐ Trusted' },
-    { id: 'homeopathy', icon: <FaLeaf />, label: 'Homeopathy', desc: '300+ Doctors', color: '#059669', bg: '#ecfdf5', path: '/homeopathy', badge: 'NEW' },
-    { id: 'ayurveda', icon: <FaSpa />, label: 'Ayurveda', desc: '450+ Doctors', color: '#8b5cf6', bg: '#f5f3ff', path: '/ayurveda', badge: 'NEW' },
-    { id: 'caregiver', icon: <FaUserMd />, label: 'Caregiver', desc: '200+ Providers', color: '#ec4899', bg: '#fdf2f8', path: '/caregivers', badge: null },
-    { id: 'emi', icon: <FaMoneyBillWave />, label: 'Health EMI', desc: '0% EMI Available', color: '#6366f1', bg: '#eef2ff', path: '/financing', badge: null },
-    { id: 'online', icon: <FaVideo />, label: 'Online Doctor', desc: '24/7 Consult', color: '#14b8a6', bg: '#f0fdfa', path: '/teleconsult', badge: null },
-    { id: 'corporate', icon: <FaBuilding />, label: 'Corporate Health', desc: 'For 50+ Employees', color: '#64748b', bg: '#f8fafc', path: '/corporate', badge: 'LIVE' },
-    { id: 'diagnostics', icon: <FaFlask />, label: 'Diagnostics', desc: '1,000+ Tests', color: '#06b6d4', bg: '#ecfeff', path: '/diagnostics', badge: null },
-    { id: 'mentalhealth', icon: <FaBrain />, label: 'Mental Health', desc: '150+ Therapists', color: '#8b5cf6', bg: '#f5f3ff', path: '/mentalhealth', badge: 'NEW' }
+    { id: 'hospitals', icon: <FaHospital />, label: 'Find Hospitals', desc: '1,200+ Providers', color: '#3b82f6', bg: '#eff6ff', path: '/hospitals' },
+    { id: 'ambulance', icon: <FaAmbulance />, label: 'Book Ambulance', desc: '500+ Vehicles', color: '#f59e0b', bg: '#fffbeb', path: '/ambulance' },
+    { id: 'online', icon: <FaVideo />, label: 'Online Doctor', desc: '24/7 Consult', color: '#14b8a6', bg: '#f0fdfa', path: '/online-doctor' },
+    { id: 'diagnostics', icon: <FaFlask />, label: 'Lab Tests & Packages', desc: '1,000+ Tests', color: '#06b6d4', bg: '#ecfeff', path: '/diagnostics' },
+    { id: 'ayurveda', icon: <FaSpa />, label: 'Ayurveda & Wellness', desc: '450+ Doctors', color: '#8b5cf6', bg: '#f5f3ff', path: '/ayurveda' },
+    { id: 'homeopathy', icon: <FaLeaf />, label: 'Homeopathy Care', desc: '300+ Doctors', color: '#059669', bg: '#ecfdf5', path: '/homeopathy' },
+    { id: 'mentalhealth', icon: <FaBrain />, label: 'Mental Wellness', desc: '150+ Therapists', color: '#8b5cf6', bg: '#f5f3ff', path: '/mentalhealth' },
+    { id: 'caregiver', icon: <FaUserMd />, label: 'Home Care', desc: '200+ Providers', color: '#ec4899', bg: '#fdf2f8', path: '/caregivers' },
+    { id: 'insurance', icon: <FaShieldAlt />, label: 'Health Insurance', desc: 'Compare & Buy', color: '#10b981', bg: '#ecfdf5', path: '/insurance' },
+    { id: 'emi', icon: <FaMoneyBillWave />, label: 'Health on EMI', desc: '0% EMI Available', color: '#6366f1', bg: '#eef2ff', path: '/financing' },
+    { id: 'corporate', icon: <FaBuilding />, label: 'Corporate Health', desc: 'For Companies', color: '#64748b', bg: '#f8fafc', path: '/corporate' }
   ];
 
   const providerRoles = [
@@ -90,7 +92,8 @@ const HomePage = () => {
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
       
       {/* ================================================================
-          NAVIGATION BAR - WITH LOGIN BUTTONS VISIBLE
+          NAVIGATION BAR — Clean, No Extra Links
+          Only: Logo + Search + Patient Login + Provider Login + Admin
       ================================================================ */}
       <nav style={{
         backgroundColor: 'white',
@@ -98,7 +101,8 @@ const HomePage = () => {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        borderBottom: '1px solid #e2e8f0'
+        borderBottom: '1px solid #e2e8f0',
+        height: '52px'
       }}>
         <div style={{
           maxWidth: '1200px',
@@ -107,97 +111,73 @@ const HomePage = () => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          height: '64px'
+          height: '100%'
         }}>
           {/* Logo */}
-          <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: '20px', fontWeight: '700', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: '18px', fontWeight: '700', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               🏥 HealthCare Hub
             </span>
           </div>
 
-          {/* ============================================================
-              DESKTOP NAVIGATION - LOGIN BUTTONS ARE HERE
-          ============================================================ */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}>
-            <Link to="/" style={{ color: '#475569', fontWeight: '500', fontSize: '14px', textDecoration: 'none' }}>Home</Link>
-            
-            <div style={{ position: 'relative' }} onMouseEnter={() => setShowServicesDropdown(true)} onMouseLeave={() => setShowServicesDropdown(false)}>
-              <button style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#475569', fontWeight: '500', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer' }}>
-                Services <FaChevronDown style={{ fontSize: '10px' }} />
-              </button>
-              {showServicesDropdown && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 2, width: '220px', background: 'white', borderRadius: '10px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', padding: '6px 0' }}>
-                  {services.map((s) => (
-                    <Link key={s.id} to={s.path} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', textDecoration: 'none', fontSize: '14px', color: '#334155' }}>
-                      <span style={{ color: s.color }}>{s.icon}</span> {s.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Link to="/about" style={{ color: '#475569', fontWeight: '500', fontSize: '14px', textDecoration: 'none' }}>About</Link>
-            <Link to="/blog" style={{ color: '#475569', fontWeight: '500', fontSize: '14px', textDecoration: 'none' }}>Blog</Link>
-            <Link to="/contact" style={{ color: '#475569', fontWeight: '500', fontSize: '14px', textDecoration: 'none' }}>Contact</Link>
-
-            {/* Search */}
-            <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center' }}>
+          {/* Center: Search Bar */}
+          <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', flex: 1, maxWidth: '400px', margin: '0 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', background: '#f1f5f9', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+              <FaSearch style={{ color: '#94a3b8', marginLeft: '12px', fontSize: '14px', flexShrink: 0 }} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search..."
-                style={{ padding: '6px 12px', fontSize: '14px', border: '1px solid #e2e8f0', borderRadius: '8px 0 0 8px', outline: 'none', width: '120px' }}
+                placeholder="Search hospitals, doctors, tests..."
+                style={{ width: '100%', padding: '8px 12px', border: 'none', outline: 'none', fontSize: '14px', color: '#1e293b', background: 'transparent' }}
               />
-              <button type="submit" style={{ padding: '6px 12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer' }}>
+              <button type="submit" style={{ padding: '8px 14px', background: '#2563eb', color: 'white', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                 <FaSearch size={14} />
               </button>
-            </form>
+            </div>
+          </form>
 
-            {/* 👤 PATIENT LOGIN - VISIBLE */}
+          {/* Right: Login Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {/* Patient Login */}
             <Link to="/login" style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '8px 20px',
-              fontSize: '14px',
+              gap: '5px',
+              padding: '7px 16px',
+              fontSize: '13px',
               fontWeight: '600',
               color: 'white',
               background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-              borderRadius: '8px',
+              borderRadius: '7px',
               textDecoration: 'none',
-              boxShadow: '0 2px 10px rgba(37, 99, 235, 0.3)'
+              whiteSpace: 'nowrap'
             }}>
-              <FaUser size={14} /> Patient Login
+              <FaUser size={12} /> Patient Login
             </Link>
 
-            {/* 🔐 PROVIDER LOGIN - VISIBLE */}
+            {/* Provider Login Dropdown */}
             <div style={{ position: 'relative' }} onMouseEnter={() => setShowProviderDropdown(true)} onMouseLeave={() => setShowProviderDropdown(false)}>
               <button style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '8px 20px',
-                fontSize: '14px',
+                gap: '5px',
+                padding: '7px 16px',
+                fontSize: '13px',
                 fontWeight: '600',
                 color: '#7c3aed',
                 background: '#f5f3ff',
-                borderRadius: '8px',
-                border: '2px solid #7c3aed',
-                cursor: 'pointer'
+                borderRadius: '7px',
+                border: '1.5px solid #7c3aed',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}>
-                <FaUserTie size={14} /> Provider Login <FaChevronDown style={{ fontSize: '10px' }} />
+                <FaUserTie size={12} /> Provider <FaChevronDown style={{ fontSize: '9px' }} />
               </button>
               {showProviderDropdown && (
-                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 2, width: '240px', background: 'white', borderRadius: '10px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', padding: '6px 0' }}>
+                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', width: '220px', background: 'white', borderRadius: '10px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '1px solid #e2e8f0', padding: '6px 0', zIndex: 100 }}>
                   {providerRoles.map((role) => (
-                    <Link key={role.path} to={role.path} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', textDecoration: 'none', fontSize: '14px', color: '#334155' }}>
+                    <Link key={role.path} to={role.path} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 14px', textDecoration: 'none', fontSize: '13px', color: '#334155' }}>
                       <span>{role.icon}</span> {role.label}
                     </Link>
                   ))}
@@ -205,113 +185,119 @@ const HomePage = () => {
               )}
             </div>
 
-            {/* 🔑 ADMIN LOGIN - VISIBLE */}
+            {/* Admin */}
             <Link to="/admin/login" style={{
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              padding: '6px 14px',
-              fontSize: '13px',
+              padding: '7px 14px',
+              fontSize: '12px',
               fontWeight: '600',
               color: '#dc2626',
               background: '#fef2f2',
               borderRadius: '6px',
               textDecoration: 'none',
-              border: '1px solid #fecaca'
+              border: '1px solid #fecaca',
+              whiteSpace: 'nowrap'
             }}>
-              <FaLock size={14} /> Admin
+              <FaLock size={11} /> Admin
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ display: 'block', padding: '4px', background: 'none', border: 'none', cursor: 'pointer' }}>
-            {isMenuOpen ? <FaTimes size={22} /> : <FaBars size={22} />}
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ display: 'none', padding: '4px', background: 'none', border: 'none', cursor: 'pointer' }}>
+            {isMenuOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
           </button>
         </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div style={{ background: 'white', borderTop: '1px solid #e2e8f0', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <Link to="/" style={{ color: '#334155', textDecoration: 'none', fontSize: '15px' }}>Home</Link>
-            {services.map((s) => (
-              <Link key={s.id} to={s.path} style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', padding: '2px 8px' }}>{s.icon} {s.label}</Link>
-            ))}
-            <Link to="/about" style={{ color: '#334155', textDecoration: 'none', fontSize: '15px' }}>About</Link>
-            <Link to="/blog" style={{ color: '#334155', textDecoration: 'none', fontSize: '15px' }}>Blog</Link>
-            <Link to="/contact" style={{ color: '#334155', textDecoration: 'none', fontSize: '15px' }}>Contact</Link>
-            <Link to="/login" style={{ padding: '12px', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: 'white', borderRadius: '8px', textDecoration: 'none', textAlign: 'center', fontWeight: '600' }}>👤 Patient Login</Link>
-            <Link to="/admin/login" style={{ padding: '12px', background: '#dc2626', color: 'white', borderRadius: '8px', textDecoration: 'none', textAlign: 'center', fontWeight: '600' }}>🔑 Admin Login</Link>
+          <div style={{ background: 'white', borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <Link to="/login" style={{ padding: '10px', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: 'white', borderRadius: '8px', textDecoration: 'none', textAlign: 'center', fontWeight: '600', fontSize: '14px' }}>👤 Patient Login</Link>
+            <Link to="/admin/login" style={{ padding: '10px', background: '#dc2626', color: 'white', borderRadius: '8px', textDecoration: 'none', textAlign: 'center', fontWeight: '600', fontSize: '14px' }}>🔑 Admin Login</Link>
           </div>
         )}
       </nav>
 
       {/* ================================================================
-          HERO BANNER
+          HERO BANNER — Compact (140px)
       ================================================================ */}
       <section style={{
         background: 'linear-gradient(135deg, #1e40af 0%, #7c3aed 50%, #db2777 100%)',
-        padding: '40px 20px 32px',
+        padding: '16px 20px 12px',
         textAlign: 'center',
         color: 'white'
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '750px', margin: '0 auto' }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <span style={{ background: '#ef4444', padding: '4px 18px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ background: '#ef4444', padding: '3px 14px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold' }}>
                 🚨 Emergency?
               </span>
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '15px' }}>Need Help Now?</span>
             </div>
             
-            <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '4px' }}>Your Health, Our Priority</h1>
-            <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.85)', marginBottom: '20px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '2px' }}>
+              Your Health, Our Priority
+            </h1>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', marginBottom: '12px' }}>
               India's Most Trusted Healthcare Marketplace
             </p>
 
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', maxWidth: '650px', margin: '0 auto', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <div style={{ flex: 2, minWidth: '200px', display: 'flex', alignItems: 'center', background: 'white', borderRadius: '10px', overflow: 'hidden' }}>
-                <FaSearch style={{ color: '#94a3b8', marginLeft: '14px', fontSize: '16px' }} />
+            {/* Search Bar + Location */}
+            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', maxWidth: '600px', margin: '0 auto 10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <div style={{ flex: 2, minWidth: '180px', display: 'flex', alignItems: 'center', background: 'white', borderRadius: '8px', overflow: 'hidden' }}>
+                <FaSearch style={{ color: '#94a3b8', marginLeft: '12px', fontSize: '14px', flexShrink: 0 }} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for Hospitals, Doctors, Services..."
-                  style={{ width: '100%', padding: '12px 14px', border: 'none', outline: 'none', fontSize: '15px', color: '#1e293b' }}
+                  style={{ width: '100%', padding: '10px 12px', border: 'none', outline: 'none', fontSize: '14px', color: '#1e293b' }}
                 />
               </div>
-              <div style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center', background: 'white', borderRadius: '10px', overflow: 'hidden' }}>
-                <FaMapMarkerAlt style={{ color: '#94a3b8', marginLeft: '14px', fontSize: '16px' }} />
+              <div style={{ flex: 1, minWidth: '120px', display: 'flex', alignItems: 'center', background: 'white', borderRadius: '8px', overflow: 'hidden' }}>
+                <FaMapMarkerAlt style={{ color: '#94a3b8', marginLeft: '10px', fontSize: '14px', flexShrink: 0 }} />
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="Location"
-                  style={{ width: '100%', padding: '12px 14px', border: 'none', outline: 'none', fontSize: '15px', color: '#1e293b' }}
+                  style={{ width: '100%', padding: '10px 12px', border: 'none', outline: 'none', fontSize: '14px', color: '#1e293b' }}
                 />
               </div>
-              <button
-                type="submit"
-                style={{ padding: '12px 32px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}
-              >
-                Find Help
-              </button>
             </form>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', maxWidth: '550px', margin: '18px auto 0' }}>
+            {/* 4 Quick Action Buttons — In a Row */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {[
-                { icon: <FaPhoneAlt size={14} />, label: '🚨 Emergency', path: '/emergency-search' },
-                { icon: <FaCalendarAlt size={14} />, label: '📋 Book Now', path: '/my-bookings' },
-                { icon: <FaFlask size={14} />, label: '💊 Lab Tests', path: '/diagnostics' },
-                { icon: <FaHeart size={14} />, label: '📞 24/7 Helpline', path: '/mentalhealth/crisis' }
+                { icon: '🚨', label: 'Emergency', path: '/emergency-search', color: '#DC2626' },
+                { icon: '📋', label: 'Book Now', path: '/my-bookings', color: '#2563EB' },
+                { icon: '💊', label: 'Lab Tests', path: '/diagnostics', color: '#059669' },
+                { icon: '📞', label: '24/7 Help', path: '/mentalhealth/crisis', color: '#EA580C' }
               ].map((item) => (
                 <div
                   key={item.label}
                   onClick={() => navigate(item.path)}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', background: 'rgba(255,255,255,0.15)', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 18px',
+                    background: item.color,
+                    color: 'white',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                 >
                   {item.icon} {item.label}
                 </div>
@@ -322,92 +308,135 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          11 BIG ATTRACTIVE SERVICES
+          11 SERVICE CARDS — 2 Fixed Rows
+          Row 1: 6 cards | Row 2: 5 cards centered
       ================================================================ */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '36px 20px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}>💡 Healthcare Services</h2>
-          <p style={{ color: '#64748b', fontSize: '16px' }}>Compare, choose, book – all in minutes</p>
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e293b' }}>💡 Healthcare Services</h2>
+          <p style={{ color: '#64748b', fontSize: '14px' }}>Compare, choose, book — all in minutes</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
-          {services.map((service, index) => (
+        {/* Row 1: 6 Cards */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(6, 1fr)', 
+          gap: '12px', 
+          marginBottom: '12px',
+          '@media (max-width: 900px)': { gridTemplateColumns: 'repeat(3, 1fr)' }
+        }}>
+          {services.slice(0, 6).map((service, index) => (
             <motion.div
               key={service.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.04 }}
               onClick={() => navigate(service.path)}
               style={{
                 background: 'white',
-                borderRadius: '16px',
-                padding: '24px 16px',
+                borderRadius: '12px',
+                padding: '14px 10px',
                 textAlign: 'center',
                 cursor: 'pointer',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
                 border: '1px solid #f1f5f9',
                 transition: 'all 0.3s ease',
                 position: 'relative'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-6px)';
-                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.10)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.08)';
+                e.currentTarget.style.borderColor = service.color;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.05)';
+                e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.04)';
+                e.currentTarget.style.borderColor = '#f1f5f9';
               }}
             >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: service.color, borderRadius: '4px 4px 0 0' }} />
-              <div style={{ fontSize: '36px', color: service.color, marginBottom: '6px' }}>{service.icon}</div>
-              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#1e293b' }}>{service.label}</h3>
-              <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '2px' }}>{service.desc}</p>
-              {service.badge && (
-                <span style={{
-                  display: 'inline-block',
-                  fontSize: '10px',
-                  fontWeight: '700',
-                  padding: '2px 12px',
-                  borderRadius: '12px',
-                  marginTop: '6px',
-                  background: service.badge === 'NEW' ? '#d1fae5' : service.badge === 'LIVE' ? '#fee2e2' : '#fef3c7',
-                  color: service.badge === 'NEW' ? '#065f46' : service.badge === 'LIVE' ? '#991b1b' : '#92400e'
-                }}>
-                  {service.badge}
-                </span>
-              )}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: service.color, borderRadius: '3px 3px 0 0' }} />
+              <div style={{ fontSize: '28px', color: service.color, marginBottom: '4px' }}>{service.icon}</div>
+              <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: '0' }}>{service.label}</h3>
+              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', margin: '2px 0 0 0' }}>{service.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Row 2: 5 Cards Centered */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          {services.slice(6, 11).map((service, index) => (
+            <motion.div
+              key={service.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: (index + 6) * 0.04 }}
+              onClick={() => navigate(service.path)}
+              style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '14px 10px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+                border: '1px solid #f1f5f9',
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                width: 'calc((100% - 48px) / 5)',
+                minWidth: '130px',
+                maxWidth: '170px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.08)';
+                e.currentTarget.style.borderColor = service.color;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.04)';
+                e.currentTarget.style.borderColor = '#f1f5f9';
+              }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: service.color, borderRadius: '3px 3px 0 0' }} />
+              <div style={{ fontSize: '28px', color: service.color, marginBottom: '4px' }}>{service.icon}</div>
+              <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: '0' }}>{service.label}</h3>
+              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', margin: '2px 0 0 0' }}>{service.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* ================================================================
-          WHY CHOOSE US
+          WHY CHOOSE US — Compact
       ================================================================ */}
-      <section style={{ background: 'white', padding: '36px 20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '26px', fontWeight: 'bold', color: '#1e293b' }}>🌟 Why HealthCare Hub?</h2>
-            <p style={{ color: '#64748b', fontSize: '15px' }}>Trusted by millions of Indians</p>
+      <section style={{ background: 'white', padding: '28px 20px' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>🌟 Why HealthCare Hub?</h2>
+            <p style={{ color: '#64748b', fontSize: '13px' }}>Trusted by millions of Indians</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             {[
-              { icon: <FaShield style={{ color: '#3b82f6', fontSize: '32px' }} />, title: 'Verified Providers', desc: 'Trusted healthcare partners with verified credentials' },
-              { icon: <FaThumbsUp style={{ color: '#10b981', fontSize: '32px' }} />, title: 'Best Price', desc: 'Compare and save money on healthcare services' },
-              { icon: <FaClock style={{ color: '#8b5cf6', fontSize: '32px' }} />, title: '24/7 Service', desc: 'Emergency support available around the clock' },
-              { icon: <FaUsers style={{ color: '#f59e0b', fontSize: '32px' }} />, title: 'Easy Booking', desc: 'Book appointments in 60 seconds' }
+              { icon: <FaShieldAlt style={{ color: '#3b82f6', fontSize: '28px' }} />, title: 'Verified Providers', desc: 'Trusted healthcare partners' },
+              { icon: <FaThumbsUp style={{ color: '#10b981', fontSize: '28px' }} />, title: 'Best Price', desc: 'Compare and save money' },
+              { icon: <FaClock style={{ color: '#8b5cf6', fontSize: '28px' }} />, title: '24/7 Service', desc: 'Emergency support always' },
+              { icon: <FaUsers style={{ color: '#f59e0b', fontSize: '28px' }} />, title: 'Easy Booking', desc: 'Book in 60 seconds' }
             ].map((item, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                style={{ textAlign: 'center', padding: '24px', background: '#f8fafc', borderRadius: '14px' }}
+                style={{ textAlign: 'center', padding: '16px', background: '#f8fafc', borderRadius: '12px' }}
               >
-                <div style={{ marginBottom: '8px' }}>{item.icon}</div>
-                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>{item.title}</h3>
-                <p style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>{item.desc}</p>
+                <div style={{ marginBottom: '6px' }}>{item.icon}</div>
+                <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#1e293b', margin: '0' }}>{item.title}</h3>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', margin: '2px 0 0 0' }}>{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -415,106 +444,134 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          HEALTH INSIGHTS
+          HOW IT WORKS — 4 Simple Steps
       ================================================================ */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '36px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b' }}>📰 Health Insights</h2>
-            <p style={{ color: '#64748b', fontSize: '14px' }}>Expert articles to keep you informed</p>
-          </div>
-          <Link to="/blog" style={{ color: '#2563eb', fontWeight: '600', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            View All <FaArrowRight size={14} />
-          </Link>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-          {articles.map((article, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              onClick={() => navigate('/blog')}
-              style={{
-                background: 'white',
-                borderRadius: '14px',
-                overflow: 'hidden',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-                border: '1px solid #f1f5f9',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.08)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.05)'; }}
-            >
-              <div style={{ height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '48px', background: 'linear-gradient(135deg, #eff6ff, #f5f3ff)' }}>
-                {article.image}
-              </div>
-              <div style={{ padding: '16px 20px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '600', color: '#2563eb', background: '#eff6ff', padding: '2px 12px', borderRadius: '10px' }}>{article.category}</span>
-                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', marginTop: '8px' }}>{article.title}</h3>
-                <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>By {article.author} • {article.date}</p>
-                <span style={{ display: 'inline-block', marginTop: '8px', color: '#2563eb', fontWeight: '600', fontSize: '14px' }}>Read More →</span>
-              </div>
-            </motion.div>
+      <section style={{ maxWidth: '1000px', margin: '0 auto', padding: '28px 20px' }}>
+        <h2 style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold', color: '#1e293b', marginBottom: '16px' }}>
+          📋 How It Works
+        </h2>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '20px', flexWrap: 'wrap' }}>
+          {[
+            { icon: '🔍', title: 'Search & Find', desc: 'Find best hospitals, doctors, labs near you' },
+            { icon: '📊', title: 'Compare Prices', desc: 'Compare ratings & prices side by side' },
+            { icon: '📅', title: 'Book Instantly', desc: 'Book your appointment in 60 seconds' },
+            { icon: '✅', title: 'Get Treated', desc: 'Pay online or at facility' }
+          ].map((step, i) => (
+            <div key={i} style={{ textAlign: 'center', width: '140px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '6px' }}>{step.icon}</div>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', margin: '0' }}>{step.title}</h4>
+              <p style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', margin: '2px 0 0 0' }}>{step.desc}</p>
+              {i < 3 && (
+                <div style={{ position: 'absolute', display: 'none' }}>→</div>
+              )}
+            </div>
           ))}
         </div>
       </section>
 
       {/* ================================================================
-          TESTIMONIALS
+          HEALTH INSIGHTS — Compact Blog Cards
       ================================================================ */}
-      <section style={{ background: 'linear-gradient(135deg, #1e40af, #7c3aed)', padding: '36px 20px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: 'white', marginBottom: '4px' }}>💬 What Our Users Say</h2>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '15px', marginBottom: '16px' }}>Real stories from real people</p>
+      <section style={{ background: 'white', padding: '28px 20px' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b', margin: '0' }}>📰 Health Insights</h2>
+              <p style={{ color: '#64748b', fontSize: '12px', margin: '2px 0 0 0' }}>Expert articles to keep you informed</p>
+            </div>
+            <Link to="/blog" style={{ color: '#2563eb', fontWeight: '600', fontSize: '13px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+              View All <FaArrowRight size={12} />
+            </Link>
+          </div>
 
-          <div style={{ position: 'relative', minHeight: '160px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            {articles.map((article, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                onClick={() => navigate('/blog')}
+                style={{
+                  background: '#f8fafc',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  border: '1px solid #f1f5f9',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <div style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', background: 'linear-gradient(135deg, #eff6ff, #f5f3ff)' }}>
+                  {article.image}
+                </div>
+                <div style={{ padding: '12px 14px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#2563eb', background: '#eff6ff', padding: '2px 10px', borderRadius: '8px' }}>{article.category}</span>
+                  <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginTop: '6px', margin: '6px 0 0 0' }}>{article.title}</h3>
+                  <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', margin: '3px 0 0 0' }}>By {article.author} • {article.date}</p>
+                  <span style={{ display: 'inline-block', marginTop: '6px', color: '#2563eb', fontWeight: '600', fontSize: '12px' }}>Read More →</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          TESTIMONIALS — Compact Carousel
+      ================================================================ */}
+      <section style={{ background: 'linear-gradient(135deg, #1e40af, #7c3aed)', padding: '28px 20px' }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: 'white', marginBottom: '2px' }}>💬 What Our Users Say</h2>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', marginBottom: '12px' }}>Real stories from real people</p>
+
+          <div style={{ position: 'relative', minHeight: '120px' }}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentTestimonial}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.4 }}
                 style={{
                   background: 'rgba(255,255,255,0.12)',
                   backdropFilter: 'blur(10px)',
-                  borderRadius: '18px',
-                  padding: '28px 32px',
+                  borderRadius: '14px',
+                  padding: '20px 24px',
                   border: '1px solid rgba(255,255,255,0.08)'
                 }}
               >
-                <div style={{ fontSize: '24px', color: '#fbbf24', marginBottom: '8px' }}>
+                <div style={{ fontSize: '18px', color: '#fbbf24', marginBottom: '6px' }}>
                   {'⭐'.repeat(testimonials[currentTestimonial].rating)}
                 </div>
-                <p style={{ fontSize: '18px', color: 'white', lineHeight: '1.6', fontStyle: 'italic' }}>
+                <p style={{ fontSize: '15px', color: 'white', lineHeight: '1.5', fontStyle: 'italic', margin: '0' }}>
                   "{testimonials[currentTestimonial].text}"
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginTop: '12px' }}>
-                  <span style={{ fontSize: '32px' }}>{testimonials[currentTestimonial].icon}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '10px' }}>
+                  <span style={{ fontSize: '24px' }}>{testimonials[currentTestimonial].icon}</span>
                   <div style={{ textAlign: 'left' }}>
-                    <p style={{ color: 'white', fontWeight: '700', fontSize: '16px' }}>{testimonials[currentTestimonial].name}</p>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>{testimonials[currentTestimonial].location}</p>
+                    <p style={{ color: 'white', fontWeight: '700', fontSize: '14px', margin: '0' }}>{testimonials[currentTestimonial].name}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', margin: '0' }}>{testimonials[currentTestimonial].location}</p>
                   </div>
                 </div>
               </motion.div>
             </AnimatePresence>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
               {testimonials.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentTestimonial(index)}
                   style={{
-                    width: '10px',
-                    height: '10px',
+                    width: '8px',
+                    height: '8px',
                     borderRadius: '50%',
                     border: 'none',
                     background: index === currentTestimonial ? 'white' : 'rgba(255,255,255,0.3)',
                     cursor: 'pointer',
-                    transition: 'all 0.3s'
+                    transition: 'all 0.3s',
+                    padding: 0
                   }}
                 />
               ))}
@@ -524,102 +581,145 @@ const HomePage = () => {
       </section>
 
       {/* ================================================================
-          APP DOWNLOAD
+          DOWNLOAD APP — Small Banner
       ================================================================ */}
-      <section style={{ background: 'white', padding: '36px 20px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', flexWrap: 'wrap' }}>
+      <section style={{ background: 'white', padding: '20px 20px' }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'center' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b' }}>📱 Download Our App</h2>
-            <p style={{ color: '#64748b', fontSize: '15px', maxWidth: '350px' }}>
-              Book appointments, track health, get reminders, and more.
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: '0' }}>📱 Download Our App</h2>
+            <p style={{ color: '#64748b', fontSize: '13px', margin: '2px 0 8px 0' }}>
+              Book appointments, track health, get reminders
             </p>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '12px', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
               <button
                 onClick={() => window.open('https://play.google.com', '_blank')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
               >
-                <FaGooglePlay size={20} /> Play Store
+                <FaGooglePlay size={16} /> Play Store
               </button>
               <button
                 onClick={() => window.open('https://www.apple.com/app-store/', '_blank')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
               >
-                <FaApple size={20} /> App Store
+                <FaApple size={16} /> App Store
               </button>
             </div>
           </div>
-          <div style={{ fontSize: '64px', opacity: 0.8 }}>📱</div>
+          <div style={{ fontSize: '48px', opacity: 0.7 }}>📱</div>
         </div>
       </section>
 
       {/* ================================================================
-          FOOTER
+          FOOTER — Complete with All Links
+          Columns: For Patients | For Providers | Company+Support+Legal | Resources+Contact
+          Social Icons + Bottom Bar
       ================================================================ */}
-      <footer style={{ background: '#0f172a', color: 'white', padding: '32px 20px 20px' }}>
+      <footer style={{ background: '#0f172a', color: 'white', padding: '28px 20px 16px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '24px', marginBottom: '20px' }}>
+          
+          {/* 4 Main Columns */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '16px' }}>
+            
+            {/* For Patients */}
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>🏥 HealthCare Hub</h3>
-              <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px' }}>India's Most Trusted Marketplace</p>
-              <p style={{ color: '#64748b', fontSize: '11px', marginTop: '12px' }}>© 2024 All Rights Reserved</p>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <a href="#" style={{ color: '#94a3b8' }}><FaFacebook size={16} /></a>
-                <a href="#" style={{ color: '#94a3b8' }}><FaTwitter size={16} /></a>
-                <a href="#" style={{ color: '#94a3b8' }}><FaInstagram size={16} /></a>
-                <a href="#" style={{ color: '#94a3b8' }}><FaLinkedin size={16} /></a>
-              </div>
-            </div>
-
-            <div>
-              <h4 style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>For Patients</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <li><Link to="/hospitals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>Find Doctors</Link></li>
-                <li><Link to="/diagnostics" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>Book Tests</Link></li>
-                <li><Link to="/emergency-search" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>Emergency</Link></li>
-                <li><Link to="/my-bookings" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>My Bookings</Link></li>
+              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>For Patients</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <li><Link to="/hospitals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Find Hospitals</Link></li>
+                <li><Link to="/ambulance" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Book Ambulance</Link></li>
+                <li><Link to="/online-doctor" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Online Doctor</Link></li>
+                <li><Link to="/diagnostics" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Lab Tests</Link></li>
+                <li><Link to="/my-bookings" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>My Bookings</Link></li>
+                <li><Link to="/emergency-search" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Emergency</Link></li>
               </ul>
             </div>
 
+            {/* For Providers */}
             <div>
-              <h4 style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>For Providers</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <li><Link to="/provider/choose-role" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>Register</Link></li>
-                <li><Link to="/provider/login" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>Login</Link></li>
+              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>For Providers</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <li><Link to="/provider/choose-role" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Register</Link></li>
+                <li><Link to="/provider/login" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Login</Link></li>
+                <li><Link to="/provider/dashboard" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Dashboard</Link></li>
+                <li><Link to="/partner" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Partner With Us</Link></li>
               </ul>
             </div>
 
+            {/* Company + Support + Legal Combined */}
             <div>
-              <h4 style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>About Us</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <li><Link to="/about" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>Our Story</Link></li>
-                <li><Link to="/blog" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>Blog</Link></li>
-                <li><Link to="/contact" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px' }}>Contact</Link></li>
+              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Company</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px 0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <li><Link to="/about" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>About Us</Link></li>
+                <li><Link to="/blog" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Blog</Link></li>
+                <li><Link to="/contact" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Contact</Link></li>
+                <li><Link to="/careers" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Careers</Link></li>
+                <li><Link to="/press" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Press</Link></li>
+              </ul>
+              
+              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Support</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px 0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <li><Link to="/help" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Help Center</Link></li>
+                <li><Link to="/faq" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>FAQ</Link></li>
+                <li><a href="#" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Live Chat</a></li>
+                <li><Link to="/grievance" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Grievance</Link></li>
+              </ul>
+
+              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Legal</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <li><Link to="/privacy" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Privacy Policy</Link></li>
+                <li><Link to="/terms" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Terms & Conditions</Link></li>
+                <li><Link to="/refund" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Refund Policy</Link></li>
+                <li><Link to="/cancellation" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Cancellation Policy</Link></li>
+                <li><Link to="/disclaimer" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Disclaimer</Link></li>
               </ul>
             </div>
 
+            {/* Resources + Contact */}
             <div>
-              <h4 style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>Contact Us</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}>
-                  <FaPhoneIcon size={14} /> +91-XXXXXXXXXX
+              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Resources</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px 0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <li><Link to="/directory" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Healthcare Directory</Link></li>
+                <li><Link to="/pcs-terms" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>PCS T&C</Link></li>
+                <li><Link to="/developers" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>Developers</Link></li>
+                <li><Link to="/api-docs" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '12px' }}>API Docs</Link></li>
+              </ul>
+
+              <h4 style={{ fontWeight: '600', marginBottom: '6px', fontSize: '13px', color: '#e2e8f0', margin: '0 0 6px 0' }}>Contact</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '12px' }}>
+                  <FaPhoneAlt size={11} /> +91-XXXXXXXXXX
                 </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}>
-                  <FaEnvelope size={14} /> support@healthcarehub.com
+                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '12px' }}>
+                  <FaEnvelope size={11} /> support@healthcarehub.com
                 </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}>
-                  <FaMapMarkerAlt size={14} /> Mumbai, India
+                <li style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '12px' }}>
+                  <FaMapMarkerAlt size={11} /> Mumbai, India
                 </li>
               </ul>
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid #1e293b', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <p style={{ color: '#64748b', fontSize: '13px' }}>© 2024 HealthCare Hub. All rights reserved.</p>
-            <div style={{ display: 'flex', gap: '20px', fontSize: '13px' }}>
-              <Link to="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy Policy</Link>
-              <Link to="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms & Conditions</Link>
-              <Link to="/refund" style={{ color: '#94a3b8', textDecoration: 'none' }}>Refund Policy</Link>
-            </div>
+          {/* Social Icons */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '12px', paddingTop: '12px', borderTop: '1px solid #1e293b' }}>
+            <a href="https://facebook.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaFacebook /></a>
+            <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaTwitter /></a>
+            <a href="https://linkedin.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaLinkedin /></a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaInstagram /></a>
+            <a href="https://youtube.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px' }}><FaYoutube /></a>
+            <a href="https://github.com" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', fontSize: '18px', textDecoration: 'none' }}>🐙</a>
+          </div>
+
+          {/* Bottom Bar */}
+          <div style={{ borderTop: '1px solid #1e293b', paddingTop: '10px', textAlign: 'center' }}>
+            <p style={{ color: '#64748b', fontSize: '12px', marginBottom: '4px', margin: '0 0 4px 0' }}>
+              🏥 HealthCare Hub — India's Most Trusted Healthcare Marketplace
+            </p>
+            <p style={{ color: '#475569', fontSize: '11px', margin: '0' }}>
+              © 2025 HealthCare Hub. All rights reserved. &nbsp;|&nbsp;
+              <Link to="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy Policy</Link> &nbsp;•&nbsp;
+              <Link to="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms & Conditions</Link> &nbsp;•&nbsp;
+              <Link to="/refund" style={{ color: '#94a3b8', textDecoration: 'none' }}>Refund Policy</Link> &nbsp;•&nbsp;
+              <Link to="/sitemap" style={{ color: '#94a3b8', textDecoration: 'none' }}>Sitemap</Link>
+            </p>
           </div>
         </div>
       </footer>
