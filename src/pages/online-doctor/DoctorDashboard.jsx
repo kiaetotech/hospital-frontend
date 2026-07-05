@@ -11,10 +11,26 @@ const DoctorDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [uploading, setUploading] = useState(false);
 
+  // ============================================
+  // 🆕 FEE SETTINGS STATE
+  // ============================================
+  const [feeSettings, setFeeSettings] = useState({
+    consultationFee: 500,
+    followUpFee: 200,
+    followUpWindowDays: 7,
+    freeFollowUps: 1,
+    emergencyConsultFee: 800,
+    consultationDuration: 15,
+    packagePrice: 0
+  });
+  const [feeLoading, setFeeLoading] = useState(false);
+  const [feeMessage, setFeeMessage] = useState('');
+
   useEffect(() => {
     const token = localStorage.getItem('doctorToken');
     if (!token) { navigate('/online-doctor/login'); return; }
     fetchDashboard();
+    fetchFeeSettings(); // 🆕 Fetch fee settings
   }, [navigate]);
 
   const fetchDashboard = async () => {
@@ -28,6 +44,48 @@ const DoctorDashboard = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============================================
+  // 🆕 FEE SETTINGS FUNCTIONS
+  // ============================================
+  const fetchFeeSettings = async () => {
+    try {
+      const token = localStorage.getItem('doctorToken');
+      const res = await api.get('/online-doctor/fee-settings', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success && res.data?.data) {
+        setFeeSettings(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching fee settings:', err);
+    }
+  };
+
+  const handleFeeChange = (field, value) => {
+    setFeeSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const saveFeeSettings = async () => {
+    setFeeLoading(true);
+    setFeeMessage('');
+    try {
+      const token = localStorage.getItem('doctorToken');
+      const res = await api.put('/online-doctor/fee-settings', feeSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success) {
+        setFeeMessage('✅ Fee settings saved successfully!');
+        setTimeout(() => setFeeMessage(''), 3000);
+      } else {
+        setFeeMessage('❌ ' + (res.data?.message || 'Error saving'));
+      }
+    } catch (err) {
+      setFeeMessage('❌ Error saving settings');
+    } finally {
+      setFeeLoading(false);
     }
   };
 
@@ -95,7 +153,7 @@ const DoctorDashboard = () => {
             { label: "Today's Appointments", value: dashboard?.todayCount || 0, icon: '📅', color: 'from-blue-400 to-blue-600' },
             { label: 'Total Consultations', value: dashboard?.totalConsultations || 0, icon: '✅', color: 'from-green-400 to-green-600' },
             { label: 'Total Earnings', value: `₹${dashboard?.totalEarnings || 0}`, icon: '💰', color: 'from-purple-400 to-purple-600' },
-            { label: 'Commission Rate', value: `${dashboard?.commissionPercentage || 25}%`, icon: '📊', color: 'from-orange-400 to-orange-600' },
+            { label: 'Commission Rate', value: `${dashboard?.commissionPercentage || 20}%`, icon: '📊', color: 'from-orange-400 to-orange-600' },
           ].map((stat) => (
             <div key={stat.label} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-6 text-white shadow-lg`}>
               <div className="text-2xl mb-2">{stat.icon}</div>
@@ -108,10 +166,10 @@ const DoctorDashboard = () => {
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="border-b flex overflow-x-auto">
-            {['overview', 'appointments', 'earnings', 'documents', 'analytics'].map((tab) => (
+            {['overview', 'appointments', 'fees', 'earnings', 'documents', 'analytics'].map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-6 py-4 font-medium text-sm capitalize whitespace-nowrap transition ${activeTab === tab ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
-                {tab}
+                {tab === 'fees' ? '💰 Fee Settings' : tab}
               </button>
             ))}
           </div>
@@ -127,8 +185,8 @@ const DoctorDashboard = () => {
                   <p className="text-sm text-gray-500">Your Commission Slab</p>
                   <p className="text-2xl font-bold text-blue-600">{(dashboard?.commissionSlab || 'DEFAULT').toUpperCase()}</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {dashboard?.commissionSlab === 'default' && 'Complete 50+ consultations with 4.2+ rating for Silver (22%)'}
-                    {dashboard?.commissionSlab === 'silver' && 'Complete 200+ consultations with 4.5+ rating for Gold (20%)'}
+                    {dashboard?.commissionSlab === 'default' && 'Complete 50+ consultations with 4.2+ rating for Silver (20%)'}
+                    {dashboard?.commissionSlab === 'silver' && 'Complete 200+ consultations with 4.5+ rating for Gold (18%)'}
                     {dashboard?.commissionSlab === 'gold' && 'Complete 500+ consultations with 4.8+ rating for Platinum (15%)'}
                     {dashboard?.commissionSlab === 'platinum' && 'Complete 1000+ consultations with 4.9+ rating for Diamond (12%)'}
                     {dashboard?.commissionSlab === 'diamond' && '🏆 You are at the highest tier!'}
@@ -161,6 +219,123 @@ const DoctorDashboard = () => {
                 ) : (
                   <p className="text-gray-500 text-center py-8">No appointments for today</p>
                 )}
+              </div>
+            )}
+
+            {/* ============================================ */}
+            {/* 🆕 FEE SETTINGS TAB */}
+            {/* ============================================ */}
+            {activeTab === 'fees' && (
+              <div>
+                <h3 className="font-bold text-gray-800 mb-1">💰 Fee Settings</h3>
+                <p className="text-gray-500 text-sm mb-6">Set your consultation fees. Patients will see these prices.</p>
+
+                {/* Message */}
+                {feeMessage && (
+                  <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${feeMessage.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    {feeMessage}
+                  </div>
+                )}
+
+                {/* Commission Info */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+                  <span className="text-2xl">📊</span>
+                  <div>
+                    <p className="font-semibold text-blue-800 text-sm">Platform Commission: {dashboard?.commissionPercentage || 20}%</p>
+                    <p className="text-blue-600 text-xs">Tier: {(dashboard?.commissionSlab || 'default').toUpperCase()} • Higher ratings = Lower commission</p>
+                  </div>
+                </div>
+
+                {/* Consultation Fees */}
+                <div className="bg-white border rounded-xl p-5 mb-4">
+                  <h4 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">💬 Consultation Fees</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Consultation Fee (₹)</label>
+                      <input type="number" value={feeSettings.consultationFee} onChange={(e) => handleFeeChange('consultationFee', Number(e.target.value))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" min="0" />
+                      <p className="text-xs text-gray-400 mt-1">Standard video consultation</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Follow-up Fee (₹)</label>
+                      <input type="number" value={feeSettings.followUpFee} onChange={(e) => handleFeeChange('followUpFee', Number(e.target.value))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" min="0" />
+                      <p className="text-xs text-gray-400 mt-1">Discounted rate for repeat patients</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Emergency Fee (₹)</label>
+                      <input type="number" value={feeSettings.emergencyConsultFee} onChange={(e) => handleFeeChange('emergencyConsultFee', Number(e.target.value))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" min="0" />
+                      <p className="text-xs text-gray-400 mt-1">Priority queue, faster response</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Package Price (₹) <span className="text-gray-400">— Optional</span></label>
+                      <input type="number" value={feeSettings.packagePrice} onChange={(e) => handleFeeChange('packagePrice', Number(e.target.value))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" min="0" placeholder="0 = No package" />
+                      <p className="text-xs text-gray-400 mt-1">
+                        {feeSettings.packagePrice > 0 
+                          ? `Bundle saves ₹${feeSettings.consultationFee + feeSettings.followUpFee - feeSettings.packagePrice}`
+                          : 'Set to offer Consult + Follow-up bundle'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Follow-up Policy */}
+                <div className="bg-white border rounded-xl p-5 mb-4">
+                  <h4 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">🔄 Follow-up Policy</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Follow-up Window (Days)</label>
+                      <input type="number" value={feeSettings.followUpWindowDays} onChange={(e) => handleFeeChange('followUpWindowDays', Number(e.target.value))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" min="1" max="30" />
+                      <p className="text-xs text-gray-400 mt-1">Patient gets follow-up rate within {feeSettings.followUpWindowDays} days</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Free Follow-ups Per Patient</label>
+                      <input type="number" value={feeSettings.freeFollowUps} onChange={(e) => handleFeeChange('freeFollowUps', Number(e.target.value))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" min="0" max="5" />
+                      <p className="text-xs text-gray-400 mt-1">
+                        {feeSettings.freeFollowUps === 0 ? 'No free follow-ups' : `${feeSettings.freeFollowUps} free follow-up(s) per patient`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Duration */}
+                <div className="bg-white border rounded-xl p-5 mb-4">
+                  <h4 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">⏱️ Duration</h4>
+                  <div className="max-w-xs">
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Consultation Duration (Minutes)</label>
+                    <input type="number" value={feeSettings.consultationDuration} onChange={(e) => handleFeeChange('consultationDuration', Number(e.target.value))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" min="5" max="60" step="5" />
+                    <p className="text-xs text-gray-400 mt-1">5-60 minutes</p>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 mb-6">
+                  <h4 className="font-semibold text-gray-700 mb-3">👁️ Patient Will See</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <p className="text-xs text-gray-500">Consultation</p>
+                      <p className="text-lg font-bold text-gray-800">₹{feeSettings.consultationFee}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <p className="text-xs text-gray-500">Follow-up</p>
+                      <p className="text-lg font-bold text-green-600">{feeSettings.followUpFee > 0 ? `₹${feeSettings.followUpFee}` : 'FREE'}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <p className="text-xs text-gray-500">Emergency</p>
+                      <p className="text-lg font-bold text-red-600">₹{feeSettings.emergencyConsultFee}</p>
+                    </div>
+                    {feeSettings.packagePrice > 0 && (
+                      <div className="bg-white rounded-lg p-3 text-center border-2 border-green-500">
+                        <p className="text-xs text-gray-500">Package</p>
+                        <p className="text-lg font-bold text-green-600">₹{feeSettings.packagePrice}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <button onClick={saveFeeSettings} disabled={feeLoading}
+                  className={`px-6 py-3 rounded-xl text-white font-semibold text-sm ${feeLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                  {feeLoading ? 'Saving...' : '💾 Save Fee Settings'}
+                </button>
               </div>
             )}
 
@@ -242,13 +417,13 @@ const DoctorDashboard = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Current Rate</span>
-                      <span className="font-bold">{dashboard?.commissionPercentage || 25}%</span>
+                      <span className="font-bold">{dashboard?.commissionPercentage || 20}%</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Next Tier</span>
                       <span className="font-bold text-green-600">
-                        {dashboard?.commissionSlab === 'default' && 'Silver (22%) - Need 50+ consults & 4.2+ rating'}
-                        {dashboard?.commissionSlab === 'silver' && 'Gold (20%) - Need 200+ consults & 4.5+ rating'}
+                        {dashboard?.commissionSlab === 'default' && 'Silver (20%) - Need 50+ consults & 4.2+ rating'}
+                        {dashboard?.commissionSlab === 'silver' && 'Gold (18%) - Need 200+ consults & 4.5+ rating'}
                         {dashboard?.commissionSlab === 'gold' && 'Platinum (15%) - Need 500+ consults & 4.8+ rating'}
                         {dashboard?.commissionSlab === 'platinum' && 'Diamond (12%) - Need 1000+ consults & 4.9+ rating'}
                         {dashboard?.commissionSlab === 'diamond' && '🏆 Maximum tier achieved!'}

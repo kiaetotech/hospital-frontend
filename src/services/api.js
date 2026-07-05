@@ -9,7 +9,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token') || localStorage.getItem('providerToken');
+  const token = localStorage.getItem('token') || localStorage.getItem('providerToken') || localStorage.getItem('doctorToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -27,6 +27,7 @@ api.interceptors.response.use(
       const currentPath = window.location.pathname;
       localStorage.removeItem('token');
       localStorage.removeItem('providerToken');
+      localStorage.removeItem('doctorToken');
       if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
         window.location.href = '/login';
       }
@@ -294,6 +295,7 @@ export const getProviderStats = () => api.get('/provider-auth/stats');
 export const searchOnlineDoctors = (params) => api.get('/online-doctor/search', { params });
 export const getFeaturedOnlineDoctors = () => api.get('/online-doctor/doctors/featured');
 export const getOnlineDoctorById = (id) => api.get(`/online-doctor/doctor/${id}`);
+export const getDoctorPricing = (doctorId, patientId) => api.get(`/online-doctor/${doctorId}/pricing${patientId ? `?patientId=${patientId}` : ''}`);
 export const bookOnlineConsult = (data) => api.post('/online-doctor/book', data);
 export const getOnlineConsultations = () => api.get('/online-doctor/my-bookings');
 export const getOnlineConsultById = (id) => api.get(`/online-doctor/booking/${id}`);
@@ -305,8 +307,19 @@ export const getOnlineDoctorProfile = () => api.get('/online-doctor/doctor/profi
 export const updateOnlineDoctorProfile = (data) => api.put('/online-doctor/doctor/profile', data);
 export const updateOnlineDoctorAvailability = (data) => api.put('/online-doctor/doctor/availability', data);
 export const getOnlineDoctorDashboard = () => api.get('/online-doctor/doctor/dashboard');
+export const getDoctorFeeSettings = () => api.get('/online-doctor/fee-settings');
+export const updateDoctorFeeSettings = (data) => api.put('/online-doctor/fee-settings', data);
 export const getPendingOnlineDoctors = () => api.get('/online-doctor/admin/doctors/pending');
 export const getAllOnlineDoctors = () => api.get('/online-doctor/admin/doctors');
 export const verifyOnlineDoctor = (id, data) => api.put(`/online-doctor/admin/doctor/${id}/verify`, data);
+export const autoGenerateSlots = (data) => api.post('/online-doctor/doctor/auto-generate-slots', data);
+export const getDoctorAnalytics = (params) => api.get('/online-doctor/doctor/analytics', { params });
+export const sendConsultReminder = (data) => api.post('/online-doctor/send-reminder', data);
+export const savePrescription = (data) => api.post('/online-doctor/prescription', data);
+export const completeConsultation = (id) => api.put(`/online-doctor/booking/${id}/complete`);
+export const doctorForgotPassword = (data) => api.post('/online-doctor/doctor/forgot-password', data);
+export const doctorResetPassword = (token, data) => api.post(`/online-doctor/doctor/reset-password/${token}`, data);
+export const doctorSendOTP = (data) => api.post('/online-doctor/doctor/send-otp', data);
+export const doctorVerifyOTP = (data) => api.post('/online-doctor/doctor/verify-otp', data);
 
 export default api;

@@ -185,6 +185,7 @@ import OnlineDoctorLogin from './pages/online-doctor/DoctorLogin';
 import OnlineDoctorDashboard from './pages/online-doctor/DoctorDashboard';
 import ConsultHistory from './pages/online-doctor/ConsultHistory';
 import ResetPassword from './pages/online-doctor/ResetPassword';
+import SymptomTriage from './pages/online-doctor/SymptomTriage';
 
 // ============================================
 // 🚑 AMBULANCE BLITZ RESPONSE IMPORTS (NEW)
@@ -380,6 +381,7 @@ function App() {
           <Route path="/online-doctor/dashboard" element={<OnlineDoctorDashboard />} />
           <Route path="/online-doctor/history" element={<ConsultHistory />} />
           <Route path="/online-doctor/reset-password/:token" element={<ResetPassword />} />
+	  <Route path="/online-doctor/triage" element={<SymptomTriage />} />
 
           {/* OLD ROUTES - Redirected */}
           <Route path="/teleconsult" element={<OnlineDoctorHub />} />
