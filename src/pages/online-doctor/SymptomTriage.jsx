@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../../services/api';
-import { FaSearch, FaUserMd, FaExclamationTriangle, FaLightbulb, FaArrowRight } from 'react-icons/fa';
+import { FaSearch, FaUserMd, FaExclamationTriangle, FaLightbulb, FaArrowRight, FaBrain } from 'react-icons/fa';
 
 const SymptomTriage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [symptoms, setSymptoms] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -15,29 +16,53 @@ const SymptomTriage = () => {
     'Back pain', 'Anxiety and stress', 'Cough and cold', 'Joint pain'
   ];
 
-  const handleTriage = async () => {
-    if (!symptoms.trim() || symptoms.trim().length < 3) {
-      setError('Please describe your symptoms in more detail');
-      return;
+  // Auto-fill from URL params (from search bar)
+  useEffect(() => {
+    const q = searchParams.get('symptoms');
+    if (q) {
+      setSymptoms(q);
+      // Auto-analyze after a short delay
+      const timer = setTimeout(() => handleTriageWithText(q), 300);
+      return () => clearTimeout(timer);
     }
+  }, [searchParams]);
 
+  const handleTriageWithText = async (text) => {
+    if (!text || text.trim().length < 2) return;
     setLoading(true);
     setError('');
     setResult(null);
-
     try {
-      const res = await api.post('/online-doctor/triage', { symptoms });
+      const res = await api.post('/online-doctor/triage', { symptoms: text.trim() });
       if (res.data?.success) {
         setResult(res.data.data);
       } else {
         setError(res.data?.message || 'Unable to analyze symptoms');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Error analyzing symptoms. Please try again.');
+      console.error('Triage error:', err);
+      setError('Error connecting to AI service. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleTriage = async () => {
+    if (!symptoms.trim() || symptoms.trim().length < 2) {
+      setError('Please describe your symptoms in more detail');
+      return;
+    }
+    await handleTriageWithText(symptoms);
+  };
+
+  // Check if result uses new AI format or old format
+  const isNewFormat = result && !result.recommendation;
+  const recommendation = isNewFormat ? {
+    specialty: result.specialty,
+    confidence: result.confidence,
+    estimatedUrgency: result.urgencyLevel,
+    action: result.isEmergency ? result.action : `Book a ${result.specialty} consultation`
+  } : result?.recommendation;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -71,7 +96,7 @@ const SymptomTriage = () => {
             {commonSymptoms.map((s) => (
               <button
                 key={s}
-                onClick={() => setSymptoms(s)}
+                onClick={() => { setSymptoms(s); setError(''); }}
                 className="px-3 py-1.5 bg-gray-100 hover:bg-blue-50 hover:text-blue-600 rounded-full text-xs transition"
               >
                 {s}
@@ -93,9 +118,9 @@ const SymptomTriage = () => {
             }`}
           >
             {loading ? (
-              <>⏳ Analyzing symptoms...</>
+              <>⏳ Analyzing with AI...</>
             ) : (
-              <><FaSearch /> Analyze Symptoms</>
+              <><FaBrain /> Analyze Symptoms</>
             )}
           </button>
 
@@ -114,7 +139,7 @@ const SymptomTriage = () => {
                   <FaExclamationTriangle className="text-red-600 text-2xl" />
                   <h3 className="font-bold text-red-800 text-lg">⚠️ Medical Emergency Detected</h3>
                 </div>
-                <p className="text-red-700 mb-4">{result.recommendation?.action}</p>
+                <p className="text-red-700 mb-2">{result.emergencyReason || recommendation?.action}</p>
                 <button
                   onClick={() => navigate('/emergency-search')}
                   className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold"
@@ -125,28 +150,28 @@ const SymptomTriage = () => {
             )}
 
             {/* Recommendation */}
-            {!result.isEmergency && result.recommendation && (
+            {!result.isEmergency && recommendation && (
               <div className="bg-white rounded-2xl shadow-sm p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl">🏥</div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-lg">{result.recommendation.specialty}</h3>
+                    <h3 className="font-bold text-gray-800 text-lg">{recommendation.specialty}</h3>
                     <p className="text-gray-500 text-sm">
-                      Confidence: {result.recommendation.confidence} • 
-                      Urgency: {result.recommendation.estimatedUrgency}
+                      Confidence: {recommendation.confidence} • Method: {result.method || 'AI'}
+                      {recommendation.estimatedUrgency && <> • Urgency: {recommendation.estimatedUrgency}</>}
                     </p>
                   </div>
                 </div>
 
-                <p className="text-gray-600 mb-4">{result.message}</p>
+                <p className="text-gray-600 mb-4">{result.message || recommendation.action}</p>
 
-                {/* All possible specialties */}
-                {result.allPossibleSpecialties?.length > 1 && (
+                {/* Possible Conditions */}
+                {result.possibleConditions?.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-sm text-gray-500 mb-2">Other possible specialties:</p>
+                    <p className="text-sm text-gray-500 mb-2">Possible conditions:</p>
                     <div className="flex flex-wrap gap-2">
-                      {result.allPossibleSpecialties.map((s, i) => (
-                        <span key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">{s}</span>
+                      {result.possibleConditions.map((c, i) => (
+                        <span key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">{c}</span>
                       ))}
                     </div>
                   </div>
@@ -167,6 +192,18 @@ const SymptomTriage = () => {
                     </ul>
                   </div>
                 )}
+
+                {/* Recommended Tests */}
+                {result.recommendedTests?.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-500 mb-2">Recommended tests:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {result.recommendedTests.map((t, i) => (
+                        <span key={i} className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs">🧪 {t}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -175,9 +212,8 @@ const SymptomTriage = () => {
               <div className="bg-white rounded-2xl shadow-sm p-6">
                 <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <FaUserMd className="text-blue-600" /> 
-                  Available {result.recommendation?.specialty}s ({result.doctorsCount}+)
+                  Available {recommendation?.specialty || result.specialty}s
                 </h3>
-                
                 <div className="space-y-3">
                   {result.availableDoctors.slice(0, 4).map((doc) => (
                     <div
@@ -199,40 +235,27 @@ const SymptomTriage = () => {
                   ))}
                 </div>
 
-                {result.searchUrl && (
-                  <button
-                    onClick={() => navigate(result.searchUrl)}
-                    className="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition"
-                  >
-                    View All {result.recommendation?.specialty}s →
-                  </button>
-                )}
+                <button
+                  onClick={() => navigate(`/online-doctor/search?specialty=${encodeURIComponent(recommendation?.specialty || result.specialty || 'General Medicine')}`)}
+                  className="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition"
+                >
+                  View All {(recommendation?.specialty || result.specialty || 'General Medicine')}s →
+                </button>
               </div>
             )}
 
-            {/* Matched Symptoms Detail */}
-            {result.matches?.length > 0 && (
+            {/* Additional Notes */}
+            {result.additionalNotes && (
               <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h3 className="font-bold text-gray-800 mb-3">📊 Analysis Details</h3>
-                <div className="space-y-2">
-                  {result.matches.map((match, i) => (
-                    <div key={i} className="flex justify-between items-center py-2 border-b last:border-0">
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">{match.condition}</span>
-                        <span className="text-xs text-gray-400 ml-2">→ {match.specialty}</span>
-                      </div>
-                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                        match.confidence === 'High' ? 'bg-green-100 text-green-700' :
-                        match.confidence === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {match.confidence}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <h3 className="font-bold text-gray-800 mb-2">📝 Additional Notes</h3>
+                <p className="text-sm text-gray-600">{result.additionalNotes}</p>
               </div>
             )}
+
+            {/* Disclaimer */}
+            <p className="text-xs text-gray-400 text-center">
+              {result.disclaimer || 'This is AI-assisted triage. Always consult a qualified doctor for accurate diagnosis.'}
+            </p>
           </>
         )}
       </div>
