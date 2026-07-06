@@ -2,15 +2,189 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { searchOnlineDoctors } from '../../services/api';
 
+// ============================================
+// MEDICAL MASTER DATA — Disease/Keyword → Specialty
+// ============================================
+const DISEASE_SPECIALTY_MAP = {
+  // General
+  'fever': 'General Physician', 'cold': 'General Physician', 'cough': 'General Physician',
+  'flu': 'General Physician', 'headache': 'General Physician', 'body ache': 'General Physician',
+  'weakness': 'General Physician', 'fatigue': 'General Physician', 'tired': 'General Physician',
+  'sore throat': 'General Physician', 'infection': 'General Physician', 'viral': 'General Physician',
+  'allergy': 'General Physician', 'throat': 'General Physician',
+  
+  // Heart
+  'chest pain': 'Cardiologist', 'heart': 'Cardiologist', 'bp': 'Cardiologist',
+  'blood pressure': 'Cardiologist', 'palpitation': 'Cardiologist', 'cholesterol': 'Cardiologist',
+  'angiogram': 'Cardiologist', 'hypertension': 'Cardiologist', 'arrhythmia': 'Cardiologist',
+  'heart attack': 'Cardiologist', 'cardiac': 'Cardiologist', 'valve': 'Cardiologist',
+  
+  // Brain & Nerves
+  'migraine': 'Neurologist', 'seizure': 'Neurologist', 'epilepsy': 'Neurologist',
+  'paralysis': 'Neurologist', 'stroke': 'Neurologist', 'tremor': 'Neurologist',
+  'parkinson': 'Neurologist', 'memory': 'Neurologist', 'numbness': 'Neurologist',
+  'tingling': 'Neurologist', 'neuropathy': 'Neurologist', 'brain tumor': 'Neurologist',
+  'multiple sclerosis': 'Neurologist', 'alzheimer': 'Neurologist',
+  
+  // Bones & Joints
+  'fracture': 'Orthopedic', 'back pain': 'Orthopedic', 'knee pain': 'Orthopedic',
+  'joint pain': 'Orthopedic', 'arthritis': 'Orthopedic', 'spine': 'Orthopedic',
+  'neck pain': 'Orthopedic', 'shoulder': 'Orthopedic', 'sciatica': 'Orthopedic',
+  'spondylitis': 'Orthopedic', 'gout': 'Orthopedic', 'osteoporosis': 'Orthopedic',
+  'hip pain': 'Orthopedic', 'ankle': 'Orthopedic', 'wrist': 'Orthopedic',
+  'knee replacement': 'Orthopedic', 'hip replacement': 'Orthopedic',
+  'slip disc': 'Orthopedic', 'disc bulge': 'Orthopedic', 'carpal tunnel': 'Orthopedic',
+  
+  // Skin
+  'acne': 'Dermatologist', 'pimple': 'Dermatologist', 'eczema': 'Dermatologist',
+  'psoriasis': 'Dermatologist', 'ringworm': 'Dermatologist', 'fungal': 'Dermatologist',
+  'hair loss': 'Dermatologist', 'dandruff': 'Dermatologist', 'mole': 'Dermatologist',
+  'melanoma': 'Dermatologist', 'skin rash': 'Dermatologist', 'itching': 'Dermatologist',
+  'white patch': 'Dermatologist', 'dark spot': 'Dermatologist', 'vitiligo': 'Dermatologist',
+  'urticaria': 'Dermatologist', 'warts': 'Dermatologist', 'scar': 'Dermatologist',
+  
+  // Women
+  'pregnancy': 'Gynecologist', 'pregnant': 'Gynecologist', 'period': 'Gynecologist',
+  'menstrual': 'Gynecologist', 'pcos': 'Gynecologist', 'fibroids': 'Gynecologist',
+  'menopause': 'Gynecologist', 'endometriosis': 'Gynecologist', 'infertility': 'Gynecologist',
+  'ivf': 'Gynecologist', 'pap smear': 'Gynecologist', 'cervical': 'Gynecologist',
+  'vaginal': 'Gynecologist', 'breast': 'Gynecologist', 'ovary': 'Gynecologist',
+  'uterus': 'Gynecologist', 'hysterectomy': 'Gynecologist', 'c-section': 'Gynecologist',
+  
+  // Children
+  'child': 'Pediatrician', 'baby': 'Pediatrician', 'infant': 'Pediatrician',
+  'vaccination': 'Pediatrician', 'growth': 'Pediatrician', 'newborn': 'Pediatrician',
+  'pediatric': 'Pediatrician', 'neonatal': 'Neonatologist', 'premature': 'Neonatologist',
+  
+  // Stomach & Digestion
+  'acidity': 'Gastroenterologist', 'gas': 'Gastroenterologist', 'bloating': 'Gastroenterologist',
+  'constipation': 'Gastroenterologist', 'diarrhea': 'Gastroenterologist', 'jaundice': 'Gastroenterologist',
+  'hepatitis': 'Gastroenterologist', 'ulcer': 'Gastroenterologist', 'hernia': 'Gastroenterologist',
+  'appendicitis': 'Gastroenterologist', 'gallstones': 'Gastroenterologist', 'ibs': 'Gastroenterologist',
+  'fatty liver': 'Gastroenterologist', 'cirrhosis': 'Gastroenterologist', 'gerd': 'Gastroenterologist',
+  'stomach pain': 'Gastroenterologist', 'nausea': 'Gastroenterologist', 'vomiting': 'Gastroenterologist',
+  'digestion': 'Gastroenterologist', 'liver': 'Gastroenterologist', 'pancreas': 'Gastroenterologist',
+  'colon': 'Gastroenterologist', 'endoscopy': 'Gastroenterologist', 'colonoscopy': 'Gastroenterologist',
+  
+  // Lungs & Breathing
+  'asthma': 'Pulmonologist', 'wheezing': 'Pulmonologist', 'bronchitis': 'Pulmonologist',
+  'pneumonia': 'Pulmonologist', 'tuberculosis': 'Pulmonologist', 'tb': 'Pulmonologist',
+  'copd': 'Pulmonologist', 'breathing': 'Pulmonologist', 'lung': 'Pulmonologist',
+  'sleep apnea': 'Sleep Specialist', 'snoring': 'Sleep Specialist', 'insomnia': 'Sleep Specialist',
+  'phlegm': 'Pulmonologist', 'chest congestion': 'Pulmonologist', 'respiratory': 'Pulmonologist',
+  
+  // Diabetes & Hormones
+  'diabetes': 'Endocrinologist', 'sugar': 'Endocrinologist', 'thyroid': 'Endocrinologist',
+  'weight gain': 'Endocrinologist', 'weight loss': 'Endocrinologist', 'obesity': 'Endocrinologist',
+  'hba1c': 'Endocrinologist', 'glucose': 'Endocrinologist', 'insulin': 'Endocrinologist',
+  'hormone': 'Endocrinologist', 'metabolism': 'Endocrinologist', 'goiter': 'Endocrinologist',
+  
+  // Kidney & Urinary
+  'kidney stone': 'Urologist', 'urine': 'Urologist', 'burning urination': 'Urologist',
+  'frequent urination': 'Urologist', 'prostate': 'Urologist', 'bladder': 'Urologist',
+  'dialysis': 'Nephrologist', 'renal': 'Nephrologist', 'kidney failure': 'Nephrologist',
+  'nephritis': 'Nephrologist', 'ckd': 'Nephrologist', 'creatinine': 'Nephrologist',
+  'uti': 'Urologist', 'blood in urine': 'Urologist', 'incontinence': 'Urologist',
+  
+  // Eye
+  'cataract': 'Ophthalmologist', 'glaucoma': 'Ophthalmologist', 'vision': 'Ophthalmologist',
+  'blurry': 'Ophthalmologist', 'eye pain': 'Ophthalmologist', 'red eye': 'Ophthalmologist',
+  'conjunctivitis': 'Ophthalmologist', 'lasik': 'Ophthalmologist', 'refraction': 'Ophthalmologist',
+  'double vision': 'Ophthalmologist', 'dry eye': 'Ophthalmologist', 'retina': 'Ophthalmologist',
+  
+  // ENT
+  'ear pain': 'ENT Specialist', 'hearing': 'ENT Specialist', 'tinnitus': 'ENT Specialist',
+  'sinus': 'ENT Specialist', 'tonsils': 'ENT Specialist', 'vertigo': 'ENT Specialist',
+  'dizziness': 'ENT Specialist', 'nose bleed': 'ENT Specialist', 'ear discharge': 'ENT Specialist',
+  'hoarseness': 'ENT Specialist', 'voice': 'ENT Specialist', 'adenoids': 'ENT Specialist',
+  
+  // Dental
+  'tooth': 'Dentist', 'teeth': 'Dentist', 'gum': 'Dentist', 'cavity': 'Dentist',
+  'dental': 'Dentist', 'braces': 'Dentist', 'root canal': 'Dentist', 'wisdom tooth': 'Dentist',
+  'jaw pain': 'Dentist', 'mouth ulcer': 'Dentist', 'bleeding gum': 'Dentist',
+  
+  // Mental Health
+  'anxiety': 'Psychiatrist', 'depression': 'Psychiatrist', 'stress': 'Psychiatrist',
+  'insomnia': 'Psychiatrist', 'panic': 'Psychiatrist', 'ocd': 'Psychiatrist',
+  'bipolar': 'Psychiatrist', 'schizophrenia': 'Psychiatrist', 'ptsd': 'Psychiatrist',
+  'mood': 'Psychiatrist', 'phobia': 'Psychiatrist', 'eating disorder': 'Psychiatrist',
+  'addiction': 'Addiction Psychiatrist', 'alcohol': 'Addiction Psychiatrist',
+  'smoking': 'Addiction Psychiatrist', 'drug': 'Addiction Psychiatrist',
+  'deaddiction': 'Addiction Psychiatrist', 'substance': 'Addiction Psychiatrist',
+  
+  // Cancer
+  'cancer': 'Oncologist', 'tumor': 'Oncologist', 'lump': 'Oncologist',
+  'chemotherapy': 'Oncologist', 'radiation': 'Oncologist', 'malignancy': 'Oncologist',
+  'metastasis': 'Oncologist', 'biopsy': 'Oncologist', 'mammogram': 'Oncologist',
+  
+  // Blood
+  'anemia': 'Hematologist', 'blood disorder': 'Hematologist', 'clotting': 'Hematologist',
+  'leukemia': 'Hematologist', 'lymphoma': 'Hematologist', 'myeloma': 'Hematologist',
+  'hemoglobin': 'Hematologist', 'platelet': 'Hematologist', 'thalassemia': 'Hematologist',
+  
+  // Infections
+  'dengue': 'Infectious Disease', 'malaria': 'Infectious Disease', 'typhoid': 'Infectious Disease',
+  'covid': 'Infectious Disease', 'chickenpox': 'Infectious Disease', 'hiv': 'Infectious Disease',
+  'herpes': 'Infectious Disease', 'meningitis': 'Infectious Disease', 'sepsis': 'Infectious Disease',
+  'chikungunya': 'Infectious Disease', 'leptospirosis': 'Infectious Disease',
+  
+  // Rheumatology
+  'rheumatoid': 'Rheumatologist', 'lupus': 'Rheumatologist', 'fibromyalgia': 'Rheumatologist',
+  'autoimmune': 'Rheumatologist', 'scleroderma': 'Rheumatologist', 'vasculitis': 'Rheumatologist',
+  
+  // Surgery
+  'surgery': 'General Surgeon', 'appendicitis surgery': 'General Surgeon',
+  'gallbladder removal': 'General Surgeon', 'hernia repair': 'General Surgeon',
+  'thyroid surgery': 'General Surgeon', 'lipoma': 'General Surgeon',
+  'plastic': 'Plastic Surgeon', 'cosmetic': 'Plastic Surgeon', 'liposuction': 'Plastic Surgeon',
+  'rhinoplasty': 'Plastic Surgeon', 'facelift': 'Plastic Surgeon',
+  
+  // Other Specialties
+  'diet': 'Nutritionist', 'nutrition': 'Nutritionist', 'weight loss diet': 'Nutritionist',
+  'vitamin': 'Nutritionist', 'supplement': 'Nutritionist', 'meal plan': 'Nutritionist',
+  'physiotherapy': 'Physiotherapist', 'rehab': 'Physiotherapist', 'physio': 'Physiotherapist',
+  'sports injury': 'Sports Medicine', 'sprain': 'Sports Medicine', 'strain': 'Sports Medicine',
+  'ayurveda': 'Ayurvedic Doctor', 'panchakarma': 'Ayurvedic Doctor', 'herbs': 'Ayurvedic Doctor',
+  'homeopathy': 'Homeopathic Doctor', 'natural': 'Homeopathic Doctor',
+  'sex': 'Sexologist', 'std': 'Sexologist', 'erectile': 'Sexologist', 'impotence': 'Sexologist',
+  'xray': 'Radiologist', 'mri': 'Radiologist', 'ct scan': 'Radiologist',
+  'ultrasound': 'Radiologist', 'imaging': 'Radiologist', 'mammography': 'Radiologist',
+  'elderly': 'Geriatrician', 'dementia': 'Geriatrician', 'aging': 'Geriatrician',
+  'speech': 'Speech Therapist', 'stammering': 'Speech Therapist', 'stuttering': 'Speech Therapist',
+  'lab test': 'Pathologist', 'blood test': 'Pathologist', 'pathology': 'Pathologist',
+  'occupational therapy': 'Occupational Therapist', 'disability': 'Occupational Therapist',
+  'chiropractic': 'Chiropractor', 'posture': 'Chiropractor', 'spine alignment': 'Chiropractor',
+  'chronic pain': 'Pain Management', 'nerve pain': 'Pain Management',
+};
+
 const DoctorSearch = () => {
   const [searchParams] = useSearchParams();
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
 
+  // Get URL params
+  const urlQ = searchParams.get('q') || '';
+  const urlSpecialty = searchParams.get('specialty') || '';
+
+  // Smart detection: if q contains a disease keyword, map to specialty
+  let detectedSpecialty = urlSpecialty;
+  if (urlQ && !urlSpecialty) {
+    const qLower = urlQ.toLowerCase();
+    let bestMatch = '';
+    let bestLen = 0;
+    for (const [keyword, specialty] of Object.entries(DISEASE_SPECIALTY_MAP)) {
+      if (qLower.includes(keyword) && keyword.length > bestLen) {
+        bestMatch = specialty;
+        bestLen = keyword.length;
+      }
+    }
+    if (bestMatch) detectedSpecialty = bestMatch;
+  }
+
   const [filters, setFilters] = useState({
-    q: searchParams.get('q') || '',
-    specialty: searchParams.get('specialty') || '',
+    q: urlQ,
+    specialty: detectedSpecialty,
     language: '',
     gender: '',
     minExperience: '',
@@ -21,16 +195,31 @@ const DoctorSearch = () => {
     page: 1,
   });
 
+  const [searchDisplay, setSearchDisplay] = useState(detectedSpecialty || urlQ || '');
+  const [resultInfo, setResultInfo] = useState('');
+
   useEffect(() => {
     fetchDoctors();
   }, [filters]);
+
+  useEffect(() => {
+    if (detectedSpecialty && urlQ) {
+      setResultInfo(`Showing ${detectedSpecialty}s for "${urlQ}"`);
+    } else if (detectedSpecialty) {
+      setResultInfo(`Showing ${detectedSpecialty}s`);
+    } else if (urlQ) {
+      setResultInfo(`Search results for "${urlQ}"`);
+    }
+  }, [detectedSpecialty, urlQ]);
 
   const fetchDoctors = async () => {
     setLoading(true);
     try {
       const params = {};
-      if (filters.q) params.specialty = filters.q;
+      // Use specialty for filtering
       if (filters.specialty) params.specialty = filters.specialty;
+      // Also pass search text
+      if (filters.q) params.search = filters.q;
       if (filters.language) params.language = filters.language;
       if (filters.gender) params.gender = filters.gender;
       if (filters.minExperience) params.minExperience = filters.minExperience;
@@ -39,6 +228,7 @@ const DoctorSearch = () => {
       if (filters.available) params.available = filters.available;
       if (filters.sort) params.sort = filters.sort;
       params.page = filters.page;
+      params.limit = 10;
 
       const response = await searchOnlineDoctors(params);
       setDoctors(response.data?.data || []);
@@ -52,6 +242,8 @@ const DoctorSearch = () => {
 
   const clearFilters = () => {
     setFilters({ q: '', specialty: '', language: '', gender: '', minExperience: '', maxFee: '', minRating: '', available: '', sort: 'rating', page: 1 });
+    setSearchDisplay('');
+    setResultInfo('');
   };
 
   return (
@@ -60,6 +252,7 @@ const DoctorSearch = () => {
         <div className="max-w-6xl mx-auto px-4 py-4">
           <Link to="/online-doctor" className="text-blue-600 hover:underline text-sm">← Back</Link>
           <h1 className="text-2xl font-bold text-gray-800 mt-1">Find a Doctor</h1>
+          {resultInfo && <p className="text-sm text-green-600 font-medium mt-1">{resultInfo}</p>}
         </div>
       </div>
 
@@ -74,6 +267,10 @@ const DoctorSearch = () => {
               </h3>
 
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Search</label>
+                  <input type="text" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value, page: 1 })} placeholder="Doctor name, disease..." className="w-full border-2 rounded-xl px-4 py-2.5 text-sm focus:border-blue-400 focus:outline-none" />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Specialty</label>
                   <input type="text" value={filters.specialty} onChange={(e) => setFilters({ ...filters, specialty: e.target.value, page: 1 })} placeholder="e.g., Dermatologist" className="w-full border-2 rounded-xl px-4 py-2.5 text-sm focus:border-blue-400 focus:outline-none" />
