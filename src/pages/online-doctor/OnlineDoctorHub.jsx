@@ -83,9 +83,98 @@ const OnlineDoctorHub = () => {
   const handleSearch = () => {
     const q = searchQuery.trim();
     if (!q) return;
-    const symptomWords = ['pain', 'fever', 'cough', 'cold', 'headache', 'rash', 'itching', 'vomit', 'nausea', 'tired', 'bleeding', 'swelling', 'symptom', 'ache', 'sore', 'infection', 'allergy', 'burning', 'cramp', 'dizzy', 'fatigue'];
-    if (symptomWords.some(k => q.toLowerCase().includes(k))) {
-      navigate(`/online-doctor/triage?symptoms=${encodeURIComponent(q)}`);
+    
+    // Map common disease/condition keywords to specialties using medical knowledge
+    const diseaseToSpecialty = {
+      // Heart
+      'heart': 'Cardiologist', 'chest pain': 'Cardiologist', 'bp': 'Cardiologist', 'blood pressure': 'Cardiologist',
+      'palpitation': 'Cardiologist', 'cholesterol': 'Cardiologist', 'angiogram': 'Cardiologist',
+      // Brain
+      'migraine': 'Neurologist', 'seizure': 'Neurologist', 'epilepsy': 'Neurologist', 'paralysis': 'Neurologist',
+      'stroke': 'Neurologist', 'tremor': 'Neurologist', 'parkinson': 'Neurologist', 'memory': 'Neurologist',
+      'numbness': 'Neurologist', 'tingling': 'Neurologist',
+      // Bones
+      'fracture': 'Orthopedic', 'back pain': 'Orthopedic', 'knee pain': 'Orthopedic', 'joint pain': 'Orthopedic',
+      'arthritis': 'Orthopedic', 'spine': 'Orthopedic', 'neck pain': 'Orthopedic', 'shoulder': 'Orthopedic',
+      'sciatica': 'Orthopedic', 'spondylitis': 'Orthopedic', 'gout': 'Orthopedic', 'osteoporosis': 'Orthopedic',
+      // Skin
+      'acne': 'Dermatologist', 'pimple': 'Dermatologist', 'eczema': 'Dermatologist', 'psoriasis': 'Dermatologist',
+      'ringworm': 'Dermatologist', 'fungal': 'Dermatologist', 'hair loss': 'Dermatologist', 'dandruff': 'Dermatologist',
+      'mole': 'Dermatologist', 'melanoma': 'Dermatologist',
+      // Women
+      'pregnancy': 'Gynecologist', 'pregnant': 'Gynecologist', 'period': 'Gynecologist', 'menstrual': 'Gynecologist',
+      'pcos': 'Gynecologist', 'fibroids': 'Gynecologist', 'menopause': 'Gynecologist', 'endometriosis': 'Gynecologist',
+      'infertility': 'Gynecologist', 'ivf': 'Gynecologist', 'pap smear': 'Gynecologist',
+      // Children
+      'child': 'Pediatrician', 'baby': 'Pediatrician', 'infant': 'Pediatrician', 'vaccination': 'Pediatrician',
+      'growth': 'Pediatrician', 'newborn': 'Pediatrician',
+      // Stomach
+      'acidity': 'Gastroenterologist', 'gas': 'Gastroenterologist', 'bloating': 'Gastroenterologist',
+      'constipation': 'Gastroenterologist', 'diarrhea': 'Gastroenterologist', 'jaundice': 'Gastroenterologist',
+      'hepatitis': 'Gastroenterologist', 'ulcer': 'Gastroenterologist', 'hernia': 'Gastroenterologist',
+      'appendicitis': 'Gastroenterologist', 'gallstones': 'Gastroenterologist', 'ibs': 'Gastroenterologist',
+      'fatty liver': 'Gastroenterologist', 'cirrhosis': 'Gastroenterologist', 'gerd': 'Gastroenterologist',
+      // Lungs
+      'asthma': 'Pulmonologist', 'wheezing': 'Pulmonologist', 'bronchitis': 'Pulmonologist',
+      'pneumonia': 'Pulmonologist', 'tuberculosis': 'Pulmonologist', 'tb': 'Pulmonologist', 'copd': 'Pulmonologist',
+      'sleep apnea': 'Pulmonologist', 'snoring': 'Sleep Specialist',
+      // Diabetes/Hormones
+      'diabetes': 'Endocrinologist', 'sugar': 'Endocrinologist', 'thyroid': 'Endocrinologist',
+      'weight gain': 'Endocrinologist', 'weight loss': 'Endocrinologist', 'obesity': 'Endocrinologist',
+      'hba1c': 'Endocrinologist', 'glucose': 'Endocrinologist', 'insulin': 'Endocrinologist',
+      // Kidney/Urine
+      'kidney stone': 'Urologist', 'urine': 'Urologist', 'burning urination': 'Urologist',
+      'frequent urination': 'Urologist', 'prostate': 'Urologist', 'bladder': 'Urologist',
+      'dialysis': 'Nephrologist', 'renal': 'Nephrologist', 'kidney failure': 'Nephrologist',
+      // Eye
+      'cataract': 'Ophthalmologist', 'glaucoma': 'Ophthalmologist', 'vision': 'Ophthalmologist',
+      'blurry': 'Ophthalmologist', 'eye pain': 'Ophthalmologist', 'red eye': 'Ophthalmologist',
+      // ENT
+      'ear pain': 'ENT Specialist', 'hearing': 'ENT Specialist', 'tinnitus': 'ENT Specialist',
+      'sinus': 'ENT Specialist', 'tonsils': 'ENT Specialist', 'vertigo': 'ENT Specialist',
+      'dizziness': 'ENT Specialist', 'nose bleed': 'ENT Specialist',
+      // Dental
+      'tooth': 'Dentist', 'teeth': 'Dentist', 'gum': 'Dentist', 'cavity': 'Dentist', 'dental': 'Dentist',
+      // Mental
+      'anxiety': 'Psychiatrist', 'depression': 'Psychiatrist', 'stress': 'Psychiatrist',
+      'insomnia': 'Psychiatrist', 'panic': 'Psychiatrist', 'ocd': 'Psychiatrist', 'bipolar': 'Psychiatrist',
+      'addiction': 'Addiction Psychiatrist', 'alcohol': 'Addiction Psychiatrist', 'smoking': 'Addiction Psychiatrist',
+      // Cancer
+      'cancer': 'Oncologist', 'tumor': 'Oncologist', 'lump': 'Oncologist', 'chemotherapy': 'Oncologist',
+      // Blood
+      'anemia': 'Hematologist', 'blood disorder': 'Hematologist', 'clotting': 'Hematologist', 'leukemia': 'Hematologist',
+      // Infections
+      'dengue': 'Infectious Disease', 'malaria': 'Infectious Disease', 'typhoid': 'Infectious Disease',
+      'covid': 'Infectious Disease', 'chickenpox': 'Infectious Disease', 'hiv': 'Infectious Disease',
+      // Other
+      'allergy': 'General Physician', 'fever': 'General Physician', 'cold': 'General Physician',
+      'cough': 'General Physician', 'flu': 'General Physician', 'headache': 'General Physician',
+      'body ache': 'General Physician', 'weakness': 'General Physician', 'fatigue': 'General Physician',
+      'sore throat': 'General Physician', 'infection': 'General Physician',
+      'diet': 'Nutritionist', 'nutrition': 'Nutritionist', 'physiotherapy': 'Physiotherapist',
+      'rehab': 'Physiotherapist', 'sports injury': 'Sports Medicine', 'ayurveda': 'Ayurvedic Doctor',
+      'homeopathy': 'Homeopathic Doctor', 'sex': 'Sexologist', 'std': 'Sexologist',
+      'surgery': 'General Surgeon', 'plastic': 'Plastic Surgeon', 'cosmetic': 'Plastic Surgeon',
+      'xray': 'Radiologist', 'mri': 'Radiologist', 'ct scan': 'Radiologist', 'ultrasound': 'Radiologist',
+      'elderly': 'Geriatrician', 'dementia': 'Geriatrician', 'alzheimer': 'Geriatrician',
+      'speech': 'Speech Therapist', 'stammering': 'Speech Therapist', 'lab test': 'Pathologist',
+      'biopsy': 'Pathologist', 'blood test': 'Pathologist'
+    };
+
+    const qLower = q.toLowerCase();
+    let matchedSpecialty = null;
+    let matchedKey = '';
+
+    // Find longest matching keyword
+    for (const [key, specialty] of Object.entries(diseaseToSpecialty)) {
+      if (qLower.includes(key) && key.length > matchedKey.length) {
+        matchedSpecialty = specialty;
+        matchedKey = key;
+      }
+    }
+
+    if (matchedSpecialty) {
+      navigate(`/online-doctor/search?specialty=${encodeURIComponent(matchedSpecialty)}&q=${encodeURIComponent(q)}`);
     } else {
       navigate(`/online-doctor/search?q=${encodeURIComponent(q)}`);
     }
