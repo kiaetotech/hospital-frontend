@@ -47,7 +47,7 @@ const MentalHealthHub = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
-      {/* HERO */}
+      {/* HERO — Only 2 buttons */}
       <section style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4338ca 60%, #6366f1 100%)', padding: '44px 20px 52px', textAlign: 'center', color: 'white', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 60%, rgba(99,102,241,0.2) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(139,92,246,0.15) 0%, transparent 50%)', pointerEvents: 'none' }} />
         <div style={{ maxWidth: '750px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
@@ -73,10 +73,6 @@ const MentalHealthHub = () => {
             <button onClick={() => navigate('/mentalhealth/therapists')}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '13px 24px', background: 'white', color: '#4338ca', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>
               🔍 Find a Therapist
-            </button>
-            <button onClick={() => navigate('/mentalhealth/therapist/register')}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '13px 24px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>
-              👨‍⚕️ Are You a Therapist?
             </button>
           </motion.div>
         </div>
@@ -180,7 +176,7 @@ const MentalHealthHub = () => {
         </section>
       )}
 
-      {/* THERAPIST CTA */}
+      {/* THERAPIST CTA — Only at bottom */}
       <section style={{ background: 'linear-gradient(135deg, #1e1b4b, #4338ca)', padding: '32px 20px' }}>
         <div style={{ maxWidth: '550px', margin: '0 auto', textAlign: 'center', color: 'white' }}>
           <div style={{ fontSize: '34px', marginBottom: '8px' }}>👨‍⚕️</div>
