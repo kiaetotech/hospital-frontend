@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { searchOnlineDoctors } from '../../services/api';
+import api from '../../services/api';
 
 // ============================================
 // MEDICAL MASTER DATA — Disease/Keyword → Specialty
@@ -11,7 +12,8 @@ const DISEASE_SPECIALTY_MAP = {
   'flu': 'General Physician', 'headache': 'General Physician', 'body ache': 'General Physician',
   'weakness': 'General Physician', 'fatigue': 'General Physician', 'tired': 'General Physician',
   'sore throat': 'General Physician', 'infection': 'General Physician', 'viral': 'General Physician',
-  'allergy': 'General Physician', 'throat': 'General Physician',
+  'allergy': 'General Physician', 'throat': 'General Physician', 'pain': 'General Physician',
+  'injury': 'General Physician', 'wound': 'General Physician', 'cut': 'General Physician',
   
   // Heart
   'chest pain': 'Cardiologist', 'heart': 'Cardiologist', 'bp': 'Cardiologist',
@@ -24,7 +26,8 @@ const DISEASE_SPECIALTY_MAP = {
   'paralysis': 'Neurologist', 'stroke': 'Neurologist', 'tremor': 'Neurologist',
   'parkinson': 'Neurologist', 'memory': 'Neurologist', 'numbness': 'Neurologist',
   'tingling': 'Neurologist', 'neuropathy': 'Neurologist', 'brain tumor': 'Neurologist',
-  'multiple sclerosis': 'Neurologist', 'alzheimer': 'Neurologist',
+  'multiple sclerosis': 'Neurologist', 'alzheimer': 'Neurologist', 'nerve': 'Neurologist',
+  'brain': 'Neurologist',
   
   // Bones & Joints
   'fracture': 'Orthopedic', 'back pain': 'Orthopedic', 'knee pain': 'Orthopedic',
@@ -34,6 +37,8 @@ const DISEASE_SPECIALTY_MAP = {
   'hip pain': 'Orthopedic', 'ankle': 'Orthopedic', 'wrist': 'Orthopedic',
   'knee replacement': 'Orthopedic', 'hip replacement': 'Orthopedic',
   'slip disc': 'Orthopedic', 'disc bulge': 'Orthopedic', 'carpal tunnel': 'Orthopedic',
+  'finger': 'Orthopedic', 'hand': 'Orthopedic', 'elbow': 'Orthopedic', 'bone': 'Orthopedic',
+  'fingure': 'Orthopedic', 'fingar': 'Orthopedic',
   
   // Skin
   'acne': 'Dermatologist', 'pimple': 'Dermatologist', 'eczema': 'Dermatologist',
@@ -42,6 +47,7 @@ const DISEASE_SPECIALTY_MAP = {
   'melanoma': 'Dermatologist', 'skin rash': 'Dermatologist', 'itching': 'Dermatologist',
   'white patch': 'Dermatologist', 'dark spot': 'Dermatologist', 'vitiligo': 'Dermatologist',
   'urticaria': 'Dermatologist', 'warts': 'Dermatologist', 'scar': 'Dermatologist',
+  'skin': 'Dermatologist', 'rash': 'Dermatologist',
   
   // Women
   'pregnancy': 'Gynecologist', 'pregnant': 'Gynecologist', 'period': 'Gynecologist',
@@ -50,11 +56,13 @@ const DISEASE_SPECIALTY_MAP = {
   'ivf': 'Gynecologist', 'pap smear': 'Gynecologist', 'cervical': 'Gynecologist',
   'vaginal': 'Gynecologist', 'breast': 'Gynecologist', 'ovary': 'Gynecologist',
   'uterus': 'Gynecologist', 'hysterectomy': 'Gynecologist', 'c-section': 'Gynecologist',
+  'women': 'Gynecologist',
   
   // Children
   'child': 'Pediatrician', 'baby': 'Pediatrician', 'infant': 'Pediatrician',
   'vaccination': 'Pediatrician', 'growth': 'Pediatrician', 'newborn': 'Pediatrician',
   'pediatric': 'Pediatrician', 'neonatal': 'Neonatologist', 'premature': 'Neonatologist',
+  'kid': 'Pediatrician',
   
   // Stomach & Digestion
   'acidity': 'Gastroenterologist', 'gas': 'Gastroenterologist', 'bloating': 'Gastroenterologist',
@@ -65,6 +73,7 @@ const DISEASE_SPECIALTY_MAP = {
   'stomach pain': 'Gastroenterologist', 'nausea': 'Gastroenterologist', 'vomiting': 'Gastroenterologist',
   'digestion': 'Gastroenterologist', 'liver': 'Gastroenterologist', 'pancreas': 'Gastroenterologist',
   'colon': 'Gastroenterologist', 'endoscopy': 'Gastroenterologist', 'colonoscopy': 'Gastroenterologist',
+  'stomach': 'Gastroenterologist',
   
   // Lungs & Breathing
   'asthma': 'Pulmonologist', 'wheezing': 'Pulmonologist', 'bronchitis': 'Pulmonologist',
@@ -85,23 +94,27 @@ const DISEASE_SPECIALTY_MAP = {
   'dialysis': 'Nephrologist', 'renal': 'Nephrologist', 'kidney failure': 'Nephrologist',
   'nephritis': 'Nephrologist', 'ckd': 'Nephrologist', 'creatinine': 'Nephrologist',
   'uti': 'Urologist', 'blood in urine': 'Urologist', 'incontinence': 'Urologist',
+  'kidney': 'Nephrologist',
   
   // Eye
   'cataract': 'Ophthalmologist', 'glaucoma': 'Ophthalmologist', 'vision': 'Ophthalmologist',
   'blurry': 'Ophthalmologist', 'eye pain': 'Ophthalmologist', 'red eye': 'Ophthalmologist',
   'conjunctivitis': 'Ophthalmologist', 'lasik': 'Ophthalmologist', 'refraction': 'Ophthalmologist',
   'double vision': 'Ophthalmologist', 'dry eye': 'Ophthalmologist', 'retina': 'Ophthalmologist',
+  'eye': 'Ophthalmologist',
   
   // ENT
   'ear pain': 'ENT Specialist', 'hearing': 'ENT Specialist', 'tinnitus': 'ENT Specialist',
   'sinus': 'ENT Specialist', 'tonsils': 'ENT Specialist', 'vertigo': 'ENT Specialist',
   'dizziness': 'ENT Specialist', 'nose bleed': 'ENT Specialist', 'ear discharge': 'ENT Specialist',
   'hoarseness': 'ENT Specialist', 'voice': 'ENT Specialist', 'adenoids': 'ENT Specialist',
+  'ear': 'ENT Specialist', 'nose': 'ENT Specialist',
   
   // Dental
   'tooth': 'Dentist', 'teeth': 'Dentist', 'gum': 'Dentist', 'cavity': 'Dentist',
   'dental': 'Dentist', 'braces': 'Dentist', 'root canal': 'Dentist', 'wisdom tooth': 'Dentist',
   'jaw pain': 'Dentist', 'mouth ulcer': 'Dentist', 'bleeding gum': 'Dentist',
+  'jaw': 'Dentist', 'mouth': 'Dentist',
   
   // Mental Health
   'anxiety': 'Psychiatrist', 'depression': 'Psychiatrist', 'stress': 'Psychiatrist',
@@ -121,6 +134,7 @@ const DISEASE_SPECIALTY_MAP = {
   'anemia': 'Hematologist', 'blood disorder': 'Hematologist', 'clotting': 'Hematologist',
   'leukemia': 'Hematologist', 'lymphoma': 'Hematologist', 'myeloma': 'Hematologist',
   'hemoglobin': 'Hematologist', 'platelet': 'Hematologist', 'thalassemia': 'Hematologist',
+  'blood': 'Hematologist',
   
   // Infections
   'dengue': 'Infectious Disease', 'malaria': 'Infectious Disease', 'typhoid': 'Infectious Disease',
@@ -161,30 +175,97 @@ const DoctorSearch = () => {
   const [searchParams] = useSearchParams();
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [aiDetecting, setAiDetecting] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
 
-  // Get URL params
   const urlQ = searchParams.get('q') || '';
   const urlSpecialty = searchParams.get('specialty') || '';
 
-  // Smart detection: if q contains a disease keyword, map to specialty
-  let detectedSpecialty = urlSpecialty;
-  if (urlQ && !urlSpecialty) {
-    const qLower = urlQ.toLowerCase();
+  // ============================================
+  // Find specialty from keyword map (with partial matching)
+  // ============================================
+  const findSpecialtyFromKeyword = (query) => {
+    if (!query) return '';
+    const qLower = query.toLowerCase();
+    const words = qLower.split(/\s+/);
     let bestMatch = '';
     let bestLen = 0;
-    for (const [keyword, specialty] of Object.entries(DISEASE_SPECIALTY_MAP)) {
-      if (qLower.includes(keyword) && keyword.length > bestLen) {
-        bestMatch = specialty;
-        bestLen = keyword.length;
+
+    for (const word of words) {
+      if (word.length < 3) continue;
+      for (const [keyword, specialty] of Object.entries(DISEASE_SPECIALTY_MAP)) {
+        if (keyword.includes(word) || word.includes(keyword)) {
+          if (keyword.length > bestLen) {
+            bestMatch = specialty;
+            bestLen = keyword.length;
+          }
+        }
       }
     }
-    if (bestMatch) detectedSpecialty = bestMatch;
-  }
+    return bestMatch;
+  };
+
+  // ============================================
+  // AI fallback for unknown words (calls backend, gets ONLY specialty name)
+  // ============================================
+  const detectSpecialtyFromAI = async (query) => {
+    if (!query || query.trim().length < 3) return '';
+    setAiDetecting(true);
+    try {
+      const res = await api.post('/online-doctor/triage', { symptoms: query });
+      if (res.data?.success && res.data?.data?.specialty) {
+        return res.data.data.specialty;
+      }
+    } catch (err) {
+      console.log('AI detection skipped');
+    } finally {
+      setAiDetecting(false);
+    }
+    return '';
+  };
+
+  // ============================================
+  // Initialize search from URL params
+  // ============================================
+  const [detectedSpecialty, setDetectedSpecialty] = useState(urlSpecialty);
+  const [resultInfo, setResultInfo] = useState('');
+
+  useEffect(() => {
+    const initSearch = async () => {
+      let specialty = urlSpecialty;
+
+      if (urlQ && !urlSpecialty) {
+        // Step 1: Try keyword map
+        specialty = findSpecialtyFromKeyword(urlQ);
+
+        // Step 2: If no match, try AI
+        if (!specialty) {
+          specialty = await detectSpecialtyFromAI(urlQ);
+        }
+
+        if (specialty) {
+          setResultInfo(`Showing ${specialty}s for "${urlQ}"`);
+        } else {
+          setResultInfo(`Search results for "${urlQ}"`);
+        }
+      } else if (urlSpecialty) {
+        setResultInfo(`Showing ${urlSpecialty}s`);
+      }
+
+      setDetectedSpecialty(specialty);
+      setFilters(prev => ({
+        ...prev,
+        q: urlQ,
+        specialty: specialty || ''
+      }));
+    };
+
+    initSearch();
+  }, [urlQ, urlSpecialty]);
 
   const [filters, setFilters] = useState({
     q: urlQ,
-    specialty: detectedSpecialty,
+    specialty: detectedSpecialty || '',
     language: '',
     gender: '',
     minExperience: '',
@@ -195,30 +276,15 @@ const DoctorSearch = () => {
     page: 1,
   });
 
-  const [searchDisplay, setSearchDisplay] = useState(detectedSpecialty || urlQ || '');
-  const [resultInfo, setResultInfo] = useState('');
-
   useEffect(() => {
     fetchDoctors();
   }, [filters]);
-
-  useEffect(() => {
-    if (detectedSpecialty && urlQ) {
-      setResultInfo(`Showing ${detectedSpecialty}s for "${urlQ}"`);
-    } else if (detectedSpecialty) {
-      setResultInfo(`Showing ${detectedSpecialty}s`);
-    } else if (urlQ) {
-      setResultInfo(`Search results for "${urlQ}"`);
-    }
-  }, [detectedSpecialty, urlQ]);
 
   const fetchDoctors = async () => {
     setLoading(true);
     try {
       const params = {};
-      // Use specialty for filtering
       if (filters.specialty) params.specialty = filters.specialty;
-      // Also pass search text
       if (filters.q) params.search = filters.q;
       if (filters.language) params.language = filters.language;
       if (filters.gender) params.gender = filters.gender;
@@ -242,7 +308,6 @@ const DoctorSearch = () => {
 
   const clearFilters = () => {
     setFilters({ q: '', specialty: '', language: '', gender: '', minExperience: '', maxFee: '', minRating: '', available: '', sort: 'rating', page: 1 });
-    setSearchDisplay('');
     setResultInfo('');
   };
 
@@ -252,7 +317,12 @@ const DoctorSearch = () => {
         <div className="max-w-6xl mx-auto px-4 py-4">
           <Link to="/online-doctor" className="text-blue-600 hover:underline text-sm">← Back</Link>
           <h1 className="text-2xl font-bold text-gray-800 mt-1">Find a Doctor</h1>
-          {resultInfo && <p className="text-sm text-green-600 font-medium mt-1">{resultInfo}</p>}
+          {resultInfo && (
+            <p className="text-sm text-green-600 font-medium mt-1">
+              {resultInfo}
+              {aiDetecting && <span className="text-blue-500 ml-2">(AI analyzing...)</span>}
+            </p>
+          )}
         </div>
       </div>
 
@@ -320,10 +390,10 @@ const DoctorSearch = () => {
               </select>
             </div>
 
-            {loading ? (
+            {loading || aiDetecting ? (
               <div className="text-center py-20">
                 <div className="animate-spin text-6xl mb-4">⏳</div>
-                <p className="text-gray-500">Searching best doctors for you...</p>
+                <p className="text-gray-500">{aiDetecting ? 'AI analyzing your search...' : 'Searching best doctors for you...'}</p>
               </div>
             ) : doctors.length > 0 ? (
               <div className="space-y-4">
