@@ -195,6 +195,17 @@ export const takePrakritiQuiz = (data) => api.post('/ayurveda/prakriti-quiz', da
 export const getPrakritiResult = (id) => api.get(`/ayurveda/prakriti-result/${id}`);
 
 // ============================================
+// AYURVEDA PRODUCTS & PANCHAKARMA
+// ============================================
+
+export const getAyurvedaProducts = (params) => api.get('/ayurveda/products', { params });
+export const getAyurvedaProductById = (id) => api.get(`/ayurveda/products/${id}`);
+export const getProductsByPrakriti = (prakritiType) => api.get(`/ayurveda/products/prakriti/${prakritiType}`);
+export const getPanchakarmaProgress = (bookingId) => api.get(`/ayurveda/panchakarma-progress/${bookingId}`);
+export const updatePanchakarmaLog = (bookingId, data) => api.put(`/ayurveda/panchakarma-progress/${bookingId}`, data);
+export const getSeasonalRecommendations = () => api.get('/ayurveda/seasonal-recommendations');
+
+// ============================================
 // HOMEOPATHY
 // ============================================
 
