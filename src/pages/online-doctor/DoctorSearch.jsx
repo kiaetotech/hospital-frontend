@@ -38,7 +38,8 @@ const DISEASE_SPECIALTY_MAP = {
   'knee replacement': 'Orthopedic', 'hip replacement': 'Orthopedic',
   'slip disc': 'Orthopedic', 'disc bulge': 'Orthopedic', 'carpal tunnel': 'Orthopedic',
   'finger': 'Orthopedic', 'hand': 'Orthopedic', 'elbow': 'Orthopedic', 'bone': 'Orthopedic',
-  'fingure': 'Orthopedic', 'fingar': 'Orthopedic',
+  'fingure': 'Orthopedic', 'fingar': 'Orthopedic', 'fingure injury': 'Orthopedic',
+  'hand injury': 'Orthopedic', 'finger injury': 'Orthopedic', 'finger pain': 'Orthopedic',
   
   // Skin
   'acne': 'Dermatologist', 'pimple': 'Dermatologist', 'eczema': 'Dermatologist',
@@ -206,13 +207,15 @@ const DoctorSearch = () => {
   };
 
   // ============================================
-  // AI fallback for unknown words (calls backend, gets ONLY specialty name)
+  // AI fallback for unknown words
   // ============================================
   const detectSpecialtyFromAI = async (query) => {
     if (!query || query.trim().length < 3) return '';
     setAiDetecting(true);
     try {
-      const res = await api.post('/online-doctor/triage', { symptoms: query });
+      const res = await api.post('/online-doctor/triage', { 
+        symptoms: `Patient problem: ${query}. What ONE medical specialist should treat this? Reply with specialty name only.` 
+      });
       if (res.data?.success && res.data?.data?.specialty) {
         return res.data.data.specialty;
       }
