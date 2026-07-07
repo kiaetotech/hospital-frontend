@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import api from '../../services/api';
 
 const MentalHealthTherapists = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const autoMatch = searchParams.get('match');
   const [loading, setLoading] = useState(true);
   const [therapists, setTherapists] = useState([]);
   const [matchMode, setMatchMode] = useState(false);
@@ -18,6 +20,15 @@ const MentalHealthTherapists = () => {
     fetchTherapists();
   }, [filters]);
 
+  useEffect(() => {
+    if (autoMatch === 'true') {
+      setMatchMode(true);
+      setTimeout(() => {
+        document.getElementById('smart-match')?.scrollIntoView({ behavior: 'smooth' });
+      }, 400);
+    }
+  }, [autoMatch]);
+
   const fetchTherapists = async () => {
     setLoading(true);
     try {
@@ -27,8 +38,7 @@ const MentalHealthTherapists = () => {
       if (filters.minRating) params.append('minRating', filters.minRating);
       if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
       if (filters.consultationType && filters.consultationType !== 'all') params.append('consultationType', filters.consultationType);
-
-      const res = await axios.get(`/api/mentalhealth/therapists?${params.toString()}`);
+      const res = await api.get(`/mentalhealth/therapists?${params.toString()}`);
       if (res.data.success) setTherapists(res.data.data);
     } catch (error) {
       console.error('Error:', error);
@@ -37,26 +47,13 @@ const MentalHealthTherapists = () => {
     }
   };
 
-  // ============================================
-  // 🆕 SMART MATCHING
-  // ============================================
   const handleSmartMatch = () => {
     let result = [...therapists];
-    
-    if (matchPrefs.language) {
-      result = result.filter(t => t.languages?.some(l => l.toLowerCase().includes(matchPrefs.language.toLowerCase())));
-    }
-    if (matchPrefs.gender) {
-      result = result.filter(t => t.gender === matchPrefs.gender);
-    }
-    if (matchPrefs.budget) {
-      result = result.filter(t => (t.pricing?.consultation || 500) <= parseInt(matchPrefs.budget));
-    }
-    if (matchPrefs.concern) {
-      result = result.filter(t => t.specializations?.some(s => s.toLowerCase().includes(matchPrefs.concern.toLowerCase())));
-    }
+    if (matchPrefs.language) result = result.filter(t => t.languages?.some(l => l.toLowerCase().includes(matchPrefs.language.toLowerCase())));
+    if (matchPrefs.gender) result = result.filter(t => t.gender === matchPrefs.gender);
+    if (matchPrefs.budget) result = result.filter(t => (t.pricing?.consultation || 500) <= parseInt(matchPrefs.budget));
+    if (matchPrefs.concern) result = result.filter(t => t.specializations?.some(s => s.toLowerCase().includes(matchPrefs.concern.toLowerCase())));
 
-    // Score matching
     result = result.map(t => {
       let score = 0;
       if (matchPrefs.language && t.languages?.some(l => l.toLowerCase().includes(matchPrefs.language.toLowerCase()))) score += 3;
@@ -75,7 +72,6 @@ const MentalHealthTherapists = () => {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', fontFamily: 'system-ui, sans-serif' }}>
-      {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', padding: '20px', color: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={() => navigate('/mentalhealth')} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>← Back</button>
@@ -85,33 +81,27 @@ const MentalHealthTherapists = () => {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
 
-        {/* 🆕 SMART MATCHING PANEL */}
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: '12px' }}>
+        {/* SMART MATCHING PANEL */}
+        <div id="smart-match" style={{ backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b', margin: 0 }}>🎯 Smart Matching</h3>
+            <h3 style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b', margin: 0 }}>🎯 Smart Matching — Find Your Perfect Therapist</h3>
             <button onClick={() => { setMatchMode(false); setMatchPrefs({ language: '', gender: '', budget: '', concern: '' }); }}
-              style={{ fontSize: '11px', color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}>
-              Clear
-            </button>
+              style={{ fontSize: '11px', color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}>Clear</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', marginBottom: '10px' }}>
-            <select value={matchPrefs.language} onChange={(e) => setMatchPrefs({ ...matchPrefs, language: e.target.value })}
-              style={selectStyle}>
+            <select value={matchPrefs.language} onChange={(e) => setMatchPrefs({ ...matchPrefs, language: e.target.value })} style={selectStyle}>
               <option value="">🗣️ Language</option>
               <option>Hindi</option><option>English</option><option>Tamil</option><option>Telugu</option><option>Bengali</option><option>Marathi</option>
             </select>
-            <select value={matchPrefs.gender} onChange={(e) => setMatchPrefs({ ...matchPrefs, gender: e.target.value })}
-              style={selectStyle}>
+            <select value={matchPrefs.gender} onChange={(e) => setMatchPrefs({ ...matchPrefs, gender: e.target.value })} style={selectStyle}>
               <option value="">👤 Gender</option>
               <option>Male</option><option>Female</option><option>Other</option>
             </select>
-            <select value={matchPrefs.budget} onChange={(e) => setMatchPrefs({ ...matchPrefs, budget: e.target.value })}
-              style={selectStyle}>
+            <select value={matchPrefs.budget} onChange={(e) => setMatchPrefs({ ...matchPrefs, budget: e.target.value })} style={selectStyle}>
               <option value="">💰 Budget</option>
               <option value="500">Up to ₹500</option><option value="800">Up to ₹800</option><option value="1200">Up to ₹1200</option><option value="2000">Up to ₹2000</option>
             </select>
-            <select value={matchPrefs.concern} onChange={(e) => setMatchPrefs({ ...matchPrefs, concern: e.target.value })}
-              style={selectStyle}>
+            <select value={matchPrefs.concern} onChange={(e) => setMatchPrefs({ ...matchPrefs, concern: e.target.value })} style={selectStyle}>
               <option value="">🏥 Concern</option>
               <option>Anxiety</option><option>Depression</option><option>Stress</option><option>Trauma</option><option>Relationship</option><option>Addiction</option>
             </select>

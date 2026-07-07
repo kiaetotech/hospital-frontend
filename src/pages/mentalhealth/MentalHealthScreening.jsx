@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/api';
 
 const MentalHealthScreening = () => {
   const navigate = useNavigate();
@@ -74,7 +74,7 @@ const MentalHealthScreening = () => {
         isAnonymous: isAnonymous
       });
 
-      const res = await axios.post('/api/mentalhealth/screening', {
+      const res = await api.post('/mentalhealth/screening', {
         screeningType: type,
         answers: answers,
         isAnonymous: isAnonymous

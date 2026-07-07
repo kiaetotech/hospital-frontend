@@ -28,18 +28,18 @@ const MentalHealthHub = () => {
   };
 
   const quickActions = [
-    { icon: <FaSearch size={22} />, label: 'Find a Therapist', desc: 'Browse professionals', route: '/mentalhealth/therapists', color: '#7c3aed', bg: '#f5f3ff' },
-    { icon: <FaClipboardList size={22} />, label: 'Depression Screening', desc: 'PHQ-9 assessment', route: '/mentalhealth/screening/depression', color: '#2563eb', bg: '#eff6ff' },
-    { icon: <FaClipboardList size={22} />, label: 'Anxiety Screening', desc: 'GAD-7 assessment', route: '/mentalhealth/screening/anxiety', color: '#059669', bg: '#ecfdf5' },
-    { icon: <FaCommentDots size={22} />, label: 'Anonymous Chat', desc: 'Talk freely', route: '/mentalhealth/chat', color: '#f59e0b', bg: '#fffbeb' },
-    { icon: <FaBookOpen size={22} />, label: 'Mood Journal', desc: 'Track + AI analysis', route: '/mentalhealth/journal', color: '#0891b2', bg: '#ecfeff', badge: 'NEW' },
-    { icon: <FaBrain size={22} />, label: 'Smart Match', desc: 'AI therapist finder', route: '/mentalhealth/therapists', color: '#f97316', bg: '#fff7ed', badge: 'AI' },
-    { icon: <FaBuilding size={22} />, label: 'Corporate EAP', desc: 'Employee wellness', route: '/mentalhealth/corporate', color: '#475569', bg: '#f8fafc' },
-    { icon: <FaShieldAlt size={22} />, label: 'Crisis Support', desc: '24/7 emergency', route: '/mentalhealth/crisis', color: '#dc2626', bg: '#fef2f2' },
+    { icon: <FaSearch size={24} />, label: 'Find a Therapist', desc: 'Browse all licensed professionals', route: '/mentalhealth/therapists', color: '#7c3aed', bg: '#f5f3ff' },
+    { icon: <FaBrain size={24} />, label: 'Smart Match', desc: 'AI match by language, budget & concern', route: '/mentalhealth/therapists?match=true', color: '#f97316', bg: '#fff7ed', badge: 'AI' },
+    { icon: <FaClipboardList size={24} />, label: 'Depression Screening', desc: 'PHQ-9 self-assessment test', route: '/mentalhealth/screening/depression', color: '#2563eb', bg: '#eff6ff' },
+    { icon: <FaClipboardList size={24} />, label: 'Anxiety Screening', desc: 'GAD-7 self-assessment test', route: '/mentalhealth/screening/anxiety', color: '#059669', bg: '#ecfdf5' },
+    { icon: <FaCommentDots size={24} />, label: 'Anonymous Chat', desc: 'Talk freely without identity', route: '/mentalhealth/chat', color: '#f59e0b', bg: '#fffbeb' },
+    { icon: <FaBookOpen size={24} />, label: 'Mood Journal', desc: 'Daily tracking + AI analysis', route: '/mentalhealth/journal', color: '#0891b2', bg: '#ecfeff', badge: 'NEW' },
+    { icon: <FaBuilding size={24} />, label: 'Corporate EAP', desc: 'Employee wellness programs', route: '/mentalhealth/corporate', color: '#475569', bg: '#f8fafc' },
+    { icon: <FaShieldAlt size={24} />, label: 'Crisis Support', desc: '24/7 emergency helplines', route: '/mentalhealth/crisis', color: '#dc2626', bg: '#fef2f2' },
   ];
 
   const trustFeatures = [
-    { icon: <FaShieldAlt size={24} />, title: '100% Confidential', desc: 'Your privacy is our priority. All sessions encrypted.' },
+    { icon: <FaShieldAlt size={24} />, title: '100% Confidential', desc: 'Your privacy is our priority. All sessions encrypted end-to-end.' },
     { icon: <FaUserMd size={24} />, title: 'Licensed Therapists', desc: 'Every therapist is verified, experienced & background-checked.' },
     { icon: <FaHeart size={24} />, title: 'Judgment-Free Zone', desc: 'Safe space to share. No stigma, no judgment, just support.' },
   ];
@@ -47,29 +47,23 @@ const MentalHealthHub = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
-      {/* ============================================
-          HERO
-      ============================================ */}
+      {/* HERO */}
       <section style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4338ca 60%, #6366f1 100%)', padding: '44px 20px 52px', textAlign: 'center', color: 'white', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 60%, rgba(99,102,241,0.2) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(139,92,246,0.15) 0%, transparent 50%)', pointerEvents: 'none' }} />
-        
         <div style={{ maxWidth: '750px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.12)' }}>
               🧠 Confidential • Professional • Supportive
             </span>
           </motion.div>
-
           <motion.h1 initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             style={{ fontSize: 'clamp(30px, 4vw, 42px)', fontWeight: '800', marginBottom: '8px', lineHeight: '1.15' }}>
             Mental Health & Wellness
           </motion.h1>
-
           <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             style={{ fontSize: '15px', color: 'rgba(255,255,255,0.75)', marginBottom: '22px' }}>
             Professional, confidential support from licensed therapists — from the comfort of your home
           </motion.p>
-
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => navigate('/mentalhealth/crisis')}
@@ -88,9 +82,7 @@ const MentalHealthHub = () => {
         </div>
       </section>
 
-      {/* ============================================
-          STATS
-      ============================================ */}
+      {/* STATS */}
       <section style={{ maxWidth: '950px', margin: '-24px auto 0', padding: '0 20px', position: 'relative', zIndex: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
           {[
@@ -109,39 +101,35 @@ const MentalHealthHub = () => {
         </div>
       </section>
 
-      {/* ============================================
-          QUICK ACTIONS
-      ============================================ */}
+      {/* QUICK ACTIONS */}
       <section style={{ maxWidth: '1000px', margin: '0 auto', padding: '32px 20px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: '18px' }}>
           <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', marginBottom: '4px' }}>How Can We Help?</h2>
           <p style={{ color: '#64748b', fontSize: '14px' }}>Choose a service that fits your needs</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
           {quickActions.map((item, i) => (
             <motion.div key={item.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
               onClick={() => navigate(item.route)}
-              style={{ background: item.bg, borderRadius: '14px', padding: '20px 12px', textAlign: 'center', cursor: 'pointer', border: `1.5px solid ${item.color}20`, transition: 'all 0.25s', position: 'relative' }}
+              style={{ background: item.bg, borderRadius: '14px', padding: '20px 14px', textAlign: 'center', cursor: 'pointer', border: `1.5px solid ${item.color}20`, transition: 'all 0.25s', position: 'relative' }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.06)'; e.currentTarget.style.borderColor = item.color; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = `${item.color}20`; }}>
               <div style={{ color: item.color, marginBottom: '8px', display: 'inline-block', position: 'relative' }}>
                 {item.icon}
                 {item.badge && (
-                  <span style={{ position: 'absolute', top: '-8px', right: '-16px', background: item.badge === 'AI' ? '#f97316' : '#059669', color: 'white', padding: '2px 7px', borderRadius: '8px', fontSize: '9px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                  <span style={{ position: 'absolute', top: '-8px', right: '-18px', background: item.badge === 'AI' ? '#f97316' : '#059669', color: 'white', padding: '2px 7px', borderRadius: '8px', fontSize: '9px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                     {item.badge}
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '3px' }}>{item.label}</div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>{item.desc}</div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', marginBottom: '3px' }}>{item.label}</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>{item.desc}</div>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* ============================================
-          TRUST
-      ============================================ */}
+      {/* TRUST */}
       <section style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px 20px 28px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
           {trustFeatures.map((f, i) => (
@@ -155,9 +143,7 @@ const MentalHealthHub = () => {
         </div>
       </section>
 
-      {/* ============================================
-          FEATURED THERAPISTS
-      ============================================ */}
+      {/* FEATURED THERAPISTS */}
       {featuredTherapists.length > 0 && (
         <section style={{ background: 'white', padding: '28px 20px' }}>
           <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
@@ -194,9 +180,7 @@ const MentalHealthHub = () => {
         </section>
       )}
 
-      {/* ============================================
-          THERAPIST CTA
-      ============================================ */}
+      {/* THERAPIST CTA */}
       <section style={{ background: 'linear-gradient(135deg, #1e1b4b, #4338ca)', padding: '32px 20px' }}>
         <div style={{ maxWidth: '550px', margin: '0 auto', textAlign: 'center', color: 'white' }}>
           <div style={{ fontSize: '34px', marginBottom: '8px' }}>👨‍⚕️</div>
