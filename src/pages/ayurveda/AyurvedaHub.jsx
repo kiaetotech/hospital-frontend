@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getFeaturedDoctors } from '../../services/ayurvedaApi';
+import { motion } from 'framer-motion';
+import { FaArrowRight, FaStar, FaCheckCircle, FaClock, FaUserMd, FaLeaf, FaShoppingBag, FaCalendarAlt, FaChartLine } from 'react-icons/fa';
 
 const AyurvedaHub = () => {
   const navigate = useNavigate();
@@ -11,14 +13,10 @@ const AyurvedaHub = () => {
     const fetchDoctors = async () => {
       try {
         const response = await getFeaturedDoctors();
-        // FIX: Handle different response structures
         const doctorsData = response.data?.data || response.data || [];
-        // Ensure it's an array
         const doctorsArray = Array.isArray(doctorsData) ? doctorsData : [];
         setFeaturedDoctors(doctorsArray);
       } catch (error) {
-        console.log('Using dummy data - API not reachable');
-        // Use dummy data if API fails
         setFeaturedDoctors([
           { _id: 'AYD001', name: 'Dr. Rajesh Sharma', specialization: 'Panchakarma Specialist', experience: '15 years', rating: 4.8, consultationFee: 500, available: true },
           { _id: 'AYD002', name: 'Dr. Priya Gupta', specialization: 'Ayurvedic Physician', experience: '12 years', rating: 4.9, consultationFee: 400, available: true },
@@ -31,266 +29,213 @@ const AyurvedaHub = () => {
     fetchDoctors();
   }, []);
 
+  const stats = [
+    { icon: <FaUserMd size={20} />, value: '50+', label: 'Verified Doctors', color: '#4CAF50' },
+    { icon: <FaCheckCircle size={20} />, value: '25+', label: 'Panchakarma Centers', color: '#2196F3' },
+    { icon: <FaStar size={20} />, value: '4.8', label: 'Average Rating', color: '#FF9800' },
+    { icon: <FaClock size={20} />, value: '2 min', label: 'Prakriti Quiz', color: '#9C27B0' },
+  ];
+
   const services = [
     {
-      id: 'doctors',
-      icon: '📞',
-      title: 'Online Ayurvedic Consultation',
-      subtitle: 'Consult verified Ayurvedic doctors',
-      description: 'Video consultation with AYUSH-registered practitioners. Get personalized diet, lifestyle & treatment plans.',
-      route: '/ayurveda/doctors',
-      color: '#FF9800',
-      stats: '50+ Doctors',
-      cta: 'Find Doctor'
+      icon: '📞', title: 'Online Consultation', desc: 'Video consult with AYUSH-registered Ayurvedic doctors',
+      route: '/ayurveda/doctors', color: '#FF9800', bg: '#fff7ed',
     },
     {
-      id: 'centers',
-      icon: '🏨',
-      title: 'Panchakarma Centers',
-      subtitle: 'Book authentic detox programs',
-      description: 'Discover certified Panchakarma centers. Compare packages, pricing & book residential detox programs.',
-      route: '/ayurveda/centers',
-      color: '#2196F3',
-      stats: '25+ Centers',
-      cta: 'Explore Centers'
+      icon: '🏨', title: 'Panchakarma Centers', desc: 'Book authentic detox & rejuvenation programs',
+      route: '/ayurveda/centers', color: '#2196F3', bg: '#eff6ff',
     },
     {
-      id: 'prakriti',
-      icon: '🧬',
-      title: 'AI Prakriti Analysis',
-      subtitle: 'Know your body constitution',
-      description: '15-question AI-powered quiz to discover your Dosha (Vata/Pitta/Kapha). Free personalized wellness report.',
-      route: '/ayurveda/prakriti',
-      color: '#9C27B0',
-      isFree: true,
-      stats: '2 min quiz',
-      cta: 'Start Free Quiz'
-    }
+      icon: '🧬', title: 'Prakriti Analysis', desc: 'AI quiz to discover your Dosha body type',
+      route: '/ayurveda/prakriti', color: '#9C27B0', bg: '#faf5ff',
+    },
+    {
+      icon: '🌿', title: 'Wellness Store', desc: 'Personalized products based on your Prakriti',
+      route: '/ayurveda/commerce', color: '#059669', bg: '#ecfdf5', badge: 'NEW',
+    },
+    {
+      icon: '🔄', title: 'Treatment Tracker', desc: 'Track your Panchakarma journey day-by-day',
+      route: '/ayurveda/panchakarma-tracker', color: '#0D9488', bg: '#f0fdfa', badge: 'NEW',
+    },
+    {
+      icon: '🌸', title: 'Seasonal Wellness', desc: 'Ritu-based diet & lifestyle recommendations',
+      route: '/ayurveda/seasonal-wellness', color: '#EC4899', bg: '#fdf2f8', badge: 'NEW',
+    },
+  ];
+
+  const trustFeatures = [
+    { icon: <FaCheckCircle size={24} />, title: 'AYUSH Verified', desc: 'All doctors registered & verified' },
+    { icon: <FaLeaf size={24} />, title: 'Authentic Ayurveda', desc: 'Traditional protocols & genuine herbs' },
+    { icon: <FaChartLine size={24} />, title: 'Track Progress', desc: 'Monitor your wellness journey' },
   ];
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-      {/* Hero Section */}
-      <div style={{
-        background: 'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)',
-        borderRadius: '1rem',
-        padding: '3rem 2rem',
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      
+      {/* ============================================
+          HERO SECTION
+      ============================================ */}
+      <section style={{
+        background: 'linear-gradient(135deg, #064e3b 0%, #065f46 30%, #047857 60%, #059669 100%)',
+        padding: '40px 20px 52px',
         textAlign: 'center',
         color: 'white',
-        marginBottom: '2rem'
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-          🕉️ Ayurveda & Wellness Hub
-        </h1>
-        <p style={{ fontSize: '1.25rem', marginBottom: '2rem', opacity: 0.9 }}>
-          Ancient wisdom meets modern healthcare — Your journey to holistic wellness starts here
-        </p>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button 
-            onClick={() => navigate('/ayurveda/prakriti')}
-            style={{
-              backgroundColor: 'white',
-              color: '#2E7D32',
-              padding: '0.75rem 2rem',
-              borderRadius: '0.5rem',
-              border: 'none',
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              cursor: 'pointer'
-            }}
-          >
-            🧬 Start Free Prakriti Analysis
-          </button>
-          <button 
-            onClick={() => navigate('/ayurveda/doctors')}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              color: 'white',
-              padding: '0.75rem 2rem',
-              borderRadius: '0.5rem',
-              border: '2px solid white',
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              cursor: 'pointer'
-            }}
-          >
-            📞 Consult Doctor Now
-          </button>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 60%, rgba(52,211,153,0.15) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(167,243,208,0.1) 0%, transparent 50%)', pointerEvents: 'none' }} />
+        
+        <div style={{ maxWidth: '750px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', padding: '5px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.12)' }}>
+              🕉️ Ancient Wisdom • Modern Science • Holistic Healing
+            </span>
+          </motion.div>
+
+          <motion.h1 initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: '800', marginBottom: '6px', lineHeight: '1.15' }}>
+            Ayurveda & Wellness Hub
+          </motion.h1>
+
+          <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+            style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', marginBottom: '20px' }}>
+            Discover your Dosha • Consult Ayurvedic doctors • Book Panchakarma • Shop wellness products
+          </motion.p>
+
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/ayurveda/prakriti')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 22px', background: 'white', color: '#065f46', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.15)' }}>
+              🧬 Free Prakriti Analysis
+            </button>
+            <button onClick={() => navigate('/ayurveda/doctors')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 22px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+              📞 Consult Doctor Now
+            </button>
+            <button onClick={() => navigate('/ayurveda/commerce')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 22px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+              🌿 Wellness Store
+            </button>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* 3 Main Services */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
-        gap: '1.5rem',
-        marginBottom: '3rem'
-      }}>
-        {services.map(service => (
-          <div
-            key={service.id}
-            onClick={() => navigate(service.route)}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '1rem',
-              padding: '2rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              borderTop: `4px solid ${service.color}`,
-              position: 'relative'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-            }}
-          >
-            {service.isFree && (
-              <span style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                padding: '4px 12px',
-                borderRadius: '20px',
-                fontSize: '0.75rem',
-                fontWeight: 'bold'
-              }}>
-                FREE
-              </span>
-            )}
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{service.icon}</div>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', color: service.color }}>
-              {service.title}
-            </h3>
-            <p style={{ color: '#64748b', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              {service.subtitle}
-            </p>
-            <p style={{ color: '#475569', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-              {service.description}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>{service.stats}</span>
-              <button style={{
-                backgroundColor: service.color,
-                color: 'white',
-                padding: '0.5rem 1.5rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}>
-                {service.cta} →
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Featured Doctors Section */}
-      <div style={{ marginBottom: '3rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1.5rem', color: '#1e293b' }}>
-          👨‍⚕️ Featured Ayurvedic Doctors
-        </h2>
-        {loading ? (
-          <p>Loading featured doctors...</p>
-        ) : (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-            gap: '1.5rem' 
-          }}>
-            {featuredDoctors.slice(0, 3).map(doctor => (
-              <div
-                key={doctor._id}
-                onClick={() => navigate(`/ayurveda/doctor/${doctor._id}`)}
-                style={{
-                  backgroundColor: 'white',
-                  borderRadius: '1rem',
-                  padding: '1.5rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  border: '1px solid #e2e8f0',
-                  transition: 'box-shadow 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    backgroundColor: '#e8f5e9',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2rem'
-                  }}>
-                    👨‍⚕️
-                  </div>
-                  <div>
-                    <h3 style={{ fontWeight: 'bold', color: '#1e293b' }}>{doctor.name}</h3>
-                    <p style={{ color: '#4CAF50', fontSize: '0.875rem' }}>{doctor.specialization}</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <span style={{ color: '#64748b' }}>⭐ {doctor.rating}</span>
-                  <span style={{ color: '#64748b' }}>📅 {doctor.experience}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 'bold', color: '#1e293b' }}>₹{doctor.consultationFee}/consult</span>
-                  <span style={{ 
-                    padding: '4px 12px', 
-                    borderRadius: '20px', 
-                    fontSize: '0.75rem',
-                    backgroundColor: doctor.available ? '#e8f5e9' : '#fff3e0',
-                    color: doctor.available ? '#2E7D32' : '#E65100'
-                  }}>
-                    {doctor.available ? '🟢 Available' : '🟡 Busy'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Why Ayurveda Section */}
-      <div style={{
-        backgroundColor: '#f0fdf4',
-        borderRadius: '1rem',
-        padding: '3rem 2rem',
-        textAlign: 'center'
-      }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '2rem' }}>
-          🌿 Why Choose Our Ayurveda Platform?
-        </h2>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '2rem',
-          textAlign: 'center'
-        }}>
-          {[
-            { icon: '✅', title: 'Verified Doctors', desc: 'All practitioners are AYUSH-registered & verified' },
-            { icon: '💰', title: 'Transparent Pricing', desc: 'No hidden charges. Pay only consultation fee' },
-            { icon: '🔒', title: 'Secure Platform', desc: 'Your health data is encrypted & private' },
-            { icon: '🎯', title: 'Personalized Care', desc: 'AI-powered Prakriti analysis for tailored treatment' }
-          ].map((item, idx) => (
-            <div key={idx}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{item.icon}</div>
-              <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#1e293b' }}>{item.title}</h3>
-              <p style={{ color: '#64748b', fontSize: '0.9rem' }}>{item.desc}</p>
-            </div>
+      {/* ============================================
+          STATS BAR
+      ============================================ */}
+      <section style={{ maxWidth: '950px', margin: '-24px auto 0', padding: '0 20px', position: 'relative', zIndex: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          {stats.map((stat, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+              style={{ background: 'white', borderRadius: '12px', padding: '14px 10px', textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
+              <div style={{ color: stat.color, marginBottom: '4px' }}>{stat.icon}</div>
+              <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>{stat.value}</div>
+              <div style={{ fontSize: '10px', color: '#64748b' }}>{stat.label}</div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </section>
+
+      {/* ============================================
+          MAIN SERVICES GRID (6 Cards)
+      ============================================ */}
+      <section style={{ maxWidth: '1000px', margin: '0 auto', padding: '32px 20px 20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', marginBottom: '2px' }}>Our Services</h2>
+          <p style={{ color: '#64748b', fontSize: '13px' }}>Everything you need for holistic wellness</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+          {services.map((service, i) => (
+            <motion.div key={service.route} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+              onClick={() => navigate(service.route)}
+              style={{ background: service.bg, borderRadius: '12px', padding: '18px 12px', textAlign: 'center', cursor: 'pointer', border: `1.5px solid ${service.color}20`, transition: 'all 0.25s', position: 'relative' }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)'; e.currentTarget.style.borderColor = service.color; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = `${service.color}20`; }}>
+              {service.badge && (
+                <span style={{ position: 'absolute', top: '8px', right: '8px', background: '#059669', color: 'white', padding: '2px 8px', borderRadius: '8px', fontSize: '9px', fontWeight: '700' }}>{service.badge}</span>
+              )}
+              <div style={{ fontSize: '28px', marginBottom: '6px' }}>{service.icon}</div>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '2px' }}>{service.title}</div>
+              <div style={{ fontSize: '10px', color: '#64748b', lineHeight: '1.3' }}>{service.desc}</div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ============================================
+          FEATURED DOCTORS
+      ============================================ */}
+      {featuredDoctors.length > 0 && (
+        <section style={{ background: 'white', padding: '28px 20px' }}>
+          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', margin: 0 }}>👨‍⚕️ Featured Ayurvedic Doctors</h2>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: '2px 0 0' }}>Top-rated AYUSH-registered practitioners</p>
+              </div>
+              <Link to="/ayurveda/doctors" style={{ color: '#059669', fontWeight: '600', fontSize: '12px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                View All <FaArrowRight size={10} />
+              </Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '10px' }}>
+              {featuredDoctors.slice(0, 3).map((doctor) => (
+                <div key={doctor._id} onClick={() => navigate(`/ayurveda/doctor/${doctor._id}`)}
+                  style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px', cursor: 'pointer', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, #059669, #047857)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '18px', flexShrink: 0 }}>👨‍⚕️</div>
+                    <div>
+                      <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Dr. {doctor.name}</h3>
+                      <p style={{ fontSize: '11px', color: '#059669', margin: '1px 0' }}>{doctor.specialization}</p>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
+                        <span style={{ fontSize: '11px', color: '#f59e0b' }}>⭐ {doctor.rating}</span>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#1e293b' }}>₹{doctor.consultationFee}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ============================================
+          TRUST SECTION
+      ============================================ */}
+      <section style={{ maxWidth: '1000px', margin: '0 auto', padding: '28px 20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          {trustFeatures.map((f, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+              style={{ textAlign: 'center', padding: '18px 14px', background: 'white', borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+              <div style={{ color: '#059669', marginBottom: '6px' }}>{f.icon}</div>
+              <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', margin: '0 0 2px' }}>{f.title}</h3>
+              <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{f.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ============================================
+          BOTTOM CTA
+      ============================================ */}
+      <section style={{ background: 'linear-gradient(135deg, #064e3b, #047857)', padding: '28px 20px' }}>
+        <div style={{ maxWidth: '550px', margin: '0 auto', textAlign: 'center', color: 'white' }}>
+          <div style={{ fontSize: '30px', marginBottom: '6px' }}>🕉️</div>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 4px' }}>Begin Your Wellness Journey</h2>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', margin: '0 0 14px' }}>Take the free Prakriti quiz or consult an Ayurvedic doctor today</p>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/ayurveda/prakriti')}
+              style={{ padding: '11px 22px', background: 'white', color: '#065f46', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+              🧬 Start Free Quiz
+            </button>
+            <button onClick={() => navigate('/ayurveda/commerce')}
+              style={{ padding: '11px 22px', background: 'rgba(255,255,255,0.12)', color: 'white', border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+              🌿 Wellness Store
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
