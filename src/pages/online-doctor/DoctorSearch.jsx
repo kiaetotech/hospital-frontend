@@ -40,6 +40,7 @@ const DISEASE_SPECIALTY_MAP = {
   'finger': 'Orthopedic', 'hand': 'Orthopedic', 'elbow': 'Orthopedic', 'bone': 'Orthopedic',
   'fingure': 'Orthopedic', 'fingar': 'Orthopedic', 'fingure injury': 'Orthopedic',
   'hand injury': 'Orthopedic', 'finger injury': 'Orthopedic', 'finger pain': 'Orthopedic',
+  'joint': 'Orthopedic', 'leg': 'Orthopedic',
   
   // Skin
   'acne': 'Dermatologist', 'pimple': 'Dermatologist', 'eczema': 'Dermatologist',
@@ -182,27 +183,54 @@ const DoctorSearch = () => {
   const urlQ = searchParams.get('q') || '';
   const urlSpecialty = searchParams.get('specialty') || '';
 
+  const [filters, setFilters] = useState({
+    q: urlQ,
+    specialty: urlSpecialty,
+    language: '',
+    gender: '',
+    minExperience: '',
+    maxFee: '',
+    minRating: '',
+    available: searchParams.get('available') || '',
+    sort: 'rating',
+    page: 1,
+  });
+
+  const [resultInfo, setResultInfo] = useState('');
+
   // ============================================
-  // Find specialty from keyword map (with partial matching)
+  // Find specialty from keyword map
   // ============================================
   const findSpecialtyFromKeyword = (query) => {
     if (!query) return '';
     const qLower = query.toLowerCase();
-    const words = qLower.split(/\s+/);
     let bestMatch = '';
     let bestLen = 0;
 
-    for (const word of words) {
-      if (word.length < 3) continue;
-      for (const [keyword, specialty] of Object.entries(DISEASE_SPECIALTY_MAP)) {
-        if (keyword.includes(word) || word.includes(keyword)) {
-          if (keyword.length > bestLen) {
-            bestMatch = specialty;
-            bestLen = keyword.length;
+    // Check full phrases first
+    for (const [keyword, specialty] of Object.entries(DISEASE_SPECIALTY_MAP)) {
+      if (qLower.includes(keyword) && keyword.length > bestLen) {
+        bestMatch = specialty;
+        bestLen = keyword.length;
+      }
+    }
+
+    // If no match, check individual words
+    if (!bestMatch) {
+      const words = qLower.split(/\s+/);
+      for (const word of words) {
+        if (word.length < 3) continue;
+        for (const [keyword, specialty] of Object.entries(DISEASE_SPECIALTY_MAP)) {
+          if (keyword.includes(word) || word.includes(keyword)) {
+            if (keyword.length > bestLen) {
+              bestMatch = specialty;
+              bestLen = keyword.length;
+            }
           }
         }
       }
     }
+
     return bestMatch;
   };
 
@@ -228,61 +256,56 @@ const DoctorSearch = () => {
   };
 
   // ============================================
-  // Initialize search from URL params
+  // Smart search — auto-detect specialty when typing
   // ============================================
-  const [detectedSpecialty, setDetectedSpecialty] = useState(urlSpecialty);
-  const [resultInfo, setResultInfo] = useState('');
+  const handleSearchInput = async (value) => {
+    setFilters(prev => ({ ...prev, q: value, page: 1 }));
+    
+    if (value.trim().length >= 3) {
+      // Try keyword map first (instant)
+      const keywordSpecialty = findSpecialtyFromKeyword(value);
+      if (keywordSpecialty) {
+        setFilters(prev => ({ ...prev, specialty: keywordSpecialty }));
+        setResultInfo(`Showing ${keywordSpecialty}s for "${value}"`);
+        return;
+      }
+      
+      // Try AI
+      const aiSpecialty = await detectSpecialtyFromAI(value);
+      if (aiSpecialty) {
+        setFilters(prev => ({ ...prev, specialty: aiSpecialty }));
+        setResultInfo(`Showing ${aiSpecialty}s for "${value}"`);
+      } else {
+        setFilters(prev => ({ ...prev, specialty: '' }));
+        setResultInfo(`Search results for "${value}"`);
+      }
+    } else {
+      setFilters(prev => ({ ...prev, specialty: '' }));
+      setResultInfo('');
+    }
+  };
 
-useEffect(() => {
+  // ============================================
+  // Initialize from URL params
+  // ============================================
+  useEffect(() => {
     const initSearch = async () => {
-      let specialty = urlSpecialty;
-
-      if (urlQ && !urlSpecialty) {
-        // Try keyword map first (instant)
-        specialty = findSpecialtyFromKeyword(urlQ);
-
-        // ALWAYS verify with AI for better accuracy
-        const aiSpecialty = await detectSpecialtyFromAI(urlQ);
-        if (aiSpecialty) {
-          specialty = aiSpecialty; // AI overrides keyword map
-        }
-
-        if (specialty) {
-          setResultInfo(`Showing ${specialty}s for "${urlQ}"`);
-        } else {
-          setResultInfo(`Search results for "${urlQ}"`);
-        }
+      if (urlQ) {
+        await handleSearchInput(urlQ);
       } else if (urlSpecialty) {
         setResultInfo(`Showing ${urlSpecialty}s`);
+        setFilters(prev => ({ ...prev, specialty: urlSpecialty }));
       }
-
-      setDetectedSpecialty(specialty);
-      setFilters(prev => ({
-        ...prev,
-        q: urlQ,
-        specialty: specialty || ''
-      }));
     };
-
     initSearch();
   }, [urlQ, urlSpecialty]);
 
-  const [filters, setFilters] = useState({
-    q: urlQ,
-    specialty: detectedSpecialty || '',
-    language: '',
-    gender: '',
-    minExperience: '',
-    maxFee: '',
-    minRating: '',
-    available: searchParams.get('available') || '',
-    sort: 'rating',
-    page: 1,
-  });
-
+  // ============================================
+  // Fetch doctors when filters change
+  // ============================================
   useEffect(() => {
     fetchDoctors();
-  }, [filters]);
+  }, [filters.page, filters.sort, filters.specialty, filters.language, filters.gender, filters.minExperience, filters.maxFee, filters.available]);
 
   const fetchDoctors = async () => {
     setLoading(true);
@@ -343,7 +366,10 @@ useEffect(() => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Search</label>
-                  <input type="text" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value, page: 1 })} placeholder="Doctor name, disease..." className="w-full border-2 rounded-xl px-4 py-2.5 text-sm focus:border-blue-400 focus:outline-none" />
+                  <input type="text" value={filters.q} 
+                    onChange={(e) => handleSearchInput(e.target.value)} 
+                    placeholder="Condition, symptom, or doctor name..." 
+                    className="w-full border-2 rounded-xl px-4 py-2.5 text-sm focus:border-blue-400 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Specialty</label>
