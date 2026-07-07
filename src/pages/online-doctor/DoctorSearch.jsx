@@ -233,17 +233,18 @@ const DoctorSearch = () => {
   const [detectedSpecialty, setDetectedSpecialty] = useState(urlSpecialty);
   const [resultInfo, setResultInfo] = useState('');
 
-  useEffect(() => {
+useEffect(() => {
     const initSearch = async () => {
       let specialty = urlSpecialty;
 
       if (urlQ && !urlSpecialty) {
-        // Step 1: Try keyword map
+        // Try keyword map first (instant)
         specialty = findSpecialtyFromKeyword(urlQ);
 
-        // Step 2: If no match, try AI
-        if (!specialty) {
-          specialty = await detectSpecialtyFromAI(urlQ);
+        // ALWAYS verify with AI for better accuracy
+        const aiSpecialty = await detectSpecialtyFromAI(urlQ);
+        if (aiSpecialty) {
+          specialty = aiSpecialty; // AI overrides keyword map
         }
 
         if (specialty) {
