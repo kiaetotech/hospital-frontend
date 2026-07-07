@@ -68,6 +68,7 @@ import HomeoDoctorDashboard from './pages/homeopathy/DoctorDashboard';
 import HomeoCenterRegistration from './pages/homeopathy/CenterRegistration';
 import HomeoPharmacyRegistration from './pages/homeopathy/PharmacyRegistration';
 import NaturopathyCenters from './pages/homeopathy/NaturopathyCenters';
+import RemedyMatcher from './pages/homeopathy/RemedyMatcher';
 
 // ============================================
 // LEGAL PAGES
@@ -271,6 +272,7 @@ function App() {
           <Route path="/homeopathy/center/register" element={<HomeoCenterRegistration />} />
           <Route path="/homeopathy/pharmacy/register" element={<HomeoPharmacyRegistration />} />
           <Route path="/homeopathy/centers" element={<NaturopathyCenters />} />
+	  <Route path="/homeopathy/remedy-matcher" element={<RemedyMatcher />} />
 
           {/* LEGAL PAGES */}
           <Route path="/terms" element={<TermsAndConditions />} />

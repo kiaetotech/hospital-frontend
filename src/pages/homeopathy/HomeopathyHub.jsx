@@ -1,13 +1,14 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaUserMd, FaLeaf, FaShoppingBag, FaVideo, FaStar, FaCheckCircle, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
+import { FaUserMd, FaLeaf, FaShoppingBag, FaVideo, FaStar, FaCheckCircle, FaUserPlus, FaSignInAlt, FaBrain } from 'react-icons/fa';
 
 const HomeopathyHub = () => {
   const navigate = useNavigate();
 
   const services = [
     { icon: '👨‍⚕️', title: 'Find a Homeopath', desc: 'Consult verified BHMS/MD doctors', route: '/homeopathy/doctors', color: '#7c3aed', bg: '#f5f3ff' },
+    { icon: '🤖', title: 'Remedy Matcher AI', desc: 'AI-powered remedy suggestion', route: '/homeopathy/remedy-matcher', color: '#f97316', bg: '#fff7ed', badge: 'AI' },
     { icon: '🌿', title: 'Naturopathy Centers', desc: 'Drugless natural healing programs', route: '/homeopathy/centers', color: '#059669', bg: '#ecfdf5' },
     { icon: '💊', title: 'Pharmacy', desc: 'Order potentized remedies online', route: '/homeopathy/pharmacy', color: '#dc2626', bg: '#fef2f2' },
     { icon: '📞', title: 'Online Consult', desc: 'Video/audio consultation', route: '/homeopathy/doctors?mode=online', color: '#2563eb', bg: '#eff6ff' },
@@ -46,9 +47,9 @@ const HomeopathyHub = () => {
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 22px', background: 'white', color: '#7c3aed', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
               👨‍⚕️ Find a Doctor
             </button>
-            <button onClick={() => navigate('/homeopathy/pharmacy')}
+            <button onClick={() => navigate('/homeopathy/remedy-matcher')}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 22px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
-              💊 Order Medicine
+              🤖 AI Remedy Matcher
             </button>
           </motion.div>
         </div>
@@ -78,10 +79,15 @@ const HomeopathyHub = () => {
           {services.map((item, i) => (
             <motion.div key={item.title} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
               onClick={() => navigate(item.route)}
-              style={{ background: item.bg, borderRadius: '12px', padding: '18px 12px', textAlign: 'center', cursor: 'pointer', border: `1.5px solid ${item.color}20`, transition: 'all 0.25s' }}
+              style={{ background: item.bg, borderRadius: '12px', padding: '18px 12px', textAlign: 'center', cursor: 'pointer', border: `1.5px solid ${item.color}20`, transition: 'all 0.25s', position: 'relative' }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)'; e.currentTarget.style.borderColor = item.color; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = `${item.color}20`; }}>
-              <div style={{ fontSize: '28px', marginBottom: '6px' }}>{item.icon}</div>
+              <div style={{ color: item.color, marginBottom: '8px', display: 'inline-block', position: 'relative' }}>
+                <span style={{ fontSize: '28px' }}>{item.icon}</span>
+                {item.badge && (
+                  <span style={{ position: 'absolute', top: '-8px', right: '-18px', background: '#f97316', color: 'white', padding: '2px 7px', borderRadius: '8px', fontSize: '9px', fontWeight: '700' }}>{item.badge}</span>
+                )}
+              </div>
               <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '2px' }}>{item.title}</div>
               <div style={{ fontSize: '10px', color: '#64748b', lineHeight: '1.3' }}>{item.desc}</div>
             </motion.div>
