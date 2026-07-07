@@ -8,7 +8,8 @@ const MentalHealthTherapists = () => {
   const autoMatch = searchParams.get('match');
   const [loading, setLoading] = useState(true);
   const [therapists, setTherapists] = useState([]);
-  const [matchMode, setMatchMode] = useState(false);
+  const [matchMode, setMatchMode] = useState(autoMatch === 'true');
+  const [showMatchPanel, setShowMatchPanel] = useState(autoMatch === 'true');
   const [matchPrefs, setMatchPrefs] = useState({ language: '', gender: '', budget: '', concern: '' });
   const [matchedTherapists, setMatchedTherapists] = useState([]);
   
@@ -23,6 +24,7 @@ const MentalHealthTherapists = () => {
   useEffect(() => {
     if (autoMatch === 'true') {
       setMatchMode(true);
+      setShowMatchPanel(true);
       setTimeout(() => {
         document.getElementById('smart-match')?.scrollIntoView({ behavior: 'smooth' });
       }, 400);
@@ -75,41 +77,56 @@ const MentalHealthTherapists = () => {
       <div style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', padding: '20px', color: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={() => navigate('/mentalhealth')} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>← Back</button>
-          <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>🧠 Find a Therapist</h1>
+          <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>
+            {autoMatch === 'true' ? '🎯 Smart Match' : '🧠 Find a Therapist'}
+          </h1>
         </div>
       </div>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
 
-        {/* SMART MATCHING PANEL */}
-        <div id="smart-match" style={{ backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b', margin: 0 }}>🎯 Smart Matching — Find Your Perfect Therapist</h3>
-            <button onClick={() => { setMatchMode(false); setMatchPrefs({ language: '', gender: '', budget: '', concern: '' }); }}
-              style={{ fontSize: '11px', color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}>Clear</button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', marginBottom: '10px' }}>
-            <select value={matchPrefs.language} onChange={(e) => setMatchPrefs({ ...matchPrefs, language: e.target.value })} style={selectStyle}>
-              <option value="">🗣️ Language</option>
-              <option>Hindi</option><option>English</option><option>Tamil</option><option>Telugu</option><option>Bengali</option><option>Marathi</option>
-            </select>
-            <select value={matchPrefs.gender} onChange={(e) => setMatchPrefs({ ...matchPrefs, gender: e.target.value })} style={selectStyle}>
-              <option value="">👤 Gender</option>
-              <option>Male</option><option>Female</option><option>Other</option>
-            </select>
-            <select value={matchPrefs.budget} onChange={(e) => setMatchPrefs({ ...matchPrefs, budget: e.target.value })} style={selectStyle}>
-              <option value="">💰 Budget</option>
-              <option value="500">Up to ₹500</option><option value="800">Up to ₹800</option><option value="1200">Up to ₹1200</option><option value="2000">Up to ₹2000</option>
-            </select>
-            <select value={matchPrefs.concern} onChange={(e) => setMatchPrefs({ ...matchPrefs, concern: e.target.value })} style={selectStyle}>
-              <option value="">🏥 Concern</option>
-              <option>Anxiety</option><option>Depression</option><option>Stress</option><option>Trauma</option><option>Relationship</option><option>Addiction</option>
-            </select>
-          </div>
-          <button onClick={handleSmartMatch}
-            style={{ width: '100%', padding: '10px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '13px' }}>
-            🎯 Find My Match
+        {/* SMART MATCHING PANEL - Collapsible */}
+        <div id="smart-match" style={{ backgroundColor: 'white', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: '12px' }}>
+          <button onClick={() => setShowMatchPanel(!showMatchPanel)}
+            style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0' }}>
+            <h3 style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b', margin: 0 }}>
+              🎯 Smart Matching — Find Your Perfect Therapist
+              {matchMode && <span style={{ fontSize: '11px', color: '#059669', marginLeft: '8px', fontWeight: '600' }}>Active</span>}
+            </h3>
+            <span style={{ fontSize: '18px', color: '#7c3aed', fontWeight: '700' }}>{showMatchPanel ? '▲' : '▼'}</span>
           </button>
+          
+          {showMatchPanel && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>Match by language, gender, budget & concern</span>
+                <button onClick={() => { setMatchMode(false); setMatchPrefs({ language: '', gender: '', budget: '', concern: '' }); }}
+                  style={{ fontSize: '11px', color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}>Clear</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', marginBottom: '10px', marginTop: '8px' }}>
+                <select value={matchPrefs.language} onChange={(e) => setMatchPrefs({ ...matchPrefs, language: e.target.value })} style={selectStyle}>
+                  <option value="">🗣️ Language</option>
+                  <option>Hindi</option><option>English</option><option>Tamil</option><option>Telugu</option><option>Bengali</option><option>Marathi</option>
+                </select>
+                <select value={matchPrefs.gender} onChange={(e) => setMatchPrefs({ ...matchPrefs, gender: e.target.value })} style={selectStyle}>
+                  <option value="">👤 Gender</option>
+                  <option>Male</option><option>Female</option><option>Other</option>
+                </select>
+                <select value={matchPrefs.budget} onChange={(e) => setMatchPrefs({ ...matchPrefs, budget: e.target.value })} style={selectStyle}>
+                  <option value="">💰 Budget</option>
+                  <option value="500">Up to ₹500</option><option value="800">Up to ₹800</option><option value="1200">Up to ₹1200</option><option value="2000">Up to ₹2000</option>
+                </select>
+                <select value={matchPrefs.concern} onChange={(e) => setMatchPrefs({ ...matchPrefs, concern: e.target.value })} style={selectStyle}>
+                  <option value="">🏥 Concern</option>
+                  <option>Anxiety</option><option>Depression</option><option>Stress</option><option>Trauma</option><option>Relationship</option><option>Addiction</option>
+                </select>
+              </div>
+              <button onClick={handleSmartMatch}
+                style={{ width: '100%', padding: '10px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '13px' }}>
+                🎯 Find My Match
+              </button>
+            </>
+          )}
         </div>
 
         {/* Filters */}
