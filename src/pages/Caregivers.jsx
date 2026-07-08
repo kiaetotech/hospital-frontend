@@ -1,361 +1,501 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCaregivers, getAICaregiverMatch, getCaregiverSuggestions } from '../services/api';
 
 const Caregivers = () => {
   const navigate = useNavigate();
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationStatus, setLocationStatus] = useState('loading');
-  const [filters, setFilters] = useState({
-    radius: 10,
-    gender: 'any',
-    serviceType: '',
-    minRating: '',
-    minExperience: '',
-    maxHourlyRate: '',
-    specializations: ''
-  });
-  const [filteredCaregivers, setFilteredCaregivers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [caregivers, setCaregivers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
-  const itemsPerPage = 6;
+  const [showAIMatch, setShowAIMatch] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [userLocation, setUserLocation] = useState(null);
+  
+  const [filters, setFilters] = useState({
+    serviceType: '',
+    gender: 'any',
+    minExperience: '',
+    minRating: '',
+    maxHourlyRate: '',
+    specializations: '',
+    city: '',
+    radius: 10
+  });
 
-  // Complete caregiver data
-  const allCaregivers = [
-    {
-      _id: '1',
-      fullName: 'Priya Sharma',
-      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=PS',
-      gender: 'female',
-      serviceType: 'both',
-      experienceYears: 8,
-      certifications: ['RN', 'CPR', 'BLS'],
-      specializations: ['dementia', 'post-surgery', 'bedridden'],
-      pricing: { personal: { hourly: 350 }, skilled: { hourly: 500 } },
-      ratings: { average: 4.8, count: 124 },
-      isVerified: true,
-      distance: 2.5,
-      phone: '9876543210',
-      email: 'priya@example.com',
-      location: { city: 'Mumbai' },
-      availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    },
-    {
-      _id: '2',
-      fullName: 'Rajesh Kumar',
-      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=RK',
-      gender: 'male',
-      serviceType: 'personal',
-      experienceYears: 5,
-      certifications: ['CNA', 'CPR'],
-      specializations: ['elder care', 'mobility support'],
-      pricing: { personal: { hourly: 250 } },
-      ratings: { average: 4.6, count: 89 },
-      isVerified: true,
-      distance: 3.8,
-      phone: '9876543211',
-      email: 'rajesh@example.com',
-      location: { city: 'Mumbai' },
-      availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Saturday', 'Sunday']
-    },
-    {
-      _id: '3',
-      fullName: 'Sunita Reddy',
-      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=SR',
-      gender: 'female',
-      serviceType: 'skilled',
-      experienceYears: 12,
-      certifications: ['RN', 'BLS', 'ACLS'],
-      specializations: ['wound care', 'ventilator', 'tracheostomy'],
-      pricing: { skilled: { hourly: 650 } },
-      ratings: { average: 4.9, count: 210 },
-      isVerified: true,
-      distance: 5.2,
-      phone: '9876543212',
-      email: 'sunita@example.com',
-      location: { city: 'Navi Mumbai' },
-      availableDays: ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    },
-    {
-      _id: '4',
-      fullName: 'Anita Desai',
-      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=AD',
-      gender: 'female',
-      serviceType: 'personal',
-      experienceYears: 3,
-      certifications: ['BLS'],
-      specializations: ['newborn care', 'postnatal'],
-      pricing: { personal: { hourly: 200 } },
-      ratings: { average: 4.5, count: 45 },
-      isVerified: true,
-      distance: 4.5,
-      phone: '9876543213',
-      email: 'anita@example.com',
-      location: { city: 'Mumbai' },
-      availableDays: ['Monday', 'Friday', 'Saturday', 'Sunday']
-    },
-    {
-      _id: '5',
-      fullName: 'Vikram Singh',
-      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=VS',
-      gender: 'male',
-      serviceType: 'both',
-      experienceYears: 15,
-      certifications: ['RN', 'CPR', 'ACLS', 'BLS'],
-      specializations: ['dementia', 'palliative', 'hospice'],
-      pricing: { personal: { hourly: 600 }, skilled: { hourly: 800 } },
-      ratings: { average: 4.9, count: 320 },
-      isVerified: true,
-      distance: 6.0,
-      phone: '9876543214',
-      email: 'vikram@example.com',
-      location: { city: 'Mumbai' },
-      availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    },
-    {
-      _id: '6',
-      fullName: 'Meera Joshi',
-      photo: 'https://placehold.co/100x100/e2e8f0/1e293b?text=MJ',
-      gender: 'female',
-      serviceType: 'skilled',
-      experienceYears: 7,
-      certifications: ['RN', 'CPR'],
-      specializations: ['diabetes care', 'wound care'],
-      pricing: { skilled: { hourly: 550 } },
-      ratings: { average: 4.7, count: 98 },
-      isVerified: true,
-      distance: 3.2,
-      phone: '9876543215',
-      email: 'meera@example.com',
-      location: { city: 'Mumbai' },
-      availableDays: ['Monday', 'Tuesday', 'Thursday', 'Friday']
+  const [aiMatchData, setAIMatchData] = useState({
+    careType: '',
+    city: '',
+    serviceType: '',
+    languages: '',
+    genderPreference: 'any',
+    maxBudget: '',
+    skillsRequired: ''
+  });
+
+  const ITEMS_PER_PAGE = 6;
+
+  // Fetch caregivers from API
+  const fetchCaregivers = useCallback(async (page = 1) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const params = {
+        page,
+        limit: ITEMS_PER_PAGE,
+        ...(filters.serviceType && { serviceType: filters.serviceType }),
+        ...(filters.gender !== 'any' && { gender: filters.gender }),
+        ...(filters.minExperience && { minExperience: filters.minExperience }),
+        ...(filters.minRating && { minRating: filters.minRating }),
+        ...(filters.maxHourlyRate && { maxHourlyRate: filters.maxHourlyRate }),
+        ...(filters.city && { city: filters.city })
+      };
+
+      const response = await getCaregivers(params);
+      
+      if (response.data.success) {
+        let data = response.data.data;
+        
+        // Client-side specialization filter
+        if (filters.specializations) {
+          const specTerms = filters.specializations.toLowerCase().split(',').map(s => s.trim());
+          data = data.filter(c => 
+            c.specializations?.some(spec => 
+              specTerms.some(term => spec.toLowerCase().includes(term))
+            )
+          );
+        }
+        
+        setCaregivers(data);
+        setTotalPages(response.data.pagination?.total || Math.ceil(data.length / ITEMS_PER_PAGE));
+      }
+    } catch (err) {
+      setError('Failed to load caregivers. Please try again.');
+      console.error('Fetch caregivers error:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [filters]);
+
+  // AI Quick Match
+  const handleAIMatch = async () => {
+    if (!aiMatchData.careType || !aiMatchData.city) {
+      alert('Please select care type and city');
+      return;
+    }
+    
+    setLoading(true);
+    setShowAIMatch(false);
+    
+    try {
+      const response = await getAICaregiverMatch({
+        careType: aiMatchData.careType,
+        city: aiMatchData.city,
+        serviceType: aiMatchData.serviceType || undefined,
+        languages: aiMatchData.languages ? aiMatchData.languages.split(',').map(l => l.trim()) : [],
+        genderPreference: aiMatchData.genderPreference !== 'any' ? aiMatchData.genderPreference : undefined,
+        maxBudget: aiMatchData.maxBudget || undefined,
+        skillsRequired: aiMatchData.skillsRequired ? aiMatchData.skillsRequired.split(',').map(s => s.trim()) : []
+      });
+      
+      if (response.data.success) {
+        setCaregivers(response.data.data);
+        setTotalPages(1);
+      }
+    } catch (err) {
+      alert('AI matching failed. Showing all caregivers instead.');
+      fetchCaregivers();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Search with suggestions
+  const handleSearchInput = async (value) => {
+    setSearchQuery(value);
+    
+    if (value.length >= 2) {
+      try {
+        const response = await getCaregiverSuggestions(value);
+        if (response.data.success) {
+          setSuggestions(response.data.data);
+          setShowSuggestions(true);
+        }
+      } catch (err) {
+        // Silently fail for suggestions
+      }
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    if (suggestion.type === 'city') {
+      setFilters(prev => ({ ...prev, city: suggestion.text }));
+    } else if (suggestion.type === 'skill') {
+      setFilters(prev => ({ 
+        ...prev, 
+        specializations: prev.specializations 
+          ? prev.specializations + ', ' + suggestion.text 
+          : suggestion.text 
+      }));
+    }
+    setSearchQuery('');
+    setShowSuggestions(false);
+  };
 
   // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-          setLocationStatus('success');
-          // Apply initial filters after location is set
-          setTimeout(() => applyFilters(), 500);
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
         },
         () => {
-          setLocationStatus('error');
-          applyFilters();
+          console.log('Location access denied');
         }
       );
-    } else {
-      setLocationStatus('unsupported');
-      applyFilters();
     }
   }, []);
 
-  // Apply filters
-  const applyFilters = () => {
-    setLoading(true);
-    let filtered = [...allCaregivers];
-    
-    if (filters.serviceType) {
-      if (filters.serviceType === 'personal') {
-        filtered = filtered.filter(c => c.serviceType === 'personal' || c.serviceType === 'both');
-      } else if (filters.serviceType === 'skilled') {
-        filtered = filtered.filter(c => c.serviceType === 'skilled' || c.serviceType === 'both');
-      }
-    }
-    
-    if (filters.gender && filters.gender !== 'any') {
-      filtered = filtered.filter(c => c.gender === filters.gender);
-    }
-    
-    if (filters.minExperience) {
-      filtered = filtered.filter(c => c.experienceYears >= parseInt(filters.minExperience));
-    }
-    
-    if (filters.minRating) {
-      filtered = filtered.filter(c => c.ratings.average >= parseFloat(filters.minRating));
-    }
-    
-    if (filters.maxHourlyRate) {
-      const maxRate = parseInt(filters.maxHourlyRate);
-      filtered = filtered.filter(c => {
-        const rate = c.serviceType === 'personal' ? c.pricing.personal?.hourly : c.pricing.skilled?.hourly;
-        return rate <= maxRate;
-      });
-    }
-    
-    if (filters.specializations) {
-      const specTerms = filters.specializations.toLowerCase().split(',').map(s => s.trim());
-      filtered = filtered.filter(c => 
-        c.specializations.some(spec => specTerms.some(term => spec.toLowerCase().includes(term)))
-      );
-    }
-    
-    if (userLocation && filters.radius) {
-      const maxDist = parseInt(filters.radius);
-      filtered = filtered.filter(c => c.distance <= maxDist);
-    }
-    
-    setFilteredCaregivers(filtered);
+  // Initial fetch
+  useEffect(() => {
+    fetchCaregivers(currentPage);
+  }, [currentPage, fetchCaregivers]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
-    setLoading(false);
   };
 
   const resetFilters = () => {
     setFilters({
-      radius: 10,
-      gender: 'any',
       serviceType: '',
-      minRating: '',
+      gender: 'any',
       minExperience: '',
+      minRating: '',
       maxHourlyRate: '',
-      specializations: ''
+      specializations: '',
+      city: '',
+      radius: 10
     });
-    setTimeout(() => applyFilters(), 100);
+    setCurrentPage(1);
   };
 
-  const handleFilterChange = (key, value) => {
-    setFilters({ ...filters, [key]: value });
-  };
-
-  // Apply filters when filters change
-  useEffect(() => {
-    applyFilters();
-  }, [filters]);
-
-  const getServiceTypeText = (type) => {
-    if (type === 'personal') return '🩺 Personal Care';
-    if (type === 'skilled') return '💉 Skilled Nursing';
-    return '🤝 Both';
+  const getServiceTypeBadge = (type) => {
+    if (type === 'personal') return { icon: '🩺', text: 'Personal Care', color: '#dbeafe' };
+    if (type === 'skilled') return { icon: '💉', text: 'Skilled Nursing', color: '#fce7f3' };
+    return { icon: '🤝', text: 'Both', color: '#d1fae5' };
   };
 
   const getRatingStars = (rating) => {
     const full = Math.floor(rating);
     const half = rating % 1 >= 0.5;
-    return '⭐'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
+    return '⭐'.repeat(full) + (half ? '½' : '');
   };
 
-  // Handle View Profile
-  const handleViewProfile = (caregiver) => {
-    navigate(`/caregiver-profile/${caregiver._id}`, { state: { caregiver } });
+  const getInitials = (name) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CG';
   };
-
-  // Handle Book Now
-  const handleBookNow = (caregiver) => {
-    navigate(`/book-caregiver/${caregiver._id}`, { state: { caregiver } });
-  };
-
-  const paginatedCaregivers = filteredCaregivers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const totalPages = Math.ceil(filteredCaregivers.length / itemsPerPage);
-
-  if (locationStatus === 'loading' && filteredCaregivers.length === 0) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Detecting your location...</div>;
-  }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e3a8a' }}>👵 Find a Caregiver</h1>
-          <p style={{ color: '#6b7280' }}>Connect with trusted caregivers for in-home care services</p>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+      {/* Hero Section */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)',
+        padding: '3rem 2rem',
+        textAlign: 'center',
+        color: 'white'
+      }}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+          🏠 Find Trusted Caregivers
+        </h1>
+        <p style={{ fontSize: '1.1rem', opacity: 0.9, marginBottom: '2rem' }}>
+          AI-powered matching with verified home care professionals
+        </p>
+        
+        {/* Search Bar */}
+        <div style={{ 
+          maxWidth: '700px', 
+          margin: '0 auto', 
+          position: 'relative' 
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: '0.5rem',
+            backgroundColor: 'white', 
+            borderRadius: '3rem', 
+            padding: '0.5rem',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}>
+            <input
+              type="text"
+              placeholder="Search by skill, city, or caregiver name..."
+              value={searchQuery}
+              onChange={(e) => handleSearchInput(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              style={{
+                flex: 1,
+                padding: '0.75rem 1.5rem',
+                border: 'none',
+                borderRadius: '3rem',
+                fontSize: '1rem',
+                outline: 'none',
+                color: '#1e293b'
+              }}
+            />
+            <button
+              onClick={() => setShowAIMatch(true)}
+              style={{
+                padding: '0.75rem 2rem',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '3rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                fontSize: '0.95rem'
+              }}
+            >
+              🤖 AI Quick Match
+            </button>
+          </div>
+          
+          {/* Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: '1rem',
+              right: '1rem',
+              backgroundColor: 'white',
+              borderRadius: '0.75rem',
+              marginTop: '0.5rem',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+              zIndex: 100,
+              overflow: 'hidden'
+            }}>
+              {suggestions.map((s, i) => (
+                <div
+                  key={i}
+                  onMouseDown={() => handleSuggestionClick(s)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    cursor: 'pointer',
+                    color: '#1e293b',
+                    borderBottom: '1px solid #f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                >
+                  {s.type === 'city' ? '📍' : '🎯'} {s.text}
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: 'auto' }}>
+                    {s.type === 'city' ? 'City' : 'Skill'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Filters Section */}
-        <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ fontWeight: 'bold' }}>🔍 Filter Caregivers</h3>
-            <button onClick={() => setShowFilters(!showFilters)} style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer' }}>
+      {/* Main Content */}
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+        {/* Filters Panel */}
+        <div style={{ 
+          backgroundColor: 'white', 
+          borderRadius: '1rem', 
+          padding: '1.5rem',
+          marginBottom: '1.5rem',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e2e8f0'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: showFilters ? '1rem' : '0'
+          }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1e293b' }}>
+              🔍 Filter Caregivers
+            </h3>
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#3b82f6',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.9rem'
+              }}
+            >
               {showFilters ? '▲ Hide Filters' : '▼ Show Filters'}
             </button>
           </div>
           
           {showFilters && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-              <select value={filters.serviceType} onChange={(e) => handleFilterChange('serviceType', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
-                <option value="">All Services</option>
-                <option value="personal">Personal Only</option>
-                <option value="skilled">Skilled Only</option>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+              gap: '0.75rem' 
+            }}>
+              <select 
+                value={filters.serviceType} 
+                onChange={(e) => handleFilterChange('serviceType', e.target.value)}
+                style={filterSelectStyle}
+              >
+                <option value="">All Service Types</option>
+                <option value="personal">🩺 Personal Care</option>
+                <option value="skilled">💉 Skilled Nursing</option>
               </select>
               
-              <select value={filters.gender} onChange={(e) => handleFilterChange('gender', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
+              <select 
+                value={filters.gender} 
+                onChange={(e) => handleFilterChange('gender', e.target.value)}
+                style={filterSelectStyle}
+              >
                 <option value="any">Any Gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
               
-              <select value={filters.minExperience} onChange={(e) => handleFilterChange('minExperience', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
-                <option value="">Experience</option>
-                <option value="2">2+ years</option>
-                <option value="5">5+ years</option>
-                <option value="10">10+ years</option>
+              <select 
+                value={filters.minExperience} 
+                onChange={(e) => handleFilterChange('minExperience', e.target.value)}
+                style={filterSelectStyle}
+              >
+                <option value="">Any Experience</option>
+                <option value="2">2+ Years</option>
+                <option value="5">5+ Years</option>
+                <option value="10">10+ Years</option>
               </select>
               
-              <select value={filters.minRating} onChange={(e) => handleFilterChange('minRating', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
-                <option value="">Rating</option>
-                <option value="4">4★ & up</option>
-                <option value="4.5">4.5★ & up</option>
+              <select 
+                value={filters.minRating} 
+                onChange={(e) => handleFilterChange('minRating', e.target.value)}
+                style={filterSelectStyle}
+              >
+                <option value="">Any Rating</option>
+                <option value="4">⭐ 4.0 & above</option>
+                <option value="4.5">⭐ 4.5 & above</option>
               </select>
               
-              <input type="number" placeholder="Max hourly rate (₹)" value={filters.maxHourlyRate} onChange={(e) => handleFilterChange('maxHourlyRate', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+              <input
+                type="number"
+                placeholder="Max hourly rate (₹)"
+                value={filters.maxHourlyRate}
+                onChange={(e) => handleFilterChange('maxHourlyRate', e.target.value)}
+                style={filterInputStyle}
+              />
               
-              <select value={filters.radius} onChange={(e) => handleFilterChange('radius', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}>
-                <option value="5">Within 5 km</option>
-                <option value="10">Within 10 km</option>
-                <option value="20">Within 20 km</option>
-                <option value="50">Within 50 km</option>
-              </select>
+              <input
+                type="text"
+                placeholder="City"
+                value={filters.city}
+                onChange={(e) => handleFilterChange('city', e.target.value)}
+                style={filterInputStyle}
+              />
               
-              <input type="text" placeholder="Specializations (comma separated)" value={filters.specializations} onChange={(e) => handleFilterChange('specializations', e.target.value)} style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.375rem' }} />
+              <input
+                type="text"
+                placeholder="Skills (comma separated)"
+                value={filters.specializations}
+                onChange={(e) => handleFilterChange('specializations', e.target.value)}
+                style={filterInputStyle}
+              />
               
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={applyFilters} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Apply</button>
-                <button onClick={resetFilters} style={{ flex: 1, backgroundColor: '#6b7280', color: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Reset</button>
+                <button 
+                  onClick={resetFilters}
+                  style={{
+                    flex: 1,
+                    padding: '0.6rem',
+                    backgroundColor: '#f1f5f9',
+                    color: '#64748b',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  Reset
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        <p style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>Found {filteredCaregivers.length} caregivers</p>
+        {/* Results Count */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '1rem'
+        }}>
+          <p style={{ color: '#64748b', fontWeight: '500' }}>
+            {loading ? 'Searching...' : `Found ${caregivers.length} caregivers`}
+          </p>
+          
+          {/* CTA for Caregivers */}
+          <button
+            onClick={() => navigate('/caregiver/register')}
+            style={{
+              padding: '0.5rem 1.5rem',
+              backgroundColor: '#1e3a8a',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.9rem'
+            }}
+          >
+            Register as Caregiver →
+          </button>
+        </div>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>Loading...</div>
-        ) : paginatedCaregivers.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '0.5rem' }}>
-            <p>No caregivers found matching your criteria.</p>
-            <button onClick={resetFilters} style={{ marginTop: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}>Reset Filters</button>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1rem' }}>
-            {paginatedCaregivers.map(c => (
-              <div key={c._id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        {/* Loading Skeleton */}
+        {loading && (
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', 
+            gap: '1rem' 
+          }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{
+                backgroundColor: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                animation: 'pulse 1.5s infinite'
+              }}>
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                  <img src={c.photo} alt={c.fullName} style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <div style={{ 
+                    width: '80px', 
+                    height: '80px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#e2e8f0' 
+                  }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{c.fullName}</h3>
-                      {c.isVerified && <span style={{ backgroundColor: '#10b981', color: 'white', padding: '0.15rem 0.4rem', borderRadius: '9999px', fontSize: '0.7rem' }}>✓ Verified</span>}
-                    </div>
-                    <div>{getRatingStars(c.ratings.average)} ({c.ratings.count} reviews)</div>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{c.experienceYears} years • {getServiceTypeText(c.serviceType)}</p>
-                    <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>🎯 {c.specializations.slice(0, 2).join(', ')}</p>
-                    <p style={{ fontSize: '0.875rem', color: '#3b82f6' }}>📍 {c.distance} km away</p>
-                    <p style={{ fontSize: '1rem', fontWeight: 'bold', color: '#10b981' }}>₹{c.pricing?.personal?.hourly || c.pricing?.skilled?.hourly}/hour</p>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <button 
-                        onClick={() => handleViewProfile(c)}
-                        style={{ flex: 1, backgroundColor: '#3b82f6', color: 'white', padding: '0.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
-                      >
-                        View Profile
-                      </button>
-                      <button 
-                        onClick={() => handleBookNow(c)}
-                        style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '0.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
-                      >
-                        Book Now
-                      </button>
-                    </div>
+                    <div style={{ height: '20px', backgroundColor: '#e2e8f0', borderRadius: '0.25rem', marginBottom: '0.5rem', width: '60%' }} />
+                    <div style={{ height: '16px', backgroundColor: '#e2e8f0', borderRadius: '0.25rem', marginBottom: '0.5rem', width: '40%' }} />
+                    <div style={{ height: '16px', backgroundColor: '#e2e8f0', borderRadius: '0.25rem', width: '80%' }} />
                   </div>
                 </div>
               </div>
@@ -363,16 +503,502 @@ const Caregivers = () => {
           </div>
         )}
 
+        {/* Error State */}
+        {!loading && error && (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '3rem',
+            backgroundColor: 'white',
+            borderRadius: '1rem',
+            border: '1px solid #fecaca'
+          }}>
+            <p style={{ color: '#dc2626', marginBottom: '1rem', fontSize: '1.1rem' }}>⚠️ {error}</p>
+            <button 
+              onClick={() => fetchCaregivers()}
+              style={{
+                padding: '0.75rem 2rem',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && caregivers.length === 0 && (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '4rem 2rem',
+            backgroundColor: 'white',
+            borderRadius: '1rem'
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔍</div>
+            <h3 style={{ color: '#1e293b', marginBottom: '0.5rem' }}>No Caregivers Found</h3>
+            <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+              Try adjusting your filters or search criteria
+            </p>
+            <button 
+              onClick={resetFilters}
+              style={{
+                padding: '0.75rem 2rem',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              Reset All Filters
+            </button>
+          </div>
+        )}
+
+        {/* Caregiver Cards Grid */}
+        {!loading && !error && caregivers.length > 0 && (
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', 
+            gap: '1rem' 
+          }}>
+            {caregivers.map(c => {
+              const badge = getServiceTypeBadge(c.serviceType);
+              return (
+                <div 
+                  key={c._id}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: '1rem',
+                    padding: '1.5rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    border: '1px solid #e2e8f0',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 10px 40px rgba(0,0,0,0.1)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {/* Match Score Badge (if AI matched) */}
+                  {c.matchScore && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '1rem',
+                      right: '1rem',
+                      backgroundColor: c.matchScore > 80 ? '#10b981' : c.matchScore > 60 ? '#f59e0b' : '#6b7280',
+                      color: 'white',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {c.matchScore}% Match
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    {/* Avatar */}
+                    {c.photo && c.photo !== 'https://placehold.co/400x400/e2e8f0/1e293b?text=Caregiver' ? (
+                      <img 
+                        src={c.photo} 
+                        alt={c.fullName}
+                        style={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '3px solid #e2e8f0'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '50%',
+                        backgroundColor: '#3b82f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '1.5rem',
+                        fontWeight: 'bold',
+                        border: '3px solid #e2e8f0'
+                      }}>
+                        {getInitials(c.fullName)}
+                      </div>
+                    )}
+                    
+                    <div style={{ flex: 1 }}>
+                      {/* Name + Verified Badge */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1e293b', margin: 0 }}>
+                          {c.fullName}
+                        </h3>
+                        {c.isVerified && (
+                          <span style={{
+                            backgroundColor: '#d1fae5',
+                            color: '#065f46',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '9999px',
+                            fontSize: '0.7rem',
+                            fontWeight: '600'
+                          }}>
+                            ✓ Verified
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Rating */}
+                      <div style={{ marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                        {getRatingStars(c.ratings?.average || 0)}
+                        <span style={{ color: '#64748b', marginLeft: '0.25rem' }}>
+                          ({c.ratings?.count || c.totalReviews || 0} reviews)
+                        </span>
+                      </div>
+                      
+                      {/* Experience + Service Type */}
+                      <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.25rem' }}>
+                        {c.experienceYears} years exp • 
+                        <span style={{
+                          display: 'inline-block',
+                          backgroundColor: badge.color,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '9999px',
+                          marginLeft: '0.5rem',
+                          fontSize: '0.75rem',
+                          fontWeight: '500'
+                        }}>
+                          {badge.icon} {badge.text}
+                        </span>
+                      </p>
+                      
+                      {/* Specializations */}
+                      <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.5rem' }}>
+                        🎯 {c.specializations?.slice(0, 3).join(', ') || 'General Care'}
+                      </p>
+                      
+                      {/* Location */}
+                      <p style={{ fontSize: '0.85rem', color: '#3b82f6', margin: '0 0 0.5rem' }}>
+                        📍 {c.location?.city || 'Available'}
+                        {c.distance && ` • ${c.distance} km away`}
+                      </p>
+                      
+                      {/* Price */}
+                      <p style={{ 
+                        fontSize: '1.1rem', 
+                        fontWeight: 'bold', 
+                        color: '#059669',
+                        margin: '0 0 0.75rem'
+                      }}>
+                        ₹{c.pricing?.personal?.hourly || c.pricing?.skilled?.hourly || 'N/A'}/hour
+                      </p>
+                      
+                      {/* Action Buttons */}
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => navigate(`/caregiver-profile/${c._id}`, { state: { caregiver: c } })}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            backgroundColor: '#eff6ff',
+                            color: '#1e40af',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: '0.5rem',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '0.85rem'
+                          }}
+                        >
+                          View Profile
+                        </button>
+                        <button 
+                          onClick={() => navigate(`/book-caregiver/${c._id}`, { state: { caregiver: c } })}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '0.85rem'
+                          }}
+                        >
+                          Book Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Pagination */}
         {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === 1 ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Previous</button>
-            <span>Page {currentPage} of {totalPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', backgroundColor: currentPage === totalPages ? '#ccc' : '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>Next</button>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            gap: '1rem',
+            marginTop: '2rem',
+            padding: '1rem'
+          }}>
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+              disabled={currentPage === 1}
+              style={{
+                padding: '0.5rem 1.5rem',
+                backgroundColor: currentPage === 1 ? '#e2e8f0' : '#3b82f6',
+                color: currentPage === 1 ? '#94a3b8' : 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              ← Previous
+            </button>
+            <span style={{ color: '#64748b', fontWeight: '500' }}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+              disabled={currentPage === totalPages}
+              style={{
+                padding: '0.5rem 1.5rem',
+                backgroundColor: currentPage === totalPages ? '#e2e8f0' : '#3b82f6',
+                color: currentPage === totalPages ? '#94a3b8' : 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              Next →
+            </button>
           </div>
         )}
       </div>
+
+      {/* AI Match Modal */}
+      {showAIMatch && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '1rem',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>
+                🤖 AI Caregiver Match
+              </h2>
+              <button 
+                onClick={() => setShowAIMatch(false)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  fontSize: '1.5rem', 
+                  cursor: 'pointer',
+                  color: '#64748b'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+              Tell us your requirements and our AI will find the best matches.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={modalLabelStyle}>Care Type *</label>
+                <select 
+                  value={aiMatchData.careType} 
+                  onChange={(e) => setAIMatchData(prev => ({ ...prev, careType: e.target.value }))}
+                  style={filterSelectStyle}
+                >
+                  <option value="">Select care type</option>
+                  <option value="Elderly Care">Elderly Care</option>
+                  <option value="Post-Surgery Care">Post-Surgery Care</option>
+                  <option value="Paralysis Care">Paralysis Care</option>
+                  <option value="Dementia Care">Dementia Care</option>
+                  <option value="Physiotherapy">Physiotherapy</option>
+                  <option value="Pediatric Care">Pediatric Care</option>
+                  <option value="Palliative Care">Palliative Care</option>
+                  <option value="Wound Care">Wound Care</option>
+                  <option value="Diabetes Care">Diabetes Care</option>
+                  <option value="Newborn Care">Newborn/Postnatal Care</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={modalLabelStyle}>City *</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter city"
+                  value={aiMatchData.city}
+                  onChange={(e) => setAIMatchData(prev => ({ ...prev, city: e.target.value }))}
+                  style={filterInputStyle}
+                />
+              </div>
+              
+              <div>
+                <label style={modalLabelStyle}>Service Type</label>
+                <select 
+                  value={aiMatchData.serviceType} 
+                  onChange={(e) => setAIMatchData(prev => ({ ...prev, serviceType: e.target.value }))}
+                  style={filterSelectStyle}
+                >
+                  <option value="">Any</option>
+                  <option value="personal">Personal Care</option>
+                  <option value="skilled">Skilled Nursing</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={modalLabelStyle}>Preferred Languages (comma separated)</label>
+                <input 
+                  type="text" 
+                  placeholder="Hindi, English, Tamil"
+                  value={aiMatchData.languages}
+                  onChange={(e) => setAIMatchData(prev => ({ ...prev, languages: e.target.value }))}
+                  style={filterInputStyle}
+                />
+              </div>
+              
+              <div>
+                <label style={modalLabelStyle}>Gender Preference</label>
+                <select 
+                  value={aiMatchData.genderPreference} 
+                  onChange={(e) => setAIMatchData(prev => ({ ...prev, genderPreference: e.target.value }))}
+                  style={filterSelectStyle}
+                >
+                  <option value="any">Any Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={modalLabelStyle}>Max Budget (₹/hour)</label>
+                <input 
+                  type="number" 
+                  placeholder="e.g., 500"
+                  value={aiMatchData.maxBudget}
+                  onChange={(e) => setAIMatchData(prev => ({ ...prev, maxBudget: e.target.value }))}
+                  style={filterInputStyle}
+                />
+              </div>
+              
+              <div>
+                <label style={modalLabelStyle}>Required Skills (comma separated)</label>
+                <input 
+                  type="text" 
+                  placeholder="wound care, injection, physio"
+                  value={aiMatchData.skillsRequired}
+                  onChange={(e) => setAIMatchData(prev => ({ ...prev, skillsRequired: e.target.value }))}
+                  style={filterInputStyle}
+                />
+              </div>
+              
+              <button 
+                onClick={handleAIMatch}
+                style={{
+                  padding: '0.75rem',
+                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  marginTop: '0.5rem'
+                }}
+              >
+                🤖 Find Best Matches with AI
+              </button>
+            </div>
+            
+            <p style={{ 
+              marginTop: '1rem', 
+              fontSize: '0.75rem', 
+              color: '#94a3b8', 
+              textAlign: 'center' 
+            }}>
+              🔒 AI analysis is real-time. No health data stored.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Add keyframe animation for skeleton */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
+};
+
+// Shared styles
+const filterSelectStyle = {
+  padding: '0.6rem',
+  border: '1px solid #e2e8f0',
+  borderRadius: '0.5rem',
+  fontSize: '0.85rem',
+  backgroundColor: 'white',
+  color: '#1e293b',
+  outline: 'none',
+  width: '100%'
+};
+
+const filterInputStyle = {
+  padding: '0.6rem',
+  border: '1px solid #e2e8f0',
+  borderRadius: '0.5rem',
+  fontSize: '0.85rem',
+  backgroundColor: 'white',
+  color: '#1e293b',
+  outline: 'none',
+  width: '100%'
+};
+
+const modalLabelStyle = {
+  display: 'block',
+  fontWeight: '600',
+  marginBottom: '0.25rem',
+  fontSize: '0.85rem',
+  color: '#374151'
 };
 
 export default Caregivers;

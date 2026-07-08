@@ -120,7 +120,19 @@ export const trackAmbulance = (bookingId) => api.get(`/ambulance/track/${booking
 
 export const getCaregivers = (params) => api.get('/caregivers', { params });
 export const getCaregiverById = (id) => api.get(`/caregivers/${id}`);
+export const getAICaregiverMatch = (data) => api.post('/caregivers/ai-match', data);
+export const getCaregiverSuggestions = (query) => api.get('/caregivers/suggestions', { params: { q: query } });
+export const caregiverLogin = (data) => api.post('/caregivers/login', data);
+export const caregiverRegister = (data) => api.post('/caregivers/profile', data);
+export const getCaregiverProfile = () => api.get('/caregivers/profile/me');
+export const updateCaregiverProfile = (data) => api.post('/caregivers/profile', data);
 export const bookCaregiver = (data) => api.post('/caregivers/book', data);
+export const getMyCaregiverBookings = () => api.get('/caregivers/my-bookings');
+export const getCaregiverDashboard = () => api.get('/caregivers/dashboard/stats');
+export const toggleCaregiverAvailability = (data) => api.put('/caregivers/availability', data);
+export const checkinCaregiver = (bookingId, data) => api.post(`/caregivers/checkin/${bookingId}`, data);
+export const checkoutCaregiver = (bookingId, data) => api.post(`/caregivers/checkout/${bookingId}`, data);
+export const rateCaregiver = (bookingId, data) => api.post(`/caregivers/rate/${bookingId}`, data);
 
 // ============================================
 // DIAGNOSTICS

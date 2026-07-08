@@ -1,61 +1,337 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../../services/api';
+import { caregiverLogin } from '../../services/api';
 
 const CaregiverLogin = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('email');
-  const [form, setForm] = useState({ email: '', phone: '', password: '', otp: '' });
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCountdown, setOtpCountdown] = useState(0);
 
-  useEffect(() => { if (otpCountdown > 0) { const t = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000); return () => clearTimeout(t); } }, [otpCountdown]);
-  const handleChange = (f, v) => { setForm(p => ({ ...p, [f]: v })); setError(''); };
-  const handleSendOTP = async () => {
-    if (!form.phone || form.phone.length < 10) { setError('Enter valid 10-digit number'); return; }
-    try { await api.post('/otp/send', { phone: `+91${form.phone}`, type: 'login' }); setOtpSent(true); setOtpCountdown(30); setError(''); } catch (e) { setError('Failed'); }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null);
   };
-  const handleLogin = async (e) => {
-    e.preventDefault(); setLoading(true); setError('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      let res;
-      if (activeTab === 'email') {
-        if (!form.email || !form.password) { setError('Fill all fields'); setLoading(false); return; }
-        res = await api.post('/auth/login', { email: form.email, password: form.password, role: 'caregiver' });
-      } else {
-        if (!form.phone || !form.otp) { setError('Enter phone and OTP'); setLoading(false); return; }
-        res = await api.post('/otp/verify', { phone: `+91${form.phone}`, otp: form.otp, type: 'login' });
-        if (res.data?.success) res = await api.post('/auth/login', { phone: `+91${form.phone}`, role: 'caregiver', otpLogin: true });
-      }
-      if (res.data?.success) {
-        localStorage.setItem('providerToken', res.data.token);
-        localStorage.setItem('providerId', res.data.user?._id || '');
-        localStorage.setItem('providerType', 'caregiver');
+      const response = await caregiverLogin({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (response.data.success) {
+        const { token, caregiver } = response.data.data;
+        
+        // Store token and caregiver data
+        localStorage.setItem('caregiverToken', token);
+        localStorage.setItem('caregiverData', JSON.stringify(caregiver));
+        
+        // Redirect to dashboard
         navigate('/caregiver/dashboard');
-      } else setError(res.data?.message || 'Login failed');
-    } catch (e) { setError('Login failed'); } finally { setLoading(false); }
+      }
+    } catch (err) {
+      const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const c = '#0277BD';
   return (
-    <div style={{ minHeight:'100vh',background:'linear-gradient(135deg,#0277BD,#01579B)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',fontFamily:'Arial' }}>
-      <div style={{ width:'100%',maxWidth:'420px',background:'#fff',borderRadius:'20px',padding:'30px 24px',boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
-        <div style={{ textAlign:'center',marginBottom:'24px' }}><span style={{ fontSize:'44px',display:'block' }}>🏠</span><h2 style={{ margin:'8px 0 0',fontSize:'22px',fontWeight:800 }}>Caregiver Login</h2><p style={{ fontSize:'13px',color:'#888' }}>Caregiver Portal</p></div>
-        <div style={{ display:'flex',background:'#f5f5f5',borderRadius:'12px',padding:'4px',marginBottom:'20px' }}><button onClick={()=>{setActiveTab('email');setError('');}} style={{ flex:1,padding:'12px',border:'none',borderRadius:'10px',background:activeTab==='email'?c:'transparent',color:activeTab==='email'?'#fff':'#666',fontWeight:600,fontSize:'13px',cursor:'pointer' }}>✉️ Email</button><button onClick={()=>{setActiveTab('phone');setError('');}} style={{ flex:1,padding:'12px',border:'none',borderRadius:'10px',background:activeTab==='phone'?c:'transparent',color:activeTab==='phone'?'#fff':'#666',fontWeight:600,fontSize:'13px',cursor:'pointer' }}>📱 Mobile OTP</button></div>
-        {error&&<div style={{ background:'#ffebee',color:'#c62828',padding:'10px',borderRadius:'8px',fontSize:'13px',marginBottom:'15px',textAlign:'center' }}>{error}</div>}
-        <form onSubmit={handleLogin}>
-          {activeTab==='email'?<><div style={{ marginBottom:'14px' }}><label style={ls}>Email</label><input type="email" placeholder="Enter email" value={form.email} onChange={e=>handleChange('email',e.target.value)} style={is} /></div><div style={{ marginBottom:'10px' }}><label style={ls}>Password</label><div style={{ position:'relative' }}><input type={showPassword?'text':'password'} placeholder="Password" autoComplete="new-password" value={form.password} onChange={e=>handleChange('password',e.target.value)} style={{...is,paddingRight:'40px'}} /><button type="button" onClick={()=>setShowPassword(!showPassword)} style={{ position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',fontSize:'18px',cursor:'pointer' }}>{showPassword?'🙈':'👁️'}</button></div></div><div style={{ textAlign:'right',marginBottom:'16px' }}><Link to="/caregiver/forgot-password" style={{ fontSize:'12px',color:c,textDecoration:'none',fontWeight:600 }}>Forgot Password?</Link></div></>:<><div style={{ marginBottom:'14px' }}><label style={ls}>Phone</label><div style={{ display:'flex',gap:'8px' }}><span style={cc}>+91</span><input type="tel" placeholder="Phone" value={form.phone} onChange={e=>handleChange('phone',e.target.value.replace(/\D/g,'').slice(0,10))} style={{...is,flex:1}} /></div></div><div style={{ display:'flex',gap:'8px',marginBottom:'10px' }}><button type="button" onClick={handleSendOTP} disabled={otpCountdown>0} style={{ padding:'12px 16px',background:otpCountdown>0?'#ccc':c,color:'#fff',border:'none',borderRadius:'10px',fontSize:'12px',fontWeight:600,cursor:otpCountdown>0?'not-allowed':'pointer',whiteSpace:'nowrap' }}>{otpCountdown>0?`Resend ${otpCountdown}s`:'Send OTP'}</button>{otpSent&&<input type="text" placeholder="6-digit OTP" value={form.otp} onChange={e=>handleChange('otp',e.target.value.replace(/\D/g,'').slice(0,6))} maxLength={6} style={{...is,flex:1,letterSpacing:'6px',textAlign:'center',fontSize:'18px'}} />}</div></>}
-          <button type="submit" disabled={loading} style={{ width:'100%',padding:'14px',background:c,color:'#fff',border:'none',borderRadius:'12px',fontSize:'15px',fontWeight:700,cursor:'pointer',opacity:loading?0.7:1 }}>{loading?'Logging in...':'Login'}</button>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#f8fafc',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '2rem'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '1.5rem',
+        padding: '2.5rem',
+        maxWidth: '450px',
+        width: '100%',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+        border: '1px solid #e2e8f0'
+      }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{
+            width: '70px',
+            height: '70px',
+            borderRadius: '50%',
+            backgroundColor: '#eff6ff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1rem',
+            fontSize: '2rem'
+          }}>
+            🏠
+          </div>
+          <h1 style={{ 
+            fontSize: '1.8rem', 
+            fontWeight: 'bold', 
+            color: '#1e293b',
+            marginBottom: '0.5rem'
+          }}>
+            Caregiver Login
+          </h1>
+          <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+            Welcome back! Sign in to manage your bookings.
+          </p>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div style={{
+            padding: '0.75rem 1rem',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '0.5rem',
+            color: '#dc2626',
+            fontSize: '0.9rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span>⚠️</span> {error}
+          </div>
+        )}
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={labelStyle}>
+              Email Address
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="caregiver@example.com"
+              style={inputStyle}
+              autoComplete="email"
+              disabled={loading}
+            />
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={labelStyle}>
+              Password
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                style={{ ...inputStyle, paddingRight: '2.5rem' }}
+                autoComplete="current-password"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  color: '#94a3b8',
+                  padding: '0.25rem'
+                }}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
+          {/* Forgot Password */}
+          <div style={{ textAlign: 'right', marginBottom: '1.5rem' }}>
+            <button
+              type="button"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#3b82f6',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}
+              onClick={() => alert('Password reset feature coming soon. Contact support.')}
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '0.8rem',
+              background: loading 
+                ? '#94a3b8' 
+                : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.75rem',
+              fontWeight: '600',
+              fontSize: '1rem',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: loading ? 'none' : '0 4px 12px rgba(59, 130, 246, 0.3)',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            {loading ? (
+              <>
+                <span style={{ 
+                  width: '20px', 
+                  height: '20px', 
+                  border: '2px solid white',
+                  borderTopColor: 'transparent',
+                  borderRadius: '50%',
+                  display: 'inline-block',
+                  animation: 'spin 0.8s linear infinite'
+                }} />
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
+          </button>
         </form>
-        <div style={{ textAlign:'center',marginTop:'18px',paddingTop:'16px',borderTop:'1px solid #eee' }}><p style={{ fontSize:'13px',color:'#888',margin:0 }}>Don't have an account? <Link to="/caregiver/register" style={{ color:c,fontWeight:700,textDecoration:'none' }}>Register Here</Link></p></div>
+
+        {/* Divider */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          margin: '1.5rem 0'
+        }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+          <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>OR</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+        </div>
+
+        {/* Register Link */}
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+            Don't have an account?
+          </p>
+          <Link
+            to="/caregiver/register"
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '0.8rem',
+              backgroundColor: '#f0fdf4',
+              color: '#065f46',
+              border: '2px solid #bbf7d0',
+              borderRadius: '0.75rem',
+              fontWeight: '600',
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              textAlign: 'center',
+              textDecoration: 'none',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#d1fae5';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#f0fdf4';
+            }}
+          >
+            Register as Caregiver →
+          </Link>
+        </div>
+
+        {/* Back to Home */}
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <Link
+            to="/caregivers"
+            style={{
+              color: '#64748b',
+              textDecoration: 'none',
+              fontSize: '0.85rem',
+              fontWeight: '500'
+            }}
+          >
+            ← Back to Caregivers
+          </Link>
+        </div>
+
+        {/* Disclaimer */}
+        <p style={{
+          textAlign: 'center',
+          color: '#94a3b8',
+          fontSize: '0.7rem',
+          marginTop: '1.5rem',
+          lineHeight: '1.5'
+        }}>
+          By signing in, you agree to our Terms of Service and Privacy Policy.
+          Your data is encrypted and secure.
+        </p>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
-const ls={display:'block',fontSize:'13px',fontWeight:600,color:'#555',marginBottom:'6px'};
-const is={width:'100%',padding:'13px',border:'2px solid #e0e0e0',borderRadius:'10px',fontSize:'14px',outline:'none',boxSizing:'border-box',marginBottom:'12px'};
-const cc={padding:'13px 10px',background:'#f5f5f5',border:'2px solid #e0e0e0',borderRadius:'10px',fontSize:'14px',fontWeight:600,color:'#555'};
+
+const labelStyle = {
+  display: 'block',
+  fontWeight: '600',
+  marginBottom: '0.35rem',
+  fontSize: '0.85rem',
+  color: '#374151'
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '0.7rem 0.85rem',
+  border: '1px solid #e2e8f0',
+  borderRadius: '0.5rem',
+  fontSize: '0.95rem',
+  color: '#1e293b',
+  outline: 'none',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+  backgroundColor: 'white'
+};
+
 export default CaregiverLogin;
