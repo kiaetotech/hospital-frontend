@@ -1,44 +1,37 @@
 // D:\hospital-frontend\src\pages\Caregivers.jsx
-// Home Care Hub — Production Ready with AI Matching
+// Home Care — Production Hub
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  FaSearch, FaUserMd, FaMapMarkerAlt, FaStar, FaShieldAlt,
-  FaClock, FaUsers, FaHeart, FaHandHoldingHeart, FaCalendarCheck,
-  FaLanguage, FaMoneyBillWave, FaFilter, FaTimes, FaChevronDown,
-  FaUserPlus, FaSignInAlt, FaArrowRight, FaPhone, FaEnvelope
-} from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import { getCaregivers, getAICaregiverMatch, getCaregiverSuggestions } from '../services/api';
 
 const Caregivers = () => {
   const navigate = useNavigate();
   const searchRef = useRef(null);
-  const dropdownRef = useRef(null);
 
-  // State
   const [caregivers, setCaregivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [location, setLocation] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [showAIMatch, setShowAIMatch] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [viewMode, setViewMode] = useState('grid'); // grid | list
+  const [sortBy, setSortBy] = useState('relevance');
 
   const [filters, setFilters] = useState({
     serviceType: '',
+    schedule: '',
     gender: 'any',
     minExperience: '',
     minRating: '',
     maxHourlyRate: '',
+    language: '',
     specializations: '',
-    city: '',
-    language: ''
+    city: ''
   });
 
   const [aiMatchData, setAIMatchData] = useState({
@@ -51,24 +44,15 @@ const Caregivers = () => {
     skillsRequired: ''
   });
 
-  const ITEMS_PER_PAGE = 9;
+  const ITEMS_PER_PAGE = 12;
 
-  // Service Categories for Hub
-  const serviceCategories = [
-    { id: 'elderly', icon: '👴', title: 'Elderly Care', desc: 'Compassionate care for seniors', color: '#f59e0b', skills: ['elder care', 'mobility support', 'companionship'] },
-    { id: 'post-surgery', icon: '🏥', title: 'Post-Surgery', desc: 'Recovery assistance at home', color: '#3b82f6', skills: ['post-surgery', 'wound care', 'medication'] },
-    { id: 'nursing', icon: '💉', title: 'Skilled Nursing', desc: 'Professional medical care', color: '#8b5cf6', skills: ['wound care', 'ventilator', 'tracheostomy', 'injection'] },
-    { id: 'physio', icon: '🦵', title: 'Physiotherapy', desc: 'Rehabilitation & therapy', color: '#10b981', skills: ['physiotherapy', 'mobility support'] },
-    { id: 'dementia', icon: '🧠', title: 'Dementia Care', desc: 'Specialized memory care', color: '#ec4899', skills: ['dementia', 'palliative'] },
-    { id: 'child', icon: '👶', title: 'Child Care', desc: 'Newborn & pediatric care', color: '#06b6d4', skills: ['newborn care', 'postnatal', 'pediatric'] },
-  ];
-
-  // Stats
-  const stats = [
-    { icon: <FaUserMd />, value: '200+', label: 'Verified Caregivers', color: '#3b82f6' },
-    { icon: <FaMapMarkerAlt />, value: '50+', label: 'Cities Covered', color: '#10b981' },
-    { icon: <FaStar />, value: '4.8', label: 'Average Rating', color: '#f59e0b' },
-    { icon: <FaClock />, value: '24/7', label: 'Service Available', color: '#8b5cf6' },
+  const quickCategories = [
+    { id: 'elderly', icon: '👴', label: 'Elderly Care', skills: 'elder care, mobility support, companionship' },
+    { id: 'post-surgery', icon: '🏥', label: 'Post-Surgery', skills: 'post-surgery, wound care, medication' },
+    { id: 'nursing', icon: '💉', label: 'Nursing', skills: 'wound care, injection, ventilator, tracheostomy' },
+    { id: 'physio', icon: '🦵', label: 'Physiotherapy', skills: 'physiotherapy, mobility support' },
+    { id: 'dementia', icon: '🧠', label: 'Dementia', skills: 'dementia, palliative, hospice' },
+    { id: 'child', icon: '👶', label: 'Child Care', skills: 'newborn care, postnatal, pediatric' },
   ];
 
   // Fetch caregivers
@@ -92,58 +76,73 @@ const Caregivers = () => {
       if (response.data.success) {
         let data = response.data.data || [];
 
-        if (filters.specializations) {
-          const specTerms = filters.specializations.toLowerCase().split(',').map(s => s.trim());
-          data = data.filter(c =>
-            c.specializations?.some(spec =>
-              specTerms.some(term => spec.toLowerCase().includes(term))
-            )
-          );
-        }
-
+        // Client-side filters
         if (filters.maxHourlyRate) {
-          const maxRate = parseInt(filters.maxHourlyRate);
           data = data.filter(c => {
             const rate = c.pricing?.personal?.hourly || c.pricing?.skilled?.hourly || 0;
-            return rate <= maxRate;
+            return rate <= parseInt(filters.maxHourlyRate);
           });
+        }
+
+        if (filters.specializations) {
+          const terms = filters.specializations.toLowerCase().split(',').map(s => s.trim());
+          data = data.filter(c =>
+            c.specializations?.some(s => terms.some(t => s.toLowerCase().includes(t)))
+          );
         }
 
         if (filters.language) {
           data = data.filter(c =>
-            c.languages?.some(lang =>
-              lang.toLowerCase().includes(filters.language.toLowerCase())
-            )
+            c.languages?.some(l => l.toLowerCase().includes(filters.language.toLowerCase()))
           );
         }
 
+        if (filters.schedule && filters.schedule !== 'any') {
+          const scheduleMap = {
+            '12-hour': '12-Hour',
+            '24-hour': '24-Hour',
+            'visit': 'Visit-Based',
+            'live-in': 'Live-In'
+          };
+          data = data.filter(c => c.serviceTypes?.includes(scheduleMap[filters.schedule]));
+        }
+
+        // Sort
+        if (sortBy === 'rating') data.sort((a, b) => (b.ratings?.average || 0) - (a.ratings?.average || 0));
+        if (sortBy === 'experience') data.sort((a, b) => (b.experienceYears || 0) - (a.experienceYears || 0));
+        if (sortBy === 'price-low') {
+          data.sort((a, b) => {
+            const rateA = a.pricing?.personal?.hourly || a.pricing?.skilled?.hourly || 0;
+            const rateB = b.pricing?.personal?.hourly || b.pricing?.skilled?.hourly || 0;
+            return rateA - rateB;
+          });
+        }
+        if (sortBy === 'price-high') {
+          data.sort((a, b) => {
+            const rateA = a.pricing?.personal?.hourly || a.pricing?.skilled?.hourly || 0;
+            const rateB = b.pricing?.personal?.hourly || b.pricing?.skilled?.hourly || 0;
+            return rateB - rateA;
+          });
+        }
+
         setCaregivers(data);
-        setTotalPages(response.data.pagination?.total || Math.ceil(data.length / ITEMS_PER_PAGE));
-      } else {
-        setCaregivers([]);
-        setTotalPages(1);
+        setTotalPages(Math.ceil(data.length / ITEMS_PER_PAGE) || 1);
       }
     } catch (err) {
-      if (err.response?.status === 404) {
-        setCaregivers([]);
-      } else {
-        setError('Unable to load caregivers. Please try again.');
-      }
+      setError('Unable to load caregivers. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, sortBy]);
 
-  // AI Quick Match
+  // AI Match
   const handleAIMatch = async () => {
     if (!aiMatchData.careType || !aiMatchData.city) {
-      alert('Please select care type and city');
+      alert('Please enter care type and city');
       return;
     }
-
     setLoading(true);
     setShowAIMatch(false);
-
     try {
       const response = await getAICaregiverMatch({
         careType: aiMatchData.careType,
@@ -154,207 +153,158 @@ const Caregivers = () => {
         maxBudget: aiMatchData.maxBudget || undefined,
         skillsRequired: aiMatchData.skillsRequired ? aiMatchData.skillsRequired.split(',').map(s => s.trim()) : []
       });
-
       if (response.data.success) {
         setCaregivers(response.data.data || []);
         setTotalPages(1);
       }
-    } catch (err) {
-      alert('AI matching unavailable. Showing all caregivers.');
+    } catch {
       fetchCaregivers();
     } finally {
       setLoading(false);
     }
   };
 
-  // Search suggestions
+  // Hero search
+  const handleHeroSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setFilters(prev => ({
+        ...prev,
+        specializations: searchQuery,
+        city: location || prev.city
+      }));
+      setCurrentPage(1);
+    }
+  };
+
+  // Suggestions
   const handleSearchInput = async (value) => {
     setSearchQuery(value);
     if (value.length >= 2) {
       try {
-        const response = await getCaregiverSuggestions(value);
-        if (response.data.success) {
-          setSuggestions(response.data.data || []);
+        const res = await getCaregiverSuggestions(value);
+        if (res.data.success) {
+          setSuggestions(res.data.data || []);
           setShowSuggestions(true);
         }
-      } catch {
-        setSuggestions([]);
-      }
+      } catch { setSuggestions([]); }
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
     }
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    if (suggestion.type === 'city') {
-      setFilters(prev => ({ ...prev, city: suggestion.text || suggestion.label }));
+  const handleSuggestionClick = (s) => {
+    if (s.type === 'city') {
+      setLocation(s.text || s.label);
+      setFilters(prev => ({ ...prev, city: s.text || s.label }));
     } else {
+      setSearchQuery(s.text || s.label);
       setFilters(prev => ({
         ...prev,
-        specializations: prev.specializations
-          ? prev.specializations + ', ' + (suggestion.text || suggestion.label)
-          : (suggestion.text || suggestion.label)
+        specializations: prev.specializations ? prev.specializations + ', ' + (s.text || s.label) : (s.text || s.label)
       }));
     }
-    setSearchQuery('');
     setShowSuggestions(false);
   };
 
-  const handleCategoryClick = (category) => {
-    setFilters(prev => ({
-      ...prev,
-      specializations: category.skills.join(', ')
-    }));
-    window.scrollTo({ top: 400, behavior: 'smooth' });
+  // Quick category click
+  const handleCategoryClick = (cat) => {
+    setFilters(prev => ({ ...prev, specializations: cat.skills }));
+    setCurrentPage(1);
+    window.scrollTo({ top: 500, behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    fetchCaregivers(currentPage);
-  }, [currentPage, fetchCaregivers]);
-
-  const resetFilters = () => {
-    setFilters({
-      serviceType: '',
-      gender: 'any',
-      minExperience: '',
-      minRating: '',
-      maxHourlyRate: '',
-      specializations: '',
-      city: '',
-      language: ''
-    });
+  // Filter change
+  const handleFilter = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
 
-  const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CG';
+  const resetFilters = () => {
+    setFilters({
+      serviceType: '', schedule: '', gender: 'any', minExperience: '',
+      minRating: '', maxHourlyRate: '', language: '', specializations: '', city: ''
+    });
+    setSearchQuery('');
+    setLocation('');
+    setSortBy('relevance');
+    setCurrentPage(1);
+  };
 
-  const getRatingStars = (rating) => {
-    const full = Math.floor(rating || 0);
-    return '⭐'.repeat(full) + '☆'.repeat(5 - full);
+  useEffect(() => { fetchCaregivers(currentPage); }, [currentPage, fetchCaregivers]);
+
+  const getInitials = (n) => n?.split(' ').map(w => w[0]).join('').toUpperCase() || 'CG';
+  const getStars = (r) => '⭐'.repeat(Math.floor(r || 0)) + '☆'.repeat(5 - Math.floor(r || 0));
+  const getHourlyRate = (c) => c.pricing?.personal?.hourly || c.pricing?.skilled?.hourly || 'N/A';
+
+  const paginatedCaregivers = caregivers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const S = {
+    filterSelect: { padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#334155', background: 'white', outline: 'none', minWidth: '110px', cursor: 'pointer' },
+    filterInput: { padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#334155', outline: 'none', width: '100px' },
+    btnReset: { padding: '8px 16px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' },
+    btnPrimary: { padding: '10px 20px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' },
+    btnOutline: { padding: '10px 20px', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' },
+    btnGreen: { padding: '10px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }
   };
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
       {/* ================================================================
-          HERO SECTION
+          HERO
       ================================================================ */}
-      <section style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 40%, #312e81 100%)',
-        padding: '40px 20px 60px',
-        textAlign: 'center',
-        color: 'white',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Background pattern */}
-        <div style={{
-          position: 'absolute', inset: 0, opacity: 0.05,
-          backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-          backgroundSize: '30px 30px'
-        }} />
-
-        <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            
-            {/* Badge */}
-            <span style={{
-              display: 'inline-block', padding: '6px 20px', borderRadius: '20px',
-              background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.2)', fontSize: '14px', fontWeight: '600',
-              marginBottom: '16px'
-            }}>
+      <section style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)', padding: '36px 20px 40px', textAlign: 'center', color: 'white' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <span style={{ display: 'inline-block', padding: '5px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', fontSize: '13px', fontWeight: '600', marginBottom: '12px' }}>
               🏠 India's Trusted Home Care Platform
             </span>
-
-            <h1 style={{
-              fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: '800', marginBottom: '12px',
-              lineHeight: 1.2, background: 'linear-gradient(to right, #fff, #e2e8f0)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-            }}>
-              Find Trusted Caregivers<br />for Your Loved Ones
+            <h1 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: '800', marginBottom: '8px' }}>
+              Find a Trusted Caregiver for Your Family
             </h1>
-            <p style={{ fontSize: '18px', color: '#94a3b8', marginBottom: '28px', maxWidth: '600px', margin: '0 auto 28px' }}>
-              AI-powered matching with verified, background-checked home care professionals
+            <p style={{ fontSize: '15px', color: '#94a3b8', marginBottom: '20px' }}>
+              AI-powered matching with verified, background-checked professionals
             </p>
 
-            {/* Search Bar */}
-            <div ref={searchRef} style={{
-              maxWidth: '700px', margin: '0 auto 24px', position: 'relative'
-            }}>
-              <div style={{
-                display: 'flex', gap: '0', background: 'white', borderRadius: '16px',
-                overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '18px' }}>
-                  <FaSearch style={{ color: '#94a3b8', fontSize: '18px' }} />
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchInput(e.target.value)}
-                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  placeholder="Search by skill, city, or caregiver name..."
-                  style={{
-                    flex: 1, padding: '16px 14px', border: 'none', outline: 'none',
-                    fontSize: '16px', color: '#1e293b', background: 'transparent'
-                  }}
-                />
-                <button
-                  onClick={() => setShowAIMatch(true)}
-                  style={{
-                    padding: '16px 24px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                    color: 'white', border: 'none', cursor: 'pointer', fontWeight: '700',
-                    fontSize: '15px', whiteSpace: 'nowrap'
-                  }}
-                >
-                  🤖 AI Match
-                </button>
+            {/* Search Form */}
+            <form onSubmit={handleHeroSearch} style={{ maxWidth: '650px', margin: '0 auto 12px', display: 'flex', gap: '0', background: 'white', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)', position: 'relative' }}>
+              <div ref={searchRef} style={{ flex: 2, display: 'flex', alignItems: 'center', paddingLeft: '14px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '16px' }}>🔍</span>
+                <input type="text" value={searchQuery} onChange={(e) => handleSearchInput(e.target.value)} onFocus={() => suggestions.length > 0 && setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  placeholder="Search by skill, condition, or name..." style={{ width: '100%', padding: '13px 10px', border: 'none', outline: 'none', fontSize: '14px', color: '#1e293b', background: 'transparent' }} />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', borderRadius: '0 0 10px 10px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', zIndex: 100, textAlign: 'left' }}>
+                    {suggestions.map((s, i) => (
+                      <div key={i} onMouseDown={() => handleSuggestionClick(s)} style={{ padding: '10px 16px', cursor: 'pointer', fontSize: '13px', borderBottom: i < suggestions.length - 1 ? '1px solid #f1f5f9' : 'none' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'white'}>
+                        {s.type === 'city' ? '📍' : '🎯'} {s.text || s.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+              <div style={{ width: '1px', background: '#e2e8f0', margin: '8px 0' }} />
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '10px' }}>
+                <span style={{ color: '#ef4444', fontSize: '14px' }}>📍</span>
+                <input type="text" value={location} onChange={(e) => { setLocation(e.target.value); setFilters(prev => ({ ...prev, city: e.target.value })); }}
+                  placeholder="Location" style={{ width: '100%', padding: '13px 10px', border: 'none', outline: 'none', fontSize: '14px', color: '#1e293b', background: 'transparent' }} />
+              </div>
+              <button type="submit" style={{ padding: '13px 24px', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '14px', whiteSpace: 'nowrap' }}>🔍 Search</button>
+            </form>
 
-              {/* Suggestions */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: '8px', right: '8px',
-                  background: 'white', borderRadius: '12px', marginTop: '6px',
-                  boxShadow: '0 20px 50px rgba(0,0,0,0.2)', zIndex: 100,
-                  overflow: 'hidden', textAlign: 'left'
-                }}>
-                  {suggestions.map((s, i) => (
-                    <div key={i} onMouseDown={() => handleSuggestionClick(s)}
-                      style={{
-                        padding: '12px 20px', cursor: 'pointer', color: '#1e293b',
-                        fontSize: '14px', borderBottom: i < suggestions.length - 1 ? '1px solid #f1f5f9' : 'none',
-                        display: 'flex', alignItems: 'center', gap: '10px'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                    >
-                      {s.type === 'city' ? '📍' : '🎯'} {s.text || s.label}
-                    </div>
-                  ))}
+            <button onClick={() => setShowAIMatch(true)} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)' }}>
+              🤖 AI Quick Match
+            </button>
+
+            {/* Quick Stats */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '32px', marginTop: '16px', flexWrap: 'wrap' }}>
+              {[{ v: '200+', l: 'Verified Caregivers' }, { v: '50+', l: 'Cities' }, { v: '4.8', l: 'Avg Rating' }].map((s, i) => (
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '20px', fontWeight: '800' }}>{s.v}</div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>{s.l}</div>
                 </div>
-              )}
-            </div>
-
-            {/* Stats Row */}
-            <div style={{
-              display: 'flex', justifyContent: 'center', gap: '32px', flexWrap: 'wrap'
-            }}>
-              {stats.map((stat, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.1 }}
-                  style={{ textAlign: 'center' }}
-                >
-                  <div style={{ fontSize: '24px', color: stat.color, marginBottom: '4px' }}>{stat.icon}</div>
-                  <div style={{ fontSize: '24px', fontWeight: '800', color: 'white' }}>{stat.value}</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>{stat.label}</div>
-                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -362,321 +312,200 @@ const Caregivers = () => {
       </section>
 
       {/* ================================================================
-          SERVICE CATEGORIES
+          QUICK CATEGORIES
       ================================================================ */}
-      <section style={{ maxWidth: '1200px', margin: '-30px auto 0', padding: '0 20px', position: 'relative', zIndex: 2 }}>
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: '16px'
-        }}>
-          {serviceCategories.map((cat, i) => (
-            <motion.div
-              key={cat.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 + i * 0.05 }}
-              onClick={() => handleCategoryClick(cat)}
-              style={{
-                background: 'white', borderRadius: '16px', padding: '20px 16px',
-                textAlign: 'center', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                border: '1px solid #f1f5f9', transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-6px)';
-                e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.12)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)';
-              }}
-            >
-              <div style={{ fontSize: '40px', marginBottom: '10px' }}>{cat.icon}</div>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', margin: '0 0 4px' }}>
-                {cat.title}
-              </h3>
-              <p style={{ fontSize: '13px', color: '#64748b', margin: '0', lineHeight: 1.4 }}>
-                {cat.desc}
-              </p>
-              <div style={{
-                marginTop: '10px', fontSize: '12px', color: cat.color, fontWeight: '600'
-              }}>
-                Find Caregivers →
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================================================================
-          HOW IT WORKS
-      ================================================================ */}
-      <section style={{ maxWidth: '1000px', margin: '48px auto', padding: '0 20px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>
-            📋 How It Works
-          </h2>
-          <p style={{ color: '#64748b', fontSize: '16px' }}>Find the perfect caregiver in 3 simple steps</p>
-        </div>
-
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px'
-        }}>
-          {[
-            { step: '01', icon: '🔍', title: 'Search & Filter', desc: 'Tell us your needs — care type, location, budget, and preferences' },
-            { step: '02', icon: '🤖', title: 'AI Matching', desc: 'Our AI analyzes skills, experience, and compatibility to find the best match' },
-            { step: '03', icon: '📅', title: 'Book & Relax', desc: 'Book instantly. Caregiver contacts you directly. Pay securely online.' }
-          ].map((step, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              style={{
-                textAlign: 'center', padding: '28px 20px',
-                background: 'white', borderRadius: '16px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-                position: 'relative'
-              }}
-            >
-              <div style={{
-                position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)',
-                width: '40px', height: '40px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: '800', fontSize: '14px'
-              }}>
-                {step.step}
-              </div>
-              <div style={{ fontSize: '40px', marginBottom: '12px', marginTop: '8px' }}>{step.icon}</div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px' }}>
-                {step.title}
-              </h3>
-              <p style={{ fontSize: '14px', color: '#64748b', margin: '0', lineHeight: 1.5 }}>{step.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================================================================
-          TRUST BADGES
-      ================================================================ */}
-      <section style={{ background: 'white', padding: '40px 20px', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'center', gap: '48px', flexWrap: 'wrap' }}>
-          {[
-            { icon: <FaShieldAlt style={{ color: '#10b981', fontSize: '28px' }} />, title: 'Background Verified', desc: 'All caregivers undergo background checks' },
-            { icon: <FaStar style={{ color: '#f59e0b', fontSize: '28px' }} />, title: 'Rated & Reviewed', desc: 'Real reviews from real families' },
-            { icon: <FaHeart style={{ color: '#ef4444', fontSize: '28px' }} />, title: 'Compassionate Care', desc: 'Trained in patient-centered care' }
-          ].map((badge, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ marginBottom: '8px' }}>{badge.icon}</div>
-              <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', margin: '0 0 4px' }}>{badge.title}</h4>
-              <p style={{ fontSize: '13px', color: '#64748b', margin: '0' }}>{badge.desc}</p>
+      <section style={{ maxWidth: '1200px', margin: '-16px auto 0', padding: '0 20px', position: 'relative', zIndex: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {quickCategories.map(cat => (
+            <div key={cat.id} onClick={() => handleCategoryClick(cat)}
+              style={{ padding: '10px 18px', background: 'white', borderRadius: '20px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', fontSize: '13px', fontWeight: '600', color: '#334155', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; }}>
+              {cat.icon} {cat.label}
             </div>
           ))}
         </div>
       </section>
 
       {/* ================================================================
-          SEARCH RESULTS SECTION
+          FILTERS BAR — Always Visible
       ================================================================ */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 20px' }}>
-        
-        {/* Section Header */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: '20px', flexWrap: 'wrap', gap: '12px'
-        }}>
-          <div>
-            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: '0' }}>
-              🔍 Available Caregivers
-            </h2>
-            <p style={{ color: '#64748b', fontSize: '14px', margin: '4px 0 0' }}>
-              {loading ? 'Searching...' : `${caregivers.length} caregiver${caregivers.length !== 1 ? 's' : ''} found`}
-            </p>
-          </div>
+      <section style={{ maxWidth: '1200px', margin: '20px auto', padding: '0 20px' }}>
+        <div style={{ background: 'white', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: '600', fontSize: '13px', color: '#64748b', whiteSpace: 'nowrap' }}>🔍 Filters:</span>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            {/* View Toggle */}
-            <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', overflow: 'hidden' }}>
-              <button onClick={() => setViewMode('grid')}
-                style={{
-                  padding: '8px 14px', border: 'none', cursor: 'pointer',
-                  background: viewMode === 'grid' ? '#3b82f6' : 'transparent',
-                  color: viewMode === 'grid' ? 'white' : '#64748b',
-                  fontWeight: '600', fontSize: '13px'
-                }}>⊞ Grid</button>
-              <button onClick={() => setViewMode('list')}
-                style={{
-                  padding: '8px 14px', border: 'none', cursor: 'pointer',
-                  background: viewMode === 'list' ? '#3b82f6' : 'transparent',
-                  color: viewMode === 'list' ? 'white' : '#64748b',
-                  fontWeight: '600', fontSize: '13px'
-                }}>≡ List</button>
-            </div>
+          <select value={filters.serviceType} onChange={(e) => handleFilter('serviceType', e.target.value)} style={S.filterSelect}>
+            <option value="">All Care Types</option>
+            <option value="personal">🩺 Personal Care</option>
+            <option value="skilled">💉 Skilled Nursing</option>
+          </select>
 
-            {/* Filter Toggle */}
-            <button onClick={() => setShowFilters(!showFilters)}
-              style={{
-                padding: '8px 16px', background: showFilters ? '#eff6ff' : '#f8fafc',
-                border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
-                fontWeight: '600', fontSize: '13px', color: '#3b82f6',
-                display: 'flex', alignItems: 'center', gap: '6px'
-              }}>
-              <FaFilter size={14} /> Filters
-              {Object.values(filters).some(v => v && v !== 'any') && (
-                <span style={{
-                  width: '8px', height: '8px', borderRadius: '50%',
-                  background: '#ef4444', display: 'inline-block'
-                }} />
-              )}
-            </button>
-          </div>
+          <select value={filters.schedule} onChange={(e) => handleFilter('schedule', e.target.value)} style={S.filterSelect}>
+            <option value="">Any Schedule</option>
+            <option value="12-hour">12-Hour</option>
+            <option value="24-hour">24-Hour</option>
+            <option value="visit">Visit-Based</option>
+            <option value="live-in">Live-In</option>
+          </select>
+
+          <select value={filters.gender} onChange={(e) => handleFilter('gender', e.target.value)} style={S.filterSelect}>
+            <option value="any">Any Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+
+          <select value={filters.minExperience} onChange={(e) => handleFilter('minExperience', e.target.value)} style={S.filterSelect}>
+            <option value="">Any Experience</option>
+            <option value="2">2+ Years</option>
+            <option value="5">5+ Years</option>
+            <option value="10">10+ Years</option>
+          </select>
+
+          <select value={filters.minRating} onChange={(e) => handleFilter('minRating', e.target.value)} style={S.filterSelect}>
+            <option value="">Any Rating</option>
+            <option value="4">⭐ 4+</option>
+            <option value="4.5">⭐ 4.5+</option>
+          </select>
+
+          <input type="number" placeholder="Max ₹/hr" value={filters.maxHourlyRate} onChange={(e) => handleFilter('maxHourlyRate', e.target.value)} style={S.filterInput} />
+
+          <select value={filters.language} onChange={(e) => handleFilter('language', e.target.value)} style={S.filterSelect}>
+            <option value="">Any Language</option>
+            <option value="hindi">Hindi</option>
+            <option value="english">English</option>
+            <option value="tamil">Tamil</option>
+            <option value="telugu">Telugu</option>
+            <option value="bengali">Bengali</option>
+            <option value="marathi">Marathi</option>
+          </select>
+
+          <input type="text" placeholder="City" value={filters.city} onChange={(e) => handleFilter('city', e.target.value)} style={{ ...S.filterInput, width: '80px' }} />
+
+          <button onClick={resetFilters} style={S.btnReset}>✕ Reset</button>
+        </div>
+      </section>
+
+      {/* ================================================================
+          RESULTS
+      ================================================================ */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px 32px' }}>
+        {/* Results Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <p style={{ fontWeight: '600', color: '#1e293b', fontSize: '15px', margin: 0 }}>
+            {loading ? 'Searching...' : `${caregivers.length} caregiver${caregivers.length !== 1 ? 's' : ''} found`}
+          </p>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={S.filterSelect}>
+            <option value="relevance">Sort: Relevance</option>
+            <option value="rating">Rating: High to Low</option>
+            <option value="experience">Experience: High to Low</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+          </select>
         </div>
 
-        {/* Filters Panel */}
-        {showFilters && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            style={{
-              background: 'white', borderRadius: '12px', padding: '20px',
-              marginBottom: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              border: '1px solid #e2e8f0', overflow: 'hidden'
-            }}
-          >
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-              gap: '12px'
-            }}>
-              <FilterSelect label="Service Type" value={filters.serviceType}
-                onChange={(v) => setFilters(p => ({ ...p, serviceType: v }))}
-                options={[['', 'All'], ['personal', '🩺 Personal Care'], ['skilled', '💉 Skilled Nursing']]} />
-              
-              <FilterSelect label="Gender" value={filters.gender}
-                onChange={(v) => setFilters(p => ({ ...p, gender: v }))}
-                options={[['any', 'Any'], ['male', 'Male'], ['female', 'Female']]} />
-              
-              <FilterSelect label="Experience" value={filters.minExperience}
-                onChange={(v) => setFilters(p => ({ ...p, minExperience: v }))}
-                options={[['', 'Any'], ['2', '2+ Years'], ['5', '5+ Years'], ['10', '10+ Years']]} />
-              
-              <FilterSelect label="Rating" value={filters.minRating}
-                onChange={(v) => setFilters(p => ({ ...p, minRating: v }))}
-                options={[['', 'Any'], ['4', '⭐ 4+'], ['4.5', '⭐ 4.5+']]} />
-              
-              <FilterInput label="Max Rate (₹/hr)" value={filters.maxHourlyRate}
-                onChange={(v) => setFilters(p => ({ ...p, maxHourlyRate: v }))}
-                type="number" placeholder="e.g. 500" />
-              
-              <FilterInput label="City" value={filters.city}
-                onChange={(v) => setFilters(p => ({ ...p, city: v }))}
-                placeholder="e.g. Mumbai" />
-              
-              <FilterInput label="Language" value={filters.language}
-                onChange={(v) => setFilters(p => ({ ...p, language: v }))}
-                placeholder="e.g. Hindi" />
-              
-              <FilterInput label="Skills" value={filters.specializations}
-                onChange={(v) => setFilters(p => ({ ...p, specializations: v }))}
-                placeholder="e.g. wound care, elderly" />
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px', justifyContent: 'flex-end' }}>
-              <button onClick={resetFilters}
-                style={{
-                  padding: '10px 20px', background: '#f1f5f9', border: '1px solid #e2e8f0',
-                  borderRadius: '8px', cursor: 'pointer', fontWeight: '600', color: '#64748b', fontSize: '14px'
-                }}>Reset All</button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Loading State */}
+        {/* Loading */}
         {loading && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: viewMode === 'list' ? '1fr' : 'repeat(auto-fill, minmax(350px, 1fr))',
-            gap: '16px'
-          }}>
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <SkeletonCard key={i} viewMode={viewMode} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '14px' }}>
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} style={{ background: 'white', borderRadius: '12px', padding: '18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', animation: 'pulse 1.5s infinite' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#e2e8f0' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ height: '18px', background: '#e2e8f0', borderRadius: '4px', width: '60%', marginBottom: '8px' }} />
+                    <div style={{ height: '14px', background: '#e2e8f0', borderRadius: '4px', width: '40%', marginBottom: '8px' }} />
+                    <div style={{ height: '14px', background: '#e2e8f0', borderRadius: '4px', width: '80%' }} />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
 
-        {/* Error State */}
+        {/* Error */}
         {!loading && error && (
-          <div style={{
-            textAlign: 'center', padding: '48px 24px', background: 'white',
-            borderRadius: '16px', border: '1px solid #fecaca'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>⚠️</div>
-            <h3 style={{ color: '#dc2626', marginBottom: '8px' }}>{error}</h3>
-            <button onClick={() => fetchCaregivers()}
-              style={{
-                padding: '12px 28px', background: '#3b82f6', color: 'white',
-                border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
-              }}>Try Again</button>
+          <div style={{ textAlign: 'center', padding: '40px', background: 'white', borderRadius: '12px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '8px' }}>⚠️</div>
+            <p style={{ color: '#dc2626', marginBottom: '12px' }}>{error}</p>
+            <button onClick={() => fetchCaregivers()} style={S.btnPrimary}>Try Again</button>
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty */}
         {!loading && !error && caregivers.length === 0 && (
-          <div style={{
-            textAlign: 'center', padding: '48px 24px', background: 'white',
-            borderRadius: '16px', border: '2px dashed #e2e8f0'
-          }}>
-            <div style={{ fontSize: '56px', marginBottom: '12px' }}>🏠</div>
-            <h3 style={{ color: '#1e293b', marginBottom: '8px', fontSize: '20px' }}>
-              No Caregivers Found
-            </h3>
-            <p style={{ color: '#64748b', marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px' }}>
-              No caregivers match your current filters. Try expanding your search or check back soon.
-            </p>
-            <button onClick={resetFilters}
-              style={{
-                padding: '10px 24px', background: '#3b82f6', color: 'white',
-                border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
-              }}>Reset Filters</button>
+          <div style={{ textAlign: 'center', padding: '40px', background: 'white', borderRadius: '12px', border: '2px dashed #e2e8f0' }}>
+            <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏠</div>
+            <h3 style={{ color: '#1e293b', marginBottom: '4px' }}>No Caregivers Found</h3>
+            <p style={{ color: '#64748b', marginBottom: '16px' }}>Try adjusting your filters or search criteria</p>
+            <button onClick={resetFilters} style={S.btnPrimary}>Reset Filters</button>
           </div>
         )}
 
-        {/* Caregiver Cards */}
+        {/* Cards Grid */}
         {!loading && !error && caregivers.length > 0 && (
           <>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: viewMode === 'list' ? '1fr' : 'repeat(auto-fill, minmax(360px, 1fr))',
-              gap: '16px'
-            }}>
-              {caregivers.map(c => (
-                <CaregiverCard
-                  key={c._id}
-                  caregiver={c}
-                  viewMode={viewMode}
-                  getInitials={getInitials}
-                  getRatingStars={getRatingStars}
-                  onViewProfile={() => navigate(`/caregiver-profile/${c._id}`, { state: { caregiver: c } })}
-                  onBook={() => navigate(`/book-caregiver/${c._id}`, { state: { caregiver: c } })}
-                />
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '14px' }}>
+              {paginatedCaregivers.map(c => {
+                const rate = getHourlyRate(c);
+                return (
+                  <motion.div key={c._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    style={{ background: 'white', borderRadius: '12px', padding: '18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                    
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      {/* Photo */}
+                      <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '18px', flexShrink: 0 }}>
+                        {c.photo && c.photo.includes('http') && !c.photo.includes('placehold') ? <img src={c.photo} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : getInitials(c.fullName)}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Name & Verified */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.fullName}</h3>
+                          {c.isVerified && <span style={{ padding: '1px 7px', background: '#d1fae5', color: '#065f46', borderRadius: '10px', fontSize: '10px', fontWeight: '700', flexShrink: 0 }}>✓</span>}
+                        </div>
+
+                        {/* Rating */}
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                          {getStars(c.ratings?.average || 0)}
+                          <span style={{ marginLeft: '4px' }}>({c.ratings?.count || c.totalReviews || 0}) • {c.experienceYears}yrs</span>
+                        </div>
+
+                        {/* Skills */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+                          {c.specializations?.slice(0, 3).map((s, i) => (
+                            <span key={i} style={{ padding: '2px 8px', background: '#eff6ff', color: '#1e40af', borderRadius: '8px', fontSize: '11px', fontWeight: '500' }}>{s}</span>
+                          ))}
+                        </div>
+
+                        {/* Location & Price Row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                          <span style={{ fontSize: '12px', color: '#64748b' }}>📍 {c.location?.city || 'Available'}{c.distance ? ` • ${c.distance}km` : ''}</span>
+                          <span style={{ fontSize: '18px', fontWeight: '800', color: '#059669' }}>₹{rate}<span style={{ fontSize: '11px', fontWeight: '400', color: '#64748b' }}>/hr</span></span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/caregiver-profile/${c._id}`, { state: { caregiver: c } }); }}
+                            style={{ flex: 1, padding: '8px', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}>View Profile</button>
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/book-caregiver/${c._id}`, { state: { caregiver: c } }); }}
+                            style={{ flex: 1, padding: '8px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}>Book Now</button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div style={{
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                gap: '16px', marginTop: '32px'
-              }}>
-                <PageButton onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
-                  ← Previous
-                </PageButton>
-                <span style={{ color: '#64748b', fontWeight: '500', fontSize: '14px' }}>
-                  Page {currentPage} of {totalPages}
-                </span>
-                <PageButton onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
-                  Next →
-                </PageButton>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                  style={{ padding: '8px 18px', borderRadius: '6px', border: 'none', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: currentPage === 1 ? '#e2e8f0' : '#3b82f6', color: currentPage === 1 ? '#94a3b8' : 'white', fontWeight: '600', fontSize: '13px' }}>← Prev</button>
+                <span style={{ color: '#64748b', fontSize: '13px' }}>Page {currentPage} of {totalPages}</span>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                  style={{ padding: '8px 18px', borderRadius: '6px', border: 'none', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: currentPage === totalPages ? '#e2e8f0' : '#3b82f6', color: currentPage === totalPages ? '#94a3b8' : 'white', fontWeight: '600', fontSize: '13px' }}>Next →</button>
               </div>
             )}
           </>
@@ -684,40 +513,31 @@ const Caregivers = () => {
       </section>
 
       {/* ================================================================
-          CAREGIVER CTA SECTION
+          TRUST BADGES
       ================================================================ */}
-      <section style={{
-        background: 'linear-gradient(135deg, #1e3a8a, #312e81)',
-        padding: '40px 20px', marginTop: '32px'
-      }}>
-        <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>👨‍⚕️</div>
-          <h2 style={{ fontSize: '26px', fontWeight: '800', color: 'white', marginBottom: '8px' }}>
-            Are You a Caregiver?
-          </h2>
-          <p style={{ fontSize: '16px', color: '#93c5fd', marginBottom: '24px', lineHeight: 1.5 }}>
-            Join 200+ verified caregivers on India's most trusted home care platform.<br />
-            Set your own rates, schedule, and service areas.
-          </p>
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/caregiver/register"
-              style={{
-                padding: '14px 32px', background: 'linear-gradient(135deg, #10b981, #059669)',
-                color: 'white', borderRadius: '12px', textDecoration: 'none',
-                fontWeight: '700', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px',
-                boxShadow: '0 8px 25px rgba(16, 185, 129, 0.3)'
-              }}>
-              <FaUserPlus /> Register as Caregiver
-            </Link>
-            <Link to="/caregiver/login"
-              style={{
-                padding: '14px 32px', background: 'rgba(255,255,255,0.15)',
-                color: 'white', borderRadius: '12px', textDecoration: 'none',
-                fontWeight: '700', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px',
-                border: '2px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(10px)'
-              }}>
-              <FaSignInAlt /> Caregiver Login
-            </Link>
+      <section style={{ background: 'white', borderTop: '1px solid #f1f5f9', padding: '28px 20px' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap', textAlign: 'center' }}>
+          {[{ icon: '🛡️', t: 'Background Verified', d: 'All caregivers undergo verification' }, { icon: '🎓', t: 'Trained & Certified', d: 'Qualified healthcare professionals' }, { icon: '⭐', t: 'Rated by Families', d: 'Real reviews from real people' }, { icon: '📞', t: '24/7 Support', d: 'Help whenever you need it' }].map((b, i) => (
+            <div key={i}>
+              <div style={{ fontSize: '28px', marginBottom: '4px' }}>{b.icon}</div>
+              <div style={{ fontWeight: '700', fontSize: '14px', color: '#1e293b' }}>{b.t}</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>{b.d}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ================================================================
+          CAREGIVER CTA
+      ================================================================ */}
+      <section style={{ background: 'linear-gradient(135deg, #1e3a8a, #312e81)', padding: '32px 20px', textAlign: 'center' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <div style={{ fontSize: '36px', marginBottom: '8px' }}>👨‍⚕️</div>
+          <h2 style={{ color: 'white', fontWeight: '800', fontSize: '22px', marginBottom: '6px' }}>Are You a Caregiver?</h2>
+          <p style={{ color: '#93c5fd', fontSize: '14px', marginBottom: '16px' }}>Join 200+ caregivers. Set your own rates and schedule.</p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/caregiver/register" style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px' }}>📝 Register as Caregiver</Link>
+            <Link to="/caregiver/login" style={{ padding: '12px 28px', background: 'rgba(255,255,255,0.15)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', border: '2px solid rgba(255,255,255,0.3)' }}>🔑 Caregiver Login</Link>
           </div>
         </div>
       </section>
@@ -725,11 +545,9 @@ const Caregivers = () => {
       {/* ================================================================
           DISCLAIMER
       ================================================================ */}
-      <section style={{ maxWidth: '800px', margin: '0 auto', padding: '24px 20px', textAlign: 'center' }}>
-        <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: 1.6 }}>
-          ⚠️ HealthCare Hub is a technology platform connecting patients with independent caregivers.
-          We do not employ caregivers or provide medical services. We earn a commission for bookings made through our platform.
-          No health data is stored. All care is provided directly by the caregiver.
+      <section style={{ padding: '20px', textAlign: 'center' }}>
+        <p style={{ color: '#94a3b8', fontSize: '12px', maxWidth: '700px', margin: '0 auto', lineHeight: 1.5 }}>
+          ⚠️ HealthCare Hub is a technology platform connecting patients with independent caregivers. We do not employ caregivers or provide medical services. No health data is stored. All care is provided directly by the caregiver.
         </p>
       </section>
 
@@ -737,284 +555,49 @@ const Caregivers = () => {
           AI MATCH MODAL
       ================================================================ */}
       {showAIMatch && (
-        <div style={{
-          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 2000, padding: '20px', backdropFilter: 'blur(4px)'
-        }}>
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            style={{
-              background: 'white', borderRadius: '20px', padding: '32px',
-              maxWidth: '520px', width: '100%', maxHeight: '90vh', overflow: 'auto',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.3)'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#1e293b' }}>
-                🤖 AI Caregiver Matching
-              </h3>
-              <button onClick={() => setShowAIMatch(false)}
-                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#94a3b8' }}>
-                <FaTimes />
-              </button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '16px', backdropFilter: 'blur(4px)' }}>
+          <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} style={{ background: 'white', borderRadius: '16px', padding: '28px', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '700' }}>🤖 AI Caregiver Match</h3>
+              <button onClick={() => setShowAIMatch(false)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer' }}>✕</button>
             </div>
-
-            <p style={{ color: '#64748b', marginBottom: '24px', fontSize: '14px' }}>
-              Our AI analyzes your requirements and matches you with the most compatible caregivers.
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <ModalField label="Care Type *">
-                <select value={aiMatchData.careType}
-                  onChange={(e) => setAIMatchData(p => ({ ...p, careType: e.target.value }))}
-                  style={selectStyle}>
-                  <option value="">Select care type</option>
-                  <option value="Elderly Care">Elderly Care</option>
-                  <option value="Post-Surgery Care">Post-Surgery Care</option>
-                  <option value="Paralysis Care">Paralysis Care</option>
-                  <option value="Dementia Care">Dementia Care</option>
-                  <option value="Physiotherapy">Physiotherapy</option>
-                  <option value="Pediatric Care">Pediatric/Newborn Care</option>
-                  <option value="Palliative Care">Palliative Care</option>
-                  <option value="Wound Care">Wound Care</option>
-                  <option value="Diabetes Care">Diabetes Care</option>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Field label="Care Type *">
+                <select value={aiMatchData.careType} onChange={e => setAIMatchData(p => ({ ...p, careType: e.target.value }))} style={S.filterSelect}>
+                  <option value="">Select</option>
+                  <option>Elderly Care</option><option>Post-Surgery Care</option><option>Paralysis Care</option><option>Dementia Care</option><option>Physiotherapy</option><option>Pediatric Care</option><option>Palliative Care</option><option>Wound Care</option>
                 </select>
-              </ModalField>
-
-              <ModalField label="City *">
-                <input type="text" placeholder="e.g. Mumbai"
-                  value={aiMatchData.city}
-                  onChange={(e) => setAIMatchData(p => ({ ...p, city: e.target.value }))}
-                  style={inputStyle} />
-              </ModalField>
-
-              <ModalField label="Service Type">
-                <select value={aiMatchData.serviceType}
-                  onChange={(e) => setAIMatchData(p => ({ ...p, serviceType: e.target.value }))}
-                  style={selectStyle}>
-                  <option value="">Any</option>
-                  <option value="personal">Personal Care</option>
-                  <option value="skilled">Skilled Nursing</option>
+              </Field>
+              <Field label="City *"><input type="text" value={aiMatchData.city} onChange={e => setAIMatchData(p => ({ ...p, city: e.target.value }))} style={S.filterInput} placeholder="e.g. Mumbai" /></Field>
+              <Field label="Service Type">
+                <select value={aiMatchData.serviceType} onChange={e => setAIMatchData(p => ({ ...p, serviceType: e.target.value }))} style={S.filterSelect}>
+                  <option value="">Any</option><option value="personal">Personal Care</option><option value="skilled">Skilled Nursing</option>
                 </select>
-              </ModalField>
-
-              <ModalField label="Preferred Languages">
-                <input type="text" placeholder="Hindi, English, Tamil"
-                  value={aiMatchData.languages}
-                  onChange={(e) => setAIMatchData(p => ({ ...p, languages: e.target.value }))}
-                  style={inputStyle} />
-              </ModalField>
-
-              <ModalField label="Gender Preference">
-                <select value={aiMatchData.genderPreference}
-                  onChange={(e) => setAIMatchData(p => ({ ...p, genderPreference: e.target.value }))}
-                  style={selectStyle}>
-                  <option value="any">Any</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
+              </Field>
+              <Field label="Languages"><input type="text" value={aiMatchData.languages} onChange={e => setAIMatchData(p => ({ ...p, languages: e.target.value }))} style={S.filterInput} placeholder="Hindi, English" /></Field>
+              <Field label="Gender">
+                <select value={aiMatchData.genderPreference} onChange={e => setAIMatchData(p => ({ ...p, genderPreference: e.target.value }))} style={S.filterSelect}>
+                  <option value="any">Any</option><option value="male">Male</option><option value="female">Female</option>
                 </select>
-              </ModalField>
-
-              <ModalField label="Max Budget (₹/hour)">
-                <input type="number" placeholder="e.g. 500"
-                  value={aiMatchData.maxBudget}
-                  onChange={(e) => setAIMatchData(p => ({ ...p, maxBudget: e.target.value }))}
-                  style={inputStyle} />
-              </ModalField>
-
-              <ModalField label="Required Skills">
-                <input type="text" placeholder="wound care, injection, physio"
-                  value={aiMatchData.skillsRequired}
-                  onChange={(e) => setAIMatchData(p => ({ ...p, skillsRequired: e.target.value }))}
-                  style={inputStyle} />
-              </ModalField>
-
-              <button onClick={handleAIMatch}
-                style={{
-                  padding: '14px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                  color: 'white', border: 'none', borderRadius: '12px',
-                  fontWeight: '700', fontSize: '16px', cursor: 'pointer', marginTop: '8px'
-                }}>
-                🤖 Find Best Matches
-              </button>
-
-              <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
-                🔒 AI analysis is real-time. No data stored.
-              </p>
+              </Field>
+              <Field label="Max Budget (₹/hr)"><input type="number" value={aiMatchData.maxBudget} onChange={e => setAIMatchData(p => ({ ...p, maxBudget: e.target.value }))} style={S.filterInput} placeholder="500" /></Field>
+              <Field label="Skills Needed"><input type="text" value={aiMatchData.skillsRequired} onChange={e => setAIMatchData(p => ({ ...p, skillsRequired: e.target.value }))} style={S.filterInput} placeholder="wound care, injection" /></Field>
+              <button onClick={handleAIMatch} style={{ ...S.btnPrimary, background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', width: '100%', padding: '14px', marginTop: '8px' }}>🤖 Find Best Matches</button>
             </div>
           </motion.div>
         </div>
       )}
+
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     </div>
   );
 };
 
-// ================================================================
-// HELPER COMPONENTS
-// ================================================================
-
-const CaregiverCard = ({ caregiver: c, viewMode, getInitials, getRatingStars, onViewProfile, onBook }) => {
-  const hourlyRate = c.pricing?.personal?.hourly || c.pricing?.skilled?.hourly || 'N/A';
-  const isGrid = viewMode === 'grid';
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
-        background: 'white', borderRadius: '16px', padding: isGrid ? '20px' : '16px 20px',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-        cursor: 'pointer', transition: 'all 0.2s',
-        display: isGrid ? 'block' : 'flex', gap: '16px', alignItems: 'center'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.08)';
-        e.currentTarget.style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)';
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-    >
-      {/* Avatar */}
-      <div style={{
-        width: isGrid ? '70px' : '56px', height: isGrid ? '70px' : '56px',
-        borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: 'white', fontWeight: '700', fontSize: isGrid ? '20px' : '16px',
-        flexShrink: 0, marginBottom: isGrid ? '12px' : '0'
-      }}>
-        {c.photo && c.photo !== 'https://placehold.co/400x400/e2e8f0/1e293b?text=Caregiver' ? (
-          <img src={c.photo} alt={c.fullName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-        ) : getInitials(c.fullName)}
-      </div>
-
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-          <div>
-            <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', margin: '0 0 4px' }}>
-              {c.fullName}
-              {c.isVerified && (
-                <span style={{
-                  marginLeft: '8px', padding: '2px 8px', background: '#d1fae5', color: '#065f46',
-                  borderRadius: '12px', fontSize: '11px', fontWeight: '600'
-                }}>✓ Verified</span>
-              )}
-            </h3>
-            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>
-              {getRatingStars(c.ratings?.average || 0)}
-              <span style={{ marginLeft: '6px' }}>({c.ratings?.count || c.totalReviews || 0})</span>
-              <span style={{ margin: '0 8px' }}>•</span>
-              {c.experienceYears} yrs exp
-            </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#059669' }}>₹{hourlyRate}</div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>per hour</div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '8px 0' }}>
-          {c.specializations?.slice(0, 3).map((s, i) => (
-            <span key={i} style={{
-              padding: '4px 10px', background: '#eff6ff', color: '#1e40af',
-              borderRadius: '12px', fontSize: '12px', fontWeight: '500'
-            }}>{s}</span>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '13px', color: '#64748b' }}>
-            📍 {c.location?.city || 'Available'} {c.distance && `• ${c.distance}km`}
-          </span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={(e) => { e.stopPropagation(); onViewProfile(); }}
-              style={{
-                padding: '8px 16px', background: '#eff6ff', color: '#1e40af',
-                border: '1px solid #bfdbfe', borderRadius: '8px', cursor: 'pointer',
-                fontWeight: '600', fontSize: '13px'
-              }}>Profile</button>
-            <button onClick={(e) => { e.stopPropagation(); onBook(); }}
-              style={{
-                padding: '8px 16px', background: 'linear-gradient(135deg, #10b981, #059669)',
-                color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer',
-                fontWeight: '600', fontSize: '13px'
-              }}>Book Now</button>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const SkeletonCard = ({ viewMode }) => (
-  <div style={{
-    background: 'white', borderRadius: '16px', padding: '20px',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.04)', animation: 'pulse 1.5s infinite'
-  }}>
-    <div style={{ display: 'flex', gap: '12px' }}>
-      <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#e2e8f0', flexShrink: 0 }} />
-      <div style={{ flex: 1 }}>
-        <div style={{ height: '20px', background: '#e2e8f0', borderRadius: '6px', width: '60%', marginBottom: '8px' }} />
-        <div style={{ height: '16px', background: '#e2e8f0', borderRadius: '6px', width: '40%', marginBottom: '12px' }} />
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <div style={{ height: '24px', background: '#e2e8f0', borderRadius: '12px', width: '60px' }} />
-          <div style={{ height: '24px', background: '#e2e8f0', borderRadius: '12px', width: '80px' }} />
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const FilterSelect = ({ label, value, onChange, options }) => (
+const Field = ({ label, children }) => (
   <div>
-    <label style={{ display: 'block', fontWeight: '600', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{label}</label>
-    <select value={value} onChange={(e) => onChange(e.target.value)} style={selectStyle}>
-      {options.map(([val, txt]) => <option key={val} value={val}>{txt}</option>)}
-    </select>
-  </div>
-);
-
-const FilterInput = ({ label, value, onChange, type = 'text', placeholder }) => (
-  <div>
-    <label style={{ display: 'block', fontWeight: '600', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>{label}</label>
-    <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={inputStyle} />
-  </div>
-);
-
-const ModalField = ({ label, children }) => (
-  <div>
-    <label style={{ display: 'block', fontWeight: '600', fontSize: '13px', color: '#374151', marginBottom: '4px' }}>{label}</label>
+    <label style={{ display: 'block', fontWeight: '600', fontSize: '12px', color: '#374151', marginBottom: '3px' }}>{label}</label>
     {children}
   </div>
 );
-
-const PageButton = ({ children, onClick, disabled }) => (
-  <button onClick={onClick} disabled={disabled}
-    style={{
-      padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
-      fontWeight: '600', fontSize: '14px', background: disabled ? '#e2e8f0' : '#3b82f6',
-      color: disabled ? '#94a3b8' : 'white'
-    }}>{children}</button>
-);
-
-// Shared Styles
-const selectStyle = {
-  width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0',
-  borderRadius: '8px', fontSize: '14px', color: '#1e293b',
-  background: 'white', outline: 'none'
-};
-
-const inputStyle = {
-  width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0',
-  borderRadius: '8px', fontSize: '14px', color: '#1e293b', outline: 'none'
-};
-
-// Animation
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`;
-document.head.appendChild(styleSheet);
 
 export default Caregivers;
