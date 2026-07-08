@@ -12,7 +12,7 @@ import {
   FaApple, FaGooglePlay, FaMapMarkerAlt, FaEnvelope
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from './services/api';
+import api from '../services/api';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -42,7 +42,6 @@ const HomePage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -102,56 +101,51 @@ const HomePage = () => {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
-    try {
-      const response = await api.post('/caregivers/ai-match', {
-        careType: searchQuery,
-        city: location || 'Mumbai'
-      });
-      
-      // Route based on search intent
-      const q = searchQuery.toLowerCase();
-      if (q.includes('hospital') || q.includes('clinic')) {
-        navigate(`/hospitals?search=${encodeURIComponent(searchQuery)}`);
-      } else if (q.includes('doctor') || q.includes('physician') || q.includes('specialist')) {
-        navigate(`/online-doctor?search=${encodeURIComponent(searchQuery)}`);
-      } else if (q.includes('lab') || q.includes('test') || q.includes('blood')) {
-        navigate(`/diagnostics?search=${encodeURIComponent(searchQuery)}`);
-      } else if (q.includes('ambulance') || q.includes('emergency')) {
-        navigate(`/ambulance?search=${encodeURIComponent(searchQuery)}`);
-      } else if (q.includes('caregiver') || q.includes('nurse') || q.includes('home care')) {
-        navigate(`/caregivers?search=${encodeURIComponent(searchQuery)}`);
-      } else {
-        navigate(`/search?q=${encodeURIComponent(searchQuery)}&loc=${encodeURIComponent(location)}`);
-      }
-    } catch (error) {
+    const q = searchQuery.toLowerCase();
+    
+    // Route based on search intent
+    if (q.includes('hospital') || q.includes('clinic')) {
+      navigate(`/hospitals?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('doctor') || q.includes('physician') || q.includes('specialist')) {
+      navigate(`/online-doctor?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('lab') || q.includes('test') || q.includes('blood')) {
+      navigate(`/diagnostics?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('ambulance') || q.includes('emergency')) {
+      navigate(`/ambulance?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('caregiver') || q.includes('nurse') || q.includes('home care')) {
+      navigate(`/caregivers?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('ayurveda') || q.includes('ayurvedic')) {
+      navigate(`/ayurveda?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('homeopathy') || q.includes('homeopathic')) {
+      navigate(`/homeopathy?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('mental') || q.includes('therapy') || q.includes('counseling')) {
+      navigate(`/mentalhealth?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('insurance') || q.includes('policy')) {
+      navigate(`/insurance?search=${encodeURIComponent(searchQuery)}`);
+    } else if (q.includes('emi') || q.includes('loan') || q.includes('finance')) {
+      navigate(`/financing?search=${encodeURIComponent(searchQuery)}`);
+    } else {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}&loc=${encodeURIComponent(location)}`);
-    } finally {
-      setIsSearching(false);
     }
+    
+    setIsSearching(false);
   };
 
-  // AI-powered search suggestions
-  const handleSearchInput = async (value) => {
+  const handleSearchInput = (value) => {
     setSearchQuery(value);
     if (value.length >= 2) {
-      try {
-        const response = await api.get(`/caregivers/suggestions?q=${encodeURIComponent(value)}`);
-        if (response.data.success) {
-          setAiSuggestions(response.data.data || []);
-          setShowSuggestions(true);
-        }
-      } catch {
-        // Fallback suggestions
-        const commonSearches = [
-          { type: 'service', text: 'Hospitals near me' },
-          { type: 'service', text: 'Online Doctor Consultation' },
-          { type: 'service', text: 'Lab Tests' },
-          { type: 'service', text: 'Ambulance Service' },
-          { type: 'service', text: 'Home Care Services' }
-        ].filter(s => s.text.toLowerCase().includes(value.toLowerCase()));
-        setAiSuggestions(commonSearches);
-        setShowSuggestions(commonSearches.length > 0);
-      }
+      const commonSearches = [
+        { type: 'service', text: 'Hospitals near me' },
+        { type: 'service', text: 'Online Doctor Consultation' },
+        { type: 'service', text: 'Lab Tests & Packages' },
+        { type: 'service', text: 'Ambulance Service' },
+        { type: 'service', text: 'Home Care Services' },
+        { type: 'service', text: 'Ayurveda Doctors' },
+        { type: 'service', text: 'Health Insurance' },
+        { type: 'service', text: 'Mental Wellness' }
+      ].filter(s => s.text.toLowerCase().includes(value.toLowerCase()));
+      setAiSuggestions(commonSearches);
+      setShowSuggestions(commonSearches.length > 0);
     } else {
       setAiSuggestions([]);
       setShowSuggestions(false);
