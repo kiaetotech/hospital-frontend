@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getCaregivers, getAICaregiverMatch, getCaregiverSuggestions } from '../services/api';
 
 const Caregivers = () => {
@@ -14,7 +14,6 @@ const Caregivers = () => {
   const [showAIMatch, setShowAIMatch] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [userLocation, setUserLocation] = useState(null);
   
   const [filters, setFilters] = useState({
     serviceType: '',
@@ -59,7 +58,7 @@ const Caregivers = () => {
       const response = await getCaregivers(params);
       
       if (response.data.success) {
-        let data = response.data.data;
+        let data = response.data.data || [];
         
         // Client-side specialization filter
         if (filters.specializations) {
@@ -73,10 +72,13 @@ const Caregivers = () => {
         
         setCaregivers(data);
         setTotalPages(response.data.pagination?.total || Math.ceil(data.length / ITEMS_PER_PAGE));
+      } else {
+        setCaregivers([]);
       }
     } catch (err) {
       setError('Failed to load caregivers. Please try again.');
       console.error('Fetch caregivers error:', err);
+      setCaregivers([]);
     } finally {
       setLoading(false);
     }
@@ -104,7 +106,7 @@ const Caregivers = () => {
       });
       
       if (response.data.success) {
-        setCaregivers(response.data.data);
+        setCaregivers(response.data.data || []);
         setTotalPages(1);
       }
     } catch (err) {
@@ -123,11 +125,11 @@ const Caregivers = () => {
       try {
         const response = await getCaregiverSuggestions(value);
         if (response.data.success) {
-          setSuggestions(response.data.data);
+          setSuggestions(response.data.data || []);
           setShowSuggestions(true);
         }
       } catch (err) {
-        // Silently fail for suggestions
+        setSuggestions([]);
       }
     } else {
       setSuggestions([]);
@@ -137,35 +139,18 @@ const Caregivers = () => {
 
   const handleSuggestionClick = (suggestion) => {
     if (suggestion.type === 'city') {
-      setFilters(prev => ({ ...prev, city: suggestion.text }));
-    } else if (suggestion.type === 'skill') {
+      setFilters(prev => ({ ...prev, city: suggestion.text || suggestion.label }));
+    } else if (suggestion.type === 'skill' || suggestion.type === 'service') {
       setFilters(prev => ({ 
         ...prev, 
         specializations: prev.specializations 
-          ? prev.specializations + ', ' + suggestion.text 
-          : suggestion.text 
+          ? prev.specializations + ', ' + (suggestion.text || suggestion.label) 
+          : (suggestion.text || suggestion.label)
       }));
     }
     setSearchQuery('');
     setShowSuggestions(false);
   };
-
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        () => {
-          console.log('Location access denied');
-        }
-      );
-    }
-  }, []);
 
   // Initial fetch
   useEffect(() => {
@@ -284,7 +269,8 @@ const Caregivers = () => {
               marginTop: '0.5rem',
               boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
               zIndex: 100,
-              overflow: 'hidden'
+              overflow: 'hidden',
+              textAlign: 'left'
             }}>
               {suggestions.map((s, i) => (
                 <div
@@ -297,12 +283,13 @@ const Caregivers = () => {
                     borderBottom: '1px solid #f1f5f9',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    fontSize: '0.9rem'
                   }}
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
                 >
-                  {s.type === 'city' ? '📍' : '🎯'} {s.text}
+                  {s.type === 'city' ? '📍' : '🎯'} {s.text || s.label}
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: 'auto' }}>
                     {s.type === 'city' ? 'City' : 'Skill'}
                   </span>
@@ -310,6 +297,62 @@ const Caregivers = () => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Caregiver CTA Buttons */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: '1rem', 
+          marginTop: '1.5rem',
+          flexWrap: 'wrap'
+        }}>
+          <Link
+            to="/caregiver/register"
+            style={{
+              padding: '0.6rem 1.5rem',
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              border: '2px solid rgba(255,255,255,0.4)',
+              borderRadius: '2rem',
+              textDecoration: 'none',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = 'rgba(255,255,255,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'rgba(255,255,255,0.2)';
+            }}
+          >
+            📝 Register as Caregiver
+          </Link>
+          <Link
+            to="/caregiver/login"
+            style={{
+              padding: '0.6rem 1.5rem',
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              border: '2px solid rgba(255,255,255,0.4)',
+              borderRadius: '2rem',
+              textDecoration: 'none',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = 'rgba(255,255,255,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'rgba(255,255,255,0.2)';
+            }}
+          >
+            🔑 Caregiver Login
+          </Link>
         </div>
       </div>
 
@@ -354,120 +397,102 @@ const Caregivers = () => {
               gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
               gap: '0.75rem' 
             }}>
-              <select 
-                value={filters.serviceType} 
-                onChange={(e) => handleFilterChange('serviceType', e.target.value)}
-                style={filterSelectStyle}
-              >
+              <select value={filters.serviceType} onChange={(e) => handleFilterChange('serviceType', e.target.value)} style={filterSelectStyle}>
                 <option value="">All Service Types</option>
                 <option value="personal">🩺 Personal Care</option>
                 <option value="skilled">💉 Skilled Nursing</option>
               </select>
               
-              <select 
-                value={filters.gender} 
-                onChange={(e) => handleFilterChange('gender', e.target.value)}
-                style={filterSelectStyle}
-              >
+              <select value={filters.gender} onChange={(e) => handleFilterChange('gender', e.target.value)} style={filterSelectStyle}>
                 <option value="any">Any Gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
               
-              <select 
-                value={filters.minExperience} 
-                onChange={(e) => handleFilterChange('minExperience', e.target.value)}
-                style={filterSelectStyle}
-              >
+              <select value={filters.minExperience} onChange={(e) => handleFilterChange('minExperience', e.target.value)} style={filterSelectStyle}>
                 <option value="">Any Experience</option>
                 <option value="2">2+ Years</option>
                 <option value="5">5+ Years</option>
                 <option value="10">10+ Years</option>
               </select>
               
-              <select 
-                value={filters.minRating} 
-                onChange={(e) => handleFilterChange('minRating', e.target.value)}
-                style={filterSelectStyle}
-              >
+              <select value={filters.minRating} onChange={(e) => handleFilterChange('minRating', e.target.value)} style={filterSelectStyle}>
                 <option value="">Any Rating</option>
                 <option value="4">⭐ 4.0 & above</option>
                 <option value="4.5">⭐ 4.5 & above</option>
               </select>
               
-              <input
-                type="number"
-                placeholder="Max hourly rate (₹)"
-                value={filters.maxHourlyRate}
-                onChange={(e) => handleFilterChange('maxHourlyRate', e.target.value)}
-                style={filterInputStyle}
-              />
+              <input type="number" placeholder="Max hourly rate (₹)" value={filters.maxHourlyRate} onChange={(e) => handleFilterChange('maxHourlyRate', e.target.value)} style={filterInputStyle} />
               
-              <input
-                type="text"
-                placeholder="City"
-                value={filters.city}
-                onChange={(e) => handleFilterChange('city', e.target.value)}
-                style={filterInputStyle}
-              />
+              <input type="text" placeholder="City" value={filters.city} onChange={(e) => handleFilterChange('city', e.target.value)} style={filterInputStyle} />
               
-              <input
-                type="text"
-                placeholder="Skills (comma separated)"
-                value={filters.specializations}
-                onChange={(e) => handleFilterChange('specializations', e.target.value)}
-                style={filterInputStyle}
-              />
+              <input type="text" placeholder="Skills (comma separated)" value={filters.specializations} onChange={(e) => handleFilterChange('specializations', e.target.value)} style={filterInputStyle} />
               
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
-                  onClick={resetFilters}
-                  style={{
-                    flex: 1,
-                    padding: '0.6rem',
-                    backgroundColor: '#f1f5f9',
-                    color: '#64748b',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '0.85rem'
-                  }}
-                >
-                  Reset
-                </button>
-              </div>
+              <button onClick={resetFilters} style={{
+                padding: '0.6rem',
+                backgroundColor: '#f1f5f9',
+                color: '#64748b',
+                border: '1px solid #e2e8f0',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.85rem'
+              }}>
+                Reset
+              </button>
             </div>
           )}
         </div>
 
-        {/* Results Count */}
+        {/* Results Header */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          marginBottom: '1rem'
+          marginBottom: '1rem',
+          flexWrap: 'wrap',
+          gap: '0.75rem'
         }}>
-          <p style={{ color: '#64748b', fontWeight: '500' }}>
+          <p style={{ color: '#64748b', fontWeight: '500', margin: 0 }}>
             {loading ? 'Searching...' : `Found ${caregivers.length} caregivers`}
           </p>
           
-          {/* CTA for Caregivers */}
-          <button
-            onClick={() => navigate('/caregiver/register')}
-            style={{
-              padding: '0.5rem 1.5rem',
-              backgroundColor: '#1e3a8a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '0.9rem'
-            }}
-          >
-            Register as Caregiver →
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Link
+              to="/caregiver/register"
+              style={{
+                padding: '0.5rem 1.25rem',
+                backgroundColor: '#059669',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.85rem',
+                textDecoration: 'none',
+                display: 'inline-block'
+              }}
+            >
+              📝 Register as Caregiver
+            </Link>
+            <Link
+              to="/caregiver/login"
+              style={{
+                padding: '0.5rem 1.25rem',
+                backgroundColor: '#1e3a8a',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.85rem',
+                textDecoration: 'none',
+                display: 'inline-block'
+              }}
+            >
+              🔑 Caregiver Login
+            </Link>
+          </div>
         </div>
 
         {/* Loading Skeleton */}
@@ -486,12 +511,7 @@ const Caregivers = () => {
                 animation: 'pulse 1.5s infinite'
               }}>
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ 
-                    width: '80px', 
-                    height: '80px', 
-                    borderRadius: '50%', 
-                    backgroundColor: '#e2e8f0' 
-                  }} />
+                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e2e8f0' }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ height: '20px', backgroundColor: '#e2e8f0', borderRadius: '0.25rem', marginBottom: '0.5rem', width: '60%' }} />
                     <div style={{ height: '16px', backgroundColor: '#e2e8f0', borderRadius: '0.25rem', marginBottom: '0.5rem', width: '40%' }} />
@@ -513,46 +533,99 @@ const Caregivers = () => {
             border: '1px solid #fecaca'
           }}>
             <p style={{ color: '#dc2626', marginBottom: '1rem', fontSize: '1.1rem' }}>⚠️ {error}</p>
-            <button 
-              onClick={() => fetchCaregivers()}
-              style={{
-                padding: '0.75rem 2rem',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-            >
+            <button onClick={() => fetchCaregivers()} style={{
+              padding: '0.75rem 2rem',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}>
               Try Again
             </button>
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State with CTAs */}
         {!loading && !error && caregivers.length === 0 && (
           <div style={{ 
             textAlign: 'center', 
-            padding: '4rem 2rem',
+            padding: '3rem 2rem',
             backgroundColor: 'white',
-            borderRadius: '1rem'
+            borderRadius: '1rem',
+            border: '2px dashed #e2e8f0'
           }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔍</div>
-            <h3 style={{ color: '#1e293b', marginBottom: '0.5rem' }}>No Caregivers Found</h3>
-            <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-              Try adjusting your filters or search criteria
+            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🏠</div>
+            <h3 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.2rem' }}>
+              No Caregivers Found in This Area
+            </h3>
+            <p style={{ color: '#64748b', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+              Try adjusting your filters or check back soon
             </p>
+            
+            {/* CTA Buttons */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '1rem', 
+              justifyContent: 'center', 
+              flexWrap: 'wrap',
+              marginTop: '1.5rem',
+              marginBottom: '1rem'
+            }}>
+              <Link
+                to="/caregiver/register"
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '0.9rem',
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                📝 Register as Caregiver
+              </Link>
+              
+              <Link
+                to="/caregiver/login"
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#eff6ff',
+                  color: '#1e40af',
+                  border: '2px solid #bfdbfe',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '0.9rem',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                🔑 Caregiver Login
+              </Link>
+            </div>
+
             <button 
               onClick={resetFilters}
               style={{
-                padding: '0.75rem 2rem',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
+                padding: '0.5rem 1.5rem',
+                backgroundColor: '#f1f5f9',
+                color: '#64748b',
+                border: '1px solid #e2e8f0',
                 borderRadius: '0.5rem',
                 cursor: 'pointer',
-                fontWeight: '600'
+                fontWeight: '500',
+                fontSize: '0.85rem'
               }}
             >
               Reset All Filters
@@ -579,7 +652,8 @@ const Caregivers = () => {
                     boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                     border: '1px solid #e2e8f0',
                     transition: 'all 0.2s ease',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    position: 'relative'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.boxShadow = '0 10px 40px rgba(0,0,0,0.1)';
@@ -590,7 +664,7 @@ const Caregivers = () => {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  {/* Match Score Badge (if AI matched) */}
+                  {/* Match Score Badge */}
                   {c.matchScore && (
                     <div style={{
                       position: 'absolute',
@@ -601,14 +675,14 @@ const Caregivers = () => {
                       padding: '0.25rem 0.75rem',
                       borderRadius: '9999px',
                       fontSize: '0.75rem',
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      zIndex: 1
                     }}>
                       {c.matchScore}% Match
                     </div>
                   )}
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    {/* Avatar */}
                     {c.photo && c.photo !== 'https://placehold.co/400x400/e2e8f0/1e293b?text=Caregiver' ? (
                       <img 
                         src={c.photo} 
@@ -640,7 +714,6 @@ const Caregivers = () => {
                     )}
                     
                     <div style={{ flex: 1 }}>
-                      {/* Name + Verified Badge */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1e293b', margin: 0 }}>
                           {c.fullName}
@@ -659,7 +732,6 @@ const Caregivers = () => {
                         )}
                       </div>
                       
-                      {/* Rating */}
                       <div style={{ marginBottom: '0.5rem', fontSize: '0.9rem' }}>
                         {getRatingStars(c.ratings?.average || 0)}
                         <span style={{ color: '#64748b', marginLeft: '0.25rem' }}>
@@ -667,7 +739,6 @@ const Caregivers = () => {
                         </span>
                       </div>
                       
-                      {/* Experience + Service Type */}
                       <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.25rem' }}>
                         {c.experienceYears} years exp • 
                         <span style={{
@@ -683,18 +754,15 @@ const Caregivers = () => {
                         </span>
                       </p>
                       
-                      {/* Specializations */}
                       <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.5rem' }}>
                         🎯 {c.specializations?.slice(0, 3).join(', ') || 'General Care'}
                       </p>
                       
-                      {/* Location */}
                       <p style={{ fontSize: '0.85rem', color: '#3b82f6', margin: '0 0 0.5rem' }}>
                         📍 {c.location?.city || 'Available'}
                         {c.distance && ` • ${c.distance} km away`}
                       </p>
                       
-                      {/* Price */}
                       <p style={{ 
                         fontSize: '1.1rem', 
                         fontWeight: 'bold', 
@@ -704,7 +772,6 @@ const Caregivers = () => {
                         ₹{c.pricing?.personal?.hourly || c.pricing?.skilled?.hourly || 'N/A'}/hour
                       </p>
                       
-                      {/* Action Buttons */}
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button 
                           onClick={() => navigate(`/caregiver-profile/${c._id}`, { state: { caregiver: c } })}
@@ -792,6 +859,21 @@ const Caregivers = () => {
             </button>
           </div>
         )}
+
+        {/* Bottom Disclaimer */}
+        <p style={{
+          textAlign: 'center',
+          color: '#94a3b8',
+          fontSize: '0.8rem',
+          marginTop: '2rem',
+          lineHeight: '1.6',
+          maxWidth: '800px',
+          margin: '2rem auto 0'
+        }}>
+          ⚠️ HealthCare Hub is a technology platform connecting patients with independent caregivers. 
+          We do not employ caregivers or provide medical services. We earn a commission for bookings made through our platform.
+          No health data is stored. All care is provided directly by the caregiver.
+        </p>
       </div>
 
       {/* AI Match Modal */}
@@ -819,16 +901,7 @@ const Caregivers = () => {
               <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>
                 🤖 AI Caregiver Match
               </h2>
-              <button 
-                onClick={() => setShowAIMatch(false)}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  fontSize: '1.5rem', 
-                  cursor: 'pointer',
-                  color: '#64748b'
-                }}
-              >
+              <button onClick={() => setShowAIMatch(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}>
                 ✕
               </button>
             </div>
@@ -840,11 +913,7 @@ const Caregivers = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={modalLabelStyle}>Care Type *</label>
-                <select 
-                  value={aiMatchData.careType} 
-                  onChange={(e) => setAIMatchData(prev => ({ ...prev, careType: e.target.value }))}
-                  style={filterSelectStyle}
-                >
+                <select value={aiMatchData.careType} onChange={(e) => setAIMatchData(prev => ({ ...prev, careType: e.target.value }))} style={filterSelectStyle}>
                   <option value="">Select care type</option>
                   <option value="Elderly Care">Elderly Care</option>
                   <option value="Post-Surgery Care">Post-Surgery Care</option>
@@ -861,22 +930,12 @@ const Caregivers = () => {
               
               <div>
                 <label style={modalLabelStyle}>City *</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter city"
-                  value={aiMatchData.city}
-                  onChange={(e) => setAIMatchData(prev => ({ ...prev, city: e.target.value }))}
-                  style={filterInputStyle}
-                />
+                <input type="text" placeholder="Enter city" value={aiMatchData.city} onChange={(e) => setAIMatchData(prev => ({ ...prev, city: e.target.value }))} style={filterInputStyle} />
               </div>
               
               <div>
                 <label style={modalLabelStyle}>Service Type</label>
-                <select 
-                  value={aiMatchData.serviceType} 
-                  onChange={(e) => setAIMatchData(prev => ({ ...prev, serviceType: e.target.value }))}
-                  style={filterSelectStyle}
-                >
+                <select value={aiMatchData.serviceType} onChange={(e) => setAIMatchData(prev => ({ ...prev, serviceType: e.target.value }))} style={filterSelectStyle}>
                   <option value="">Any</option>
                   <option value="personal">Personal Care</option>
                   <option value="skilled">Skilled Nursing</option>
@@ -885,22 +944,12 @@ const Caregivers = () => {
               
               <div>
                 <label style={modalLabelStyle}>Preferred Languages (comma separated)</label>
-                <input 
-                  type="text" 
-                  placeholder="Hindi, English, Tamil"
-                  value={aiMatchData.languages}
-                  onChange={(e) => setAIMatchData(prev => ({ ...prev, languages: e.target.value }))}
-                  style={filterInputStyle}
-                />
+                <input type="text" placeholder="Hindi, English, Tamil" value={aiMatchData.languages} onChange={(e) => setAIMatchData(prev => ({ ...prev, languages: e.target.value }))} style={filterInputStyle} />
               </div>
               
               <div>
                 <label style={modalLabelStyle}>Gender Preference</label>
-                <select 
-                  value={aiMatchData.genderPreference} 
-                  onChange={(e) => setAIMatchData(prev => ({ ...prev, genderPreference: e.target.value }))}
-                  style={filterSelectStyle}
-                >
+                <select value={aiMatchData.genderPreference} onChange={(e) => setAIMatchData(prev => ({ ...prev, genderPreference: e.target.value }))} style={filterSelectStyle}>
                   <option value="any">Any Gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -909,57 +958,36 @@ const Caregivers = () => {
               
               <div>
                 <label style={modalLabelStyle}>Max Budget (₹/hour)</label>
-                <input 
-                  type="number" 
-                  placeholder="e.g., 500"
-                  value={aiMatchData.maxBudget}
-                  onChange={(e) => setAIMatchData(prev => ({ ...prev, maxBudget: e.target.value }))}
-                  style={filterInputStyle}
-                />
+                <input type="number" placeholder="e.g., 500" value={aiMatchData.maxBudget} onChange={(e) => setAIMatchData(prev => ({ ...prev, maxBudget: e.target.value }))} style={filterInputStyle} />
               </div>
               
               <div>
                 <label style={modalLabelStyle}>Required Skills (comma separated)</label>
-                <input 
-                  type="text" 
-                  placeholder="wound care, injection, physio"
-                  value={aiMatchData.skillsRequired}
-                  onChange={(e) => setAIMatchData(prev => ({ ...prev, skillsRequired: e.target.value }))}
-                  style={filterInputStyle}
-                />
+                <input type="text" placeholder="wound care, injection, physio" value={aiMatchData.skillsRequired} onChange={(e) => setAIMatchData(prev => ({ ...prev, skillsRequired: e.target.value }))} style={filterInputStyle} />
               </div>
               
-              <button 
-                onClick={handleAIMatch}
-                style={{
-                  padding: '0.75rem',
-                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  marginTop: '0.5rem'
-                }}
-              >
+              <button onClick={handleAIMatch} style={{
+                padding: '0.75rem',
+                background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                marginTop: '0.5rem'
+              }}>
                 🤖 Find Best Matches with AI
               </button>
             </div>
             
-            <p style={{ 
-              marginTop: '1rem', 
-              fontSize: '0.75rem', 
-              color: '#94a3b8', 
-              textAlign: 'center' 
-            }}>
+            <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>
               🔒 AI analysis is real-time. No health data stored.
             </p>
           </div>
         </div>
       )}
 
-      {/* Add keyframe animation for skeleton */}
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
@@ -970,7 +998,6 @@ const Caregivers = () => {
   );
 };
 
-// Shared styles
 const filterSelectStyle = {
   padding: '0.6rem',
   border: '1px solid #e2e8f0',
