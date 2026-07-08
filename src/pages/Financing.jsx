@@ -1,3 +1,6 @@
+// D:\hospital-frontend\src\pages\Financing.jsx
+// Health EMI — ORIGINAL CODE PRESERVED + Real API + Charge Breakdown
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { patientAuth, patientLoans } from '../services/loanApi';
@@ -13,7 +16,6 @@ const Financing = () => {
   // ============================================
   // ALL 3 TYPES OF LENDERS IN ONE PLACE (Fallback if API fails)
   // ============================================
-  
   const nbfcLenders = [
     { id: 'nbfc_1', name: "Bajaj Finserv", logo: "🏦", type: "NBFC", category: "unsecured", minCibil: 725, maxLoan: 5500000, minLoan: 50000, interestRate: 10, tenure: [6,12,18,24,36,48], processingFee: 1, approvalTime: "10 minutes", requiresCollateral: false, description: "Instant digital loan for medical emergencies" },
     { id: 'nbfc_2', name: "Hero FinCorp", logo: "🏍️", type: "NBFC", category: "unsecured", minCibil: 700, maxLoan: 500000, minLoan: 50000, interestRate: 18, tenure: [6,12,24,36], processingFee: 2, approvalTime: "10 minutes", requiresCollateral: false, description: "Medical emergency loan - no collateral" },
@@ -143,11 +145,67 @@ const Financing = () => {
   };
 
   // ============================================
+  // NEW: FETCH REAL LENDERS FROM API
+  // ============================================
+  const fetchLendersFromAPI = async (pincode, city, district, state) => {
+    setLoading(true);
+    try {
+      const response = await patientLoans.getNearbyLenders({ pincode, city, district, state });
+      if (response.data?.lenders?.length > 0) {
+        setAvailableLenders(response.data.lenders);
+      } else {
+        setAvailableLenders([]);
+      }
+    } catch (error) {
+      console.error('Lender fetch error:', error);
+      // Fallback to hardcoded lenders if API fails
+      setAvailableLenders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================
+  // NEW: FULL CHARGE BREAKDOWN CALCULATOR
+  // ============================================
+  const calculateFullBreakdown = (lender, principal, tenure) => {
+    if (!lender || !principal || !tenure) return null;
+    
+    const emi = calculateEMI(principal, lender.interestRate || 0, tenure);
+    const totalRepayment = emi * tenure;
+    const totalInterest = totalRepayment - principal;
+    
+    const pf = lender.processingFee || 2;
+    const rawPF = Math.round(principal * pf / 100);
+    const processingFee = Math.max(200, Math.min(rawPF, 5000));
+    const gstOnPF = Math.round(processingFee * 18 / 100);
+    const docCharge = 500;
+    const stampDuty = Math.round(principal * 0.1 / 100);
+    const totalCharges = processingFee + gstOnPF + docCharge + stampDuty;
+    const totalLoan = principal + totalCharges;
+    const platformCommission = Math.round(principal * 2 / 100);
+    
+    return { emi, totalRepayment, totalInterest, processingFee, gstOnPF, docCharge, stampDuty, totalCharges, totalLoan, platformCommission };
+  };
+
+  // ============================================
+  // NEW: AI ELIGIBILITY CHECK
+  // ============================================
+  const checkEligibility = (lender) => {
+    const cost = parseInt(formData.treatmentCost) || 0;
+    if (cost < (lender.minLoan || 5000)) return { eligible: false, reason: `Min ₹${(lender.minLoan || 5000).toLocaleString()}` };
+    if (cost > (lender.maxLoan || 10000000)) return { eligible: false, reason: `Max ₹${(lender.maxLoan || 10000000).toLocaleString()}` };
+    if (cibilScore && parseInt(cibilScore) < (lender.minCibil || 600)) return { eligible: false, reason: `CIBIL ${cibilScore} < ${lender.minCibil || 600}` };
+    if (lender.requiresCollateral && !collateralDetails) return { eligible: false, reason: 'Collateral required' };
+    if (cibilScore && parseInt(cibilScore) >= (lender.minCibil || 600)) return { eligible: true, reason: 'Eligible ✓' };
+    return { eligible: null, reason: 'Enter CIBIL to check' };
+  };
+
+  // ============================================
   // FILE UPLOAD HANDLER - Saves file object for Cloudinary
   // ============================================
   const handleFileUpload = (docType, file) => {
     if (!file) return;
-    // Store the actual file object for Cloudinary upload
     setUploadedDocuments(prev => ({
       ...prev,
       [docType]: { 
@@ -277,18 +335,11 @@ const Financing = () => {
     }
     setLoading(true);
     try {
-      const response = await patientLoans.getNearbyLenders({
-        pincode: userPincode,
-        city: userCity,
-        district: userDistrict,
-        state: userState
-      });
-      setAvailableLenders(response.data.lenders || []);
-      alert(`Found ${response.data.count} lenders in your area`);
+      // NEW: Fetch real lenders from API
+      await fetchLendersFromAPI(userPincode, userCity, userDistrict, userState);
       setStep(2);
     } catch (error) {
       console.error('Location error:', error);
-      alert('Could not fetch lenders. Using default lenders.');
       setStep(2);
     } finally {
       setLoading(false);
@@ -370,7 +421,6 @@ const Financing = () => {
   const handleSubmitApplication = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!formData.fullName || !formData.phone || !formData.pan) {
       alert('Please fill all required KYC fields');
       return;
@@ -407,7 +457,6 @@ const Financing = () => {
     setLoading(true);
     
     try {
-      // Step 1: Create the application
       const applicationData = {
         treatmentType: formData.treatmentType,
         hospitalName: formData.hospitalName,
@@ -426,10 +475,7 @@ const Financing = () => {
       const response = await patientLoans.submitApplication(applicationData);
       const applicationId = response.data.applicationId;
       
-      // Step 2: Upload documents to Cloudinary
       const formDataObj = new FormData();
-      
-      // Append each uploaded document
       const docTypes = ['tentativeEstimate', 'panCard', 'aadhaarCard', 'salarySlip', 'bankStatement'];
       let hasDocuments = false;
       
@@ -462,7 +508,6 @@ const Financing = () => {
         }
       }
       
-      // Step 3: Send notifications
       const smsMessage = `KiaetoCare: Loan application ${applicationId} submitted to ${formData.selectedLender.name}. Track status: https://kiaetocare.com/my-loans. - KiaetoCare`;
       const emailSubject = `Loan Application Submitted - ${applicationId}`;
       const emailBody = `Dear ${formData.fullName},\n\nYour loan application has been submitted.\n\nApplication ID: ${applicationId}\nAmount: ₹${parseInt(formData.treatmentCost).toLocaleString()}\nLender: ${formData.selectedLender.name}\n\nTrack: https://kiaetocare.com/my-loans\n\nRegards,\nKiaetoCare Team`;
@@ -484,7 +529,6 @@ const Financing = () => {
     if (!file) return;
     setLoading(true);
     try {
-      // Upload final bill to Cloudinary first
       const formDataObj = new FormData();
       formDataObj.append('finalBill', file);
       
@@ -507,7 +551,6 @@ const Financing = () => {
       const result = await uploadResponse.json();
       const finalBillUrl = result.documents?.finalBill;
       
-      // Update application with final bill
       await patientLoans.uploadFinalBill(application.applicationId, finalBillUrl, null, null);
       
       alert(`✅ Final bill uploaded successfully. Lender will process disbursal.`);
@@ -570,6 +613,12 @@ const Financing = () => {
             </button>
           </form>
           <button onClick={() => { setLocationSkipped(true); setStep(2); }} style={{ width: '100%', backgroundColor: 'transparent', color: '#8b5cf6', padding: '0.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', marginTop: '1rem' }}>Skip (Show national lenders)</button>
+          
+          {/* NEW: Lender CTA Buttons */}
+          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+            <button onClick={() => navigate('/lender/register')} style={{ padding: '0.6rem 1rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer' }}>🏦 Register as Lender</button>
+            <button onClick={() => navigate('/lender/login')} style={{ padding: '0.6rem 1rem', backgroundColor: '#1e3a8a', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer' }}>🔑 Lender Login</button>
+          </div>
         </div>
       </div>
     );
@@ -664,6 +713,7 @@ const Financing = () => {
   if (step === 4) {
     const principal = parseInt(formData.treatmentCost);
     const filteredLenders = getFilteredLenders();
+    const breakdown = (formData.selectedLender && formData.selectedTenure) ? calculateFullBreakdown(formData.selectedLender, principal, formData.selectedTenure) : null;
     
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem 1rem' }}>
@@ -678,10 +728,16 @@ const Financing = () => {
               <button onClick={() => setLoanCategory('secured')} style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: loanCategory === 'secured' ? '2px solid #8b5cf6' : '1px solid #e5e7eb', backgroundColor: loanCategory === 'secured' ? '#f3e8ff' : 'white', cursor: 'pointer' }}>🏠 Secured/Mortgage</button>
             </div>
             {filteredLenders.length === 0 && <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>No lenders available for this amount. Try adjusting loan amount or category.</div>}
-            {filteredLenders.map(lender => (
+            {filteredLenders.map(lender => {
+              const eligibility = checkEligibility(lender);
+              return (
               <div key={lender.id || lender._id} onClick={() => handleSelectLender(lender)} style={{ border: formData.selectedLender?.id === lender.id || formData.selectedLender?._id === lender._id ? '2px solid #8b5cf6' : '1px solid #e5e7eb', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1rem', cursor: 'pointer', backgroundColor: (formData.selectedLender?.id === lender.id || formData.selectedLender?._id === lender._id) ? '#f3e8ff' : 'white' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <div><span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>{lender.logo}</span><strong>{lender.name}</strong><span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', padding: '0.2rem 0.5rem', backgroundColor: '#e5e7eb', borderRadius: '1rem' }}>{lender.type || lender.lenderType}</span></div>
+                  <div><span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>{lender.logo}</span><strong>{lender.name}</strong><span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', padding: '0.2rem 0.5rem', backgroundColor: '#e5e7eb', borderRadius: '1rem' }}>{lender.type || lender.lenderType}</span>
+                    {/* NEW: Eligibility Badge */}
+                    {eligibility.eligible === true && <span style={{ marginLeft: '0.5rem', fontSize: '0.65rem', padding: '0.2rem 0.5rem', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: '1rem', fontWeight: '600' }}>✅ Eligible</span>}
+                    {eligibility.eligible === false && <span style={{ marginLeft: '0.5rem', fontSize: '0.65rem', padding: '0.2rem 0.5rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '1rem', fontWeight: '600' }}>❌ {eligibility.reason}</span>}
+                  </div>
                   <div style={{ textAlign: 'right' }}><span style={{ color: lender.interestRate === 0 ? '#f59e0b' : '#10b981', fontWeight: 'bold' }}>{lender.interestRate === 0 ? '0% p.a.' : `${lender.interestRate}% p.a.`}</span><p style={{ fontSize: '0.7rem', color: '#6b7280' }}>{lender.approvalTime || 'Varies'}</p></div>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>{lender.description}</p>
@@ -690,7 +746,7 @@ const Financing = () => {
                 {!lender.requiresCollateral && lender.interestRate === 0 && <p style={{ fontSize: '0.7rem', color: '#10b981', marginTop: '0.25rem' }}>🔥 0% EMI Offer - No interest!</p>}
                 {lender.nearestBranch && <p style={{ fontSize: '0.7rem', color: '#8b5cf6', marginTop: '0.25rem' }}>📍 Assigned Branch: {lender.nearestBranch.branchName}</p>}
               </div>
-            ))}
+            )})}
             {formData.selectedLender && (
               <>
                 <h3 style={{ fontWeight: '600', marginTop: '1.5rem', marginBottom: '0.75rem' }}>Select Tenure (months)</h3>
@@ -709,6 +765,19 @@ const Financing = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}><span>Total Payable:</span><span>₹{formData.totalPayable.toLocaleString()}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total Interest:</span><span style={{ color: '#ef4444' }}>₹{formData.totalInterest.toLocaleString()}</span></div>
                 {formData.selectedLender.requiresCollateral && <p style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.5rem' }}>⚡ This is a secured loan. Collateral/mortgage required.</p>}
+              </div>
+            )}
+            {/* NEW: Full Charge Breakdown */}
+            {breakdown && (
+              <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
+                <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#1e293b' }}>💰 Complete Cost Breakdown</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', fontSize: '0.8rem' }}><span style={{ color: '#64748b' }}>Processing Fee</span><span>₹{breakdown.processingFee.toLocaleString()}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', fontSize: '0.8rem' }}><span style={{ color: '#64748b' }}>GST on Processing</span><span>₹{breakdown.gstOnPF.toLocaleString()}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', fontSize: '0.8rem' }}><span style={{ color: '#64748b' }}>Documentation</span><span>₹{breakdown.docCharge.toLocaleString()}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.8rem' }}><span style={{ color: '#64748b' }}>Stamp Duty</span><span>₹{breakdown.stampDuty.toLocaleString()}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', fontWeight: 'bold', fontSize: '0.85rem' }}><span>Total Charges</span><span>₹{breakdown.totalCharges.toLocaleString()}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem', color: '#8b5cf6' }}><span>Total Loan Amount</span><span>₹{breakdown.totalLoan.toLocaleString()}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', fontSize: '0.75rem', color: '#f59e0b' }}><span>Platform Commission (2%)</span><span>₹{breakdown.platformCommission.toLocaleString()}</span></div>
               </div>
             )}
             <button onClick={handleProceedToKYC} disabled={!formData.selectedTenure} style={{ width: '100%', backgroundColor: '#8b5cf6', color: 'white', padding: '0.875rem', borderRadius: '0.5rem', border: 'none', fontWeight: 'bold', fontSize: '1rem', cursor: formData.selectedTenure ? 'pointer' : 'not-allowed', opacity: formData.selectedTenure ? 1 : 0.5 }}>Continue to Application →</button>
