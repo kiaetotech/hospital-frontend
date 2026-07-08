@@ -297,7 +297,7 @@ const HomePage = () => {
             >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: service.color, borderRadius: '3px 3px 0 0' }} />
               <div style={{ fontSize: '28px', color: service.color, marginBottom: '4px' }}>{service.icon}</div>
-              <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: '0' }}>{service.label}</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', margin: '0', letterSpacing: '0.01em' }}>{service.label}</h3>
               <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0 0' }}>{service.desc}</p>
             </motion.div>
           ))}
