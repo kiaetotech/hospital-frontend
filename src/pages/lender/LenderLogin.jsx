@@ -1,3 +1,4 @@
+// D:\hospital-frontend\src\pages\Lender\LenderLogin.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
@@ -24,19 +25,20 @@ const LenderLogin = () => {
       let res;
       if (activeTab === 'email') {
         if (!form.email || !form.password) { setError('Fill all fields'); setLoading(false); return; }
-        res = await api.post('/auth/login', { email: form.email, password: form.password, role: 'lender' });
+        res = await api.post('/lender/auth/login', { email: form.email, password: form.password });
       } else {
         if (!form.phone || !form.otp) { setError('Enter phone and OTP'); setLoading(false); return; }
         res = await api.post('/otp/verify', { phone: `+91${form.phone}`, otp: form.otp, type: 'login' });
-        if (res.data?.success) res = await api.post('/auth/login', { phone: `+91${form.phone}`, role: 'lender', otpLogin: true });
+        if (res.data?.success) res = await api.post('/lender/auth/login', { phone: `+91${form.phone}`, otpLogin: true });
       }
       if (res.data?.success) {
+        localStorage.setItem('lenderToken', res.data.token);
         localStorage.setItem('providerToken', res.data.token);
-        localStorage.setItem('providerId', res.data.user?._id || '');
+        localStorage.setItem('providerId', res.data.lender?.lenderId || '');
         localStorage.setItem('providerType', 'lender');
         navigate('/lender/dashboard');
-      } else setError(res.data?.message || 'Login failed');
-    } catch (e) { setError('Login failed'); } finally { setLoading(false); }
+      } else setError(res.data?.message || res.data?.error || 'Login failed');
+    } catch (e) { setError(e.response?.data?.error || 'Login failed'); } finally { setLoading(false); }
   };
 
   const c = '#E65100';
