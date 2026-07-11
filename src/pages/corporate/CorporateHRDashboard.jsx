@@ -566,10 +566,6 @@ const CorporateHRDashboard = () => {
   );
 };
 
-export default import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import BulkEmployeeUpload from '../../components/corporate/BulkEmployeeUpload';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
 
