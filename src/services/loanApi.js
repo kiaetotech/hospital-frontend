@@ -1,7 +1,7 @@
 // D:\hospital-frontend\src\services\loanApi.js
 import axios from 'axios';
 
-const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+const API_URL = 'https://hospital-backend-production-f1b1.up.railway.app/api';
 
 const loanApi = axios.create({
   baseURL: `${API_URL}/loan`,
