@@ -139,6 +139,7 @@ import CorporateCheckups from './pages/corporate/CorporateCheckups';
 import CorporateWellness from './pages/corporate/CorporateWellness';
 import EmployeeLogin from './pages/corporate/EmployeeLogin';
 import EmployeePortal from './pages/corporate/EmployeePortal';
+import CompanyRegister from './pages/corporate/CompanyRegister';
 
 // ============================================
 // PROVIDER REGISTRATION IMPORTS
@@ -349,6 +350,7 @@ function App() {
           <Route path="/corporate/wellness" element={<CorporateWellness />} />
           <Route path="/corporate/employee/login" element={<EmployeeLogin />} />
           <Route path="/corporate/employee/dashboard" element={<EmployeePortal />} />
+	  <Route path="/corporate/register" element={<CompanyRegister />} />
 
           {/* PROVIDER REGISTRATION */}
           <Route path="/hospital/register" element={<HospitalRegister />} />
