@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
+
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [adminKey, setAdminKey] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -14,19 +17,17 @@ const AdminLogin = () => {
     setError('');
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
-      
-      // ✅ Call the backend API
       const response = await axios.post(`${API_URL}/api/admin/login`, {
-        adminKey: adminKey
+        email,
+        password
       });
 
       if (response.data.success) {
-        // ✅ Store the JWT token from backend
         localStorage.setItem('adminToken', response.data.token);
+        localStorage.setItem('adminData', JSON.stringify(response.data.admin));
         navigate('/admin/dashboard');
       } else {
-        setError(response.data.message || 'Invalid admin key');
+        setError(response.data.message || 'Invalid credentials');
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -42,27 +43,38 @@ const AdminLogin = () => {
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <span style={{ fontSize: '3rem' }}>🔐</span>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Admin Login</h1>
-          <p style={{ color: '#6b7280' }}>Enter your admin key to access the dashboard</p>
+          <p style={{ color: '#6b7280' }}>Sign in to manage the platform</p>
         </div>
 
         {error && (
-          <div style={{ backgroundColor: '#fee2e2', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1rem', color: '#dc2626' }}>
+          <div style={{ backgroundColor: '#fee2e2', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1rem', color: '#dc2626', fontSize: '0.9rem' }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>Admin Key</label>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>Email</label>
             <input
-              type="password"
-              value={adminKey}
-              onChange={(e) => setAdminKey(e.target.value)}
-              placeholder="Enter admin key"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@healthcarehub.com"
               style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
               required
             />
-            <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Default key: admin_secret_key_2024</p>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+              required
+            />
           </div>
 
           <button
