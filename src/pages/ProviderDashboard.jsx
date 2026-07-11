@@ -30,7 +30,7 @@ const ProviderDashboard = () => {
   
   const [priceFile, setPriceFile] = useState(null);
   
-  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+  const API_URL = 'https://hospital-backend-production-f1b1.up.railway.app/api';
 
   // Geocoding function
   const geocodeAddress = async (address, city) => {

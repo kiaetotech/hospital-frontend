@@ -42,7 +42,7 @@ const MyBookings = () => {
     
     setLoading(true);
     try {
-      const response = await axios.get(`https://hospital-backend-production-8de3.up.railway.app/api/bookings/patient/${phone}`);
+      const response = await axios.get(`https://hospital-backend-production-f1b1.up.railway.app/api/bookings/patient/${phone}`);
       setBookings(response.data);
       
       try {
@@ -76,7 +76,7 @@ const MyBookings = () => {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.put(
-        `https://hospital-backend-production-8de3.up.railway.app/api/bookings/${cancellingId}/cancel`,
+        `https://hospital-backend-production-f1b1.up.railway.app/api/bookings/${cancellingId}/cancel`,
         { reason: cancelReason || 'Cancelled by patient' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -86,7 +86,7 @@ const MyBookings = () => {
         setActionMessage(`✅ Booking cancelled! Refund: ₹${refundInfo.refundAmount} (${refundInfo.refundPercentage}%)`);
         
         // Refresh bookings
-        const response = await axios.get(`https://hospital-backend-production-8de3.up.railway.app/api/bookings/patient/${phone}`);
+        const response = await axios.get(`https://hospital-backend-production-f1b1.up.railway.app/api/bookings/patient/${phone}`);
         setBookings(response.data);
       }
       
@@ -118,7 +118,7 @@ const MyBookings = () => {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post(
-        `https://hospital-backend-production-8de3.up.railway.app/api/bookings/${selectedBooking.bookingId}/review`,
+        `https://hospital-backend-production-f1b1.up.railway.app/api/bookings/${selectedBooking.bookingId}/review`,
         reviewData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -127,7 +127,7 @@ const MyBookings = () => {
         setActionMessage('✅ Review submitted successfully! Thank you for your feedback.');
         
         // Refresh bookings
-        const response = await axios.get(`https://hospital-backend-production-8de3.up.railway.app/api/bookings/patient/${phone}`);
+        const response = await axios.get(`https://hospital-backend-production-f1b1.up.railway.app/api/bookings/patient/${phone}`);
         setBookings(response.data);
       }
       

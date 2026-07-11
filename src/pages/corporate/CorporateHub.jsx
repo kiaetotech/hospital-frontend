@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-8de3.up.railway.app';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
 
 const CorporateHub = () => {
   const navigate = useNavigate();

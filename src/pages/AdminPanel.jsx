@@ -9,7 +9,7 @@ const AdminPanel = () => {
   const [testFile, setTestFile] = useState(null);
   const [message, setMessage] = useState('');
   
-  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+  const API_URL = 'https://hospital-backend-production-f1b1.up.railway.app/api';
 
   useEffect(() => {
     fetchTests();

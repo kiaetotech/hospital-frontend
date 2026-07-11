@@ -197,7 +197,7 @@ const HospitalDashboard = () => {
             <div style={{ fontSize:'3rem' }}>📥</div>
             <h3 style={{ color:'#92400e' }}>Complete Data Upload (Recommended)</h3>
             <p style={{ color:'#92400e', marginBottom:'1.5rem' }}>Download master Excel, fill ALL sheets, upload once. All data auto-populated.</p>
-            <a href="https://hospital-backend-production-8de3.up.railway.app/api/hospitals/provider/template/master/download" target="_blank" rel="noopener noreferrer" style={{ padding:'1rem 2rem', backgroundColor:'#f59e0b', color:'white', borderRadius:'0.75rem', textDecoration:'none', fontWeight:'bold', display:'inline-block' }}>📥 Download Master Template</a>
+            <a href="https://hospital-backend-production-f1b1.up.railway.app/api/hospitals/provider/template/master/download" target="_blank" rel="noopener noreferrer" style={{ padding:'1rem 2rem', backgroundColor:'#f59e0b', color:'white', borderRadius:'0.75rem', textDecoration:'none', fontWeight:'bold', display:'inline-block' }}>📥 Download Master Template</a>
           </div>
           <div style={{ backgroundColor:'white', borderRadius:'0.75rem', padding:'1.5rem', marginBottom:'1.5rem' }}>
             <h3>📤 Upload Filled Master Excel</h3>

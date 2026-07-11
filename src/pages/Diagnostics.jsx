@@ -138,7 +138,7 @@ const ComparisonResults = ({ selectedTests, onBack, onBookNow, filters }) => {
           userLng: filters?.userLng || null
         };
         
-        const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/tests/compare', requestBody);
+        const response = await axios.post('https://hospital-backend-production-f1b1.up.railway.app/api/tests/compare', requestBody);
         
         const providers = response.data.map(provider => ({
           provider_name: provider.providerName,
@@ -320,7 +320,7 @@ const Diagnostics = () => {
     const delayDebounce = setTimeout(async () => {
       try {
         setExcelSearchLoading(true);
-        const response = await axios.get(`https://hospital-backend-production-8de3.up.railway.app/api/tests/search?q=${searchTerm}`);
+        const response = await axios.get(`https://hospital-backend-production-f1b1.up.railway.app/api/tests/search?q=${searchTerm}`);
         setExcelSearchResults(response.data);
         setShowExcelResults(true);
       } catch (error) {
@@ -391,7 +391,7 @@ const Diagnostics = () => {
   const total = bookingTests.reduce((sum, test) => sum + (bookingProvider.individual_prices[test] || 0), 0);
   
   try {
-    const response = await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/bookings/create', {
+    const response = await axios.post('https://hospital-backend-production-f1b1.up.railway.app/api/bookings/create', {
       patientName: bookingForm.patient_name,
       patientAge: parseInt(bookingForm.patient_age),
       patientGender: bookingForm.patient_gender,
@@ -444,7 +444,7 @@ const Diagnostics = () => {
     }
     
     try {
-      await axios.post('https://hospital-backend-production-8de3.up.railway.app/api/reviews/create', {
+      await axios.post('https://hospital-backend-production-f1b1.up.railway.app/api/reviews/create', {
         providerId: completedBooking?.provider_id,
         providerName: completedBooking?.provider_name,
         patientName: bookingForm.patient_name,
@@ -829,3 +829,4 @@ const Diagnostics = () => {
 };
 
 export default Diagnostics;
+

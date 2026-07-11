@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-8de3.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
 const ADMIN_KEY = 'admin_secret_key_2024';
 
 const AdminDiscounts = () => {

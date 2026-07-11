@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getActiveEmergency } from '../../services/api';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'https://hospital-backend-production-8de3.up.railway.app';
+const SOCKET_URL = 'https://hospital-backend-production-f1b1.up.railway.app';
 
 const LiveTracking = () => {
   const { bookingId } = useParams();

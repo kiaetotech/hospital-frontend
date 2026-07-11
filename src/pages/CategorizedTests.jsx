@@ -6,7 +6,7 @@ const CategorizedTests = ({ selectedTests, setSelectedTests, onCompare }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+  const API_URL = 'https://hospital-backend-production-f1b1.up.railway.app/api';
 
   useEffect(() => {
     loadTests();
@@ -46,7 +46,7 @@ const CategorizedTests = ({ selectedTests, setSelectedTests, onCompare }) => {
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <p>No tests found in database.</p>
         <button 
-          onClick={() => window.open('https://hospital-backend-production-8de3.up.railway.app/api/diagnostics/create-master-catalog', '_blank')}
+          onClick={() => window.open('https://hospital-backend-production-f1b1.up.railway.app/api/diagnostics/create-master-catalog', '_blank')}
           style={{ padding: '10px 20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
         >
           Click to Import Tests

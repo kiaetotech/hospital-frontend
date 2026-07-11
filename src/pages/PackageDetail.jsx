@@ -24,7 +24,7 @@ const PackageDetail = () => {
     home_address: ''
   });
 
-  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+  const API_URL = 'https://hospital-backend-production-f1b1.up.railway.app/api';
 
   useEffect(() => {
     fetchPackageDetails();

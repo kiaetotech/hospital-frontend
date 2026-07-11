@@ -9,7 +9,7 @@ const SmartSuggestions = ({ onSelectPackage }) => {
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const API_URL = 'https://hospital-backend-production-8de3.up.railway.app/api';
+  const API_URL = 'https://hospital-backend-production-f1b1.up.railway.app/api';
 
   const getSuggestions = async () => {
     if (!age && !gender && !symptoms) {

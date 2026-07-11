@@ -146,3 +146,4 @@ const EmergencySearch = () => {
 };
 
 export default EmergencySearch;
+
