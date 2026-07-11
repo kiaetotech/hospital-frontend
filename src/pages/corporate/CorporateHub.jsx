@@ -7,17 +7,20 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-prod
 const CorporateHub = () => {
   const navigate = useNavigate();
   const [packages, setPackages] = useState([]);
+  const [allPackages, setAllPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalProviders: 0 });
   const [activeTag, setActiveTag] = useState('all');
   const [city, setCity] = useState('');
   const [minEmployees, setMinEmployees] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('default');
   const [compareList, setCompareList] = useState([]);
   const [calcEmployees, setCalcEmployees] = useState(100);
   const [calcServices, setCalcServices] = useState(4);
   const [faqOpen, setFaqOpen] = useState(null);
   const [showCalc, setShowCalc] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(6);
 
   useEffect(() => { fetchStats(); fetchPackages(); }, []);
 
@@ -30,11 +33,23 @@ const CorporateHub = () => {
     try {
       const p = {}; if (tag !== 'all') p.tag = tag; if (city) p.city = city; if (minEmployees) p.minEmployees = minEmployees; if (searchTerm) p.search = searchTerm;
       const r = await axios.get(`${API_BASE}/api/corporate-hub/packages`, { params: p });
-      if (r.data?.success) setPackages(r.data.data);
-    } catch(e){} finally { setLoading(false); }
+      if (r.data?.success) { setAllPackages(r.data.data); applySorting(r.data.data, sortBy); }
+      else { setAllPackages([]); setPackages([]); }
+    } catch(e){ setAllPackages([]); setPackages([]); }
+    finally { setLoading(false); setVisibleCount(6); }
   };
 
+  const applySorting = (data, sort) => {
+    let sorted = [...data];
+    if (sort === 'price_low') sorted.sort((a,b) => (a.discountedPricePerEmployee||a.pricePerEmployee) - (b.discountedPricePerEmployee||b.pricePerEmployee));
+    else if (sort === 'price_high') sorted.sort((a,b) => (b.discountedPricePerEmployee||b.pricePerEmployee) - (a.discountedPricePerEmployee||a.pricePerEmployee));
+    else if (sort === 'rating') sorted.sort((a,b) => (b.providerRating||0) - (a.providerRating||0));
+    setPackages(sorted);
+  };
+
+  const handleSort = (s) => { setSortBy(s); applySorting(allPackages, s); setVisibleCount(6); };
   const handleSearch = (e) => { e.preventDefault(); document.getElementById('packages')?.scrollIntoView({ behavior:'smooth' }); fetchPackages(activeTag); };
+  const loadMore = () => setVisibleCount(prev => prev + 6);
   const toggleCompare = (p) => setCompareList(prev => prev.find(x=>x._id===p._id) ? prev.filter(x=>x._id!==p._id) : prev.length<3 ? [...prev,p] : prev);
   const fmt = (n) => n ? '₹'+n.toLocaleString('en-IN') : '₹0';
   const tagLabel = (t) => ({ hospitals:'Hospital', onlineDoctors:'Online Doctor', diagnostics:'Lab Tests', mentalHealth:'Mental Wellness', ayurveda:'Ayurveda', homeopathy:'Homeopathy', caregivers:'Home Care', ambulance:'Ambulance' }[t]||t);
@@ -52,6 +67,8 @@ const CorporateHub = () => {
     { q:'How much can we save vs insurance?', a:'30-40% on average. Use the calculator above for your estimate.' },
   ];
   const popularSearches = ['Health Checkup','Doctor Consult','Lab Tests','Mental Wellness','Ayurveda'];
+  const visiblePackages = packages.slice(0, visibleCount);
+  const hasMore = packages.length > visibleCount;
 
   return (
     <div style={{ fontFamily:"system-ui,-apple-system,sans-serif", color:'#1e293b', lineHeight:1.45, background:'#fff' }}>
@@ -121,20 +138,34 @@ const CorporateHub = () => {
         <div style={{ maxWidth:1300, margin:'0 auto' }}>
           <h2 style={{ fontSize:'1.15rem', fontWeight:800, textAlign:'center', marginBottom:2 }}>Corporate Healthcare Packages</h2>
           <p style={{ fontSize:'0.8rem', color:'#64748b', textAlign:'center', marginBottom:14 }}>Compare packages across 8 service categories</p>
+
+          {/* Tag filters */}
           <div style={{ display:'flex', flexWrap:'wrap', gap:4, justifyContent:'center', marginBottom:12 }}>
             {tags.map(t=><button key={t} onClick={()=>{setActiveTag(t);fetchPackages(t)}} style={{ padding:'6px 12px', borderRadius:16, border:activeTag===t?'2px solid #2563eb':'1px solid #e2e8f0', background:activeTag===t?'#2563eb':'#fff', color:activeTag===t?'#fff':'#475569', fontSize:'0.75rem', cursor:'pointer', fontWeight:activeTag===t?700:400, whiteSpace:'nowrap' }}>{tagMeta[t].i} {tagMeta[t].l}</button>)}
           </div>
-          <div style={{ display:'flex', gap:6, justifyContent:'center', marginBottom:16, flexWrap:'wrap' }}>
+
+          {/* Filter bar with Sort */}
+          <div style={{ display:'flex', gap:6, justifyContent:'center', marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
             <input placeholder="📍 City" value={city} onChange={e=>setCity(e.target.value)} style={{ padding:'8px 12px', border:'2px solid #e2e8f0', borderRadius:6, fontSize:'0.8rem', outline:'none', width:130 }} />
             <input placeholder="👥 Min Employees" type="number" value={minEmployees} onChange={e=>setMinEmployees(e.target.value)} style={{ padding:'8px 12px', border:'2px solid #e2e8f0', borderRadius:6, fontSize:'0.8rem', outline:'none', width:120 }} />
+            <select value={sortBy} onChange={e=>handleSort(e.target.value)} style={{ padding:'8px 10px', border:'2px solid #e2e8f0', borderRadius:6, fontSize:'0.8rem', outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="default">Best Match</option>
+              <option value="price_low">Price: Low to High</option>
+              <option value="price_high">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+            </select>
             <button onClick={()=>fetchPackages(activeTag)} style={{ padding:'8px 16px', background:'#2563eb', color:'#fff', border:'none', borderRadius:6, fontWeight:700, cursor:'pointer', fontSize:'0.8rem' }}>🔍 Filter</button>
           </div>
+
+          {/* Compare bar */}
           {compareList.length>0 && (
             <div style={{ background:'#fff', padding:8, borderRadius:6, marginBottom:12, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', border:'2px solid #2563eb', fontSize:'0.8rem' }}>
               <span style={{ fontWeight:700 }}>Compare {compareList.length}/3:</span>
               {compareList.map(p=><span key={p._id} style={{ background:'#eff6ff', padding:'2px 6px', borderRadius:12, fontSize:'0.75rem' }}>{p.packageName} <span onClick={()=>toggleCompare(p)} style={{ cursor:'pointer' }}>×</span></span>)}
             </div>
           )}
+
+          {/* Package cards */}
           {loading ? <div style={{ textAlign:'center', padding:32 }}>⏳ Loading...</div> : packages.length===0 ? (
             <div style={{ textAlign:'center', padding:32, background:'#fff', borderRadius:10 }}>
               <div style={{ fontSize:'2rem', marginBottom:4 }}>📦</div>
@@ -142,28 +173,42 @@ const CorporateHub = () => {
               <p style={{ color:'#64748b', fontSize:'0.8rem' }}><a href="mailto:corporate@healthcarehub.com" style={{ color:'#2563eb' }}>Contact us</a> for custom plans.</p>
             </div>
           ) : (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
-              {packages.map(pkg=>(
-                <div key={pkg._id} style={{ background:'#fff', borderRadius:10, padding:16, border:'1px solid #f1f5f9', boxShadow:'0 1px 2px rgba(0,0,0,0.04)' }}
-                  onMouseEnter={e=>e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.07)'} onMouseLeave={e=>e.currentTarget.style.boxShadow='0 1px 2px rgba(0,0,0,0.04)'}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                    <span style={{ padding:'2px 8px', borderRadius:12, fontSize:'0.68rem', fontWeight:700, background:'#eff6ff', color:'#2563eb' }}>{tagLabel(pkg.tag)}</span>
-                    <div style={{ display:'flex', gap:3 }}>
-                      <button onClick={()=>toggleCompare(pkg)} style={{ padding:'1px 6px', borderRadius:12, fontSize:'0.65rem', border:'1px solid #e2e8f0', background:compareList.find(x=>x._id===pkg._id)?'#2563eb':'#fff', color:compareList.find(x=>x._id===pkg._id)?'#fff':'#64748b', cursor:'pointer' }}>⇆</button>
-                      {pkg.discountedPricePerEmployee && <span style={{ padding:'1px 6px', borderRadius:12, fontSize:'0.65rem', fontWeight:700, background:'#ecfdf5', color:'#059669' }}>{Math.round((1-pkg.discountedPricePerEmployee/pkg.pricePerEmployee)*100)}%</span>}
+            <>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
+                {visiblePackages.map(pkg=>(
+                  <div key={pkg._id} style={{ background:'#fff', borderRadius:10, padding:16, border:'1px solid #f1f5f9', boxShadow:'0 1px 2px rgba(0,0,0,0.04)' }}
+                    onMouseEnter={e=>e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.07)'} onMouseLeave={e=>e.currentTarget.style.boxShadow='0 1px 2px rgba(0,0,0,0.04)'}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+                      <span style={{ padding:'2px 8px', borderRadius:12, fontSize:'0.68rem', fontWeight:700, background:'#eff6ff', color:'#2563eb' }}>{tagLabel(pkg.tag)}</span>
+                      <div style={{ display:'flex', gap:3 }}>
+                        <button onClick={()=>toggleCompare(pkg)} style={{ padding:'1px 6px', borderRadius:12, fontSize:'0.65rem', border:'1px solid #e2e8f0', background:compareList.find(x=>x._id===pkg._id)?'#2563eb':'#fff', color:compareList.find(x=>x._id===pkg._id)?'#fff':'#64748b', cursor:'pointer' }}>⇆</button>
+                        {pkg.discountedPricePerEmployee && <span style={{ padding:'1px 6px', borderRadius:12, fontSize:'0.65rem', fontWeight:700, background:'#ecfdf5', color:'#059669' }}>{Math.round((1-pkg.discountedPricePerEmployee/pkg.pricePerEmployee)*100)}%</span>}
+                      </div>
                     </div>
+                    <h3 style={{ fontWeight:700, fontSize:'0.92rem', marginBottom:3 }}>{pkg.packageName}</h3>
+                    <p style={{ color:'#64748b', fontSize:'0.78rem', marginBottom:10, lineHeight:1.4 }}>{pkg.description||'Comprehensive corporate healthcare package.'}</p>
+                    <div style={{ background:'#f8fafc', padding:8, borderRadius:6, marginBottom:10 }}>
+                      <span style={{ fontSize:'1.15rem', fontWeight:800, color:'#2563eb' }}>{fmt(pkg.discountedPricePerEmployee||pkg.pricePerEmployee)}</span>
+                      <span style={{ color:'#94a3b8', fontSize:'0.75rem' }}> /employee</span>
+                    </div>
+                    <div style={{ fontSize:'0.73rem', color:'#475569', marginBottom:10 }}>🏥 {pkg.providerName} {pkg.providerCity&&`· ${pkg.providerCity}`} · 👥 Min {pkg.minEmployees||10}</div>
+                    <button onClick={()=>navigate('/corporate/register')} style={{ width:'100%', padding:8, background:'#2563eb', color:'#fff', border:'none', borderRadius:6, fontWeight:700, cursor:'pointer', fontSize:'0.8rem' }}>Enquire Now</button>
                   </div>
-                  <h3 style={{ fontWeight:700, fontSize:'0.92rem', marginBottom:3 }}>{pkg.packageName}</h3>
-                  <p style={{ color:'#64748b', fontSize:'0.78rem', marginBottom:10, lineHeight:1.4 }}>{pkg.description||'Comprehensive corporate healthcare package.'}</p>
-                  <div style={{ background:'#f8fafc', padding:8, borderRadius:6, marginBottom:10 }}>
-                    <span style={{ fontSize:'1.15rem', fontWeight:800, color:'#2563eb' }}>{fmt(pkg.discountedPricePerEmployee||pkg.pricePerEmployee)}</span>
-                    <span style={{ color:'#94a3b8', fontSize:'0.75rem' }}> /employee</span>
-                  </div>
-                  <div style={{ fontSize:'0.73rem', color:'#475569', marginBottom:10 }}>🏥 {pkg.providerName} {pkg.providerCity&&`· ${pkg.providerCity}`} · 👥 Min {pkg.minEmployees||10}</div>
-                  <button onClick={()=>navigate('/corporate/register')} style={{ width:'100%', padding:8, background:'#2563eb', color:'#fff', border:'none', borderRadius:6, fontWeight:700, cursor:'pointer', fontSize:'0.8rem' }}>Enquire Now</button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {/* Load More + Count */}
+              <div style={{ textAlign:'center', marginTop:16 }}>
+                <span style={{ fontSize:'0.8rem', color:'#64748b', marginRight:16 }}>
+                  Showing {visiblePackages.length} of {packages.length} packages
+                </span>
+                {hasMore && (
+                  <button onClick={loadMore} style={{ padding:'8px 20px', background:'#fff', color:'#2563eb', border:'2px solid #2563eb', borderRadius:6, fontWeight:700, cursor:'pointer', fontSize:'0.82rem' }}>
+                    Load More Packages ↓
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
       </section>
