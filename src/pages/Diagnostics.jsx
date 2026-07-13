@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import HealthPackagesTab from './HealthPackagesTab';
+import HomeCollectionSlots from '../../components/HomeCollectionSlots';
 
 // All 16 Main Categories with their Tests
 const testCategories = [
@@ -285,6 +286,7 @@ const Diagnostics = () => {
   const [completedBooking, setCompletedBooking] = useState(null);
   const [selectedRating, setSelectedRating] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
+  const [collectionSlot, setCollectionSlot] = useState(null);
 
   const getUserLocation = () => {
     setLocationLoading(true);
@@ -760,11 +762,14 @@ const Diagnostics = () => {
                     </label>
                   </div>
                   {bookingForm.home_collection_requested && (
-                    <div style={{ marginBottom: '12px' }}>
+                    <>
                       <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Home Address</label>
                       <textarea name="home_address" rows="2" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
                     </div>
-                  )}
+                    <HomeCollectionSlots
+		      selectedSlot={collectionSlot}
+		      onSelectSlot={(slot) => setCollectionSlot(slot)}
+		  />
                 </>
               )}
               <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
