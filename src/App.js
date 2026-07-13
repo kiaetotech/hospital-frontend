@@ -27,6 +27,12 @@ import SimpleCompareTest from './pages/SimpleCompareTest';
 import ProviderDashboard from './pages/ProviderDashboard';
 import AdminPanel from './pages/AdminPanel';
 import Financing from './pages/Financing';
+import Disclaimer from './pages/Disclaimer';
+import Grievance from './pages/Grievance';
+import CancellationPolicy from './pages/CancellationPolicy';
+import ProviderTerms from './pages/ProviderTerms';
+import DataRetention from './pages/DataRetention';
+import PaymentTerms from './pages/PaymentTerms';
 
 // ============================================
 // AYURVEDA MODULE IMPORTS
@@ -214,6 +220,12 @@ function App() {
         <Routes>
           {/* MAIN PAGE */}
           <Route path="/" element={<HomePage />} />
+	  <Route path="/disclaimer" element={<Disclaimer />} />
+	  <Route path="/grievance" element={<Grievance />} />
+	  <Route path="/cancellation" element={<CancellationPolicy />} />
+	  <Route path="/provider-terms" element={<ProviderTerms />} />
+	  <Route path="/data-retention" element={<DataRetention />} />
+	  <Route path="/payment-terms" element={<PaymentTerms />} />
 
           {/* HOSPITALS TAG */}
           <Route path="/hospitals" element={<HospitalsList />} />
