@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getOnlineDoctorDashboard } from '../../services/api';
 import api from '../../services/api';
 import { uploadFile } from '../../services/api';
+import CorporatePlansTab from '../../components/CorporatePlansTab';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -25,6 +26,9 @@ const DoctorDashboard = () => {
   });
   const [feeLoading, setFeeLoading] = useState(false);
   const [feeMessage, setFeeMessage] = useState('');
+
+  const token = localStorage.getItem('doctorToken');
+  const providerId = localStorage.getItem('providerId') || localStorage.getItem('doctorId');
 
   useEffect(() => {
     const token = localStorage.getItem('doctorToken');
@@ -166,10 +170,10 @@ const DoctorDashboard = () => {
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="border-b flex overflow-x-auto">
-            {['overview', 'appointments', 'fees', 'earnings', 'documents', 'analytics'].map((tab) => (
+            {['overview', 'appointments', 'fees', 'earnings', 'documents', 'analytics', 'corporate'].map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-6 py-4 font-medium text-sm capitalize whitespace-nowrap transition ${activeTab === tab ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
-                {tab === 'fees' ? '💰 Fee Settings' : tab}
+                {tab === 'fees' ? '💰 Fee Settings' : tab === 'corporate' ? '🏢 Corporate Plans' : tab}
               </button>
             ))}
           </div>
@@ -431,6 +435,15 @@ const DoctorDashboard = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* 🆕 CORPORATE PLANS TAB */}
+            {activeTab === 'corporate' && (
+              <div>
+                <h3 className="font-bold text-gray-800 mb-1">🏢 Corporate Plans</h3>
+                <p className="text-gray-500 text-sm mb-6">Offer corporate teleconsultation packages to companies.</p>
+                <CorporatePlansTab providerType="onlineDoctors" providerId={providerId} token={token} />
               </div>
             )}
           </div>
