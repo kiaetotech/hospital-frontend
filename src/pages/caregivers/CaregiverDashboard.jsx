@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProviderDashboardLayout from '../../components/ProviderDashboardLayout';
 import ProviderStatsCards from '../../components/ProviderStatsCards';
+import CorporatePlansTab from '../../components/CorporatePlansTab';
 import { caregiverApi } from '../../services/providerApi';
 import { getCaregiverDashboard, toggleCaregiverAvailability } from '../../services/api';
 
@@ -14,6 +15,9 @@ const CaregiverDashboard = () => {
   const [isAvailable, setIsAvailable] = useState(true);
   const [recentBookings, setRecentBookings] = useState([]);
 
+  const token = localStorage.getItem('caregiverToken');
+  const providerId = localStorage.getItem('providerId') || localStorage.getItem('caregiverId');
+
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'bookings', label: 'Bookings', icon: '📅' },
@@ -21,6 +25,7 @@ const CaregiverDashboard = () => {
     { id: 'profile', label: 'My Profile', icon: '👤' },
     { id: 'availability', label: 'Availability', icon: '🕒' },
     { id: 'reviews', label: 'Reviews', icon: '⭐' },
+    { id: 'corporate', label: 'Corporate Plans', icon: '🏢' },
     { id: 'settings', label: 'Settings', icon: '⚙️' }
   ];
 
@@ -375,6 +380,76 @@ const CaregiverDashboard = () => {
               <p style={{ color: '#64748b' }}>
                 Based on {stats.totalPatients || 0} reviews
               </p>
+            </div>
+          </div>
+        );
+
+      case 'availability':
+        return (
+          <div>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '0.75rem',
+              padding: '1.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+            }}>
+              <h3 style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem' }}>🕒 Availability Settings</h3>
+              <div style={{
+                backgroundColor: isAvailable ? '#f0fdf4' : '#fef2f2',
+                borderRadius: '0.75rem',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: `2px solid ${isAvailable ? '#bbf7d0' : '#fecaca'}`
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>
+                  {isAvailable ? '🟢' : '🔴'}
+                </div>
+                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: isAvailable ? '#065f46' : '#991b1b' }}>
+                  {isAvailable ? 'You are currently Online' : 'You are currently Offline'}
+                </p>
+                <p style={{ color: '#64748b', marginBottom: '1rem' }}>
+                  {isAvailable ? 'Patients can find and book your services' : 'You are hidden from patient search results'}
+                </p>
+                <button
+                  onClick={handleToggleAvailability}
+                  style={{
+                    padding: '0.75rem 2rem',
+                    backgroundColor: isAvailable ? '#ef4444' : '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  {isAvailable ? 'Go Offline' : 'Go Online'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'corporate':
+        return (
+          <div>
+            <h2 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 8 }}>🏢 Corporate Plans</h2>
+            <p style={{ color: '#64748b', marginBottom: 16 }}>Offer corporate elder care and home care packages to companies.</p>
+            <CorporatePlansTab providerType="caregivers" providerId={providerId} token={token} />
+          </div>
+        );
+
+      case 'settings':
+        return (
+          <div>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '0.75rem',
+              padding: '1.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+            }}>
+              <h3 style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem' }}>⚙️ Settings</h3>
+              <p style={{ color: '#64748b' }}>Settings coming soon.</p>
             </div>
           </div>
         );
