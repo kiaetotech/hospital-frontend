@@ -5,6 +5,7 @@ import ProviderStatsCards from '../../components/ProviderStatsCards';
 import ProviderTable from '../../components/ProviderTable';
 import { hospitalApi } from '../../services/providerApi';
 import ProviderAuth from '../../components/ProviderAuth';
+import CorporatePlansTab from '../../components/CorporatePlansTab';
 import api from '../../services/api';
 import { updateBedStatus, uploadDoctorsExcel, uploadHospitalDataExcel, downloadDoctorTemplate, updateHospitalProfile, updateHospitalSchemes, updateHospitalInsurance, updateHospitalFacilities, addDoctor, updateDoctor, removeDoctor, getHospitalDashboardStats, getHospitalBookings } from '../../services/api';
 
@@ -55,6 +56,7 @@ const HospitalDashboard = () => {
     { id: 'schemes', label: 'Schemes & Insurance', icon: '💠' },
     { id: 'bookings', label: 'Bookings', icon: '📋' },
     { id: 'profile', label: 'Profile', icon: '🏥' },
+    { id: 'corporate', label: 'Corporate Plans', icon: '🏢' },
     { id: 'upload', label: 'Excel Upload', icon: '📤' },
     { id: 'whatsapp', label: 'WhatsApp Setup', icon: '💬' },
     { id: 'settings', label: 'Settings', icon: '⚙️' }
@@ -187,6 +189,18 @@ const HospitalDashboard = () => {
 
       case 'profile': return (
         <div><h2>🏥 Profile</h2>{profile?<div style={{ backgroundColor:'white', borderRadius:'0.75rem', padding:'1.5rem' }}><p><strong>Name:</strong> {profile.name}</p><p><strong>Email:</strong> {profile.email||'N/A'}</p><p><strong>Phone:</strong> {profile.phone||'N/A'}</p><p><strong>City:</strong> {profile.address?.city}, {profile.address?.state}</p></div>:<p>Loading...</p>}</div>
+      );
+
+      case 'corporate': return (
+        <div>
+          <h2>🏢 Corporate Health Plans</h2>
+          <p style={{ color:'#6b7280', marginBottom:16 }}>Offer corporate healthcare packages to companies. Get bulk bookings and higher revenue.</p>
+          <CorporatePlansTab 
+            providerType="hospitals" 
+            providerId={localStorage.getItem('providerId')} 
+            token={localStorage.getItem('providerToken')} 
+          />
+        </div>
       );
 
       case 'upload': return (
