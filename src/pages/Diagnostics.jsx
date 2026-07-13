@@ -761,17 +761,18 @@ const Diagnostics = () => {
                       Request Home Collection
                     </label>
                   </div>
-                  {bookingForm.home_collection_requested && (
+                                    {bookingForm.home_collection_requested && (
                     <div>
-                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Home Address</label>
-                      <textarea name="home_address" rows="2" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '13px' }}>Home Address</label>
+                        <textarea name="home_address" rows="2" value={bookingForm.home_address} onChange={handleBookingChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '13px' }} />
+                      </div>
+                      <HomeCollectionSlots 
+                        selectedSlot={collectionSlot} 
+                        onSelectSlot={(slot) => setCollectionSlot(slot)} 
+                      />
                     </div>
-                    <HomeCollectionSlots
-		      selectedSlot={collectionSlot}
-		      onSelectSlot={(slot) => setCollectionSlot(slot)}
-		  />
-                </div>
-              )}
+                  )}
               <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
                 <button type="submit" disabled={bookingLoading} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
                   {bookingLoading ? 'Processing...' : 'Confirm Booking'}
