@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DiagnosticsCustomPackage from './DiagnosticsCustomPackage';
 import HealthPackagesTab from './HealthPackagesTab';
-import HomeCollectionSlots from '../../components/HomeCollectionSlots';
+import HomeCollectionSlots from '../components/HomeCollectionSlots';
 
 // All 16 Main Categories with their Tests
 const testCategories = [
