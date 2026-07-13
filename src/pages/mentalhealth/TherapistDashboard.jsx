@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import CorporatePlansTab from '../../components/CorporatePlansTab';
 
 const TherapistDashboard = () => {
   const navigate = useNavigate();
@@ -14,8 +15,10 @@ const TherapistDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  const token = localStorage.getItem('therapistToken');
+  const providerId = localStorage.getItem('therapistId') || localStorage.getItem('providerId');
+
   useEffect(() => {
-    const token = localStorage.getItem('therapistToken');
     if (!token) {
       navigate('/mentalhealth/therapist/login');
       return;
@@ -26,7 +29,6 @@ const TherapistDashboard = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Mock data for demo
       setStats({
         totalPatients: 45,
         totalSessions: 128,
@@ -52,6 +54,14 @@ const TherapistDashboard = () => {
       maximumFractionDigits: 0
     }).format(amount);
   };
+
+  const tabs = [
+    { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'bookings', label: '📋 Bookings' },
+    { id: 'patients', label: '👤 Patients' },
+    { id: 'earnings', label: '💰 Earnings' },
+    { id: 'corporate', label: '🏢 Corporate Plans' },
+  ];
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
@@ -82,21 +92,21 @@ const TherapistDashboard = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
         {/* Tabs */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-          {['dashboard', 'bookings', 'patients', 'earnings'].map((tab) => (
+          {tabs.map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: '0.5rem 1.5rem',
-                backgroundColor: activeTab === tab ? '#8b5cf6' : 'transparent',
-                color: activeTab === tab ? 'white' : '#1e293b',
-                border: activeTab === tab ? 'none' : '1px solid #e5e7eb',
+                backgroundColor: activeTab === tab.id ? '#8b5cf6' : 'transparent',
+                color: activeTab === tab.id ? 'white' : '#1e293b',
+                border: activeTab === tab.id ? 'none' : '1px solid #e5e7eb',
                 borderRadius: '6px',
                 cursor: 'pointer',
-                fontWeight: activeTab === tab ? 'bold' : 'normal'
+                fontWeight: activeTab === tab.id ? 'bold' : 'normal'
               }}
             >
-              {tab === 'dashboard' ? '📊 Dashboard' : tab === 'bookings' ? '📋 Bookings' : tab === 'patients' ? '👤 Patients' : '💰 Earnings'}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -148,6 +158,52 @@ const TherapistDashboard = () => {
               ))}
             </div>
           </>
+        )}
+
+        {activeTab === 'bookings' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>📋 All Bookings</h3>
+            {bookings.map((booking) => (
+              <div key={booking.id} style={{ padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <div style={{ fontWeight: 'bold' }}>{booking.patient}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{booking.date} at {booking.time} • {booking.type}</div>
+                </div>
+                <span style={{
+                  padding: '0.2rem 0.75rem',
+                  borderRadius: '12px',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  backgroundColor: booking.status === 'confirmed' ? '#dbeafe' : booking.status === 'completed' ? '#dcfce7' : '#fef3c7',
+                  color: booking.status === 'confirmed' ? '#1e40af' : booking.status === 'completed' ? '#166534' : '#92400e'
+                }}>
+                  {booking.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'patients' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>👤 Patients</h3>
+            <p style={{ color: '#6b7280' }}>Patient list coming soon.</p>
+          </div>
+        )}
+
+        {activeTab === 'earnings' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>💰 Earnings</h3>
+            <p style={{ color: '#6b7280' }}>Earnings details coming soon.</p>
+          </div>
+        )}
+
+        {activeTab === 'corporate' && (
+          <div>
+            <h2 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 8 }}>🏢 Corporate Plans</h2>
+            <p style={{ color: '#64748b', marginBottom: 16 }}>Offer corporate mental wellness programs and EAP to companies.</p>
+            <CorporatePlansTab providerType="mentalHealth" providerId={providerId} token={token} />
+          </div>
         )}
       </div>
     </div>
