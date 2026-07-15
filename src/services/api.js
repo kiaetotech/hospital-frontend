@@ -352,4 +352,31 @@ export const doctorVerifyOTP = (data) => api.post('/online-doctor/doctor/verify-
 export const registerCompany = (data) => api.post('/corporate/company/register', data);
 export const employeeBook = (data) => api.post('/corporate/employee/book', data);
 
+// Global Search
+export const globalSearch = (query, limit = 20) => api.get(`/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+
+// Employee Portal
+export const employeeSendOTP = (data) => api.post('/employee/send-otp', data);
+export const employeeVerifyOTP = (data) => api.post('/employee/verify-otp', data);
+export const getEmployeeProfile = () => {
+  const token = localStorage.getItem('employeeToken');
+  return api.get('/employee/profile', { headers: { Authorization: `Bearer ${token}` } });
+};
+export const getEmployeeServices = () => {
+  const token = localStorage.getItem('employeeToken');
+  return api.get('/employee/services', { headers: { Authorization: `Bearer ${token}` } });
+};
+export const getEmployeeBookings = () => {
+  const token = localStorage.getItem('employeeToken');
+  return api.get('/employee/bookings', { headers: { Authorization: `Bearer ${token}` } });
+};
+export const getEmployeeTransactions = () => {
+  const token = localStorage.getItem('employeeToken');
+  return api.get('/employee/transactions', { headers: { Authorization: `Bearer ${token}` } });
+};
+export const employeeBookService = (data) => {
+  const token = localStorage.getItem('employeeToken');
+  return api.post('/employee/book', data, { headers: { Authorization: `Bearer ${token}` } });
+};
+
 export default api;
