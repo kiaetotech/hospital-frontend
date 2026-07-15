@@ -345,4 +345,11 @@ export const doctorResetPassword = (token, data) => api.post(`/online-doctor/doc
 export const doctorSendOTP = (data) => api.post('/online-doctor/doctor/send-otp', data);
 export const doctorVerifyOTP = (data) => api.post('/online-doctor/doctor/verify-otp', data);
 
+// ============================================
+// CORPORATE
+// ============================================
+
+export const registerCompany = (data) => api.post('/corporate/company/register', data);
+export const employeeBook = (data) => api.post('/corporate/employee/book', data);
+
 export default api;

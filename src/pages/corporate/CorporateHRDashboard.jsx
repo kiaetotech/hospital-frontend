@@ -4,13 +4,6 @@ import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
 
-/* ============================================================
-   CORPORATE HR DASHBOARD — PRODUCTION VERSION
-   Features: Wallet • Utilization • Bulk Booking • Wellness
-   Score • Spend Analytics • Department Breakdown • Export
-   All 6 original tabs preserved + enhanced
-   ============================================================ */
-
 const CorporateHRDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -24,7 +17,10 @@ const CorporateHRDashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [message, setMessage] = useState('');
 
-  /* ---------- bulk booking state ---------- */
+  // 🆕 Wallet top-up state
+  const [showTopup, setShowTopup] = useState(false);
+  const [topupAmount, setTopupAmount] = useState('');
+
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [bulkService, setBulkService] = useState('');
@@ -33,7 +29,6 @@ const CorporateHRDashboard = () => {
   const token = localStorage.getItem('corporateToken') || localStorage.getItem('hrToken');
   const cfg = { headers: { Authorization: `Bearer ${token}` } };
 
-  /* ---------- data loader ---------- */
   const loadAll = async () => {
     setLoading(true);
     try {
@@ -51,16 +46,30 @@ const CorporateHRDashboard = () => {
 
   useEffect(() => { loadAll(); }, []);
 
-  /* ---------- helpers ---------- */
+  // 🆕 Wallet top-up handler
+  const handleTopup = async () => {
+    if (!topupAmount || topupAmount <= 0) return setMessage('❌ Enter a valid amount');
+    try {
+      const res = await axios.post(`${API_BASE}/api/corporate/hr/wallet/topup`, { amount: Number(topupAmount) }, cfg);
+      if (res.data?.success) {
+        setMessage(`✅ ₹${topupAmount} added to wallet`);
+        setStats(prev => ({ ...prev, walletBalance: res.data.data.balance }));
+        setShowTopup(false);
+        setTopupAmount('');
+      }
+    } catch (e) { setMessage('❌ Top-up failed: ' + (e.response?.data?.message || e.message)); }
+  };
+
   const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
+  
   const badge = (s) => {
     const m = { active: '#dcfce7,#166534', pending: '#fef3c7,#92400e', cancelled: '#fee2e2,#dc2626', completed: '#dcfce7,#166534', confirmed: '#dbeafe,#1e40af' };
     const [bg, c] = (m[s] || '#f3f4f6,#374151').split(',');
     return <span style={{ padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', backgroundColor: bg, color: c, fontWeight: 'bold' }}>{s?.toUpperCase()}</span>;
   };
 
-  /* ---------- bulk booking ---------- */
   const toggleSelect = (id) => setSelectedEmployees(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  
   const submitBulk = async () => {
     if (!bulkService || selectedEmployees.length === 0) return setMessage('❌ Select service and employees');
     try {
@@ -72,7 +81,6 @@ const CorporateHRDashboard = () => {
 
   if (loading) return <div style={styles.loader}><div style={{ fontSize: '3rem' }}>⏳</div><p>Loading dashboard…</p></div>;
 
-  /* ---------- render ---------- */
   return (
     <div style={styles.wrap}>
       {/* HEADER */}
@@ -82,7 +90,13 @@ const CorporateHRDashboard = () => {
           <p style={{ opacity: 0.85, fontSize: '0.9rem' }}>{stats.planName} {badge(stats.planStatus)}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={styles.walletBadge}><span style={{ opacity: 0.8, marginRight: 6 }}>💰</span>{fmt(stats.walletBalance)}</div>
+          <div style={styles.walletBadge}>
+            <span style={{ opacity: 0.8, marginRight: 6 }}>💰</span>{fmt(stats.walletBalance)}
+          </div>
+          {/* 🆕 Top-up button */}
+          <button onClick={() => setShowTopup(true)} style={{ padding: '6px 14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>
+            + Top Up
+          </button>
           <button onClick={() => { localStorage.clear(); navigate('/corporate'); }} style={styles.btnDanger}>Logout</button>
         </div>
       </div>
@@ -102,7 +116,6 @@ const CorporateHRDashboard = () => {
         {/* ============ OVERVIEW ============ */}
         {activeTab === 'dashboard' && (
           <>
-            {/* KPI cards */}
             <div style={styles.kpiGrid}>
               <KPI icon="👥" label="Total Employees" value={stats.totalEmployees} color="#2563eb" />
               <KPI icon="✅" label="Active" value={stats.activeEmployees} color="#10b981" />
@@ -110,7 +123,6 @@ const CorporateHRDashboard = () => {
               <KPI icon="📋" label="Bookings" value={stats.recentBookings?.length || 0} color="#f59e0b" />
             </div>
 
-            {/* Utilization + Department grid */}
             <div style={styles.row2col}>
               <div style={styles.card}>
                 <h3 style={styles.cardTitle}>📊 Service Utilization</h3>
@@ -130,7 +142,6 @@ const CorporateHRDashboard = () => {
               </div>
             </div>
 
-            {/* Wellness Scores */}
             {stats.wellnessScores?.length > 0 && (
               <div style={styles.card}>
                 <h3 style={styles.cardTitle}>🧘 Employee Wellness Scores</h3>
@@ -146,7 +157,6 @@ const CorporateHRDashboard = () => {
               </div>
             )}
 
-            {/* Monthly Spend Chart (text-based) */}
             {stats.monthlySpend?.length > 0 && (
               <div style={styles.card}>
                 <h3 style={styles.cardTitle}>📈 Monthly Spend</h3>
@@ -161,7 +171,6 @@ const CorporateHRDashboard = () => {
               </div>
             )}
 
-            {/* Recent Bookings */}
             <div style={styles.card}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <h3 style={styles.cardTitle}>🕐 Recent Bookings</h3>
@@ -277,6 +286,37 @@ const CorporateHRDashboard = () => {
         )}
 
       </div>
+
+      {/* 🆕 TOP-UP MODAL */}
+      {showTopup && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 28, maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 6 }}>💰 Top Up Wallet</h3>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: 16 }}>Add funds to your company wallet for employee bookings</p>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: 6 }}>Amount (₹)</label>
+              <input 
+                type="number" 
+                placeholder="Enter amount" 
+                value={topupAmount} 
+                onChange={e => setTopupAmount(e.target.value)} 
+                style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: '1.1rem', outline: 'none', boxSizing: 'border-box' }}
+                autoFocus
+              />
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                {[5000, 10000, 25000, 50000, 100000].map(amt => (
+                  <button key={amt} onClick={() => setTopupAmount(amt.toString())} style={{ padding: '6px 14px', border: '1px solid #e2e8f0', borderRadius: 20, background: topupAmount === amt.toString() ? '#2563eb' : '#fff', color: topupAmount === amt.toString() ? '#fff' : '#475569', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500 }}>₹{amt.toLocaleString('en-IN')}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={handleTopup} disabled={!topupAmount || topupAmount <= 0} style={{ flex: 1, padding: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', opacity: (!topupAmount || topupAmount <= 0) ? 0.6 : 1 }}>✅ Add Funds</button>
+              <button onClick={() => { setShowTopup(false); setTopupAmount(''); }} style={{ flex: 1, padding: '12px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem' }}>Cancel</button>
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: 12, textAlign: 'center' }}>🔒 Secured by Razorpay • Funds added instantly</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -311,7 +351,6 @@ const Table = ({ data, cols, fmt, badge, dateCol, statusCol }) => (
   </div>
 );
 
-/* ========== STYLES ========== */
 const th = { padding: '0.75rem', textAlign: 'left', fontSize: '0.8rem', color: '#6b7280', fontWeight: 700, whiteSpace: 'nowrap' };
 const td = { padding: '0.75rem' };
 const lbl = { fontWeight: 700, fontSize: '0.85rem', marginBottom: 4, display: 'block' };
@@ -319,7 +358,7 @@ const lbl = { fontWeight: 700, fontSize: '0.85rem', marginBottom: 4, display: 'b
 const styles = {
   wrap: { minHeight: '100vh', backgroundColor: '#f3f4f6' },
   header: { background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', padding: '1.5rem 2rem', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
-  walletBadge: { padding: '0.5rem 1.25rem', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 10, fontWeight: 700, fontSize: '1.05rem' },
+  walletBadge: { padding: '0.5rem 1.25rem', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 10, fontWeight: 700, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 6 },
   tabBar: { backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0.5rem 2rem', display: 'flex', gap: 4, flexWrap: 'wrap', overflowX: 'auto' },
   tab: { padding: '0.6rem 1.25rem', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap', transition: 'all .2s' },
   kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' },
@@ -331,7 +370,7 @@ const styles = {
   btnDanger: { padding: '0.5rem 1.25rem', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 },
   btnSuccess: { padding: '0.75rem 2rem', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 },
   link: { color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 },
-  input: { width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.9rem' },
+  input: { width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.9rem', boxSizing: 'border-box' },
   select: { width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.9rem', backgroundColor: '#fff' },
   toast: { padding: '0.75rem 1.25rem', borderRadius: 10, marginBottom: '1rem', fontWeight: 500, maxWidth: 800, margin: '0 auto 1rem' },
   loader: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6' }
