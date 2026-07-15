@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
+import GlobalSearch from './components/GlobalSearch';
 import ComingSoon from './pages/ComingSoon';
+import SearchResultsPage from './pages/SearchResultsPage';
 import HospitalsList from './pages/HospitalsList';
 import HospitalSimpleDetails from './pages/HospitalSimpleDetails';
 import EmergencySearch from './pages/EmergencySearch';
@@ -220,6 +222,7 @@ function App() {
         <Routes>
           {/* MAIN PAGE */}
           <Route path="/" element={<HomePage />} />
+	  <Route path="/search" element={<SearchResultsPage />} />
 	  <Route path="/disclaimer" element={<Disclaimer />} />
 	  <Route path="/grievance" element={<Grievance />} />
 	  <Route path="/cancellation" element={<CancellationPolicy />} />
@@ -362,7 +365,11 @@ function App() {
           <Route path="/corporate/wellness" element={<CorporateWellness />} />
           <Route path="/corporate/employee/login" element={<EmployeeLogin />} />
           <Route path="/corporate/employee/dashboard" element={<EmployeePortal />} />
+	  <Route path="/employee/login" element={<EmployeeLogin />} />
+	  <Route path="/employee/dashboard" element={<EmployeePortal />} />
 	  <Route path="/corporate/register" element={<CompanyRegister />} />
+	  <Route path="/employee/login" element={<EmployeeLogin />} />
+	  <Route path="/employee/dashboard" element={<EmployeePortal />} />
 
           {/* PROVIDER REGISTRATION */}
           <Route path="/hospital/register" element={<HospitalRegister />} />
