@@ -1,0 +1,7 @@
+User-agent: * 
+Allow: / 
+Disallow: /admin 
+Disallow: /employee 
+Disallow: /lender 
+Disallow: /api 
+Sitemap: https://hospital-frontend-kiaeto.vercel.app/sitemap.xml 
