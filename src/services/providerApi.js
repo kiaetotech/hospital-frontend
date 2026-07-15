@@ -44,7 +44,7 @@ export const hospitalApi = {
   uploadDocuments: (formData) => providerApi.post('/hospitals/upload-documents', formData),
   
   // Authentication
-  login: (data) => providerApi.post('/hospitals/login', data),
+  login: (data) => providerApi.post('/hospitals/provider/login', data),
   logout: () => providerApi.post('/hospitals/logout'),
   verify: () => providerApi.get('/hospitals/auth/verify'),
   
