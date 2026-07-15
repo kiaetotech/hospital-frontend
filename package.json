@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@react-google-maps/api": "^2.20.8",
     "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
