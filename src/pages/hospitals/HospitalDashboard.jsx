@@ -228,7 +228,16 @@ const HospitalDashboard = () => {
   };
 
   // Bed handlers
-  const handleBedUpdate = (e) => { e.preventDefault(); saveProfile({ beds: bedForm }); };
+  const handleBedUpdate = async (e) => {
+  e.preventDefault();
+  try {
+    await api.put('/hospitals/provider/bed-status', { beds: bedForm, updateMethod: 'web_portal' });
+    alert('✅ Beds updated successfully');
+    loadData();
+  } catch(e) {
+    alert('❌ Failed to update beds');
+  }
+};
   const quickUpdate = async (preset) => {
   const presets = {
     almost_full: { available: 5, icu_available: 2, ventilator_available: 1, emergency_beds: 1, general_ward: 0 },
