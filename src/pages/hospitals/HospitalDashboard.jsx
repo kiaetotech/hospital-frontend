@@ -22,10 +22,12 @@ const HospitalDashboard = () => {
 
   // Bed form
   const [bedForm, setBedForm] = useState({
-    total: '', available: '', icu_available: '', ventilator_available: '',
-    emergency_beds: '', nicu_beds: '', picu_beds: '', hdu_beds: '',
-    isolation_beds: '', day_care_beds: ''
-  });
+  total: '', available: '',
+  general_ward: '', twin_sharing: '', single_room: '', deluxe: '',
+  super_deluxe: '', suite: '', maternity: '', post_op: '',
+  icu_available: '', ventilator_available: '', nicu_beds: '', picu_beds: '', hdu_beds: '',
+  emergency_beds: '', isolation_beds: '', day_care_beds: ''
+});
 
   // OPD Pricing
   const [opdPricing, setOpdPricing] = useState({
@@ -174,11 +176,16 @@ const HospitalDashboard = () => {
 
       // Load saved data
       if (p?.beds) setBedForm({
-        total: p.beds.total || '', available: p.beds.available || '',
-        icu_available: p.beds.icu_available || '', ventilator_available: p.beds.ventilator_available || '',
-        emergency_beds: p.beds.emergency_beds || '', nicu_beds: p.beds.nicu_beds || '',
-        picu_beds: p.beds.picu_beds || '', hdu_beds: p.beds.hdu_beds || '',
-        isolation_beds: p.beds.isolation_beds || '', day_care_beds: p.beds.day_care_beds || ''
+  	total: p.beds.total || '', available: p.beds.available || '',
+  	general_ward: p.beds.general_ward || '', twin_sharing: p.beds.twin_sharing || '',
+  	single_room: p.beds.single_room || '', deluxe: p.beds.deluxe || '',
+  	super_deluxe: p.beds.super_deluxe || '', suite: p.beds.suite || '',
+  	maternity: p.beds.maternity || '', post_op: p.beds.post_op || '',
+  	icu_available: p.beds.icu_available || '', ventilator_available: p.beds.ventilator_available || '',
+  	nicu_beds: p.beds.nicu_beds || '', picu_beds: p.beds.picu_beds || '',
+  	hdu_beds: p.beds.hdu_beds || '',
+ 	emergency_beds: p.beds.emergency_beds || '', isolation_beds: p.beds.isolation_beds || '',
+  	day_care_beds: p.beds.day_care_beds || ''
       });
       if (p?.opd_pricing) setOpdPricing(p.opd_pricing);
       if (p?.ipd_pricing) setIpdPricing(p.ipd_pricing);
@@ -223,10 +230,10 @@ const HospitalDashboard = () => {
   // Bed handlers
   const handleBedUpdate = (e) => { e.preventDefault(); saveProfile({ beds: bedForm }); };
   const quickUpdate = async (preset) => {
-    const presets = {
-      almost_full: { available: 5, icu_available: 2, ventilator_available: 1, emergency_beds: 1 },
-      half: { available: 25, icu_available: 8, ventilator_available: 4, emergency_beds: 5 },
-      mostly: { available: 50, icu_available: 15, ventilator_available: 8, emergency_beds: 10 }
+  const presets = {
+    almost_full: { available: 5, icu_available: 2, ventilator_available: 1, emergency_beds: 1, general_ward: 0 },
+    half: { available: 25, icu_available: 8, ventilator_available: 4, emergency_beds: 5, general_ward: 10 },
+    mostly: { available: 50, icu_available: 15, ventilator_available: 8, emergency_beds: 10, general_ward: 30 }
     };
     try {
       await api.put(`/hospitals/provider/${providerId}/beds`, { beds: presets[preset], updateMethod: 'web_portal' });
@@ -475,30 +482,74 @@ const HospitalDashboard = () => {
       // ============================================
       // BED MANAGEMENT
       // ============================================
-      case 'beds': return (
-        <div>
-          <h2>🛏️ Bed Management</h2>
-          <div style={{ backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
-            <strong>WhatsApp update format:</strong> <code>BEDS 350 AVL 45 ICU 12 VENT 5 ER OPEN</code>
+      // REPLACE the entire 'beds' case in HospitalDashboard.jsx
+
+case 'beds': return (
+  <div>
+    <h2>🛏️ Bed Management</h2>
+    <div style={{ backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+      <strong>WhatsApp update format:</strong> <code>BEDS 350 AVL 45 ICU 12 VENT 5 ER OPEN</code>
+    </div>
+    <form onSubmit={handleBedUpdate}>
+      
+      {/* General Beds */}
+      <h3 style={{ marginBottom: '0.75rem', color: '#1a237e' }}>🏨 General Beds</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+        {[
+          ['Total Beds', 'total'],
+          ['Available', 'available'],
+          ['General Ward', 'general_ward'],
+          ['Twin Sharing', 'twin_sharing'],
+          ['Single Room', 'single_room'],
+          ['Deluxe', 'deluxe'],
+          ['Super Deluxe', 'super_deluxe'],
+          ['Suite', 'suite'],
+          ['Maternity', 'maternity'],
+          ['Post-Op', 'post_op']
+        ].map(([label, key]) => (
+          <div key={key}>
+            <label style={labelStyle}>{label}</label>
+            <input type="number" value={bedForm[key] || ''} onChange={e => setBedForm({...bedForm, [key]: e.target.value})} style={inp} min="0" />
           </div>
-          <form onSubmit={handleBedUpdate}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-              {[
-                ['Total Beds', 'total'], ['Available', 'available'], ['ICU', 'icu_available'],
-                ['Ventilator', 'ventilator_available'], ['Emergency', 'emergency_beds'],
-                ['NICU', 'nicu_beds'], ['PICU', 'picu_beds'], ['HDU', 'hdu_beds'],
-                ['Isolation', 'isolation_beds'], ['Day Care', 'day_care_beds']
-              ].map(([label, key]) => (
-                <div key={key}>
-                  <label style={labelStyle}>{label}</label>
-                  <input type="number" value={bedForm[key]} onChange={e => setBedForm({...bedForm, [key]: e.target.value})} style={inp} min="0" />
-                </div>
-              ))}
-            </div>
-            <button type="submit" style={{ marginTop: '1rem', ...btnGreen, padding: '0.75rem 2rem' }}>💾 Update Beds</button>
-          </form>
-        </div>
-      );
+        ))}
+      </div>
+
+      {/* Critical Care */}
+      <h3 style={{ marginBottom: '0.75rem', color: '#c62828' }}>🫀 Critical Care</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+        {[
+          ['ICU', 'icu_available'],
+          ['ICU + Ventilator', 'ventilator_available'],
+          ['NICU', 'nicu_beds'],
+          ['PICU', 'picu_beds'],
+          ['HDU', 'hdu_beds']
+        ].map(([label, key]) => (
+          <div key={key}>
+            <label style={labelStyle}>{label}</label>
+            <input type="number" value={bedForm[key] || ''} onChange={e => setBedForm({...bedForm, [key]: e.target.value})} style={inp} min="0" />
+          </div>
+        ))}
+      </div>
+
+      {/* Special Purpose */}
+      <h3 style={{ marginBottom: '0.75rem', color: '#e65100' }}>🏥 Special Purpose</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+        {[
+          ['Emergency', 'emergency_beds'],
+          ['Isolation', 'isolation_beds'],
+          ['Day Care', 'day_care_beds']
+        ].map(([label, key]) => (
+          <div key={key}>
+            <label style={labelStyle}>{label}</label>
+            <input type="number" value={bedForm[key] || ''} onChange={e => setBedForm({...bedForm, [key]: e.target.value})} style={inp} min="0" />
+          </div>
+        ))}
+      </div>
+
+      <button type="submit" style={{ marginTop: '1rem', ...btnGreen, padding: '0.75rem 2rem', fontSize: '1rem' }}>💾 Update All Beds</button>
+    </form>
+  </div>
+);
 
       // ============================================
       // DOCTORS
