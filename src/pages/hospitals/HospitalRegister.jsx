@@ -9,22 +9,19 @@ const HospitalRegister = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [otp, setOtp] = useState('');
-  const [otpVerified, setOtpVerified] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [form, setForm] = useState({
-    name: '', type: 'multi_specialty', phone: '', email: '',
+    name: '', type: 'private', phone: '', email: '',
     password: '', confirmPassword: '', city: '', state: '', address: '', website: ''
   });
 
-  const handleChange = (e) => {
-    setForm(p => ({ ...p, [e.target.name]: e.target.value }));
-  };
+  const handleChange = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleSendOTP = async () => {
     if (!form.phone || form.phone.length !== 10) return setError('Valid 10-digit phone required');
     if (!form.name || !form.email || !form.password) return setError('Fill all required fields');
     if (form.password !== form.confirmPassword) return setError('Passwords do not match');
-    if (form.password.length < 6) return setError('Password min 6 characters');
+    if (form.password.length < 8) return setError('Password min 8 characters');
     setLoading(true); setError('');
     try {
       await api.post('/otp/send', { phone: form.phone, type: 'login' });
@@ -40,7 +37,7 @@ const HospitalRegister = () => {
     setLoading(true); setError('');
     try {
       await api.post('/otp/verify', { phone: form.phone, otp, type: 'login' });
-      setOtpVerified(true); setStep(3); setSuccess('Phone verified!');
+      setStep(3); setSuccess('Phone verified!');
     } catch (err) { setError(err.response?.data?.message || 'Invalid OTP'); }
     finally { setLoading(false); }
   };
@@ -97,14 +94,14 @@ const HospitalRegister = () => {
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div style={{ gridColumn: 'span 2' }}><label style={s.lbl}>Hospital Name *</label><input name="name" value={form.name} onChange={handleChange} placeholder="Apollo Hospital" style={s.inp} /></div>
-              <div><label style={s.lbl}>Type</label><select name="type" value={form.type} onChange={handleChange} style={s.inp}><option value="multi_specialty">Multi-Specialty</option><option value="super_specialty">Super-Specialty</option><option value="general">General</option><option value="clinic">Clinic</option></select></div>
+              <div><label style={s.lbl}>Type</label><select name="type" value={form.type} onChange={handleChange} style={s.inp}><option value="private">Private</option><option value="government">Government</option><option value="trust">Trust/Charitable</option><option value="corporate">Corporate Chain</option></select></div>
               <div><label style={s.lbl}>Ownership</label><select name="ownership" value={form.ownership} onChange={handleChange} style={s.inp}><option value="private">Private</option><option value="government">Government</option><option value="trust">Trust</option></select></div>
               <div style={{ gridColumn: 'span 2' }}><label style={s.lbl}>Phone * (10 digits)</label><input name="phone" value={form.phone} onChange={handleChange} placeholder="9876543210" maxLength={10} style={s.inp} /></div>
               <div style={{ gridColumn: 'span 2' }}><label style={s.lbl}>Email *</label><input name="email" type="email" value={form.email} onChange={handleChange} placeholder="hospital@email.com" style={s.inp} /></div>
               <div><label style={s.lbl}>City *</label><input name="city" value={form.city} onChange={handleChange} placeholder="Enter your city" style={s.inp} /></div>
               <div><label style={s.lbl}>State *</label><input name="state" value={form.state} onChange={handleChange} placeholder="Enter your state" style={s.inp} /></div>
               <div style={{ gridColumn: 'span 2' }}><label style={s.lbl}>Website</label><input name="website" value={form.website} onChange={handleChange} placeholder="https://..." style={s.inp} /></div>
-              <div><label style={s.lbl}>Password *</label><input name="password" type="password" value={form.password} onChange={handleChange} placeholder="Min 6 chars" style={s.inp} /></div>
+              <div><label style={s.lbl}>Password * (min 8)</label><input name="password" type="password" value={form.password} onChange={handleChange} placeholder="Min 8 characters" style={s.inp} /></div>
               <div><label style={s.lbl}>Confirm *</label><input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} placeholder="Re-enter" style={s.inp} /></div>
             </div>
             <button onClick={handleSendOTP} disabled={loading} style={{ ...s.btn, marginTop: '16px', background: loading ? '#ccc' : '#1976d2' }}>{loading ? 'Sending...' : '📱 Send OTP'}</button>
