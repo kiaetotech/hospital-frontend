@@ -231,7 +231,11 @@ const HospitalDashboard = () => {
   const handleBedUpdate = async (e) => {
   e.preventDefault();
   try {
-    await api.put('/hospitals/provider/bed-status', { beds: bedForm, updateMethod: 'web_portal' });
+    const token = localStorage.getItem('providerToken');
+await api.put('/hospitals/provider/bed-status', 
+  { beds: bedForm, updateMethod: 'web_portal' },
+  { headers: { Authorization: `Bearer ${token}` } }
+);
     alert('✅ Beds updated successfully');
     loadData();
   } catch(e) {
