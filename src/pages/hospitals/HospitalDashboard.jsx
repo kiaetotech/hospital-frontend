@@ -190,7 +190,8 @@ const HospitalDashboard = () => {
  	emergency_beds: p.beds.emergency_beds || '', isolation_beds: p.beds.isolation_beds || '',
   	day_care_beds: p.beds.day_care_beds || ''
       });
-      if (p?.pricing) {
+      // Reload OPD/IPD from pricing
+if (p?.pricing) {
   setOpdPricing({
     general: p.pricing.opd_general || '',
     specialist: p.pricing.opd_specialist || '',
@@ -215,6 +216,11 @@ const HospitalDashboard = () => {
     day_care: p.pricing.ipd_day_care || ''
   });
 }
+
+// Reload other fields
+if (p?.accreditations?.length > 0) setAccreditations(p.accreditations);
+if (p?.gallery?.length > 0) setGallery(p.gallery);
+if (p?.documents?.length > 0) setDocuments(p.documents);
         if (p?.location) {
         setLocation({ lat: p.location.lat || '', lng: p.location.lng || '', address: p.location.address || '' });
         if (p.location.lat && p.location.lng) setMapCenter({ lat: p.location.lat, lng: p.location.lng });
