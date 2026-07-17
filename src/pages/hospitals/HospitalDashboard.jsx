@@ -165,7 +165,7 @@ const HospitalDashboard = () => {
 
       if (activeTab === 'dashboard') {
         try { const sr = await api.get(`/hospitals/provider/${providerId}/stats`); setStats(sr.data.data); } catch(e) {}
-        try { const br = await api.get(`/hospitals/provider/${providerId}/bookings?limit=5`); setBookings(br.data.data || []); } catch(e) {}
+        try { const br = await api.get(`/hospitals/provider/${providerId}/bookings`); setBookings(br.data.data || []); } catch(e) {}
       }
       if (activeTab === 'doctors') {
   try { 
