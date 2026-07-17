@@ -410,7 +410,10 @@ const handleDeleteDoctor = async (id) => {
     setLocation({ ...location, lat: e.latLng.lat(), lng: e.latLng.lng() });
   }, [location]);
 
-  const saveLocation = () => saveProfile({ location });
+  const saveLocation = () => saveProfile({ 
+  location: { lat: location.lat, lng: location.lng },
+  address: { ...profile?.address, line1: location.address }
+});
 
   // Gallery handlers
   const handleImageUpload = async (e) => {
@@ -444,7 +447,9 @@ const handleDeleteDoctor = async (id) => {
       const r = await api.post('/upload/prices', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
-      setDocuments([...documents.filter(d => d.type !== type), { type, name: type, url: r.data.url }]);
+      const updatedDocs = [...documents.filter(d => d.type !== type), { type, name: type, url: r.data.url }];
+setDocuments(updatedDocs);
+saveProfile({ documents: updatedDocs });
     } catch(e) { alert('Upload failed'); }
   };
 
