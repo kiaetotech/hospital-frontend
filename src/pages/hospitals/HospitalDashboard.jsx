@@ -266,12 +266,32 @@ const HospitalDashboard = () => {
       consultation_fee: parseFloat(doctorForm.consultation_fee) || 0,
       languages: doctorForm.languages.split(',').map(l => l.trim()).filter(Boolean),
       gender: doctorForm.gender,
-      availability: {
-        days: doctorForm.availability_days.split(',').map(d => d.trim()).filter(Boolean),
-        morning_slots: doctorForm.morning_slots, evening_slots: doctorForm.evening_slots,
-        max_patients: parseInt(doctorForm.max_patients) || 20
-      }
+      availability_days: doctorForm.availability_days,
+      morning_slots: doctorForm.morning_slots,
+      evening_slots: doctorForm.evening_slots,
+      max_patients_per_day: parseInt(doctorForm.max_patients) || 20
     };
+    const token = localStorage.getItem('providerToken');
+    try {
+      if (editingDoctor) {
+        await api.put(`/hospitals/provider/doctors/${editingDoctor._id}`, d, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        alert('✅ Doctor updated successfully');
+      } else {
+        await api.post('/hospitals/provider/doctors', d, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        alert('✅ Doctor added successfully');
+      }
+      setShowDoctorForm(false);
+      setEditingDoctor(null);
+      setDoctorForm({ name: '', specialization: '', qualification: '', experience: '', consultation_fee: '', languages: '', gender: 'Male', availability_days: '', morning_slots: '', evening_slots: '', max_patients: '20' });
+      loadData();
+    } catch(e) {
+      alert('❌ Failed to save doctor');
+    }
+  };
     try {
       if (editingDoctor) {
         await api.put(`/hospitals/provider/${providerId}/doctors/${editingDoctor._id}`, d);
