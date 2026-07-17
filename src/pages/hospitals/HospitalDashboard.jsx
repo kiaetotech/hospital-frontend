@@ -222,7 +222,7 @@ const HospitalDashboard = () => {
   const saveProfile = async (data) => {
     try {
       const token = localStorage.getItem('providerToken');
-      await api.put(`/hospitals/provider/${providerId}/profile`, data, {
+      await api.put('/hospitals/provider/profile', data, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('✅ Saved successfully');
