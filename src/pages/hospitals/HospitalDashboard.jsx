@@ -354,8 +354,11 @@ const handleDeleteDoctor = async (id) => {
     const file = e.target.files[0];
     if (!file) return;
     try {
+      const token = localStorage.getItem('providerToken');
       const fd = new FormData(); fd.append('file', file); fd.append('type', type);
-      const r = await api.post(`/hospitals/provider/${providerId}/upload-document`, fd);
+      const r = await api.post('/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+      });
       setDocuments([...documents.filter(d => d.type !== type), { type, name: type, url: r.data.url }]);
     } catch(e) { alert('Upload failed'); }
   };
@@ -428,11 +431,12 @@ const handleDeleteDoctor = async (id) => {
     if (!uploadFile) return;
     setLoading(true);
     try {
+      const token = localStorage.getItem('providerToken');
       const fd = new FormData(); fd.append('file', uploadFile);
-      const r = await api.post(`/hospitals/provider/${providerId}/upload-master`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const r = await api.post('/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
-      setUploadMessage(`✅ ${r.data.message}`);
+      setUploadMessage(`✅ File uploaded`);
       setUploadFile(null);
       setTimeout(() => { setUploadMessage(''); loadData(); }, 3000);
     } catch(e) { setUploadMessage('❌ Upload failed'); }
@@ -440,7 +444,9 @@ const handleDeleteDoctor = async (id) => {
   };
 
   const handleDownloadTemplate = () => {
-    window.open(`${api.defaults.baseURL}/hospitals/provider/${providerId}/template/master/download`, '_blank');
+    const token = localStorage.getItem('providerToken');
+    const baseURL = 'https://hospital-backend-production-f1b1.up.railway.app';
+    window.open(`${baseURL}/api/hospitals/provider/template/download?token=${token}`, '_blank');
   };
 
   const availableSchemes = [
