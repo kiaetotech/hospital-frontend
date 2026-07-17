@@ -190,9 +190,32 @@ const HospitalDashboard = () => {
  	emergency_beds: p.beds.emergency_beds || '', isolation_beds: p.beds.isolation_beds || '',
   	day_care_beds: p.beds.day_care_beds || ''
       });
-      if (p?.opd_pricing) setOpdPricing(p.opd_pricing);
-      if (p?.ipd_pricing) setIpdPricing(p.ipd_pricing);
-      if (p?.location) {
+      if (p?.pricing) {
+  setOpdPricing({
+    general: p.pricing.opd_general || '',
+    specialist: p.pricing.opd_specialist || '',
+    super_specialist: p.pricing.opd_super_specialist || '',
+    emergency: p.pricing.opd_emergency || '',
+    follow_up: p.pricing.opd_follow_up || '',
+    online: p.pricing.opd_online || ''
+  });
+  setIpdPricing({
+    general_ward: p.pricing.ipd_general_ward || '',
+    semi_private: p.pricing.ipd_semi_private || '',
+    private_room: p.pricing.ipd_private_room || '',
+    deluxe: p.pricing.ipd_deluxe || '',
+    super_deluxe: p.pricing.ipd_super_deluxe || '',
+    suite: p.pricing.ipd_suite || '',
+    icu: p.pricing.ipd_icu || '',
+    icu_ventilator: p.pricing.ipd_icu_ventilator || '',
+    nicu: p.pricing.ipd_nicu || '',
+    picu: p.pricing.ipd_picu || '',
+    hdu: p.pricing.ipd_hdu || '',
+    isolation: p.pricing.ipd_isolation || '',
+    day_care: p.pricing.ipd_day_care || ''
+  });
+}
+        if (p?.location) {
         setLocation({ lat: p.location.lat || '', lng: p.location.lng || '', address: p.location.address || '' });
         if (p.location.lat && p.location.lng) setMapCenter({ lat: p.location.lat, lng: p.location.lng });
       }
@@ -248,7 +271,7 @@ const HospitalDashboard = () => {
           ...mappedData.pricing,
           ipd_general_ward: data.ipd_pricing.general_ward,
           ipd_semi_private: data.ipd_pricing.semi_private,
-          ipd_private: data.ipd_pricing.private_room,
+          ipd_private_room: data.ipd_pricing.private_room,
           ipd_deluxe: data.ipd_pricing.deluxe,
           ipd_super_deluxe: data.ipd_pricing.super_deluxe,
           ipd_suite: data.ipd_pricing.suite,
