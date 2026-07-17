@@ -222,7 +222,56 @@ const HospitalDashboard = () => {
   const saveProfile = async (data) => {
     try {
       const token = localStorage.getItem('providerToken');
-      await api.put('/hospitals/provider/profile', data, {
+      
+      // Map frontend fields to backend model fields
+      const mappedData = {};
+      
+      // OPD Pricing: opd_pricing -> pricing.opd_*
+      if (data.opd_pricing) {
+        mappedData.pricing = {
+          ...mappedData.pricing,
+          opd_general: data.opd_pricing.general,
+          opd_specialist: data.opd_pricing.specialist,
+          opd_super_specialist: data.opd_pricing.super_specialist,
+          opd_emergency: data.opd_pricing.emergency,
+          opd_follow_up: data.opd_pricing.follow_up,
+          opd_online: data.opd_pricing.online
+        };
+      }
+      
+      // IPD Pricing: ipd_pricing -> pricing.ipd_*
+      if (data.ipd_pricing) {
+        mappedData.pricing = {
+          ...mappedData.pricing,
+          ipd_general_ward: data.ipd_pricing.general_ward,
+          ipd_semi_private: data.ipd_pricing.semi_private,
+          ipd_private: data.ipd_pricing.private_room,
+          ipd_deluxe: data.ipd_pricing.deluxe,
+          ipd_super_deluxe: data.ipd_pricing.super_deluxe,
+          ipd_suite: data.ipd_pricing.suite,
+          ipd_icu: data.ipd_pricing.icu,
+          ipd_icu_ventilator: data.ipd_pricing.icu_ventilator,
+          ipd_nicu: data.ipd_pricing.nicu,
+          ipd_picu: data.ipd_pricing.picu,
+          ipd_hdu: data.ipd_pricing.hdu,
+          ipd_isolation: data.ipd_pricing.isolation,
+          ipd_day_care: data.ipd_pricing.day_care
+        };
+      }
+      
+      // Copy remaining fields directly
+      const directFields = ['specialties', 'diseases_treated', 'procedures_available', 
+        'schemes_accepted', 'insurance_accepted', 'cashless_available', 'tpa_desk_available',
+        'reimbursement_accepted', 'emi_available', 'facilities', 'ambulance_fleet',
+        'accreditations', 'online_services', 'location', 'gallery', 'documents'];
+      
+      directFields.forEach(field => {
+        if (data[field] !== undefined) {
+          mappedData[field] = data[field];
+        }
+      });
+      
+      await api.put('/hospitals/provider/profile', mappedData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('✅ Saved successfully');
