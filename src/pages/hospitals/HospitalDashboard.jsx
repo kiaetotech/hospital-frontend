@@ -412,9 +412,13 @@ const handleDeleteDoctor = async (id) => {
     if (!file) return;
     setUploadingImage(true);
     try {
+      const token = localStorage.getItem('providerToken');
       const fd = new FormData(); fd.append('file', file); fd.append('type', 'gallery');
-      const r = await api.post(`/hospitals/provider/${providerId}/upload-image`, fd);
+      const r = await api.post('/upload/file', fd, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+      });
       setGallery([...gallery, r.data.url]);
+      saveProfile({ gallery: [...gallery, r.data.url] });
     } catch(e) { alert('Upload failed'); }
     finally { setUploadingImage(false); }
   };
@@ -431,7 +435,7 @@ const handleDeleteDoctor = async (id) => {
     try {
       const token = localStorage.getItem('providerToken');
       const fd = new FormData(); fd.append('file', file); fd.append('type', type);
-      const r = await api.post('/upload', fd, {
+      const r = await api.post('/upload/prices', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
       setDocuments([...documents.filter(d => d.type !== type), { type, name: type, url: r.data.url }]);
@@ -508,7 +512,7 @@ const handleDeleteDoctor = async (id) => {
     try {
       const token = localStorage.getItem('providerToken');
       const fd = new FormData(); fd.append('file', uploadFile);
-      const r = await api.post('/upload', fd, {
+      const r = await api.post('/upload/tests', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
       setUploadMessage(`✅ File uploaded`);
