@@ -138,22 +138,22 @@ const HospitalDashboard = () => {
   ];
 
   // ... PART 2 continues with useEffect and handlers
-  useEffect(() => { loadData(); fetchMedicalMasterData(); fetchLabCatalog(); }, [activeTab]);
+  useEffect(() => { loadData(); fetchMedicalMasterData(); }, [activeTab]);
 
   const fetchMedicalMasterData = async () => {
     try { const r = await api.get('/hospitals/medical-data'); if (r.data?.data) setMedicalMasterData(r.data.data); } catch(e) {}
   };
 
-  const fetchLabCatalog = async () => {
-    try {
-      const r = await api.get('/diagnostics/tests/master');
-      if (r.data?.data) {
-        setLabTests(r.data.data);
-        const cats = [...new Set(r.data.data.map(t => t.main_category))];
-        setLabCategories(cats);
-      }
-    } catch(e) {}
-  };
+  // const fetchLabCatalog = async () => {
+//     try {
+//       const r = await api.get('/diagnostics/tests/master');
+//       if (r.data?.data) {
+//         setLabTests(r.data.data);
+//         const cats = [...new Set(r.data.data.map(t => t.main_category))];
+//         setLabCategories(cats);
+//       }
+//     } catch(e) {}
+//   };
 
   const loadData = async () => {
     setLoading(true);
