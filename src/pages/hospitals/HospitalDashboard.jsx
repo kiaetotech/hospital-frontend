@@ -168,11 +168,14 @@ const HospitalDashboard = () => {
         try { const br = await api.get(`/hospitals/provider/${providerId}/bookings?limit=5`); setBookings(br.data.data || []); } catch(e) {}
       }
       if (activeTab === 'doctors') {
-        try { const dr = await api.get(`/hospitals/provider/${providerId}/doctors`); setDoctors(dr.data.data || []); } catch(e) {}
-      }
-      if (activeTab === 'bookings') {
-        try { const br = await api.get(`/hospitals/provider/${providerId}/bookings?limit=50`); setBookings(br.data.data || []); } catch(e) {}
-      }
+  try { 
+    const token = localStorage.getItem('providerToken');
+    const dr = await api.get('/hospitals/provider/doctors', {
+      headers: { Authorization: `Bearer ${token}` }
+    }); 
+    setDoctors(dr.data.data || []); 
+  } catch(e) {}
+}
 
       // Load saved data
       if (p?.beds) setBedForm({
