@@ -276,7 +276,10 @@ const HospitalDashboard = () => {
       if (editingDoctor) {
         await api.put(`/hospitals/provider/${providerId}/doctors/${editingDoctor._id}`, d);
       } else {
-        await api.post(`/hospitals/provider/${providerId}/doctors`, d);
+        const token = localStorage.getItem('providerToken');
+await api.post('/hospitals/provider/doctors', d, {
+  headers: { Authorization: `Bearer ${token}` }
+})
       }
       setShowDoctorForm(false); setEditingDoctor(null);
       setDoctorForm({ name: '', specialization: '', qualification: '', experience: '', consultation_fee: '', languages: '', gender: 'Male', availability_days: '', morning_slots: '', evening_slots: '', max_patients: '20' });
@@ -286,7 +289,10 @@ const HospitalDashboard = () => {
 
   const handleDeleteDoctor = async (id) => {
     if (!window.confirm('Delete this doctor?')) return;
-    try { await api.delete(`/hospitals/provider/${providerId}/doctors/${id}`); loadData(); } catch(e) {}
+    try { const token = localStorage.getItem('providerToken');
+await api.delete(`/hospitals/provider/doctors/${id}`, {
+  headers: { Authorization: `Bearer ${token}` }
+}); loadData(); } catch(e) {}
   };
 
   // Lab test pricing handler
