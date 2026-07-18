@@ -221,11 +221,7 @@ if (p?.pricing) {
 if (p?.accreditations?.length > 0) setAccreditations(p.accreditations);
 if (p?.gallery?.length > 0) setGallery(p.gallery);
 if (p?.documents?.length > 0) {
-    setDocuments(p.documents.map(d => ({
-        type: d.doc_type || d.type,
-        name: d.name,
-        url: d.url
-    })));
+    setDocuments(p.documents);
 }
         if (p?.location) {
         setLocation({ lat: p.location.lat || '', lng: p.location.lng || '', address: p.location.address || '' });
@@ -463,7 +459,7 @@ const handleDeleteDoctor = async (id) => {
       const r = await api.post('/upload/file', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
-      const updatedDocs = [...documents.filter(d => d.type !== type), { type, name: type, url: r.data.url }];
+      const updatedDocs = [...documents.filter(d => d.doc_type !== type && d.name !== type), { doc_type: type, name: type, url: r.data.url }];
       setDocuments(updatedDocs);
       saveProfile({ documents: updatedDocs });  // THIS LINE MUST BE HERE
     } catch(e) { alert('Upload failed'); }
@@ -1246,7 +1242,7 @@ case 'beds': return (
               { label: 'Hospital Exterior Photo', type: 'photo_exterior' },
               { label: 'Hospital Interior Photo', type: 'photo_interior' }
             ].map(doc => {
-              const existing = documents.find(d => d.type === doc.type);
+              const existing = documents.find(d => (d.doc_type || d.name) === doc.type);
               return (
                 <div key={doc.type} style={{ padding: '1rem', backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
