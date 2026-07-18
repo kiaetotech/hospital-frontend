@@ -262,7 +262,6 @@ if (p?.documents?.length > 0) {
       const token = localStorage.getItem('providerToken');
       const mappedData = {};
       
-      // Only add pricing if values exist
       if (data.opd_pricing) {
         const opd = data.opd_pricing;
         if (opd.general || opd.specialist || opd.super_specialist || opd.emergency || opd.follow_up || opd.online) {
@@ -278,8 +277,7 @@ if (p?.documents?.length > 0) {
       
       if (data.ipd_pricing) {
         const ipd = data.ipd_pricing;
-        const ipdKeys = ['general_ward','semi_private','private_room','deluxe','super_deluxe','suite','icu','icu_ventilator','nicu','picu','hdu','isolation','day_care'];
-        const hasIpd = ipdKeys.some(k => ipd[k]);
+        const hasIpd = ipd.general_ward || ipd.semi_private || ipd.private_room || ipd.deluxe || ipd.super_deluxe || ipd.suite || ipd.icu || ipd.icu_ventilator || ipd.nicu || ipd.picu || ipd.hdu || ipd.isolation || ipd.day_care;
         if (hasIpd) {
           if (!mappedData.pricing) mappedData.pricing = {};
           if (ipd.general_ward) mappedData.pricing.ipd_general_ward = ipd.general_ward;
@@ -298,7 +296,6 @@ if (p?.documents?.length > 0) {
         }
       }
       
-      // Only add non-empty fields
       if (data.specialties && data.specialties.length > 0) mappedData.specialties = data.specialties;
       if (data.diseases_treated && data.diseases_treated.length > 0) mappedData.diseases_treated = data.diseases_treated;
       if (data.procedures_available && data.procedures_available.length > 0) mappedData.procedures_available = data.procedures_available;
