@@ -220,7 +220,13 @@ if (p?.pricing) {
 // Reload other fields
 if (p?.accreditations?.length > 0) setAccreditations(p.accreditations);
 if (p?.gallery?.length > 0) setGallery(p.gallery);
-if (p?.documents?.length > 0) setDocuments(p.documents);
+if (p?.documents?.length > 0) {
+    setDocuments(p.documents.map(d => ({
+        type: d.doc_type || d.type,
+        name: d.name,
+        url: d.url
+    })));
+}
         if (p?.location) {
         setLocation({ lat: p.location.lat || '', lng: p.location.lng || '', address: p.location.address || '' });
         if (p.location.lat && p.location.lng) setMapCenter({ lat: p.location.lat, lng: p.location.lng });
@@ -259,37 +265,40 @@ if (p?.documents?.length > 0) setDocuments(p.documents);
       const mappedData = {};
       
       // OPD Pricing: opd_pricing -> pricing.opd_*
-      if (data.opd_pricing) {
-        mappedData.pricing = {
-          ...mappedData.pricing,
-          opd_general: data.opd_pricing.general,
-          opd_specialist: data.opd_pricing.specialist,
-          opd_super_specialist: data.opd_pricing.super_specialist,
-          opd_emergency: data.opd_pricing.emergency,
-          opd_follow_up: data.opd_pricing.follow_up,
-          opd_online: data.opd_pricing.online
-        };
-      }
-      
-      // IPD Pricing: ipd_pricing -> pricing.ipd_*
-      if (data.ipd_pricing) {
-        mappedData.pricing = {
-          ...mappedData.pricing,
-          ipd_general_ward: data.ipd_pricing.general_ward,
-          ipd_semi_private: data.ipd_pricing.semi_private,
-          ipd_private_room: data.ipd_pricing.private_room,
-          ipd_deluxe: data.ipd_pricing.deluxe,
-          ipd_super_deluxe: data.ipd_pricing.super_deluxe,
-          ipd_suite: data.ipd_pricing.suite,
-          ipd_icu: data.ipd_pricing.icu,
-          ipd_icu_ventilator: data.ipd_pricing.icu_ventilator,
-          ipd_nicu: data.ipd_pricing.nicu,
-          ipd_picu: data.ipd_pricing.picu,
-          ipd_hdu: data.ipd_pricing.hdu,
-          ipd_isolation: data.ipd_pricing.isolation,
-          ipd_day_care: data.ipd_pricing.day_care
-        };
-      }
+if (data.opd_pricing) {
+    const vals = data.opd_pricing;
+    if (vals.general || vals.specialist || vals.super_specialist || vals.emergency || vals.follow_up || vals.online) {
+        mappedData.pricing = mappedData.pricing || {};
+        if (vals.general) mappedData.pricing.opd_general = vals.general;
+        if (vals.specialist) mappedData.pricing.opd_specialist = vals.specialist;
+        if (vals.super_specialist) mappedData.pricing.opd_super_specialist = vals.super_specialist;
+        if (vals.emergency) mappedData.pricing.opd_emergency = vals.emergency;
+        if (vals.follow_up) mappedData.pricing.opd_follow_up = vals.follow_up;
+        if (vals.online) mappedData.pricing.opd_online = vals.online;
+    }
+}
+
+// IPD Pricing: ipd_pricing -> pricing.ipd_*
+if (data.ipd_pricing) {
+    const vals = data.ipd_pricing;
+    const ipdFields = ['general_ward','semi_private','private_room','deluxe','super_deluxe','suite','icu','icu_ventilator','nicu','picu','hdu','isolation','day_care'];
+    if (ipdFields.some(f => vals[f])) {
+        mappedData.pricing = mappedData.pricing || {};
+        if (vals.general_ward) mappedData.pricing.ipd_general_ward = vals.general_ward;
+        if (vals.semi_private) mappedData.pricing.ipd_semi_private = vals.semi_private;
+        if (vals.private_room) mappedData.pricing.ipd_private_room = vals.private_room;
+        if (vals.deluxe) mappedData.pricing.ipd_deluxe = vals.deluxe;
+        if (vals.super_deluxe) mappedData.pricing.ipd_super_deluxe = vals.super_deluxe;
+        if (vals.suite) mappedData.pricing.ipd_suite = vals.suite;
+        if (vals.icu) mappedData.pricing.ipd_icu = vals.icu;
+        if (vals.icu_ventilator) mappedData.pricing.ipd_icu_ventilator = vals.icu_ventilator;
+        if (vals.nicu) mappedData.pricing.ipd_nicu = vals.nicu;
+        if (vals.picu) mappedData.pricing.ipd_picu = vals.picu;
+        if (vals.hdu) mappedData.pricing.ipd_hdu = vals.hdu;
+        if (vals.isolation) mappedData.pricing.ipd_isolation = vals.isolation;
+        if (vals.day_care) mappedData.pricing.ipd_day_care = vals.day_care;
+    }
+}
       
       // Copy remaining fields directly
       const directFields = ['specialties', 'diseases_treated', 'procedures_available', 
@@ -303,6 +312,7 @@ if (p?.documents?.length > 0) setDocuments(p.documents);
         }
       });
       
+	
       await api.put('/hospitals/provider/profile', mappedData, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -444,12 +454,12 @@ const handleDeleteDoctor = async (id) => {
     try {
       const token = localStorage.getItem('providerToken');
       const fd = new FormData(); fd.append('file', file); fd.append('type', type);
-      const r = await api.post('/upload/prices', fd, {
+      const r = await api.post('/upload/file', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
       const updatedDocs = [...documents.filter(d => d.type !== type), { type, name: type, url: r.data.url }];
-setDocuments(updatedDocs);
-saveProfile({ documents: updatedDocs });
+      setDocuments(updatedDocs);
+      saveProfile({ documents: updatedDocs });  // THIS LINE MUST BE HERE
     } catch(e) { alert('Upload failed'); }
   };
 
