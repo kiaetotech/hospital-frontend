@@ -528,7 +528,7 @@ const handleDeleteDoctor = async (id) => {
   const saveOnlineServices = () => saveProfile({ online_services: onlineServices });
 
   // Excel upload
-  const handleMasterUpload = async (e) => {
+const handleMasterUpload = async (e) => {
     e.preventDefault();
     if (!uploadFile) return;
     setLoading(true);
@@ -542,7 +542,9 @@ const handleDeleteDoctor = async (id) => {
       setUploadFile(null);
       loadData();
       setTimeout(() => setUploadMessage(''), 3000);
-    } catch(e) { setUploadMessage('❌ Upload failed'); }
+    } catch(e) { 
+      setUploadMessage('❌ ' + (e.response?.data?.message || 'Upload failed')); 
+    }
     finally { setLoading(false); }
   };
 
