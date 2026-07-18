@@ -1269,7 +1269,7 @@ case 'beds': return (
         </div>
       );
 
-      // ============================================
+            // ============================================
       // BULK UPLOAD
       // ============================================
       case 'upload': return (
@@ -1293,25 +1293,23 @@ case 'beds': return (
               </button>
             </form>
           </div>
+
+          {/* Upload History */}
+          {profile?.upload_history && profile.upload_history.length > 0 && (
+            <div style={{ marginTop: '2rem' }}>
+              <h3>📋 Upload History</h3>
+              <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem' }}>
+                {profile.upload_history.map((h, i) => (
+                  <div key={i} style={{ padding: '0.5rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>📄 {h.filename}</span>
+                    <span style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(h.uploaded_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       );
-
-	{/* Upload History */}
-        {profile?.upload_history && profile.upload_history.length > 0 && (
-          <div style={{ marginTop: '2rem' }}>
-            <h3>📋 Upload History</h3>
-            <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem' }}>
-              {profile.upload_history.map((h, i) => (
-                <div key={i} style={{ padding: '0.5rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>📄 {h.filename}</span>
-                  <span style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(h.uploaded_at).toLocaleDateString()}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
 
       // ============================================
       // WHATSAPP
