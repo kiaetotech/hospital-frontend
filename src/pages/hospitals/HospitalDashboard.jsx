@@ -327,22 +327,7 @@ if (p?.documents?.length > 0) {
         'reimbursement_accepted', 'emi_available', 'facilities', 'ambulance_fleet',
         'accreditations', 'online_services', 'location', 'gallery', 'documents'];
       
-      directFields.forEach(field => {
-        if (data[field] !== undefined) {
-          mappedData[field] = data[field];
-        }
-      });
-      
-      console.log('mappedData:', JSON.stringify(mappedData, null, 2));	
-      await api.put('/hospitals/provider/profile', mappedData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      alert('✅ Saved successfully');
-      loadData();
-    } catch(e) { alert('❌ Failed to save'); }
-  };
-
-  // Bed handlers
+      // Bed handlers
   const handleBedUpdate = async (e) => {
   e.preventDefault();
   const token = localStorage.getItem('providerToken');
