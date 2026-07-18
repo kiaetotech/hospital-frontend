@@ -535,12 +535,13 @@ const handleDeleteDoctor = async (id) => {
     try {
       const token = localStorage.getItem('providerToken');
       const fd = new FormData(); fd.append('file', uploadFile);
-      const r = await api.post('/upload/tests', fd, {
+      await api.post('/upload/tests', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
-      setUploadMessage(`✅ File uploaded`);
+      setUploadMessage('✅ File uploaded successfully');
       setUploadFile(null);
-      setTimeout(() => { setUploadMessage(''); loadData(); }, 3000);
+      loadData();
+      setTimeout(() => { setUploadMessage(''); }, 3000);
     } catch(e) { setUploadMessage('❌ Upload failed'); }
     finally { setLoading(false); }
   };
