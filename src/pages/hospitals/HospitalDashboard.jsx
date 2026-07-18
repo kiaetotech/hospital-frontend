@@ -535,7 +535,7 @@ const handleDeleteDoctor = async (id) => {
     try {
       const token = localStorage.getItem('providerToken');
       const fd = new FormData(); fd.append('file', uploadFile);
-      await api.post('/upload/tests', fd, {
+      await api.post('/hospitals/provider/upload-data', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
       setUploadMessage('✅ File uploaded');
