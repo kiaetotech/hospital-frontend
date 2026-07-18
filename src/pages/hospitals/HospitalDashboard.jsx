@@ -312,7 +312,7 @@ if (data.ipd_pricing) {
         }
       });
       
-	
+      console.log('mappedData:', JSON.stringify(mappedData, null, 2));	
       await api.put('/hospitals/provider/profile', mappedData, {
         headers: { Authorization: `Bearer ${token}` }
       });
