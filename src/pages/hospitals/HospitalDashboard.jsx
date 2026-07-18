@@ -260,45 +260,69 @@ if (p?.documents?.length > 0) {
   const saveProfile = async (data) => {
     try {
       const token = localStorage.getItem('providerToken');
-      
-      // Map frontend fields to backend model fields
       const mappedData = {};
       
-      // OPD Pricing: opd_pricing -> pricing.opd_*
-if (data.opd_pricing) {
-    const vals = data.opd_pricing;
-    if (vals.general || vals.specialist || vals.super_specialist || vals.emergency || vals.follow_up || vals.online) {
-        mappedData.pricing = mappedData.pricing || {};
-        if (vals.general) mappedData.pricing.opd_general = vals.general;
-        if (vals.specialist) mappedData.pricing.opd_specialist = vals.specialist;
-        if (vals.super_specialist) mappedData.pricing.opd_super_specialist = vals.super_specialist;
-        if (vals.emergency) mappedData.pricing.opd_emergency = vals.emergency;
-        if (vals.follow_up) mappedData.pricing.opd_follow_up = vals.follow_up;
-        if (vals.online) mappedData.pricing.opd_online = vals.online;
-    }
-}
-
-// IPD Pricing: ipd_pricing -> pricing.ipd_*
-if (data.ipd_pricing) {
-    const vals = data.ipd_pricing;
-    const ipdFields = ['general_ward','semi_private','private_room','deluxe','super_deluxe','suite','icu','icu_ventilator','nicu','picu','hdu','isolation','day_care'];
-    if (ipdFields.some(f => vals[f])) {
-        mappedData.pricing = mappedData.pricing || {};
-        if (vals.general_ward) mappedData.pricing.ipd_general_ward = vals.general_ward;
-        if (vals.semi_private) mappedData.pricing.ipd_semi_private = vals.semi_private;
-        if (vals.private_room) mappedData.pricing.ipd_private_room = vals.private_room;
-        if (vals.deluxe) mappedData.pricing.ipd_deluxe = vals.deluxe;
-        if (vals.super_deluxe) mappedData.pricing.ipd_super_deluxe = vals.super_deluxe;
-        if (vals.suite) mappedData.pricing.ipd_suite = vals.suite;
-        if (vals.icu) mappedData.pricing.ipd_icu = vals.icu;
-        if (vals.icu_ventilator) mappedData.pricing.ipd_icu_ventilator = vals.icu_ventilator;
-        if (vals.nicu) mappedData.pricing.ipd_nicu = vals.nicu;
-        if (vals.picu) mappedData.pricing.ipd_picu = vals.picu;
-        if (vals.hdu) mappedData.pricing.ipd_hdu = vals.hdu;
-        if (vals.isolation) mappedData.pricing.ipd_isolation = vals.isolation;
-        if (vals.day_care) mappedData.pricing.ipd_day_care = vals.day_care;
-    }
-}
+      // Only add pricing if values exist
+      if (data.opd_pricing) {
+        const opd = data.opd_pricing;
+        if (opd.general || opd.specialist || opd.super_specialist || opd.emergency || opd.follow_up || opd.online) {
+          mappedData.pricing = {};
+          if (opd.general) mappedData.pricing.opd_general = opd.general;
+          if (opd.specialist) mappedData.pricing.opd_specialist = opd.specialist;
+          if (opd.super_specialist) mappedData.pricing.opd_super_specialist = opd.super_specialist;
+          if (opd.emergency) mappedData.pricing.opd_emergency = opd.emergency;
+          if (opd.follow_up) mappedData.pricing.opd_follow_up = opd.follow_up;
+          if (opd.online) mappedData.pricing.opd_online = opd.online;
+        }
+      }
+      
+      if (data.ipd_pricing) {
+        const ipd = data.ipd_pricing;
+        const ipdKeys = ['general_ward','semi_private','private_room','deluxe','super_deluxe','suite','icu','icu_ventilator','nicu','picu','hdu','isolation','day_care'];
+        const hasIpd = ipdKeys.some(k => ipd[k]);
+        if (hasIpd) {
+          if (!mappedData.pricing) mappedData.pricing = {};
+          if (ipd.general_ward) mappedData.pricing.ipd_general_ward = ipd.general_ward;
+          if (ipd.semi_private) mappedData.pricing.ipd_semi_private = ipd.semi_private;
+          if (ipd.private_room) mappedData.pricing.ipd_private_room = ipd.private_room;
+          if (ipd.deluxe) mappedData.pricing.ipd_deluxe = ipd.deluxe;
+          if (ipd.super_deluxe) mappedData.pricing.ipd_super_deluxe = ipd.super_deluxe;
+          if (ipd.suite) mappedData.pricing.ipd_suite = ipd.suite;
+          if (ipd.icu) mappedData.pricing.ipd_icu = ipd.icu;
+          if (ipd.icu_ventilator) mappedData.pricing.ipd_icu_ventilator = ipd.icu_ventilator;
+          if (ipd.nicu) mappedData.pricing.ipd_nicu = ipd.nicu;
+          if (ipd.picu) mappedData.pricing.ipd_picu = ipd.picu;
+          if (ipd.hdu) mappedData.pricing.ipd_hdu = ipd.hdu;
+          if (ipd.isolation) mappedData.pricing.ipd_isolation = ipd.isolation;
+          if (ipd.day_care) mappedData.pricing.ipd_day_care = ipd.day_care;
+        }
+      }
+      
+      // Only add non-empty fields
+      if (data.specialties && data.specialties.length > 0) mappedData.specialties = data.specialties;
+      if (data.diseases_treated && data.diseases_treated.length > 0) mappedData.diseases_treated = data.diseases_treated;
+      if (data.procedures_available && data.procedures_available.length > 0) mappedData.procedures_available = data.procedures_available;
+      if (data.schemes_accepted && data.schemes_accepted.length > 0) mappedData.schemes_accepted = data.schemes_accepted;
+      if (data.insurance_accepted && data.insurance_accepted.length > 0) mappedData.insurance_accepted = data.insurance_accepted;
+      if (data.facilities && data.facilities.length > 0) mappedData.facilities = data.facilities;
+      if (data.ambulance_fleet && data.ambulance_fleet.length > 0) mappedData.ambulance_fleet = data.ambulance_fleet;
+      if (data.accreditations && data.accreditations.length > 0) mappedData.accreditations = data.accreditations;
+      if (data.documents && data.documents.length > 0) mappedData.documents = data.documents;
+      if (data.gallery && data.gallery.length > 0) mappedData.gallery = data.gallery;
+      if (data.online_services && Object.keys(data.online_services).length > 0) mappedData.online_services = data.online_services;
+      if (data.location && data.location.lat) mappedData.location = data.location;
+      if (data.cashless_available !== undefined) mappedData.cashless_available = data.cashless_available;
+      if (data.tpa_desk_available !== undefined) mappedData.tpa_desk_available = data.tpa_desk_available;
+      if (data.reimbursement_accepted !== undefined) mappedData.reimbursement_accepted = data.reimbursement_accepted;
+      if (data.emi_available !== undefined) mappedData.emi_available = data.emi_available;
+      
+      await api.put('/hospitals/provider/profile', mappedData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('✅ Saved successfully');
+      loadData();
+    } catch(e) { alert('❌ Failed to save'); }
+  };
       
       // Copy remaining fields directly
       const directFields = ['specialties', 'diseases_treated', 'procedures_available', 
