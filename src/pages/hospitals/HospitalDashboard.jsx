@@ -324,12 +324,12 @@ if (p?.documents?.length > 0) {
         'accreditations', 'online_services', 'location', 'gallery', 'documents'];
       
       // Bed handlers
-  const handleBedUpdate = async (e) => {
+const handleBedUpdate = async (e) => {
   e.preventDefault();
   const token = localStorage.getItem('providerToken');
   const providerId = localStorage.getItem('providerId');
   try {
-    await api.put(`/hospitals/provider/${providerId}/beds`, 
+    await api.put(`/hospitals/provider/id/${providerId}/beds`, 
       { beds: bedForm, updateMethod: 'web_portal' },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -339,19 +339,20 @@ if (p?.documents?.length > 0) {
     alert('❌ Failed to update beds');
   }
 };
-  const quickUpdate = async (preset) => {
+
+const quickUpdate = async (preset) => {
   const presets = {
     almost_full: { available: 5, icu_available: 2, ventilator_available: 1, emergency_beds: 1, general_ward: 0 },
     half: { available: 25, icu_available: 8, ventilator_available: 4, emergency_beds: 5, general_ward: 10 },
     mostly: { available: 50, icu_available: 15, ventilator_available: 8, emergency_beds: 10, general_ward: 30 }
-    };
-    try {
-      await api.put(`/hospitals/provider/${providerId}/beds`, { beds: presets[preset], updateMethod: 'web_portal' });
-      setQuickBedStatus('✅ Updated!');
-      setTimeout(() => setQuickBedStatus(''), 3000);
-      loadData();
-    } catch(e) {}
   };
+  try {
+    await api.put(`/hospitals/provider/id/${providerId}/beds`, { beds: presets[preset], updateMethod: 'web_portal' });
+    setQuickBedStatus('✅ Updated!');
+    setTimeout(() => setQuickBedStatus(''), 3000);
+    loadData();
+  } catch(e) {}
+};
 
   /// Doctor handlers
 const handleAddDoctor = async (e) => {
