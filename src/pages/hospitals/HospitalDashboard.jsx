@@ -534,7 +534,8 @@ const handleMasterUpload = async (e) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('providerToken');
-      const fd = new FormData(); fd.append('file', uploadFile);
+      const fd = new FormData();
+      fd.append('file', uploadFile);
       await api.post('/hospitals/provider/upload-data', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
