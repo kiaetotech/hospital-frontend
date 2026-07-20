@@ -561,6 +561,35 @@ const handleMasterUpload = async (e) => {
     document.body.removeChild(link);
   };
 
+const handleDownloadLabTemplate = () => {
+    const token = localStorage.getItem('providerToken');
+    const baseURL = 'https://hospital-backend-production-f1b1.up.railway.app';
+    const link = document.createElement('a');
+    link.href = `${baseURL}/api/lab-pricing/template?token=${token}`;
+    link.download = 'lab_price_template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+const handleLabPriceUpload = async (e) => {
+    e.preventDefault();
+    if (!uploadFile) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('providerToken');
+      const fd = new FormData(); fd.append('file', uploadFile);
+      const r = await api.post('/lab-pricing/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+      });
+      setUploadMessage(`✅ ${r.data.message}`);
+      setUploadFile(null);
+    } catch(e) { 
+      setUploadMessage('❌ ' + (e.response?.data?.message || 'Upload failed')); 
+    }
+    finally { setLoading(false); }
+  };
+
   const availableSchemes = [
     { value: 'ayushman', label: 'Ayushman Bharat (PM-JAY)' },
     { value: 'cghs', label: 'CGHS' }, { value: 'esi', label: 'ESI' },
@@ -859,59 +888,39 @@ case 'beds': return (
       // LAB CATALOG (1624 tests)
       // ============================================
       case 'labcatalog': return (
-        <div>
-          <h2>🧪 Lab Test Catalog ({labTests.length} tests)</h2>
-          <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '1rem' }}>Enter your hospital price for each test. Leave blank to skip.</p>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            <input placeholder="Search test..." value={labSearch} onChange={e => setLabSearch(e.target.value)}
-              style={{ ...inp, width: '300px', marginBottom: 0 }} />
-            <select value={labCategory} onChange={e => setLabCategory(e.target.value)} style={{ ...inp, width: '200px', marginBottom: 0 }}>
-              <option value="All">All Categories</option>
-              {labCategories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <button onClick={saveLabPrices} style={{ ...btnGreen, padding: '0.6rem 1.5rem' }}>💾 Save All Prices</button>
-          </div>
-          <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', overflow: 'auto', maxHeight: '500px' }}>
-            <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f3f4f6', position: 'sticky', top: 0 }}>
-                  <th style={{ padding: '10px', textAlign: 'left' }}>Test Name</th>
-                  <th style={{ padding: '10px' }}>Category</th>
-                  <th style={{ padding: '10px' }}>Sub Category</th>
-                  <th style={{ padding: '10px', width: '120px' }}>Your Price (₹)</th>
-                  <th style={{ padding: '10px' }}>Home Collection</th>
-                  <th style={{ padding: '10px' }}>Fasting</th>
-                </tr>
-              </thead>
-              <tbody>
-                {labTests
-                  .filter(t => (labCategory === 'All' || t.main_category === labCategory) && (!labSearch || t.test_name?.toLowerCase().includes(labSearch.toLowerCase())))
-                  .slice(0, 200)
-                  .map(t => (
-                    <tr key={t._id || t.test_code} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '8px' }}><strong>{t.test_name}</strong></td>
-                      <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.75rem' }}>{t.main_category}</td>
-                      <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.7rem', color: '#888' }}>{t.sub_category}</td>
-                      <td style={{ padding: '4px' }}>
-                        <input type="number" placeholder="₹" value={t.hospital_price || ''}
-                          onChange={e => updateLabPrice(t._id, 'hospital_price', e.target.value)}
-                          style={{ ...inp, marginBottom: 0, textAlign: 'center' }} />
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'center' }}>
-                        <input type="checkbox" checked={t.home_collection || false} onChange={e => updateLabPrice(t._id, 'home_collection', e.target.checked)} />
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'center' }}>
-                        <input type="checkbox" checked={t.fasting_required || false} onChange={e => updateLabPrice(t._id, 'fasting_required', e.target.checked)} />
-                      </td>
-                    </tr>
-                  ))
-                }
-              </tbody>
-            </table>
-          </div>
-          <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem' }}>Showing 200 tests. Use search to find specific tests. All 1624 tests available.</p>
-        </div>
-      );
+  <div>
+    <h2>🧪 Lab Test Pricing</h2>
+    <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '1rem' }}>
+      Download template, fill your prices in Excel, and upload. Patient searches will show your priced tests.
+    </p>
+    
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div style={{ backgroundColor: '#eff6ff', borderRadius: '1rem', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem' }}>📥</div>
+        <h3>Download Price Template</h3>
+        <p style={{ fontSize: '0.85rem', color: '#666' }}>Excel with all 1624 tests</p>
+        <button onClick={handleDownloadLabTemplate} style={{ padding: '0.75rem 1.5rem', backgroundColor: '#1976d2', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>
+          📥 Download Template
+        </button>
+      </div>
+      
+      <div style={{ backgroundColor: '#f0fdf4', borderRadius: '1rem', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem' }}>📤</div>
+        <h3>Upload Priced Excel</h3>
+        <p style={{ fontSize: '0.85rem', color: '#666' }}>System matches by test name</p>
+        <form onSubmit={handleLabPriceUpload}>
+          <input type="file" accept=".xlsx,.xls" onChange={e => setUploadFile(e.target.files[0])} 
+            style={{ display: 'block', margin: '0 auto 0.5rem' }} />
+          <button type="submit" disabled={loading || !uploadFile}
+            style={{ padding: '0.75rem 1.5rem', backgroundColor: loading ? '#ccc' : '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
+            {loading ? 'Uploading...' : '📤 Upload Prices'}
+          </button>
+        </form>
+        {uploadMessage && <p style={{ marginTop: '0.5rem', color: uploadMessage.includes('✅') ? '#10b981' : '#ef4444' }}>{uploadMessage}</p>}
+      </div>
+    </div>
+  </div>
+);
 
       // ============================================
       // PACKAGES
