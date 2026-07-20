@@ -553,7 +553,12 @@ const handleMasterUpload = async (e) => {
   const handleDownloadTemplate = () => {
     const token = localStorage.getItem('providerToken');
     const baseURL = 'https://hospital-backend-production-f1b1.up.railway.app';
-    window.open(`${baseURL}/api/hospitals/provider/template/download?token=${token}`, '_blank');
+    const link = document.createElement('a');
+    link.href = `${baseURL}/api/hospitals/provider/template/download?token=${token}`;
+    link.download = 'hospital_template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const availableSchemes = [
