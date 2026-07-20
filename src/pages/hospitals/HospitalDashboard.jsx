@@ -565,7 +565,7 @@ const handleDownloadLabTemplate = () => {
     const token = localStorage.getItem('providerToken');
     const baseURL = 'https://hospital-backend-production-f1b1.up.railway.app';
     const link = document.createElement('a');
-    link.href = `${baseURL}/api/lab-pricing/template?token=${token}`;
+    link.href = `${baseURL}/api/lab-pricing/template?token=${encodeURIComponent(token)}`;
     link.download = 'lab_price_template.xlsx';
     document.body.appendChild(link);
     link.click();
