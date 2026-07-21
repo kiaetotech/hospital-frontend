@@ -974,15 +974,25 @@ case 'beds': return (
       case 'packages': return (
   <div>
     <h2>📦 Health Packages</h2>
-    <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '1rem' }}>
-      Create health checkup packages. Download template, fill package details, and upload.
-    </p>
+    
+    <div style={{ backgroundColor: '#eff6ff', borderRadius: '1rem', padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #bfdbfe' }}>
+      <h4 style={{ marginTop: 0 }}>📋 How to create packages:</h4>
+      <ol style={{ fontSize: '0.85rem', color: '#333', lineHeight: '1.8' }}>
+        <li>Upload <strong>lab prices first</strong> from the Lab Catalog tab</li>
+        <li>Download the <strong>Package Template</strong> below</li>
+        <li>Rename <strong>Pkg 1, Pkg 2...</strong> columns to your package names</li>
+        <li>Put <strong>✓</strong> for tests included in each package</li>
+        <li>Set <strong>Package Price</strong> at the bottom of the sheet</li>
+        <li>Upload the filled Excel</li>
+      </ol>
+      <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: 0 }}>💡 Tip: Use <strong>Ctrl+F</strong> in Excel to search tests by name</p>
+    </div>
     
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
       <div style={{ backgroundColor: '#eff6ff', borderRadius: '1rem', padding: '2rem', textAlign: 'center' }}>
         <div style={{ fontSize: '3rem' }}>📥</div>
         <h3>Download Package Template</h3>
-        <p style={{ fontSize: '0.85rem', color: '#666' }}>Excel with example package</p>
+        <p style={{ fontSize: '0.85rem', color: '#666' }}>Includes your priced tests + 10 package columns</p>
         <button onClick={handleDownloadPackageTemplate} style={{ padding: '0.75rem 1.5rem', backgroundColor: '#1976d2', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>
           📥 Download Template
         </button>
@@ -991,7 +1001,7 @@ case 'beds': return (
       <div style={{ backgroundColor: '#f0fdf4', borderRadius: '1rem', padding: '2rem', textAlign: 'center' }}>
         <div style={{ fontSize: '3rem' }}>📤</div>
         <h3>Upload Package Excel</h3>
-        <p style={{ fontSize: '0.85rem', color: '#666' }}>System matches tests and calculates pricing</p>
+        <p style={{ fontSize: '0.85rem', color: '#666' }}>System matches tests and creates packages</p>
         <form onSubmit={handlePackageUpload}>
           <input type="file" accept=".xlsx,.xls" onChange={e => setUploadFile(e.target.files[0])} 
             style={{ display: 'block', margin: '0 auto 0.5rem' }} />
@@ -1014,12 +1024,11 @@ case 'beds': return (
               <div>
                 <strong>{p.name}</strong>
                 <div style={{ fontSize: '0.8rem', color: '#888' }}>
-                  {(p.includes_names || p.includes || []).slice(0, 5).join(', ')}{(p.includes_names || p.includes || []).length > 5 ? '...' : ''}
+                  {(p.includes_names || p.includes || []).slice(0, 5).join(', ')}{(p.includes_names || p.includes || []).length > 5 ? ` +${p.includes_names.length - 5} more` : ''}
                 </div>
                 <div style={{ marginTop: '4px' }}>
                   <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{p.discounted_price || p.price}</span>
                   {p.discount_percentage > 0 && <span style={{ fontSize: '0.8rem', color: '#ef4444', marginLeft: '8px' }}>({p.discount_percentage}% off)</span>}
-                  {p.original_price > p.discounted_price && <span style={{ fontSize: '0.8rem', color: '#999', textDecoration: 'line-through', marginLeft: '8px' }}>₹{p.original_price}</span>}
                 </div>
               </div>
               <button onClick={() => handleDeletePackage(p._id)} style={del}>✕</button>
