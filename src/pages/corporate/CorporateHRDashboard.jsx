@@ -26,6 +26,7 @@ const CorporateHRDashboard = () => {
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [bulkService, setBulkService] = useState('');
   const [bulkProvider, setBulkProvider] = useState('');
+  const [bulkFile, setBulkFile] = useState(null);
 
   const token = localStorage.getItem('corporateToken') || localStorage.getItem('hrToken');
   const cfg = { headers: { Authorization: `Bearer ${token}` } };
@@ -90,14 +91,14 @@ const CorporateHRDashboard = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = 'Name,Email,Phone,Department,Designation,Employee ID\nJohn Doe,john@company.com,9876543210,Engineering,Manager,EMP001\nJane Smith,jane@company.com,9876543211,HR,Director,EMP002';
+    const csv = 'Name,Email,Phone,Department,Designation,Employee ID';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'employee_template.csv'; a.click();
   };
 
-  const handleBulkUpload = async (e) => {
-    const f = e.target.files[0]; if (!f) return;
+  const handleBulkUpload = async () => {
+    const f = bulkFile; if (!f) return;
     const txt = await f.text();
     const lines = txt.split('\n').filter(l => l.trim());
     const heads = lines[0].split(',').map(h => h.trim().toLowerCase());
@@ -107,7 +108,7 @@ const CorporateHRDashboard = () => {
     }).filter(x => x.name && x.email);
     try {
       await axios.post(`${API_BASE}/api/corporate/hr/employees`, { employees: emps }, cfg);
-      setMessage(`✅ ${emps.length} employees uploaded`); loadAll();
+      setMessage(`✅ ${emps.length} employees uploaded`); loadAll(); setBulkFile(null);
     } catch (err) { setMessage('❌ Upload failed'); }
   };
 
@@ -187,12 +188,15 @@ const CorporateHRDashboard = () => {
         {activeTab === 'bulk' && (
           <div style={styles.card}>
             <h2 style={{ fontWeight: 700, marginBottom: 8 }}>📤 Bulk Employee Upload</h2>
-            <p style={{ color: '#6b7280', marginBottom: 12 }}>Download the template, fill employee details, and upload the CSV.</p>
+            <p style={{ color: '#6b7280', marginBottom: 12 }}>Download the blank template, fill employee details, and upload.</p>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
               <button onClick={downloadTemplate} style={{ ...styles.btnPrimary, backgroundColor: '#6b7280' }}>📥 Download Template</button>
             </div>
             <p style={{ color: '#6b7280', marginBottom: 16, fontSize: '0.85rem' }}>CSV format: name, email, phone, department, designation, employeeId</p>
-            <input type="file" accept=".csv" onChange={handleBulkUpload} style={{ padding: 10, border: '2px dashed #d1d5db', borderRadius: 10, width: '100%', cursor: 'pointer' }} />
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input type="file" accept=".csv" onChange={(e) => setBulkFile(e.target.files[0])} style={{ padding: 10, border: '2px dashed #d1d5db', borderRadius: 10, cursor: 'pointer', flex: 1 }} />
+              <button onClick={handleBulkUpload} disabled={!bulkFile} style={{ ...styles.btnSuccess, opacity: bulkFile ? 1 : 0.6, padding: '0.75rem 1.5rem' }}>📤 Upload</button>
+            </div>
           </div>
         )}
 
@@ -266,11 +270,21 @@ const CorporateHRDashboard = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#fff', borderRadius: 12, padding: 28, maxWidth: 420, width: '90%' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 6 }}>💰 Top Up Wallet</h3>
-            <input type="number" placeholder="Enter amount" value={topupAmount} onChange={e => setTopupAmount(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: '1.1rem', outline: 'none', boxSizing: 'border-box', marginBottom: 16 }} autoFocus />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={handleTopup} disabled={!topupAmount || topupAmount <= 0} style={{ flex: 1, padding: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', opacity: (!topupAmount || topupAmount <= 0) ? 0.6 : 1 }}>✅ Add Funds</button>
-              <button onClick={() => { setShowTopup(false); setTopupAmount(''); }} style={{ flex: 1, padding: '12px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: 16 }}>Add funds to your company wallet for employee bookings</p>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: 6 }}>Amount (₹)</label>
+              <input type="number" placeholder="Enter amount" value={topupAmount} onChange={e => setTopupAmount(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: '1.1rem', outline: 'none', boxSizing: 'border-box' }} autoFocus />
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                {[5000, 10000, 25000, 50000, 100000].map(amt => (
+                  <button key={amt} onClick={() => setTopupAmount(amt.toString())} style={{ padding: '6px 14px', border: '1px solid #e2e8f0', borderRadius: 20, background: topupAmount === amt.toString() ? '#2563eb' : '#fff', color: topupAmount === amt.toString() ? '#fff' : '#475569', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500 }}>₹{amt.toLocaleString('en-IN')}</button>
+                ))}
+              </div>
             </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={handleTopup} disabled={!topupAmount || topupAmount <= 0} style={{ flex: 1, padding: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', opacity: (!topupAmount || topupAmount <= 0) ? 0.6 : 1 }}>✅ Add Funds</button>
+              <button onClick={() => { setShowTopup(false); setTopupAmount(''); }} style={{ flex: 1, padding: '12px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem' }}>Cancel</button>
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: 12, textAlign: 'center' }}>🔒 Secured by Razorpay • Funds added instantly</p>
           </div>
         </div>
       )}
