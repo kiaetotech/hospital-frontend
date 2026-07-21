@@ -574,11 +574,16 @@ const handleDownloadLabTemplate = () => {
 
 const handleLabPriceUpload = async (e) => {
     e.preventDefault();
-    if (!uploadFile) return;
+    if (!uploadFile) {
+      setUploadMessage('❌ Please select a file');
+      return;
+    }
     setLoading(true);
+    setUploadMessage('');
     try {
       const token = localStorage.getItem('providerToken');
-      const fd = new FormData(); fd.append('file', uploadFile);
+      const fd = new FormData();
+      fd.append('file', uploadFile);
       const r = await api.post('/lab-pricing/upload', fd, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
       });
