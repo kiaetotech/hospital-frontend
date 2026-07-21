@@ -17,11 +17,12 @@ const CorporateHRDashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [message, setMessage] = useState('');
 
-  // 🆕 Wallet top-up state
   const [showTopup, setShowTopup] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
 
-  const [bulkMode, setBulkMode] = useState(false);
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
+  const [empForm, setEmpForm] = useState({ name: '', email: '', phone: '', department: '', designation: '', employeeId: '' });
+
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [bulkService, setBulkService] = useState('');
   const [bulkProvider, setBulkProvider] = useState('');
@@ -46,7 +47,6 @@ const CorporateHRDashboard = () => {
 
   useEffect(() => { loadAll(); }, []);
 
-  // 🆕 Wallet top-up handler
   const handleTopup = async () => {
     if (!topupAmount || topupAmount <= 0) return setMessage('❌ Enter a valid amount');
     try {
@@ -54,10 +54,20 @@ const CorporateHRDashboard = () => {
       if (res.data?.success) {
         setMessage(`✅ ₹${topupAmount} added to wallet`);
         setStats(prev => ({ ...prev, walletBalance: res.data.data.balance }));
-        setShowTopup(false);
-        setTopupAmount('');
+        setShowTopup(false); setTopupAmount('');
       }
-    } catch (e) { setMessage('❌ Top-up failed: ' + (e.response?.data?.message || e.message)); }
+    } catch (e) { setMessage('❌ Top-up failed'); }
+  };
+
+  const handleAddEmployee = async () => {
+    if (!empForm.name || !empForm.email || !empForm.phone) return setMessage('❌ Name, email and phone are required');
+    try {
+      await axios.post(`${API_BASE}/api/corporate/hr/employees`, { employees: [empForm] }, cfg);
+      setMessage('✅ Employee added');
+      setShowAddEmployee(false);
+      setEmpForm({ name: '', email: '', phone: '', department: '', designation: '', employeeId: '' });
+      loadAll();
+    } catch (e) { setMessage('❌ ' + (e.response?.data?.message || 'Failed')); }
   };
 
   const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
@@ -74,34 +84,49 @@ const CorporateHRDashboard = () => {
     if (!bulkService || selectedEmployees.length === 0) return setMessage('❌ Select service and employees');
     try {
       await axios.post(`${API_BASE}/api/corporate/hr/bulk-book`, { employeeIds: selectedEmployees, serviceType: bulkService, providerId: bulkProvider }, cfg);
-      setMessage(`✅ Bulk booking created for ${selectedEmployees.length} employees`);
-      setBulkMode(false); setSelectedEmployees([]); loadAll();
+      setMessage(`✅ Bulk booking for ${selectedEmployees.length} employees`);
+      setSelectedEmployees([]); loadAll();
     } catch (e) { setMessage('❌ ' + (e.response?.data?.message || 'Failed')); }
+  };
+
+  const downloadTemplate = () => {
+    const csv = 'Name,Email,Phone,Department,Designation,Employee ID\nJohn Doe,john@company.com,9876543210,Engineering,Manager,EMP001\nJane Smith,jane@company.com,9876543211,HR,Director,EMP002';
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'employee_template.csv'; a.click();
+  };
+
+  const handleBulkUpload = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const txt = await f.text();
+    const lines = txt.split('\n').filter(l => l.trim());
+    const heads = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const emps = lines.slice(1).map(l => {
+      const vals = l.split(',').map(v => v.trim());
+      const obj = {}; heads.forEach((h, i) => obj[h] = vals[i] || ''); return obj;
+    }).filter(x => x.name && x.email);
+    try {
+      await axios.post(`${API_BASE}/api/corporate/hr/employees`, { employees: emps }, cfg);
+      setMessage(`✅ ${emps.length} employees uploaded`); loadAll();
+    } catch (err) { setMessage('❌ Upload failed'); }
   };
 
   if (loading) return <div style={styles.loader}><div style={{ fontSize: '3rem' }}>⏳</div><p>Loading dashboard…</p></div>;
 
   return (
     <div style={styles.wrap}>
-      {/* HEADER */}
       <div style={styles.header}>
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>🏢 HR Dashboard</h1>
           <p style={{ opacity: 0.85, fontSize: '0.9rem' }}>{stats.planName} {badge(stats.planStatus)}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={styles.walletBadge}>
-            <span style={{ opacity: 0.8, marginRight: 6 }}>💰</span>{fmt(stats.walletBalance)}
-          </div>
-          {/* 🆕 Top-up button */}
-          <button onClick={() => setShowTopup(true)} style={{ padding: '6px 14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>
-            + Top Up
-          </button>
+          <div style={styles.walletBadge}><span>💰</span>{fmt(stats.walletBalance)}</div>
+          <button onClick={() => setShowTopup(true)} style={{ padding: '6px 14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>+ Top Up</button>
           <button onClick={() => { localStorage.clear(); navigate('/corporate'); }} style={styles.btnDanger}>Logout</button>
         </div>
       </div>
 
-      {/* TABS */}
       <div style={styles.tabBar}>
         {['📊 Overview','👥 Employees','📤 Bulk Upload','🎯 Bulk Book','📋 Bookings','💰 Tax','📊 Reports'].map((t, i) => {
           const ids = ['dashboard','employees','bulk','bulkbook','bookings','tax','reports'];
@@ -113,7 +138,6 @@ const CorporateHRDashboard = () => {
 
       <div style={{ maxWidth: 1300, margin: '0 auto', padding: '1.5rem' }}>
 
-        {/* ============ OVERVIEW ============ */}
         {activeTab === 'dashboard' && (
           <>
             <div style={styles.kpiGrid}>
@@ -122,99 +146,56 @@ const CorporateHRDashboard = () => {
               <KPI icon="💰" label="Wallet" value={fmt(stats.walletBalance)} color="#8b5cf6" />
               <KPI icon="📋" label="Bookings" value={stats.recentBookings?.length || 0} color="#f59e0b" />
             </div>
-
             <div style={styles.row2col}>
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>📊 Service Utilization</h3>
-                {Object.keys(stats.utilization || {}).length === 0 ? <Empty text="No usage yet" /> : (
-                  <div style={styles.chipGrid}>
-                    {Object.entries(stats.utilization).map(([k, v]) => <Chip key={k} label={k} value={v} />)}
-                  </div>
-                )}
-              </div>
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>🏢 By Department</h3>
-                {Object.keys(stats.departmentBreakdown || {}).length === 0 ? <Empty text="No data" /> : (
-                  <div style={styles.chipGrid}>
-                    {Object.entries(stats.departmentBreakdown).map(([k, v]) => <Chip key={k} label={k} value={v} />)}
-                  </div>
-                )}
-              </div>
+              <div style={styles.card}><h3 style={styles.cardTitle}>📊 Service Utilization</h3>{Object.keys(stats.utilization || {}).length === 0 ? <Empty text="No usage yet" /> : <div style={styles.chipGrid}>{Object.entries(stats.utilization).map(([k, v]) => <Chip key={k} label={k} value={v} />)}</div>}</div>
+              <div style={styles.card}><h3 style={styles.cardTitle}>🏢 By Department</h3>{Object.keys(stats.departmentBreakdown || {}).length === 0 ? <Empty text="No data" /> : <div style={styles.chipGrid}>{Object.entries(stats.departmentBreakdown).map(([k, v]) => <Chip key={k} label={k} value={v} />)}</div>}</div>
             </div>
-
-            {stats.wellnessScores?.length > 0 && (
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>🧘 Employee Wellness Scores</h3>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  {stats.wellnessScores.slice(0, 6).map((w, i) => (
-                    <div key={i} style={{ textAlign: 'center', padding: 12, backgroundColor: '#f8fafc', borderRadius: 10, minWidth: 80 }}>
-                      <div style={{ fontSize: '1.8rem' }}>{w.score >= 80 ? '🟢' : w.score >= 50 ? '🟡' : '🔴'}</div>
-                      <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{w.score}%</div>
-                      <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{w.name}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {stats.monthlySpend?.length > 0 && (
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>📈 Monthly Spend</h3>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120, paddingTop: 10 }}>
-                  {stats.monthlySpend.map((m, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: 'center' }}>
-                      <div style={{ backgroundColor: '#2563eb', height: `${Math.max(4, (m.amount / Math.max(...stats.monthlySpend.map(x => x.amount))) * 100)}%`, borderRadius: '6px 6px 0 0', minWidth: 24 }} />
-                      <div style={{ fontSize: '0.65rem', color: '#6b7280', marginTop: 4 }}>{m.month}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div style={styles.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <h3 style={styles.cardTitle}>🕐 Recent Bookings</h3>
-                <button onClick={() => setActiveTab('bookings')} style={styles.link}>View All →</button>
-              </div>
-              {stats.recentBookings?.length > 0 ? <Table data={stats.recentBookings.slice(0, 5)} cols={['employeeName','serviceType','amount','status']} fmt={fmt} badge={badge} /> : <Empty text="No bookings yet" />}
-            </div>
+            <div style={styles.card}><div style={{ display: 'flex', justifyContent: 'space-between' }}><h3 style={styles.cardTitle}>🕐 Recent Bookings</h3><button onClick={() => setActiveTab('bookings')} style={styles.link}>View All →</button></div>{stats.recentBookings?.length > 0 ? <Table data={stats.recentBookings.slice(0, 5)} cols={['employeeName','serviceType','amount','status']} fmt={fmt} badge={badge} /> : <Empty text="No bookings yet" />}</div>
           </>
         )}
 
-        {/* ============ EMPLOYEES ============ */}
         {activeTab === 'employees' && (
           <div style={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <h2 style={{ fontWeight: 700 }}>👥 All Employees ({employees.length})</h2>
-              <button onClick={() => setActiveTab('bulk')} style={styles.btnPrimary}>📤 Bulk Upload</button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setShowAddEmployee(!showAddEmployee)} style={styles.btnPrimary}>+ Add Employee</button>
+                <button onClick={() => setActiveTab('bulk')} style={{ ...styles.btnPrimary, backgroundColor: '#6b7280' }}>📤 Bulk Upload</button>
+              </div>
             </div>
+            {showAddEmployee && (
+              <div style={{ backgroundColor: '#f9fafb', padding: '1.5rem', borderRadius: 10, marginBottom: 16, border: '1px solid #e5e7eb' }}>
+                <h4 style={{ fontWeight: 700, marginBottom: 12 }}>➕ Add New Employee</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                  <input placeholder="Full Name *" value={empForm.name} onChange={e => setEmpForm({...empForm, name: e.target.value})} style={styles.input} />
+                  <input placeholder="Email *" value={empForm.email} onChange={e => setEmpForm({...empForm, email: e.target.value})} style={styles.input} />
+                  <input placeholder="Phone *" value={empForm.phone} onChange={e => setEmpForm({...empForm, phone: e.target.value})} style={styles.input} />
+                  <input placeholder="Department" value={empForm.department} onChange={e => setEmpForm({...empForm, department: e.target.value})} style={styles.input} />
+                  <input placeholder="Designation" value={empForm.designation} onChange={e => setEmpForm({...empForm, designation: e.target.value})} style={styles.input} />
+                  <input placeholder="Employee ID" value={empForm.employeeId} onChange={e => setEmpForm({...empForm, employeeId: e.target.value})} style={styles.input} />
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
+                  <button onClick={handleAddEmployee} style={styles.btnSuccess}>💾 Save Employee</button>
+                  <button onClick={() => setShowAddEmployee(false)} style={{ ...styles.btnDanger, backgroundColor: '#6b7280' }}>Cancel</button>
+                </div>
+              </div>
+            )}
             {employees.length === 0 ? <Empty text="No employees" /> : <Table data={employees} cols={['name','email','phone','department','designation']} statusCol="isActive" badge={badge} fmt={fmt} />}
           </div>
         )}
 
-        {/* ============ BULK UPLOAD ============ */}
         {activeTab === 'bulk' && (
           <div style={styles.card}>
-            <h2 style={{ fontWeight: 700, marginBottom: 16 }}>📤 Bulk Employee Upload</h2>
-            <p style={{ color: '#6b7280', marginBottom: 16 }}>Upload a CSV file. Format: name,email,phone,department,designation</p>
-            <input type="file" accept=".csv" onChange={async (e) => {
-              const f = e.target.files[0]; if (!f) return;
-              const txt = await f.text();
-              const lines = txt.split('\n').filter(l => l.trim());
-              const heads = lines[0].split(',').map(h => h.trim().toLowerCase());
-              const emps = lines.slice(1).map(l => {
-                const vals = l.split(',').map(v => v.trim());
-                const obj = {}; heads.forEach((h, i) => obj[h] = vals[i] || ''); return obj;
-              }).filter(x => x.name && x.email);
-              try {
-                await axios.post(`${API_BASE}/api/corporate/hr/employees`, { employees: emps }, cfg);
-                setMessage(`✅ ${emps.length} employees uploaded`); loadAll();
-              } catch (err) { setMessage('❌ Upload failed'); }
-            }} style={{ padding: 10, border: '2px dashed #d1d5db', borderRadius: 10, width: '100%', cursor: 'pointer' }} />
+            <h2 style={{ fontWeight: 700, marginBottom: 8 }}>📤 Bulk Employee Upload</h2>
+            <p style={{ color: '#6b7280', marginBottom: 12 }}>Download the template, fill employee details, and upload the CSV.</p>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+              <button onClick={downloadTemplate} style={{ ...styles.btnPrimary, backgroundColor: '#6b7280' }}>📥 Download Template</button>
+            </div>
+            <p style={{ color: '#6b7280', marginBottom: 16, fontSize: '0.85rem' }}>CSV format: name, email, phone, department, designation, employeeId</p>
+            <input type="file" accept=".csv" onChange={handleBulkUpload} style={{ padding: 10, border: '2px dashed #d1d5db', borderRadius: 10, width: '100%', cursor: 'pointer' }} />
           </div>
         )}
 
-        {/* ============ BULK BOOKING ============ */}
         {activeTab === 'bulkbook' && (
           <div style={styles.card}>
             <h2 style={{ fontWeight: 700, marginBottom: 8 }}>🎯 Bulk Booking</h2>
@@ -248,15 +229,10 @@ const CorporateHRDashboard = () => {
           </div>
         )}
 
-        {/* ============ BOOKINGS ============ */}
         {activeTab === 'bookings' && (
-          <div style={styles.card}>
-            <h2 style={{ fontWeight: 700, marginBottom: 16 }}>📋 Bookings & Usage</h2>
-            {stats.recentBookings?.length > 0 ? <Table data={stats.recentBookings} cols={['employeeName','serviceType','providerName','amount','status']} fmt={fmt} badge={badge} dateCol="createdAt" /> : <Empty text="No bookings yet" />}
-          </div>
+          <div style={styles.card}><h2 style={{ fontWeight: 700, marginBottom: 16 }}>📋 Bookings & Usage</h2>{stats.recentBookings?.length > 0 ? <Table data={stats.recentBookings} cols={['employeeName','serviceType','providerName','amount','status']} fmt={fmt} badge={badge} dateCol="createdAt" /> : <Empty text="No bookings yet" />}</div>
         )}
 
-        {/* ============ TAX ============ */}
         {activeTab === 'tax' && (
           <div style={styles.card}>
             <h2 style={{ fontWeight: 700, marginBottom: 16 }}>💰 Tax Savings Calculator</h2>
@@ -268,7 +244,6 @@ const CorporateHRDashboard = () => {
           </div>
         )}
 
-        {/* ============ REPORTS ============ */}
         {activeTab === 'reports' && (
           <div style={styles.card}>
             <h2 style={{ fontWeight: 700, marginBottom: 16 }}>📊 Reports & Exports</h2>
@@ -287,33 +262,15 @@ const CorporateHRDashboard = () => {
 
       </div>
 
-      {/* 🆕 TOP-UP MODAL */}
       {showTopup && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 28, maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 28, maxWidth: 420, width: '90%' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 6 }}>💰 Top Up Wallet</h3>
-            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: 16 }}>Add funds to your company wallet for employee bookings</p>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: 6 }}>Amount (₹)</label>
-              <input 
-                type="number" 
-                placeholder="Enter amount" 
-                value={topupAmount} 
-                onChange={e => setTopupAmount(e.target.value)} 
-                style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: '1.1rem', outline: 'none', boxSizing: 'border-box' }}
-                autoFocus
-              />
-              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                {[5000, 10000, 25000, 50000, 100000].map(amt => (
-                  <button key={amt} onClick={() => setTopupAmount(amt.toString())} style={{ padding: '6px 14px', border: '1px solid #e2e8f0', borderRadius: 20, background: topupAmount === amt.toString() ? '#2563eb' : '#fff', color: topupAmount === amt.toString() ? '#fff' : '#475569', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500 }}>₹{amt.toLocaleString('en-IN')}</button>
-                ))}
-              </div>
-            </div>
+            <input type="number" placeholder="Enter amount" value={topupAmount} onChange={e => setTopupAmount(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: '1.1rem', outline: 'none', boxSizing: 'border-box', marginBottom: 16 }} autoFocus />
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={handleTopup} disabled={!topupAmount || topupAmount <= 0} style={{ flex: 1, padding: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', opacity: (!topupAmount || topupAmount <= 0) ? 0.6 : 1 }}>✅ Add Funds</button>
-              <button onClick={() => { setShowTopup(false); setTopupAmount(''); }} style={{ flex: 1, padding: '12px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem' }}>Cancel</button>
+              <button onClick={handleTopup} disabled={!topupAmount || topupAmount <= 0} style={{ flex: 1, padding: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', opacity: (!topupAmount || topupAmount <= 0) ? 0.6 : 1 }}>✅ Add Funds</button>
+              <button onClick={() => { setShowTopup(false); setTopupAmount(''); }} style={{ flex: 1, padding: '12px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
             </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: 12, textAlign: 'center' }}>🔒 Secured by Razorpay • Funds added instantly</p>
           </div>
         </div>
       )}
@@ -321,7 +278,6 @@ const CorporateHRDashboard = () => {
   );
 };
 
-/* ========== REUSABLE COMPONENTS ========== */
 const KPI = ({ icon, label, value, color }) => (
   <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: `4px solid ${color}` }}>
     <div style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: 6 }}>{icon} {label}</div>
@@ -360,7 +316,7 @@ const styles = {
   header: { background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', padding: '1.5rem 2rem', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
   walletBadge: { padding: '0.5rem 1.25rem', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 10, fontWeight: 700, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 6 },
   tabBar: { backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0.5rem 2rem', display: 'flex', gap: 4, flexWrap: 'wrap', overflowX: 'auto' },
-  tab: { padding: '0.6rem 1.25rem', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap', transition: 'all .2s' },
+  tab: { padding: '0.6rem 1.25rem', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap' },
   kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' },
   row2col: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1.5rem' },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: '1.5rem' },
