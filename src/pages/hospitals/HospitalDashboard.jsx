@@ -595,6 +595,47 @@ const handleLabPriceUpload = async (e) => {
     finally { setLoading(false); }
   };
 
+  const handleDownloadPackageTemplate = () => {
+    const token = localStorage.getItem('providerToken');
+    const baseURL = 'https://hospital-backend-production-f1b1.up.railway.app';
+    const link = document.createElement('a');
+    link.href = `${baseURL}/api/packages/template?token=${token}`;
+    link.download = 'package_template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+const handlePackageUpload = async (e) => {
+    e.preventDefault();
+    if (!uploadFile) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('providerToken');
+      const fd = new FormData(); fd.append('file', uploadFile);
+      const r = await api.post('/packages/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+      });
+      setUploadMessage(`✅ ${r.data.message}`);
+      setUploadFile(null);
+      loadData();
+    } catch(e) { 
+      setUploadMessage('❌ ' + (e.response?.data?.message || 'Upload failed')); 
+    }
+    finally { setLoading(false); }
+  };
+
+const handleDeletePackage = async (packageId) => {
+    if (!window.confirm('Delete this package?')) return;
+    try {
+      const token = localStorage.getItem('providerToken');
+      await api.delete(`/packages/${packageId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      loadData();
+    } catch(e) { alert('Failed to delete'); }
+  };
+
   const availableSchemes = [
     { value: 'ayushman', label: 'Ayushman Bharat (PM-JAY)' },
     { value: 'cghs', label: 'CGHS' }, { value: 'esi', label: 'ESI' },
@@ -931,34 +972,64 @@ case 'beds': return (
       // PACKAGES
       // ============================================
       case 'packages': return (
-        <div>
-          <h2>📦 Health Packages ({healthPackages.length})</h2>
-          <button onClick={() => setShowPackageForm(true)} style={{ ...btnGreen, marginBottom: '1rem' }}>+ Add Package</button>
-          {showPackageForm && (
-            <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <input placeholder="Package Name *" value={packageForm.name} onChange={e => setPackageForm({...packageForm, name: e.target.value})} style={inp} />
-              <input placeholder="Tests (comma separated)" value={packageForm.included_tests} onChange={e => setPackageForm({...packageForm, included_tests: e.target.value})} style={inp} />
-              <input placeholder="Price (₹)" type="number" value={packageForm.price} onChange={e => setPackageForm({...packageForm, price: e.target.value})} style={inp} />
-              <input placeholder="Discount %" type="number" value={packageForm.discount} onChange={e => setPackageForm({...packageForm, discount: e.target.value})} style={inp} />
-              <select value={packageForm.for_gender} onChange={e => setPackageForm({...packageForm, for_gender: e.target.value})} style={inp}><option>All</option><option>Male</option><option>Female</option></select>
-              <div><button onClick={addPackage} style={btnGreen}>Add</button><button onClick={() => setShowPackageForm(false)} style={btnGray}>Cancel</button></div>
-            </div>
-          )}
-          <div style={{ display: 'grid', gap: '0.5rem' }}>
-            {healthPackages.map((p, i) => (
-              <div key={i} style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <strong>{p.name}</strong>
-                  <div style={{ fontSize: '0.8rem', color: '#888' }}>{(p.included_tests || []).join(', ')}</div>
-                  <div>₹{p.price} {p.discount > 0 && <span style={{ color: '#10b981' }}>({p.discount}% off)</span>}</div>
+  <div>
+    <h2>📦 Health Packages</h2>
+    <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '1rem' }}>
+      Create health checkup packages. Download template, fill package details, and upload.
+    </p>
+    
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ backgroundColor: '#eff6ff', borderRadius: '1rem', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem' }}>📥</div>
+        <h3>Download Package Template</h3>
+        <p style={{ fontSize: '0.85rem', color: '#666' }}>Excel with example package</p>
+        <button onClick={handleDownloadPackageTemplate} style={{ padding: '0.75rem 1.5rem', backgroundColor: '#1976d2', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>
+          📥 Download Template
+        </button>
+      </div>
+      
+      <div style={{ backgroundColor: '#f0fdf4', borderRadius: '1rem', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem' }}>📤</div>
+        <h3>Upload Package Excel</h3>
+        <p style={{ fontSize: '0.85rem', color: '#666' }}>System matches tests and calculates pricing</p>
+        <form onSubmit={handlePackageUpload}>
+          <input type="file" accept=".xlsx,.xls" onChange={e => setUploadFile(e.target.files[0])} 
+            style={{ display: 'block', margin: '0 auto 0.5rem' }} />
+          <button type="submit" disabled={loading || !uploadFile}
+            style={{ padding: '0.75rem 1.5rem', backgroundColor: loading ? '#ccc' : '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
+            {loading ? 'Uploading...' : '📤 Upload Packages'}
+          </button>
+        </form>
+        {uploadMessage && <p style={{ marginTop: '0.5rem', color: uploadMessage.includes('✅') ? '#10b981' : '#ef4444' }}>{uploadMessage}</p>}
+      </div>
+    </div>
+
+    {/* Existing Packages */}
+    {healthPackages.length > 0 && (
+      <div>
+        <h3>Your Packages ({healthPackages.length})</h3>
+        <div style={{ display: 'grid', gap: '0.5rem' }}>
+          {healthPackages.map((p, i) => (
+            <div key={i} style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <strong>{p.name}</strong>
+                <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                  {(p.includes_names || p.includes || []).slice(0, 5).join(', ')}{(p.includes_names || p.includes || []).length > 5 ? '...' : ''}
                 </div>
-                <button onClick={() => { setHealthPackages(healthPackages.filter((_, idx) => idx !== i)); }} style={del}>✕</button>
+                <div style={{ marginTop: '4px' }}>
+                  <span style={{ fontWeight: 'bold', color: '#10b981' }}>₹{p.discounted_price || p.price}</span>
+                  {p.discount_percentage > 0 && <span style={{ fontSize: '0.8rem', color: '#ef4444', marginLeft: '8px' }}>({p.discount_percentage}% off)</span>}
+                  {p.original_price > p.discounted_price && <span style={{ fontSize: '0.8rem', color: '#999', textDecoration: 'line-through', marginLeft: '8px' }}>₹{p.original_price}</span>}
+                </div>
               </div>
-            ))}
-          </div>
-          <button onClick={savePackages} style={{ marginTop: '1rem', ...btnGreen, padding: '0.75rem 2rem' }}>💾 Save</button>
+              <button onClick={() => handleDeletePackage(p._id)} style={del}>✕</button>
+            </div>
+          ))}
         </div>
-      );
+      </div>
+    )}
+  </div>
+);
 
       // ============================================
       // OPD PRICING
