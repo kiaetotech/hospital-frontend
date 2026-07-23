@@ -317,9 +317,10 @@ const HospitalsList = () => {
                   <div style={{ flex: 1 }}>
                     <h2 style={cardStyles.hospitalName}>{h.name}</h2>
                     <div style={cardStyles.accreditationRow}>
-                      {(h.accreditations || []).map(a => (
-                        <span key={a} style={cardStyles.accreditationBadge}>{a}</span>
-                      ))}
+                      {(h.accreditations || []).map((a, i) => {
+  const label = typeof a === 'string' ? a : (a.name || a.issuing_body || a.body || 'Accredited');
+  return <span key={i} style={cardStyles.accreditationBadge}>{label}</span>;
+})}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
