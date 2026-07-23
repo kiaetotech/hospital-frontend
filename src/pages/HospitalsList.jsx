@@ -27,6 +27,22 @@ const HospitalsList = () => {
   const [diseaseCategories, setDiseaseCategories] = useState({});
   const itemsPerPage = 5;
 
+  // 🆕 COMPARE FEATURE
+  const [compareList, setCompareList] = useState([]);
+
+  const toggleCompare = (hospitalId) => {
+    setCompareList(prev => {
+      if (prev.includes(hospitalId)) {
+        return prev.filter(id => id !== hospitalId);
+      }
+      if (prev.length >= 3) {
+        alert('You can compare up to 3 hospitals');
+        return prev;
+      }
+      return [...prev, hospitalId];
+    });
+  };
+
   const [filters, setFilters] = useState({
     scheme: '', insurance: '', accreditation: '', specialty: '', disease: '',
     minRating: 0, opdFeeMin: '', opdFeeMax: '',
@@ -127,7 +143,6 @@ const HospitalsList = () => {
     finally { setLoading(false); }
   };
 
-  // 🟢 RESTORED: Hospital Status (Green Light System)
   const fetchHospitalStatuses = async (hospitalIds) => {
     try {
       const res = await api.post('/hospital-status/bulk', { hospitalIds });
@@ -135,7 +150,6 @@ const HospitalsList = () => {
     } catch (err) {}
   };
 
-  // 🟢 RESTORED: Wait Time Reporting
   const reportWaitTime = async (hospitalId, waitMinutes) => {
     try {
       await api.post(`/hospital-status/${hospitalId}/wait-time`, { waitMinutes });
@@ -250,6 +264,26 @@ const HospitalsList = () => {
               <button type="button" key={opt.value} onClick={() => setSortBy(opt.value)} style={{ padding: '0.45rem 0.9rem', backgroundColor: sortBy === opt.value ? '#10b981' : '#f3f4f6', color: sortBy === opt.value ? 'white' : '#374151', border: sortBy === opt.value ? 'none' : '1px solid #e5e7eb', borderRadius: '2rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: sortBy === opt.value ? 'bold' : 'normal', transition: 'all 0.2s' }}>{opt.label}</button>
             ))}
             <div style={{ flex: 1 }}></div>
+            
+            {/* 🆕 COMPARE BUTTON */}
+            <button 
+              onClick={() => compareList.length >= 2 && navigate('/compare-hospitals', { state: { hospitalIds: compareList } })}
+              disabled={compareList.length < 2}
+              style={{
+                padding: '0.5rem 1.2rem',
+                backgroundColor: compareList.length >= 2 ? '#6366f1' : '#e5e7eb',
+                color: compareList.length >= 2 ? 'white' : '#9ca3af',
+                border: 'none',
+                borderRadius: '2rem',
+                cursor: compareList.length >= 2 ? 'pointer' : 'not-allowed',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
+              }}>
+              ⚖️ Compare ({compareList.length}/3)
+            </button>
+            
             {activeFilterCount > 0 && (
               <button type="button" onClick={clearFilters} style={{ padding: '0.45rem 1rem', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '2rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>✕ Clear All ({activeFilterCount})</button>
             )}
@@ -284,7 +318,9 @@ const HospitalsList = () => {
             <button type="button" onClick={clearFilters} style={{ padding: '0.6rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>Clear All Filters</button>
           </div>
         ) : (
-          paginatedHospitals.map(h => {
+          // 🆕 GRID LAYOUT
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1rem' }}>
+          {paginatedHospitals.map(h => {
             const distance = userLocation && h.location ? calculateDistance(userLocation.lat, userLocation.lng, h.location.lat, h.location.lng) : null;
             const insList = h.insurance_accepted || [];
             const schList = h.schemes_accepted || [];
@@ -297,8 +333,8 @@ const HospitalsList = () => {
             const facs = h.facilities || [];
             const bedBadge = getBedTimestampBadge(h);
             const isSaved = savedHospitals[h._id];
+            const isCompared = compareList.includes(h._id);
             
-            // 🟢 RESTORED: Green Light Status
             const status = hospitalStatuses[h._id];
             const isStale = status?.isStale !== false;
             const sc = { 
@@ -310,17 +346,41 @@ const HospitalsList = () => {
             const cfg = sc[status?.status] || sc.unknown;
 
             return (
-              <div key={h._id} style={cardStyles.container}>
+              <div key={h._id} style={{
+                ...cardStyles.container,
+                marginBottom: '0',
+                position: 'relative',
+                border: isCompared ? '2px solid #6366f1' : '1px solid #e5e7eb',
+                boxShadow: isCompared ? '0 0 0 2px rgba(99,102,241,0.2)' : '0 2px 8px rgba(0,0,0,0.06)'
+              }}>
 
                 {/* ═══ HEADER ROW ═══ */}
                 <div style={cardStyles.headerRow}>
-                  <div style={{ flex: 1 }}>
+                  {/* 🆕 COMPARE CHECKBOX */}
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 2 }}>
+                    <label style={{ 
+                      display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', 
+                      fontSize: '0.7rem', color: isCompared ? '#6366f1' : '#9ca3af', 
+                      fontWeight: isCompared ? 'bold' : 'normal',
+                      backgroundColor: isCompared ? '#eef2ff' : '#f9fafb',
+                      padding: '3px 8px', borderRadius: '4px', border: isCompared ? '1px solid #6366f1' : '1px solid #e5e7eb'
+                    }}>
+                      <input 
+                        type="checkbox" 
+                        checked={isCompared} 
+                        onChange={() => toggleCompare(h._id)}
+                        style={{ transform: 'scale(1.1)', accentColor: '#6366f1', cursor: 'pointer' }}
+                      />
+                      {isCompared ? 'Selected' : 'Compare'}
+                    </label>
+                  </div>
+                  <div style={{ flex: 1, marginLeft: '85px' }}>
                     <h2 style={cardStyles.hospitalName}>{h.name}</h2>
                     <div style={cardStyles.accreditationRow}>
                       {(h.accreditations || []).map((a, i) => {
-  const label = typeof a === 'string' ? a : (a.name || a.issuing_body || a.body || 'Accredited');
-  return <span key={i} style={cardStyles.accreditationBadge}>{label}</span>;
-})}
+                        const label = typeof a === 'string' ? a : (a.name || a.issuing_body || a.body || 'Accredited');
+                        return <span key={i} style={cardStyles.accreditationBadge}>{label}</span>;
+                      })}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -341,7 +401,7 @@ const HospitalsList = () => {
                   {distance && <span style={{ fontWeight: 'bold', color: '#3b82f6' }}> • {distance} km away</span>}
                 </div>
 
-                {/* 🟢 RESTORED: Green Light Status Bar */}
+                {/* 🟢 Green Light Status Bar */}
                 <div style={{ ...cardStyles.statusBar, backgroundColor: isStale ? '#fef3c7' : cfg.bg, border: `1px solid ${isStale ? '#f59e0b' : cfg.color}` }}>
                   <span style={{ color: isStale ? '#92400e' : cfg.color, fontWeight: 'bold', fontSize: '0.8rem' }}>
                     {isStale ? '⚠️ Status Unverified' : `${cfg.icon} ${cfg.label}`}
@@ -448,10 +508,10 @@ const HospitalsList = () => {
                   <div style={cardStyles.pricingLeft}>
                     <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>📋 OPD Consultation</div>
                     <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#10b981' }}>
-                      ₹{p.consultation || 'N/A'}
-                      {p.consultation > 0 && (
+                      ₹{p.opd_general || p.consultation || 'N/A'}
+                      {(p.opd_general || p.consultation) > 0 && (
                         <span style={{ fontSize: '0.75rem', color: '#059669', marginLeft: '6px' }}>
-                          (Save ₹{Math.round(p.consultation * 0.1)} = ₹{Math.round(p.consultation * 0.9)})
+                          (Save ₹{Math.round((p.opd_general || p.consultation) * 0.1)} = ₹{Math.round((p.opd_general || p.consultation) * 0.9)})
                         </span>
                       )}
                     </div>
@@ -459,10 +519,10 @@ const HospitalsList = () => {
                   <div style={cardStyles.pricingRight}>
                     <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>🏥 Admission/day</div>
                     <div style={{ fontSize: '0.85rem', color: '#374151' }}>
-                      {p.icu_bed_per_day && <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>ICU ₹{p.icu_bed_per_day}</span>}
-                      {p.general_bed_per_day && <span> | General ₹{p.general_bed_per_day}</span>}
-                      {p.semi_private_per_day && <span> | Semi-Pvt ₹{p.semi_private_per_day}</span>}
-                      {p.private_per_day && <span> | Private ₹{p.private_per_day}</span>}
+                      {p.ipd_icu && <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>ICU ₹{p.ipd_icu}</span>}
+                      {p.ipd_general_ward && <span> | General ₹{p.ipd_general_ward}</span>}
+                      {p.ipd_semi_private && <span> | Semi-Pvt ₹{p.ipd_semi_private}</span>}
+                      {p.ipd_private_room && <span> | Private ₹{p.ipd_private_room}</span>}
                     </div>
                   </div>
                 </div>
@@ -495,7 +555,7 @@ const HospitalsList = () => {
                   </div>
                 )}
 
-                {/* 🟢 RESTORED: Ratings Breakdown */}
+                {/* 🟢 Ratings Breakdown */}
                 {h.ratings?.breakdown && (
                   <div style={cardStyles.ratingsBreakdown}>
                     <span>👨‍⚕️ Doctor: {h.ratings.breakdown.doctor_communication || h.ratings.breakdown.doctor || 'N/A'}</span>
@@ -506,7 +566,7 @@ const HospitalsList = () => {
                   </div>
                 )}
 
-                {/* 🟢 RESTORED: Featured Review */}
+                {/* 🟢 Featured Review */}
                 {h.featured_review?.text && (
                   <div style={cardStyles.featuredReview}>
                     💬 "{h.featured_review.text}" - {h.featured_review.author}
@@ -531,7 +591,6 @@ const HospitalsList = () => {
                   <button onClick={() => toggleSaveHospital(h._id)} style={cardStyles.saveBtn}>
                     {isSaved ? '🔖 Saved' : '🔖 Save'}
                   </button>
-                  {/* 🟢 RESTORED: Report Wait Time Button */}
                   <button onClick={() => { const m = prompt('How many minutes did you wait? (Optional - helps other patients)'); if (m && !isNaN(m)) reportWaitTime(h._id, parseInt(m)); }} style={cardStyles.reportWaitBtn}>
                     + Report Wait
                   </button>
@@ -539,7 +598,8 @@ const HospitalsList = () => {
 
               </div>
             );
-          })
+          })}
+          </div>
         )}
 
         {totalPages > 1 && (
@@ -577,7 +637,6 @@ const cardStyles = {
   ratingRow: { display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' },
   cashlessBadge: { backgroundColor: '#d1fae5', color: '#065f46', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 'bold', marginTop: '4px', display: 'inline-block' },
   locationRow: { color: '#6b7280', fontSize: '0.85rem', marginTop: '8px', paddingBottom: '8px', borderBottom: '1px solid #f3f4f6' },
-  // 🟢 RESTORED: Status Bar
   statusBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px', borderRadius: '8px', margin: '8px 0', flexWrap: 'wrap', gap: '6px' },
   section: { marginTop: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap' },
   pillRow: { display: 'inline-flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' },
@@ -595,9 +654,7 @@ const cardStyles = {
   bedTimestampBadge: { fontSize: '0.7rem', fontWeight: 'bold', padding: '3px 10px', borderRadius: '9999px', marginLeft: 'auto' },
   facilitiesRow: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f3f4f6' },
   facilityIcon: { fontSize: '0.78rem', color: '#374151', backgroundColor: '#f3f4f6', padding: '4px 10px', borderRadius: '6px', fontWeight: '500' },
-  // 🟢 RESTORED: Ratings Breakdown
   ratingsBreakdown: { display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '10px', padding: '8px 0', fontSize: '0.72rem', color: '#6b7280', borderTop: '1px solid #f3f4f6' },
-  // 🟢 RESTORED: Featured Review
   featuredReview: { backgroundColor: '#fef3c7', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem', color: '#92400e', marginTop: '10px', fontStyle: 'italic', borderLeft: '3px solid #f59e0b' },
   actionRow: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '12px', borderTop: '2px solid #f3f4f6' },
   bookOpdBtn: { padding: '10px 18px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', cursor: 'pointer', flex: '1 1 auto', minWidth: '130px' },
@@ -608,7 +665,6 @@ const cardStyles = {
   emergencyBadge: { backgroundColor: '#dc2626', color: 'white', padding: '3px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' },
   callNowBtn: { padding: '6px 14px', backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'none' },
   saveBtn: { padding: '6px 14px', backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', marginLeft: 'auto' },
-  // 🟢 RESTORED: Report Wait Time Button
   reportWaitBtn: { fontSize: '0.65rem', color: '#6366f1', background: 'none', border: '1px dashed #6366f1', borderRadius: '6px', cursor: 'pointer', padding: '4px 10px', fontWeight: '500' },
 };
 

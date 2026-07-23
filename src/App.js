@@ -6,6 +6,7 @@ import ComingSoon from './pages/ComingSoon';
 import SearchResultsPage from './pages/SearchResultsPage';
 import HospitalsList from './pages/HospitalsList';
 import HospitalSimpleDetails from './pages/HospitalSimpleDetails';
+import CompareHospitals from './pages/CompareHospitals';
 import EmergencySearch from './pages/EmergencySearch';
 import BookOPD from './pages/BookOPD';
 import BookAdmission from './pages/BookAdmission';
@@ -233,6 +234,7 @@ function App() {
           {/* HOSPITALS TAG */}
           <Route path="/hospitals" element={<HospitalsList />} />
           <Route path="/hospital-info/:id" element={<HospitalSimpleDetails />} />
+	  <Route path="/compare-hospitals" element={<CompareHospitals />} />
           <Route path="/emergency-search" element={<EmergencySearch />} />
           <Route path="/book-opd/:id" element={<BookOPD />} />
           <Route path="/book-admission/:id" element={<BookAdmission />} />
