@@ -188,6 +188,10 @@ const HospitalsList = () => {
     localStorage.setItem('savedHospitals', JSON.stringify(updated));
   };
 
+  const getSpecializationFromQuery = (query) => {
+    return query.toLowerCase().trim();
+  };
+
   const getMatchingDoctors = (hospital) => {
   if (!searchQuery) return [];
   const searchTerm = searchQuery.toLowerCase().trim();
@@ -203,17 +207,7 @@ const HospitalsList = () => {
   });
 };
 
-  const getMatchingDoctors = (hospital) => {
-  if (!searchQuery) return hospital.doctors || [];
-  const target = getSpecializationFromQuery(searchQuery);
-  if (!target) return hospital.doctors || [];
-  const docs = (hospital.doctors || []).filter(d => {
-  const spec = (d.specialization || '').toLowerCase();
-  return spec.includes(target) || target.includes(spec);
-});
-  return docs; // Only return matching doctors, empty array if none match
-};
-
+  
   // Get lowest doctor fee for pricing display
   const getLowestDoctorFee = (hospital) => {
     const docs = getMatchingDoctors(hospital);
