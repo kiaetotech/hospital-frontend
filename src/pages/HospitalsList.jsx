@@ -188,30 +188,29 @@ const HospitalsList = () => {
     localStorage.setItem('savedHospitals', JSON.stringify(updated));
   };
 
-  const getSpecializationFromQuery = (query) => {
-    const q = query.toLowerCase();
-    if (q.includes('heart') || q.includes('cardiac')) return 'cardiologist';
-    if (q.includes('brain') || q.includes('stroke') || q.includes('neuro')) return 'neurologist';
-    if (q.includes('bone') || q.includes('joint') || q.includes('ortho')) return 'orthopedic';
-    if (q.includes('kidney') || q.includes('renal')) return 'nephrologist';
-    if (q.includes('cancer') || q.includes('oncology')) return 'oncologist';
-    if (q.includes('skin') || q.includes('derma')) return 'dermatologist';
-    if (q.includes('eye') || q.includes('ophtha')) return 'ophthalmologist';
-    if (q.includes('ear') || q.includes('throat') || q.includes('ent')) return 'ent';
-    if (q.includes('pregnant') || q.includes('women') || q.includes('gyne')) return 'gynecologist';
-    if (q.includes('child') || q.includes('baby') || q.includes('pedi')) return 'pediatrician';
-    if (q.includes('diabetes') || q.includes('sugar')) return 'endocrinologist';
-    if (q.includes('lung') || q.includes('asthma')) return 'pulmonologist';
-    if (q.includes('mental') || q.includes('depression')) return 'psychiatrist';
-    if (q.includes('stomach') || q.includes('gas')) return 'gastroenterologist';
-    return null;
-  };
+  const getMatchingDoctors = (hospital) => {
+  if (!searchQuery) return [];
+  const searchTerm = searchQuery.toLowerCase().trim();
+  // Search in doctor's specialization, name, and hospital specialties
+  return (hospital.doctors || []).filter(d => {
+    const spec = (d.specialization || '').toLowerCase();
+    const name = (d.name || '').toLowerCase();
+    const hospitalSpecs = (hospital.specialties || []).map(s => s.toLowerCase());
+    return spec.includes(searchTerm) || 
+           name.includes(searchTerm) || 
+           searchTerm.includes(spec) ||
+           hospitalSpecs.some(s => s.includes(searchTerm) || searchTerm.includes(s));
+  });
+};
 
   const getMatchingDoctors = (hospital) => {
   if (!searchQuery) return hospital.doctors || [];
   const target = getSpecializationFromQuery(searchQuery);
   if (!target) return hospital.doctors || [];
-  const docs = (hospital.doctors || []).filter(d => (d.specialization || '').toLowerCase().includes(target));
+  const docs = (hospital.doctors || []).filter(d => {
+  const spec = (d.specialization || '').toLowerCase();
+  return spec.includes(target) || target.includes(spec);
+});
   return docs; // Only return matching doctors, empty array if none match
 };
 
