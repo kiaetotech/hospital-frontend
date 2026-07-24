@@ -199,11 +199,9 @@ const HospitalsList = () => {
   return (hospital.doctors || []).filter(d => {
     const spec = (d.specialization || '').toLowerCase();
     const name = (d.name || '').toLowerCase();
-    const hospitalSpecs = (hospital.specialties || []).map(s => s.toLowerCase());
     return spec.includes(searchTerm) || 
            name.includes(searchTerm) || 
-           searchTerm.includes(spec) ||
-           hospitalSpecs.some(s => s.includes(searchTerm) || searchTerm.includes(s));
+           searchTerm.includes(spec) ||      
   });
 };
 
