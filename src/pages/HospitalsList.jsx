@@ -208,12 +208,12 @@ const HospitalsList = () => {
   };
 
   const getMatchingDoctors = (hospital) => {
-    if (!searchQuery) return hospital.doctors || [];
-    const target = getSpecializationFromQuery(searchQuery);
-    if (!target) return hospital.doctors || [];
-    const docs = (hospital.doctors || []).filter(d => (d.specialization || '').toLowerCase().includes(target));
-    return docs.length > 0 ? docs : hospital.doctors || [];
-  };
+  if (!searchQuery) return hospital.doctors || [];
+  const target = getSpecializationFromQuery(searchQuery);
+  if (!target) return hospital.doctors || [];
+  const docs = (hospital.doctors || []).filter(d => (d.specialization || '').toLowerCase().includes(target));
+  return docs; // Only return matching doctors, empty array if none match
+};
 
   // Get lowest doctor fee for pricing display
   const getLowestDoctorFee = (hospital) => {
