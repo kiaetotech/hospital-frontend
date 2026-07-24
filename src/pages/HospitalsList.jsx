@@ -196,14 +196,13 @@ const HospitalsList = () => {
   if (!searchQuery) return [];
   const searchTerm = searchQuery.toLowerCase().trim();
   // Search in doctor's specialization, name, and hospital specialties
-  return (hospital.doctors || []).filter(d => {
+    return (hospital.doctors || []).filter(d => {
     const spec = (d.specialization || '').toLowerCase();
     const name = (d.name || '').toLowerCase();
     return spec.includes(searchTerm) || 
            name.includes(searchTerm) || 
-           searchTerm.includes(spec) ||      
+           searchTerm.includes(spec);
   });
-};
 
   
   // Get lowest doctor fee for pricing display
