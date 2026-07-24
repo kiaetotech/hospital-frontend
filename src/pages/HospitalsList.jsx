@@ -123,6 +123,7 @@ const HospitalsList = () => {
       const params = new URLSearchParams();
       if (searchQuery) params.append('q', searchQuery);
       if (city) params.append('city', city);
+      params.append('sort', sortBy);
       // Only send lat/lng if both are valid numbers
       if (userLocation && !isNaN(userLocation.lat) && !isNaN(userLocation.lng) && userLocation.lat !== 0 && userLocation.lng !== 0) { 
         params.append('lat', userLocation.lat); 
