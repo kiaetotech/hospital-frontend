@@ -629,6 +629,4 @@ const cardStyles = {
   reportWaitBtn: { fontSize: '0.65rem', color: '#6366f1', background: 'none', border: '1px dashed #6366f1', borderRadius: '5px', cursor: 'pointer', padding: '3px 8px', fontWeight: '500' },
 };
 
-};
-
 export default HospitalsList;
