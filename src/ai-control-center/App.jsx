@@ -1,18 +1,16 @@
-// D:\hospital-frontend\src\ai-control-center\App.tsx
+// D:\hospital-frontend\src\ai-control-center\App.jsx
 
 import React, { useState, useEffect } from 'react';
 import './styles.css';
 
 const API_BASE = 'https://hospital-backend-production-f1b1.up.railway.app';
 
-type TabType = 'dashboard' | 'agents' | 'health';
-
-const App: React.FC = () => {
-  const [agents, setAgents] = useState<any[]>([]);
-  const [health, setHealth] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+const App = () => {
+  const [agents, setAgents] = useState([]);
+  const [health, setHealth] = useState(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
 
   const fetchAgents = async () => {
     try {
@@ -20,7 +18,7 @@ const App: React.FC = () => {
       const data = await res.json();
       setAgents(data.agents || []);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       setError('Failed to fetch agents: ' + err.message);
     }
   };
@@ -31,7 +29,7 @@ const App: React.FC = () => {
       const data = await res.json();
       setHealth(data);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       setError('Failed to fetch health: ' + err.message);
     }
   };
@@ -43,7 +41,7 @@ const App: React.FC = () => {
       setLoading(false);
     };
     load();
-    const interval = setInterval(load, 10000); // Refresh every 10s
+    const interval = setInterval(load, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -92,7 +90,7 @@ const App: React.FC = () => {
 
       {activeTab === 'agents' && (
         <div className="agents-grid">
-          {agents.map((agent: any) => (
+          {agents.map((agent) => (
             <div key={agent.id} className="agent-card">
               <div className="agent-header">
                 <span className={`agent-status ${agent.status === 'online' ? 'online' : 'offline'}`}></span>
@@ -100,7 +98,7 @@ const App: React.FC = () => {
               </div>
               <p className="agent-role">Role: {agent.role}</p>
               <p className="agent-capabilities">
-                Capabilities: {agent.capabilities?.map((c: any) => c.name).join(', ') || 'None'}
+                Capabilities: {agent.capabilities?.map((c) => c.name).join(', ') || 'None'}
               </p>
             </div>
           ))}
