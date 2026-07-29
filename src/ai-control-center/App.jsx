@@ -5,203 +5,102 @@ import './styles.css';
 
 const API_BASE = 'https://hospital-backend-production-f1b1.up.railway.app';
 
-const AGENT_DETAILS = {
-  'HospitalAgent': {
-    description: 'Hospital Search & Booking',
-    capabilities: {
-      search_hospitals: 'Search hospitals by location, specialty',
-      compare_hospitals: 'Compare hospitals by ratings, cost',
-      check_beds: 'Check bed availability',
-      estimate_cost: 'Estimate treatment cost'
-    }
+const ORG_STRUCTURE = {
+  '🧠 CAIO "Athena"': {
+    level: 0,
+    agents: ['CEOAgent', 'StrategyAgent'],
+    codeName: 'Athena + Oracle',
+    role: 'Chief AI Officer + Chief Strategy Officer',
+    reportsTo: 'Human CEO',
+    color: '#ffd700'
   },
-  'DoctorAgent': {
-    description: 'Doctor Consultation & Booking',
-    capabilities: {
-      find_doctor: 'Find doctors by specialty, location',
-      book_consultation: 'Book online/in-person consultation',
-      check_availability: 'Check doctor availability',
-      get_doctor_profile: 'Get doctor profile details'
-    }
+  '📢 CMO "BrandPilot"': {
+    level: 1,
+    agents: ['MarketingAgent'],
+    codeName: 'BrandPilot',
+    role: 'Chief Marketing Officer',
+    reportsTo: 'CAIO Athena',
+    color: '#ff6b6b',
+    team: ['Content Generator', 'Campaign Manager', 'SEO Optimizer']
   },
-  'DiagnosticsAgent': {
-    description: 'Lab Tests & Diagnostics',
-    capabilities: {
-      find_lab: 'Find diagnostic labs',
-      compare_packages: 'Compare lab test packages',
-      book_test: 'Book lab tests',
-      interpret_results: 'Interpret test results using AI'
-    }
+  '💰 CFO "MoneyGuard"': {
+    level: 1,
+    agents: ['FinanceAgent', 'InsuranceAgent', 'CorporateHealthAgent'],
+    codeName: 'MoneyGuard',
+    role: 'Chief Financial Officer',
+    reportsTo: 'CAIO Athena',
+    color: '#4ecdc4',
+    team: ['EMI Calculator', 'Loan Advisor', 'Insurance Desk', 'Corporate Accounts']
   },
-  'AmbulanceAgent': {
-    description: 'Ambulance Dispatch & Tracking',
-    capabilities: {
-      dispatch_ambulance: 'Dispatch nearest ambulance',
-      track_ambulance: 'Track ambulance in real-time',
-      check_availability: 'Check ambulance availability',
-      calculate_eta: 'Calculate ETA'
-    }
+  '🏗️ COO "OpsMaster"': {
+    level: 1,
+    agents: ['WorkflowAgent', 'HospitalAgent', 'DoctorAgent', 'DiagnosticsAgent', 'AmbulanceAgent', 'CaregiverAgent', 'WellnessAgent'],
+    codeName: 'OpsMaster',
+    role: 'Chief Operations Officer',
+    reportsTo: 'CAIO Athena',
+    color: '#45b7d1',
+    team: ['MedSeek', 'DocFind', 'LabSmart', 'RescueAI', 'CareCom', 'HealWise']
   },
-  'InsuranceAgent': {
-    description: 'Health Insurance Comparison',
-    capabilities: {
-      compare_policies: 'Compare insurance policies',
-      check_claim: 'Check claim eligibility',
-      find_cashless_hospitals: 'Find cashless hospitals',
-      estimate_premium: 'Estimate premium'
-    }
+  '💻 CTO "TechBrain"': {
+    level: 1,
+    agents: ['SearchIntelligenceAgent', 'RecommendationAgent'],
+    codeName: 'TechBrain',
+    role: 'Chief Technology Officer',
+    reportsTo: 'CAIO Athena',
+    color: '#96ceb4',
+    team: ['Search Engine', 'Recommendation Engine', 'Autocomplete']
   },
-  'CaregiverAgent': {
-    description: 'Home Care & Caregiver Booking',
-    capabilities: {
-      find_caregiver: 'Find caregivers by type',
-      book_caregiver: 'Book caregiver services',
-      create_care_plan: 'Create care plan',
-      check_availability: 'Check caregiver availability'
-    }
+  '📊 CSO "DataSage"': {
+    level: 1,
+    agents: ['AnalyticsAgent'],
+    codeName: 'DataSage',
+    role: 'Chief Strategy Officer',
+    reportsTo: 'CAIO Athena',
+    color: '#ffeaa7',
+    team: ['KPI Dashboard', 'Report Generator', 'Trend Predictor']
   },
-  'WellnessAgent': {
-    description: 'Ayurveda, Homeopathy, Mental Wellness',
-    capabilities: {
-      find_practitioner: 'Find wellness practitioners',
-      book_consultation: 'Book consultation',
-      get_packages: 'Get wellness packages',
-      check_availability: 'Check availability'
-    }
-  },
-  'FinanceAgent': {
-    description: 'EMI, Loans, Payments',
-    capabilities: {
-      calculate_emi: 'Calculate EMI',
-      compare_emi_partners: 'Compare EMI partners',
-      apply_loan: 'Apply for health loan',
-      check_eligibility: 'Check loan eligibility'
-    }
-  },
-  'CRMAgent': {
-    description: 'Customer Relationship Management',
-    capabilities: {
-      track_customer: 'Track customer activity',
-      score_lead: 'Score and qualify leads',
-      segment_customers: 'Segment customers',
-      predict_churn: 'Predict churn risk'
-    }
-  },
-  'MarketingAgent': {
-    description: 'Content, Campaigns, SEO',
-    capabilities: {
-      generate_content: 'Generate SEO blogs, social posts',
-      create_campaign: 'Create marketing campaigns',
-      analyze_campaign: 'Analyze campaign performance',
-      suggest_optimizations: 'Suggest SEO optimizations'
-    }
-  },
-  'SupportAgent': {
-    description: 'Support Tickets, FAQs',
-    capabilities: {
-      classify_ticket: 'Classify support tickets',
-      answer_faq: 'Answer FAQs',
-      chat_support: 'Provide chat support',
-      route_ticket: 'Route tickets to departments'
-    }
-  },
-  'AnalyticsAgent': {
-    description: 'KPIs, Reports, Trends',
-    capabilities: {
-      generate_kpi: 'Generate KPIs',
-      generate_report: 'Generate reports',
-      predict_trend: 'Predict trends',
-      analyze_business: 'Analyze business health'
-    }
-  },
-  'CorporateHealthAgent': {
-    description: 'Corporate Health Plans',
-    capabilities: {
-      get_corporate_plans: 'Get corporate health plans',
-      compare_corporate_plans: 'Compare plans',
-      enroll_employees: 'Enroll employees',
-      get_enrollment_status: 'Get enrollment status'
-    }
-  },
-  'SearchIntelligenceAgent': {
-    description: 'Semantic Search, Autocomplete',
-    capabilities: {
-      semantic_search: 'Perform semantic search',
-      understand_query: 'Understand user queries',
-      rank_results: 'Rank search results',
-      autocomplete: 'Provide autocomplete suggestions'
-    }
-  },
-  'RecommendationAgent': {
-    description: 'Personalized Recommendations',
-    capabilities: {
-      personalize_recommendations: 'Generate personalized recommendations',
-      suggest_hospitals: 'Suggest hospitals',
-      suggest_doctors: 'Suggest doctors',
-      suggest_packages: 'Suggest packages'
-    }
-  },
-  'WorkflowAgent': {
-    description: 'Multi-step Workflow Orchestration',
-    capabilities: {
-      create_workflow: 'Create workflows',
-      execute_workflow: 'Execute workflows',
-      get_workflow_status: 'Get workflow status',
-      pause_workflow: 'Pause workflows'
-    }
-  },
-  'MemoryAgent': {
-    description: 'Memory Storage & Retrieval',
-    capabilities: {
-      store_memory: 'Store user memories',
-      retrieve_memory: 'Retrieve memories',
-      conversation_memory: 'Manage conversation context',
-      forget_memory: 'Remove/expire memories'
-    }
-  },
-  'NotificationAgent': {
-    description: 'Multi-channel Notifications',
-    capabilities: {
-      send_notification: 'Send notifications',
-      get_preferences: 'Get user preferences',
-      update_preferences: 'Update preferences',
-      get_history: 'Get notification history'
-    }
-  },
-  'CEOAgent': {
-    description: 'Strategic Coordination',
-    capabilities: {
-      create_strategic_plan: 'Create strategic plans',
-      coordinate_workflows: 'Coordinate multi-agent workflows',
-      generate_report: 'Generate reports',
-      allocate_resources: 'Allocate resources'
-    }
-  },
-  'StrategyAgent': {
-    description: 'Business Strategy Analysis',
-    capabilities: {
-      analyze_market: 'Analyze market trends',
-      competitive_analysis: 'Perform competitive analysis',
-      generate_insights: 'Generate strategic insights',
-      strategic_forecast: 'Forecast business trends'
-    }
+  '🤝 CCO "TrustKeeper"': {
+    level: 1,
+    agents: ['CRMAgent', 'SupportAgent', 'NotificationAgent', 'MemoryAgent'],
+    codeName: 'TrustKeeper',
+    role: 'Chief Customer Officer',
+    reportsTo: 'CAIO Athena',
+    color: '#dfe6e9',
+    team: ['HelpBot', 'NotifyMe', 'RecallAI', 'Lead Qualifier']
   }
 };
 
-const CATEGORIES = {
-  'Business Agents (Level 1)': ['HospitalAgent', 'DoctorAgent', 'DiagnosticsAgent', 'AmbulanceAgent', 'InsuranceAgent', 'CaregiverAgent', 'WellnessAgent'],
-  'Operations Agents (Level 2)': ['FinanceAgent', 'CRMAgent', 'MarketingAgent', 'SupportAgent', 'AnalyticsAgent', 'CorporateHealthAgent'],
-  'Intelligence Agents (Level 3)': ['SearchIntelligenceAgent', 'RecommendationAgent', 'WorkflowAgent', 'MemoryAgent', 'NotificationAgent'],
-  'Executive Agents (Level 4)': ['CEOAgent', 'StrategyAgent']
+const AGENT_CODENAMES = {
+  'CEOAgent': { name: 'Athena', emoji: '🧠', role: 'Chief AI Officer', dept: 'Executive' },
+  'StrategyAgent': { name: 'Oracle', emoji: '🔮', role: 'Chief Strategy Officer', dept: 'Executive' },
+  'MarketingAgent': { name: 'BrandPilot', emoji: '📢', role: 'CMO - Marketing', dept: 'Marketing' },
+  'FinanceAgent': { name: 'MoneyGuard', emoji: '💰', role: 'CFO - Finance', dept: 'Finance' },
+  'InsuranceAgent': { name: 'PolicyPro', emoji: '🛡️', role: 'Insurance Director', dept: 'Finance' },
+  'CorporateHealthAgent': { name: 'BizHealth', emoji: '🏢', role: 'Corporate Accounts Director', dept: 'Finance' },
+  'WorkflowAgent': { name: 'OpsMaster', emoji: '🏗️', role: 'COO - Operations', dept: 'Operations' },
+  'HospitalAgent': { name: 'MedSeek', emoji: '🏥', role: 'Hospital Operations', dept: 'Operations' },
+  'DoctorAgent': { name: 'DocFind', emoji: '👨‍⚕️', role: 'Medical Operations', dept: 'Operations' },
+  'DiagnosticsAgent': { name: 'LabSmart', emoji: '🔬', role: 'Lab Operations', dept: 'Operations' },
+  'AmbulanceAgent': { name: 'RescueAI', emoji: '🚑', role: 'Emergency Operations', dept: 'Operations' },
+  'CaregiverAgent': { name: 'CareCom', emoji: '🏠', role: 'Home Care Operations', dept: 'Operations' },
+  'WellnessAgent': { name: 'HealWise', emoji: '🧘', role: 'Wellness Operations', dept: 'Operations' },
+  'SearchIntelligenceAgent': { name: 'TechBrain', emoji: '💻', role: 'CTO - Technology', dept: 'Technology' },
+  'RecommendationAgent': { name: 'SuggestAI', emoji: '🎯', role: 'Personalization Lead', dept: 'Technology' },
+  'AnalyticsAgent': { name: 'DataSage', emoji: '📊', role: 'CSO - Analytics', dept: 'Analytics' },
+  'CRMAgent': { name: 'TrustKeeper', emoji: '🤝', role: 'CCO - Customer Relations', dept: 'Customer Relations' },
+  'SupportAgent': { name: 'HelpBot', emoji: '🎫', role: 'Support Manager', dept: 'Customer Relations' },
+  'NotificationAgent': { name: 'NotifyMe', emoji: '🔔', role: 'Communications Manager', dept: 'Customer Relations' },
+  'MemoryAgent': { name: 'RecallAI', emoji: '🧠', role: 'Data Manager', dept: 'Customer Relations' }
 };
 
 const App = () => {
   const [agents, setAgents] = useState([]);
   const [health, setHealth] = useState(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('org-chart');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedAgents, setExpandedAgents] = useState({});
+  const [selectedDept, setSelectedDept] = useState(null);
+  const [expandedDepts, setExpandedDepts] = useState({});
 
   const fetchData = async () => {
     try {
@@ -230,148 +129,199 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleAgent = (agentName) => {
-    setExpandedAgents(prev => ({
-      ...prev,
-      [agentName]: !prev[agentName]
-    }));
-  };
+  const getAgent = (agentName) => agents.find(a => a.name === agentName);
+  const isOnline = (agent) => agent && (agent.status === 'idle' || agent.status === 'online');
+  const onlineCount = agents.filter(a => isOnline(a)).length;
 
-  const getAgentFromAPI = (agentName) => {
-    return agents.find(a => a.name === agentName);
+  const toggleDept = (dept) => {
+    setExpandedDepts(prev => ({ ...prev, [dept]: !prev[dept] }));
   };
 
   if (loading) {
     return (
       <div className="ai-control-center">
-        <div className="loading">🔄 Loading AI Control Center...</div>
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <p>Loading AI Organization...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="ai-control-center">
+      {/* HEADER */}
       <header className="ai-header">
-        <h1>🤖 HospitalHub AI Control Center</h1>
-        <div className="connection-status">
-          <span className={`status-dot ${error ? 'red' : 'green'}`}></span>
-          {error ? '⚠️ Error' : '✅ Connected'} | {agents.length} Agents Online
+        <div className="header-left">
+          <h1>🤖 HospitalHub AI Organization</h1>
+          <span className="subtitle">20 Agents · 7 Departments · 1 Mission</span>
+        </div>
+        <div className="header-right">
+          <div className="status-badge">
+            <span className={`status-dot ${error ? 'red' : 'green'}`}></span>
+            {error ? '⚠️ Error' : `${onlineCount}/${agents.length} Online`}
+          </div>
+          <button className="refresh-btn" onClick={fetchData}>🔄 Refresh</button>
         </div>
       </header>
 
+      {/* TABS */}
       <nav className="ai-tabs">
-        <button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>📊 Dashboard</button>
-        <button className={activeTab === 'agents' ? 'active' : ''} onClick={() => setActiveTab('agents')}>📋 Agent Directory</button>
-        <button className={activeTab === 'health' ? 'active' : ''} onClick={() => setActiveTab('health')}>🩺 System Health</button>
+        <button className={activeTab === 'org-chart' ? 'active' : ''} onClick={() => setActiveTab('org-chart')}>🏢 Org Chart</button>
+        <button className={activeTab === 'list' ? 'active' : ''} onClick={() => setActiveTab('list')}>📋 Agent List</button>
+        <button className={activeTab === 'departments' ? 'active' : ''} onClick={() => setActiveTab('departments')}>📊 Departments</button>
+        <button className={activeTab === 'health' ? 'active' : ''} onClick={() => setActiveTab('health')}>🩺 System</button>
       </nav>
 
       {error && <div className="error-banner">{error}</div>}
 
-      {activeTab === 'dashboard' && (
-        <div>
-          <div className="dashboard-grid">
-            <div className="card">
-              <h3>🤖 Total Agents</h3>
-              <div className="big-number">{agents.length}</div>
-            </div>
-            <div className="card">
-              <h3>🟢 Online</h3>
-              <div className="big-number green">{agents.filter(a => a.status === 'idle' || a.status === 'online').length}</div>
-            </div>
-            <div className="card">
-              <h3>🩺 System</h3>
-              <div className="big-number">{health?.status || 'Running'}</div>
+      {/* ORG CHART VIEW */}
+      {activeTab === 'org-chart' && (
+        <div className="org-chart">
+          {/* CAIO - TOP LEVEL */}
+          <div className="org-level ceo-level">
+            <div className="org-node ceo-node">
+              <div className="node-emoji">🧠</div>
+              <div className="node-title">CAIO "Athena"</div>
+              <div className="node-subtitle">Chief AI Officer</div>
+              <div className="node-agents">
+                {['CEOAgent', 'StrategyAgent'].map(name => {
+                  const agent = getAgent(name);
+                  return (
+                    <span key={name} className={`node-agent ${isOnline(agent) ? 'online' : 'offline'}`}>
+                      {AGENT_CODENAMES[name]?.emoji} {AGENT_CODENAMES[name]?.name}
+                    </span>
+                  );
+                })}
+              </div>
+              <div className="node-reports">Reports to: Human CEO</div>
             </div>
           </div>
-          <div className="summary-table">
-            <h2>📋 AGENTS SUMMARY</h2>
-            <table>
-              <thead>
-                <tr><th>#</th><th>Agent Name</th><th>Role</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                {Object.entries(CATEGORIES).map(([category, agentNames]) => (
-                  <React.Fragment key={category}>
-                    <tr className="category-header"><td colSpan="4"><strong>{category}</strong></td></tr>
-                    {agentNames.map((name, idx) => {
-                      const agent = getAgentFromAPI(name);
-                      return (
-                        <tr key={name} className="agent-row" onClick={() => toggleAgent(name)}>
-                          <td>{idx + 1}</td>
-                          <td>{name}</td>
-                          <td>{AGENT_DETAILS[name]?.description || 'Unknown'}</td>
-                          <td><span className={`badge ${agent?.status === 'idle' ? 'green' : 'yellow'}`}>{agent?.status || 'offline'}</span></td>
-                        </tr>
-                      );
-                    })}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+
+          {/* CONNECTOR LINE */}
+          <div className="connector-vertical"></div>
+
+          {/* DEPARTMENT HEADS - LEVEL 2 */}
+          <div className="org-level dept-level">
+            {Object.entries(ORG_STRUCTURE).filter(([key]) => ORG_STRUCTURE[key].level === 1).map(([deptName, dept]) => (
+              <div key={deptName} className="org-node dept-node" style={{ borderColor: dept.color }}>
+                <div className="node-emoji">{deptName.split(' ')[0]}</div>
+                <div className="node-title">{deptName.split('"')[1] ? deptName.split('"')[1] : deptName}</div>
+                <div className="node-subtitle">{dept.role}</div>
+                <div className="node-agents">
+                  {dept.agents.map(name => {
+                    const agent = getAgent(name);
+                    const cn = AGENT_CODENAMES[name];
+                    return (
+                      <span key={name} className={`node-agent small ${isOnline(agent) ? 'online' : 'offline'}`}>
+                        {cn?.emoji} {cn?.name}
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className="node-team">
+                  Team: {dept.team?.join(', ') || dept.agents.length + ' agents'}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* LEGEND */}
+          <div className="org-legend">
+            <div className="legend-item"><span className="dot green"></span> Online</div>
+            <div className="legend-item"><span className="dot gray"></span> Offline</div>
+            <div className="legend-item">🏢 Department Head</div>
+            <div className="legend-item">👤 Specialist Agent</div>
           </div>
         </div>
       )}
 
-      {activeTab === 'agents' && (
-        <div>
-          {Object.entries(CATEGORIES).map(([category, agentNames]) => (
-            <div key={category} className="category-section">
-              <h2 className="category-title">{category}</h2>
-              <table className="agent-detail-table">
-                <thead>
-                  <tr><th>#</th><th>Agent</th><th>Description</th><th>Capabilities</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                  {agentNames.map((name, idx) => {
-                    const agent = getAgentFromAPI(name);
-                    const details = AGENT_DETAILS[name];
-                    const isExpanded = expandedAgents[name];
+      {/* AGENT LIST VIEW */}
+      {activeTab === 'list' && (
+        <div className="agent-list">
+          {Object.entries(ORG_STRUCTURE).map(([deptName, dept]) => (
+            <div key={deptName} className="dept-group" style={{ borderLeft: `4px solid ${dept.color}` }}>
+              <div className="dept-header" onClick={() => toggleDept(deptName)}>
+                <h3>{deptName}</h3>
+                <span className="dept-meta">{dept.role} · Reports to: {dept.reportsTo}</span>
+                <span className="expand-icon">{expandedDepts[deptName] ? '▲' : '▼'}</span>
+              </div>
+              {expandedDepts[deptName] && (
+                <div className="dept-agents">
+                  {dept.agents.map(name => {
+                    const agent = getAgent(name);
+                    const cn = AGENT_CODENAMES[name];
                     return (
-                      <React.Fragment key={name}>
-                        <tr className="agent-row" onClick={() => toggleAgent(name)}>
-                          <td>{idx + 1}</td>
-                          <td><strong>{name}</strong></td>
-                          <td>{details?.description || 'Unknown'}</td>
-                          <td>
-                            <span className="cap-count">{agent?.capabilities?.length || 0} capabilities</span>
-                            <span className="expand-icon">{isExpanded ? '▲' : '▼'}</span>
-                          </td>
-                          <td><span className={`badge ${agent?.status === 'idle' ? 'green' : 'yellow'}`}>{agent?.status || 'offline'}</span></td>
-                        </tr>
-                        {isExpanded && details?.capabilities && (
-                          <tr className="capability-row">
-                            <td colSpan="5">
-                              <div className="capability-list">
-                                <strong>Capabilities:</strong>
-                                <table className="capability-table">
-                                  <thead>
-                                    <tr><th>Capability</th><th>Description</th></tr>
-                                  </thead>
-                                  <tbody>
-                                    {Object.entries(details.capabilities).map(([cap, desc]) => (
-                                      <tr key={cap}>
-                                        <td><code>{cap}</code></td>
-                                        <td>{desc}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
+                      <div key={name} className={`agent-list-item ${isOnline(agent) ? 'online' : 'offline'}`}>
+                        <span className="agent-emoji">{cn?.emoji}</span>
+                        <div className="agent-info">
+                          <strong>{cn?.name}</strong> <span className="agent-class">({name})</span>
+                          <div className="agent-meta">{cn?.role} · {cn?.dept}</div>
+                          <div className="agent-capabilities">
+                            {agent?.capabilities?.map(c => (
+                              <code key={c}>{c.replace(/_/g, ' ')}</code>
+                            ))}
+                          </div>
+                        </div>
+                        <span className={`status-indicator ${isOnline(agent) ? 'green' : 'gray'}`}></span>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
+      {/* DEPARTMENTS VIEW */}
+      {activeTab === 'departments' && (
+        <div className="departments-view">
+          <div className="dept-summary-grid">
+            {Object.entries(ORG_STRUCTURE).map(([deptName, dept]) => {
+              const onlineCount = dept.agents.filter(name => isOnline(getAgent(name))).length;
+              return (
+                <div key={deptName} className="dept-card" style={{ borderTop: `4px solid ${dept.color}` }}>
+                  <div className="dept-card-header">
+                    <span className="dept-icon">{deptName.split(' ')[0]}</span>
+                    <div>
+                      <h4>{deptName.split('"')[1] || deptName}</h4>
+                      <p>{dept.role}</p>
+                    </div>
+                  </div>
+                  <div className="dept-stats">
+                    <div className="stat">
+                      <span className="stat-value">{dept.agents.length}</span>
+                      <span className="stat-label">Agents</span>
+                    </div>
+                    <div className="stat">
+                      <span className="stat-value green">{onlineCount}</span>
+                      <span className="stat-label">Online</span>
+                    </div>
+                  </div>
+                  <div className="dept-reports">
+                    <small>Reports to: {dept.reportsTo}</small>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* HEALTH VIEW */}
       {activeTab === 'health' && health && (
         <div className="health-panel">
+          <div className="health-stats">
+            <div className="health-card">
+              <h4>System Status</h4>
+              <div className="big-number">{health?.status || 'Running'}</div>
+            </div>
+            <div className="health-card">
+              <h4>Agents Online</h4>
+              <div className="big-number green">{onlineCount}/{agents.length}</div>
+            </div>
+          </div>
           <pre>{JSON.stringify(health, null, 2)}</pre>
         </div>
       )}
