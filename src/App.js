@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import GlobalSearch from './components/GlobalSearch';
+import AIControlCenter from './ai-control-center/App';
 import ComingSoon from './pages/ComingSoon';
 import SearchResultsPage from './pages/SearchResultsPage';
 import HospitalsList from './pages/HospitalsList';
@@ -417,6 +418,9 @@ function App() {
 
           {/* OLD ROUTES - Redirected */}
           <Route path="/teleconsult" element={<OnlineDoctorHub />} />
+
+	  {/* AI CONTROL CENTER */}
+	  <Route path="/ai-control-center" element={<AIControlCenter />} />
 
           {/* OTHER */}
           <Route path="/lab-tests" element={<ComingSoon title="Lab Tests" />} />
