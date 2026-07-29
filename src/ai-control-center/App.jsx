@@ -5,12 +5,27 @@ import './styles.css';
 
 const API_BASE = 'https://hospital-backend-production-f1b1.up.railway.app';
 
+const AGENT_CATEGORIES = {
+  'Business': ['hospital', 'doctor', 'diagnostics', 'ambulance', 'insurance', 'caregiver', 'wellness'],
+  'Operations': ['finance', 'crm', 'marketing', 'support', 'analytics', 'corporate'],
+  'Intelligence': ['search_intelligence', 'recommendation', 'workflow', 'memory', 'notification'],
+  'Executive': ['ceo', 'strategy']
+};
+
+const CATEGORY_ICONS = {
+  'Business': '🏥',
+  'Operations': '⚙️',
+  'Intelligence': '🧠',
+  'Executive': '👔'
+};
+
 const App = () => {
   const [agents, setAgents] = useState([]);
   const [health, setHealth] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedAgent, setSelectedAgent] = useState(null);
 
   const fetchAgents = async () => {
     try {
@@ -44,6 +59,21 @@ const App = () => {
     const interval = setInterval(load, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  const getAgentCategory = (role) => {
+    for (const [category, roles] of Object.entries(AGENT_CATEGORIES)) {
+      if (roles.includes(role)) return category;
+    }
+    return 'Other';
+  };
+
+  const getAgentsByCategory = () => {
+    const grouped = {};
+    for (const category of Object.keys(AGENT_CATEGORIES)) {
+      grouped[category] = agents.filter(a => AGENT_CATEGORIES[category].includes(a.role));
+    }
+    return grouped;
+  };
 
   if (loading) {
     return (
@@ -79,27 +109,49 @@ const App = () => {
           </div>
           <div className="card">
             <h3>🩺 System Status</h3>
-            <div className="big-number">{health?.status || 'Unknown'}</div>
+            <div className="big-number">{health?.status || 'Running'}</div>
           </div>
           <div className="card">
             <h3>📋 API Base</h3>
             <div className="small-text">{API_BASE}</div>
           </div>
+          {Object.entries(getAgentsByCategory()).map(([category, categoryAgents]) => (
+            <div className="card" key={category}>
+              <h3>{CATEGORY_ICONS[category]} {category}</h3>
+              <div className="big-number">{categoryAgents.length}</div>
+              <div className="small-text">agents</div>
+            </div>
+          ))}
         </div>
       )}
 
       {activeTab === 'agents' && (
-        <div className="agents-grid">
-          {agents.map((agent) => (
-            <div key={agent.id} className="agent-card">
-              <div className="agent-header">
-                <span className={`agent-status ${agent.status === 'online' ? 'online' : 'offline'}`}></span>
-                <h4>{agent.name}</h4>
+        <div>
+          {Object.entries(getAgentsByCategory()).map(([category, categoryAgents]) => (
+            <div key={category} className="category-section">
+              <h2 className="category-title">{CATEGORY_ICONS[category]} {category} Layer ({categoryAgents.length} agents)</h2>
+              <div className="agents-grid">
+                {categoryAgents.map((agent) => (
+                  <div key={agent.id} className="agent-card" onClick={() => setSelectedAgent(selectedAgent?.id === agent.id ? null : agent)}>
+                    <div className="agent-header">
+                      <span className={`agent-status ${agent.status === 'idle' ? 'online' : 'offline'}`}></span>
+                      <h4>{agent.name}</h4>
+                    </div>
+                    <p className="agent-role">Role: <strong>{agent.role}</strong></p>
+                    {selectedAgent?.id === agent.id && (
+                      <div className="agent-capabilities">
+                        <strong>Capabilities:</strong>
+                        <ul>
+                          {agent.capabilities.map((cap) => (
+                            <li key={cap}>{cap.replace(/_/g, ' ')}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <p className="agent-hint">Click to {selectedAgent?.id === agent.id ? 'hide' : 'view'} capabilities</p>
+                  </div>
+                ))}
               </div>
-              <p className="agent-role">Role: {agent.role}</p>
-              <p className="agent-capabilities">
-                Capabilities: {agent.capabilities?.map((c) => c.name).join(', ') || 'None'}
-              </p>
             </div>
           ))}
         </div>
