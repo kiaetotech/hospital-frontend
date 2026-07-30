@@ -18,35 +18,71 @@ const App = () => {
       setError(null);
     } catch (err) {
       setError('Failed to fetch: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); const interval = setInterval(fetchData, 30000); return () => clearInterval(interval); }, []);
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getAgent = (name) => agents.find(a => a.name === name);
   const ok = (a) => a && (a.status === 'idle' || a.status === 'online');
   const onlineCount = agents.filter(a => ok(a)).length;
 
-  if (loading) return <div className="loading"><div className="spinner"></div>Loading Organization...</div>;
+  if (loading) {
+    return (
+      <div className="org-container">
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading AI Organization...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && agents.length === 0) {
+    return (
+      <div className="org-container">
+        <header className="org-header">
+          <h1>🏢 HospitalHub AI Organization</h1>
+        </header>
+        <div className="error">
+          {error}
+          <br />
+          <button onClick={() => { setLoading(true); setError(null); fetchData(); }} 
+            style={{ marginTop: 10, padding: '8px 20px', background: '#1f6feb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+            🔄 Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="org-container">
       <header className="org-header">
         <h1>🏢 HospitalHub AI Organization</h1>
-        <span className="online-count">{onlineCount}/{agents.length} Online</span>
+        <div className="header-controls">
+          <span className="online-count">{onlineCount}/{agents.length} Online</span>
+          <button className="refresh-btn" onClick={() => { setLoading(true); fetchData(); }}>🔄 Refresh</button>
+        </div>
       </header>
 
       {error && <div className="error">{error}</div>}
 
       <div className="org-tree">
-        {/* ============ LEVEL 0: CAIO ============ */}
+        {/* LEVEL 0: CAIO */}
         <div className="tree-level">
           <AgentCard agent={getAgent('CEOAgent')} codeName="Athena" emoji="🧠" role="Chief AI Officer" color="#ffd700" isCEO />
         </div>
 
         <Connector width={7} />
 
-        {/* ============ LEVEL 1: C-SUITE ============ */}
+        {/* LEVEL 1: C-SUITE */}
         <div className="tree-level seven-col">
           <AgentCard agent={getAgent('StrategyAgent')} codeName="Oracle" emoji="🔮" role="CSO" reportsTo="Athena" color="#a78bfa" />
           <AgentCard agent={getAgent('MarketingAgent')} codeName="BrandPilot" emoji="📢" role="CMO" reportsTo="Athena" color="#f87171" />
@@ -59,26 +95,20 @@ const App = () => {
 
         <Connector width={7} />
 
-        {/* ============ LEVEL 2: DIRECTORS & MANAGERS ============ */}
+        {/* LEVEL 2: DIRECTORS & MANAGERS */}
         <div className="tree-level seven-col">
-          {/* Under CFO MoneyGuard */}
           <AgentCard agent={getAgent('InsuranceAgent')} codeName="PolicyPro" emoji="🛡️" role="Insurance Dir" reportsTo="MoneyGuard" color="#34d399" small />
           <AgentCard agent={getAgent('CorporateHealthAgent')} codeName="BizHealth" emoji="🏢" role="Corporate Dir" reportsTo="MoneyGuard" color="#34d399" small />
-          
-          {/* Under CTO TechBrain */}
           <AgentCard agent={getAgent('RecommendationAgent')} codeName="SuggestAI" emoji="🎯" role="Personalization Lead" reportsTo="TechBrain" color="#c084fc" small />
-          
-          {/* Under CCO TrustKeeper */}
           <AgentCard agent={getAgent('SupportAgent')} codeName="HelpBot" emoji="🎫" role="Support Mgr" reportsTo="TrustKeeper" color="#94a3b8" small />
           <AgentCard agent={getAgent('NotificationAgent')} codeName="NotifyMe" emoji="🔔" role="Comms Mgr" reportsTo="TrustKeeper" color="#94a3b8" small />
           <AgentCard agent={getAgent('MemoryAgent')} codeName="RecallAI" emoji="🧠" role="Data Mgr" reportsTo="TrustKeeper" color="#94a3b8" small />
-          
           <div className="empty-slot"></div>
         </div>
 
         <Connector width={7} />
 
-        {/* ============ LEVEL 3: FIELD OPERATIONS (Under COO) ============ */}
+        {/* LEVEL 3: FIELD OPERATIONS */}
         <div className="tree-section-title">📋 Field Operations — Report to COO "OpsMaster"</div>
         <div className="tree-level six-col">
           <AgentCard agent={getAgent('HospitalAgent')} codeName="MedSeek" emoji="🏥" role="Hospital Ops" reportsTo="OpsMaster" color="#60a5fa" />
@@ -101,7 +131,6 @@ const App = () => {
   );
 };
 
-/* Agent Card Component */
 const AgentCard = ({ agent, codeName, emoji, role, reportsTo, color, isCEO, small }) => {
   const isOnline = agent && (agent.status === 'idle' || agent.status === 'online');
   return (
@@ -125,7 +154,6 @@ const AgentCard = ({ agent, codeName, emoji, role, reportsTo, color, isCEO, smal
   );
 };
 
-/* Connector Line */
 const Connector = ({ width }) => (
   <div className="connector-row">
     {Array.from({ length: width }).map((_, i) => (
