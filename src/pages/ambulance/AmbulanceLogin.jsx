@@ -74,6 +74,7 @@ const AmbulanceLogin = () => {
       if (res.data?.success) {
         localStorage.setItem('providerToken', res.data.token);
 	localStorage.setItem('user', JSON.stringify(res.data.user));
+    	localStorage.setItem('providerType', 'ambulance');
         navigate('/ambulance/dashboard');
       } else {
         setError(res.data?.message || 'Login failed');
@@ -228,3 +229,4 @@ const successStyle = { background: '#e8f5e9', color: '#2e7d32', padding: '10px',
 export default AmbulanceLogin;
 // force deploy 
 "// deploy v2" 
+// fix 
