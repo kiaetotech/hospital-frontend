@@ -72,8 +72,8 @@ const AmbulanceLogin = () => {
         res = await api.post('/otp/verify', { phone: `+91${form.phone}`, otp: form.otp });
       }
       if (res.data?.success) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
+        localStorage.setItem('providerToken', res.data.token);
+	localStorage.setItem('user', JSON.stringify(res.data.user));
         navigate('/ambulance/dashboard');
       } else {
         setError(res.data?.message || 'Login failed');
