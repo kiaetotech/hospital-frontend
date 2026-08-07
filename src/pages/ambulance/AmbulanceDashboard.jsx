@@ -22,7 +22,6 @@ const AmbulanceDashboard = () => {
   const [newDriver, setNewDriver] = useState({ name: '', phone: '', licenseNumber: '' });
 
   const token = localStorage.getItem('providerToken');
-  const token = localStorage.getItem('providerToken');
   const providerId = localStorage.getItem('providerId');
 
 const S = {
