@@ -124,7 +124,13 @@ const sidebarItems = [
             </div>
           )}
           {vehicles.length === 0 && !showVehicleForm && <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>No vehicles added yet. Click "+ Add Vehicle" to register your first ambulance.</p>}
-          <ProviderTable columns={[{ key:'vehicleNumber', label:'Vehicle Number' },{ key:'type', label:'Type' },{ key:'status', label:'Status', render:(s)=>(<span style={{ padding:'0.15rem 0.5rem', borderRadius:'10px', fontSize:'0.7rem', backgroundColor:s==='available'?'#dcfce7':s==='on_trip'?'#dbeafe':'#fef3c7', color:s==='available'?'#166534':s==='on_trip'?'#1e40af':'#92400e' }}>{s||'available'}</span>)}]} data={vehicles} loading={loading} />
+          <ProviderTable columns={[
+  { key:'vehicleNumber', label:'Vehicle Number' },
+  { key:'type', label:'Type' },
+  { key:'driver', label:'Driver' },
+  { key:'driverPhone', label:'Driver Phone' },
+  { key:'status', label:'Status', render:(s)=>(<span style={{ padding:'0.15rem 0.5rem', borderRadius:'10px', fontSize:'0.7rem', backgroundColor:s==='available'?'#dcfce7':s==='on_trip'?'#dbeafe':'#fef3c7', color:s==='available'?'#166534':s==='on_trip'?'#1e40af':'#92400e' }}>{s||'available'}</span>)}
+]} data={vehicles} loading={loading} />
         </div>
       );
 
@@ -224,3 +230,4 @@ const sidebarItems = [
 
 export default AmbulanceDashboard;"// deploy fix" 
 "// add forms" 
+"// driver columns" 
