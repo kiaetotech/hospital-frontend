@@ -342,7 +342,7 @@ const AmbulanceDashboard = () => {
               {key:'name',label:'Name'},
               {key:'phone',label:'Phone'},
               {key:'licenseNumber',label:'License'},
-              {key:'experience',label:'Exp (yrs)', render: (v) => v || '-'},
+              {key:'experience',label:'Exp (yrs)', render: (v) => (v && v !== '') ? v : '-'},
               {key:'status',label:'Status',render:(s)=>(<span style={{padding:'0.15rem 0.5rem',borderRadius:'10px',fontSize:'0.7rem',backgroundColor:s==='available'?'#dcfce7':'#fef3c7',color:'#166534'}}>{s||'available'}</span>)}
             ]} 
             data={drivers} 
