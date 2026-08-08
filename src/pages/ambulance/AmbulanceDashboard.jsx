@@ -278,7 +278,7 @@ const AmbulanceDashboard = () => {
               <button onClick={async()=>{
     if(!newVehicle.vehicleNumber) return alert('Vehicle number required');
     if(!newVehicle.baseFare || !newVehicle.perKmRate) return alert('Base fare and per km rate required');
-    console.log('SAVING:', JSON.stringify({...newVehicle, year: newVehicle.year ? parseInt(newVehicle.year) : undefined, baseFare: parseInt(newVehicle.baseFare) || 0, perKmRate: parseInt(newVehicle.perKmRate) || 0, nightCharge: parseInt(newVehicle.nightCharge) || 0, waitingCharge: parseInt(newVehicle.waitingCharge) || 0}));
+    parseInt(newVehicle.baseFare) || 0, perKmRate: parseInt(newVehicle.perKmRate) || 0, nightCharge: parseInt(newVehicle.nightCharge) || 0, waitingCharge: parseInt(newVehicle.waitingCharge) || 0}));
     await ambulanceApi.addVehicle({
       ...newVehicle,
       year: newVehicle.year ? parseInt(newVehicle.year) : undefined,
