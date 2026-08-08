@@ -278,7 +278,14 @@ const AmbulanceDashboard = () => {
               <button onClick={async()=>{
                 if(!newVehicle.vehicleNumber) return alert('Vehicle number required');
                 if(!newVehicle.baseFare || !newVehicle.perKmRate) return alert('Base fare and per km rate required');
-                await ambulanceApi.addVehicle(newVehicle);
+                await ambulanceApi.addVehicle({
+                  ...newVehicle,
+                  year: newVehicle.year ? parseInt(newVehicle.year) : undefined,
+                  baseFare: parseInt(newVehicle.baseFare) || 0,
+                  perKmRate: parseInt(newVehicle.perKmRate) || 0,
+                  nightCharge: parseInt(newVehicle.nightCharge) || 0,
+                  waitingCharge: parseInt(newVehicle.waitingCharge) || 0,
+                });
                 setNewVehicle({vehicleNumber:'',type:'basic',model:'',year:'',equipment:[],baseFare:'',perKmRate:'',nightCharge:'',waitingCharge:'',driverName:'',driverPhone:''});
                 setShowVehicleForm(false);
                 const r=await ambulanceApi.getVehicles();
@@ -292,8 +299,8 @@ const AmbulanceDashboard = () => {
               {key:'vehicleNumber',label:'Vehicle #'},
               {key:'type',label:'Type'},
               {key:'equipment',label:'Equipment', render: (eq) => (Array.isArray(eq) && eq.length > 0) ? eq.join(', ') : '-'},
-              {key:'baseFare',label:'Base ₹'},
-              {key:'perKmRate',label:'/KM ₹'},
+              {key:'baseFare',label:'Base ₹', render: (v) => (v || v === 0) ? `₹${v}` : '-'},
+              {key:'perKmRate',label:'/KM ₹', render: (v) => (v || v === 0) ? `₹${v}` : '-'},
               {key:'driver',label:'Driver'},
               {key:'status',label:'Status',render:(s)=>(<span style={{padding:'0.15rem 0.5rem',borderRadius:'10px',fontSize:'0.7rem',backgroundColor:s==='available'?'#dcfce7':'#fef3c7',color:'#166534'}}>{s||'available'}</span>)}
             ]} 
@@ -332,8 +339,10 @@ const AmbulanceDashboard = () => {
           {drivers.length===0 && !showDriverForm && <p style={{color:'#6b7280',textAlign:'center',padding:'2rem'}}>No drivers yet.</p>}
           <ProviderTable 
             columns={[
-              {key:'name',label:'Name'},{key:'phone',label:'Phone'},{key:'licenseNumber',label:'License'},
-              {key:'experience',label:'Exp (yrs)'},
+              {key:'name',label:'Name'},
+              {key:'phone',label:'Phone'},
+              {key:'licenseNumber',label:'License'},
+              {key:'experience',label:'Exp (yrs)', render: (v) => v || '-'},
               {key:'status',label:'Status',render:(s)=>(<span style={{padding:'0.15rem 0.5rem',borderRadius:'10px',fontSize:'0.7rem',backgroundColor:s==='available'?'#dcfce7':'#fef3c7',color:'#166534'}}>{s||'available'}</span>)}
             ]} 
             data={drivers} 
@@ -356,9 +365,12 @@ const AmbulanceDashboard = () => {
           </div>
           <ProviderTable 
             columns={[
-              {key:'bookingId',label:'ID'},{key:'patientName',label:'Patient'},
-              {key:'pickupLocation',label:'Pickup'},{key:'dropLocation',label:'Drop'},
-              {key:'vehicleType',label:'Type'},{key:'amount',label:'Amount'},
+              {key:'bookingId',label:'ID'},
+              {key:'patientName',label:'Patient'},
+              {key:'pickupLocation',label:'Pickup'},
+              {key:'dropLocation',label:'Drop'},
+              {key:'vehicleType',label:'Type'},
+              {key:'amount',label:'Amount'},
               {key:'status',label:'Status'}
             ]} 
             data={bookings.filter(b=>statusFilter==='all'||b.status===statusFilter)} 
