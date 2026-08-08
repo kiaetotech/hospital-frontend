@@ -31,6 +31,7 @@ const AmbulanceDashboard = () => {
   const [areaInput, setAreaInput] = useState('');
   const [profileForm, setProfileForm] = useState({
     name: '', phone: '', email: '', address: '', city: '',
+    lat: '', lng: '',
     operatingHours: { open: '00:00', close: '23:59' },
     acceptsEmergency: true, acceptsScheduled: true, acceptsIntercity: false
   });
@@ -91,6 +92,7 @@ const AmbulanceDashboard = () => {
           setProfileForm({
             name: p.name || '', phone: p.phone || '', email: p.email || '',
             address: p.ambulanceCompanyAddress?.address || '', city: p.ambulanceCompanyAddress?.city || '',
+	    lat: p.ambulanceCompanyAddress?.coordinates?.lat || '', lng: p.ambulanceCompanyAddress?.coordinates?.lng || '',
             operatingHours: p.ambulanceSettings?.operatingHours || { open: '00:00', close: '23:59' },
             acceptsEmergency: p.ambulanceSettings?.acceptsEmergency !== false,
             acceptsScheduled: p.ambulanceSettings?.acceptsScheduled !== false,
@@ -128,10 +130,13 @@ const AmbulanceDashboard = () => {
   const saveProfile = async () => {
     try {
       await ambulanceApi.updateProfile({ ...profileForm, serviceAreas, isAvailable });
+      if (profileForm.lat && profileForm.lng) {
+        await ambulanceApi.updateLocation({ lat: parseFloat(profileForm.lat), lng: parseFloat(profileForm.lng) });
+      }
       setProfile(prev => ({ ...prev, ...profileForm, serviceAreas, isAvailable }));
       alert('Profile updated!');
     } catch (err) { alert('Failed to update profile'); }
-  };
+  }
 
   const renderContent = () => {
     switch(activeTab) {
@@ -174,6 +179,8 @@ const AmbulanceDashboard = () => {
               <div><label style={S.label}>Phone *</label><input value={profileForm.phone} onChange={e=>setProfileForm({...profileForm, phone:e.target.value})} style={S.input} /></div>
               <div><label style={S.label}>Email</label><input value={profileForm.email} onChange={e=>setProfileForm({...profileForm, email:e.target.value})} style={S.input} /></div>
               <div><label style={S.label}>City *</label><input value={profileForm.city} onChange={e=>setProfileForm({...profileForm, city:e.target.value})} style={S.input} placeholder="e.g. Mumbai" /></div>
+	      <div><label style={S.label}>Latitude</label><input value={profileForm.lat} onChange={e=>setProfileForm({...profileForm, lat:e.target.value})} style={S.input} placeholder="e.g. 19.0760" /></div>
+               <div><label style={S.label}>Longitude</label><input value={profileForm.lng} onChange={e=>setProfileForm({...profileForm, lng:e.target.value})} style={S.input} placeholder="e.g. 72.8777" /></div>
             </div>
             <div><label style={S.label}>Address</label><input value={profileForm.address} onChange={e=>setProfileForm({...profileForm, address:e.target.value})} style={S.input} /></div>
             
