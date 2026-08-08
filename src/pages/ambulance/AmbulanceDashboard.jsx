@@ -278,7 +278,6 @@ const AmbulanceDashboard = () => {
               <button onClick={async()=>{
     if(!newVehicle.vehicleNumber) return alert('Vehicle number required');
     if(!newVehicle.baseFare || !newVehicle.perKmRate) return alert('Base fare and per km rate required');
-    parseInt(newVehicle.baseFare) || 0, perKmRate: parseInt(newVehicle.perKmRate) || 0, nightCharge: parseInt(newVehicle.nightCharge) || 0, waitingCharge: parseInt(newVehicle.waitingCharge) || 0}));
     await ambulanceApi.addVehicle({
       ...newVehicle,
       year: newVehicle.year ? parseInt(newVehicle.year) : undefined,
@@ -287,11 +286,11 @@ const AmbulanceDashboard = () => {
       nightCharge: parseInt(newVehicle.nightCharge) || 0,
       waitingCharge: parseInt(newVehicle.waitingCharge) || 0,
     });
-                  setNewVehicle({vehicleNumber:'',type:'basic',model:'',year:'',equipment:[],baseFare:'',perKmRate:'',nightCharge:'',waitingCharge:'',driverName:'',driverPhone:''});
-                setShowVehicleForm(false);
-                const r=await ambulanceApi.getVehicles();
-                setVehicles(Array.isArray(r.data?.data)?r.data.data:[]);
-              }} style={{...S.btn,background:'#10b981',color:'white',marginTop:12,padding:'12px 24px'}}>💾 Save Vehicle</button>
+    setNewVehicle({vehicleNumber:'',type:'basic',model:'',year:'',equipment:[],baseFare:'',perKmRate:'',nightCharge:'',waitingCharge:'',driverName:'',driverPhone:''});
+    setShowVehicleForm(false);
+    const r=await ambulanceApi.getVehicles();
+    setVehicles(Array.isArray(r.data?.data)?r.data.data:[]);
+}} style={{...S.btn,background:'#10b981',color:'white',marginTop:12,padding:'12px 24px'}}>💾 Save Vehicle</button>
             </div>
           )}
           {vehicles.length===0 && !showVehicleForm && <p style={{color:'#6b7280',textAlign:'center',padding:'2rem'}}>No vehicles yet. Click + to add.</p>}
