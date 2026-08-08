@@ -90,6 +90,7 @@ export const ambulanceApi = {
   verify: () => providerApi.get('/ambulance/auth/verify'),
   getProfile: () => providerApi.get('/ambulance/profile'),
   updateProfile: (data) => providerApi.put('/ambulance/profile', data),
+  updateLocation: (data) => providerApi.put('/ambulance/location', data),
   getVehicles: () => providerApi.get('/ambulance/vehicles'),
   addVehicle: (data) => providerApi.post('/ambulance/vehicles', data),
   updateVehicle: (id, data) => providerApi.put(`/ambulance/vehicles/${id}`, data),
