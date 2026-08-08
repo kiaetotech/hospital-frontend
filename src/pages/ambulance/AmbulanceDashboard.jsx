@@ -129,6 +129,7 @@ const AmbulanceDashboard = () => {
 
   const saveProfile = async () => {
     try {
+      console.log('PROFILE SAVING:', JSON.stringify({ ...profileForm, serviceAreas, isAvailable }));
       await ambulanceApi.updateProfile({ ...profileForm, serviceAreas, isAvailable });
       if (profileForm.lat && profileForm.lng) {
         await ambulanceApi.updateLocation({ lat: parseFloat(profileForm.lat), lng: parseFloat(profileForm.lng) });
