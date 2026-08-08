@@ -122,7 +122,7 @@ const ProviderTable = ({
                       fontSize: '0.9rem',
                       color: '#1e293b'
                     }}>
-                      {col.render ? col.render(row[col.key], row) : row[col.key] || '-'}
+                      {col.render ? col.render(row[col.key], row) : (row[col.key] !== undefined && row[col.key] !== null && row[col.key] !== '') ? row[col.key] : '-'}
                     </td>
                   ))}
                   {(onView || onEdit || onDelete) && (

@@ -291,7 +291,7 @@ const AmbulanceDashboard = () => {
             columns={[
               {key:'vehicleNumber',label:'Vehicle #'},
               {key:'type',label:'Type'},
-              {key:'equipment',label:'Equipment', render: (eq) => Array.isArray(eq) ? eq.join(', ') : eq || '-'},
+              {key:'equipment',label:'Equipment', render: (eq) => (Array.isArray(eq) && eq.length > 0) ? eq.join(', ') : '-'},
               {key:'baseFare',label:'Base ₹'},
               {key:'perKmRate',label:'/KM ₹'},
               {key:'driver',label:'Driver'},
