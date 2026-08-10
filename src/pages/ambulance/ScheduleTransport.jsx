@@ -86,7 +86,7 @@ const ScheduleTransport = () => {
       setLoadingAmbulances(true);
       setError('');
 
-      const res = await api.get('/ambulance/nearby-ambulances', {
+      const res = await api.get('/ambulance/search', {
         params: {
           lat: form.pickupLat,
           lng: form.pickupLng,
