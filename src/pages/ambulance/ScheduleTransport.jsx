@@ -84,6 +84,7 @@ const ScheduleTransport = () => {
   const fetchAvailableAmbulances = async () => {
     try {
       setLoadingAmbulances(true);
+      console.log('SEARCHING with:', { lat: form.pickupLat, lng: form.pickupLng });
       setError('');
 
       const res = await api.get('/ambulance/search', {
