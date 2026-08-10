@@ -29,7 +29,7 @@ const ScheduleTransport = () => {
 
     hospitalName: '',
 
-    ambulanceType: 'basic',
+    ambulanceType: 'all',
 
     // IMPORTANT:
     // These come from the provider/vehicle selected by patient.
