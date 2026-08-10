@@ -99,7 +99,7 @@ const AmbulanceDashboard = () => {
             acceptsIntercity: p.ambulanceSettings?.acceptsIntercity || false
           });
           setServiceAreas(p.serviceAreas || []);
-          setIsAvailable(p.isAvailable || false);
+          setIsAvailable(p.isAvailable === true);
           break;
       }
     } catch (error) {
