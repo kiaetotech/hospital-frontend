@@ -821,7 +821,7 @@ const ScheduleTransport = () => {
             required
           />
 
-          <button
+                    <button
             type="button"
             onClick={() =>
               getCurrentLocation(
@@ -832,6 +832,33 @@ const ScheduleTransport = () => {
           >
             📍 Use Current Location
           </button>
+
+          <div style={styles.row}>
+            <input
+              type="text"
+              placeholder="Latitude"
+              value={form.destinationLat}
+              onChange={(e) =>
+                handleChange(
+                  'destinationLat',
+                  e.target.value
+                )
+              }
+              style={{...styles.input, flex: 1}}
+            />
+            <input
+              type="text"
+              placeholder="Longitude"
+              value={form.destinationLng}
+              onChange={(e) =>
+                handleChange(
+                  'destinationLng',
+                  e.target.value
+                )
+              }
+              style={{...styles.input, flex: 1}}
+            />
+          </div>
 
           {form.destinationLat && (
             <p style={styles.coords}>
