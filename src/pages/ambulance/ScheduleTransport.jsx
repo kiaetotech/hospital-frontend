@@ -87,13 +87,14 @@ const ScheduleTransport = () => {
       setError('');
 
       const res = await api.get('/ambulance/search', {
-        params: {
-          lat: form.pickupLat,
-          lng: form.pickupLng,
-          radius: 25,
-          limit: 20
-        }
-      });
+    params: {
+      lat: form.pickupLat,
+      lng: form.pickupLng,
+      radius: 25,
+      type: form.ambulanceType || 'all',
+      limit: 20
+    }
+  });
 
       const ambulances = res.data?.data || [];
 
