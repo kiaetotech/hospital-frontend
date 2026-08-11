@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 const MyBookings = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
+  const [phone, setPhone] = useState('');
   const [insurancePolicies, setInsurancePolicies] = useState([]);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
