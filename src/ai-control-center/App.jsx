@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import './styles.css';
 
-const API_BASE = 'https://hospital-backend-production-f1b1.up.railway.app';
+const API_BASE = 'https://hospital-backend-production-7d0f.up.railway.app';
 
 const App = () => {
   const [agents, setAgents] = useState([]);

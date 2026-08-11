@@ -21,7 +21,7 @@ const PriceComparisonTable = ({ selectedTests, onBack, onBookNow, filters }) => 
           userLng: filters?.userLng || null
         };
         
-        const response = await axios.post('https://hospital-backend-production-f1b1.up.railway.app/api/tests/compare', requestBody);
+        const response = await axios.post('https://hospital-backend-production-7d0f.up.railway.app/api/tests/compare', requestBody);
         
         const providers = response.data.map(provider => ({
           provider_name: provider.providerName,

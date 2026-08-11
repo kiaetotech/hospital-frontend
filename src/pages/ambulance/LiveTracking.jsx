@@ -4,7 +4,7 @@ import { getActiveEmergency } from '../../services/api';
 import { io } from 'socket.io-client';
 
 const SOCKET_URL =
-  'https://hospital-backend-production-f1b1.up.railway.app';
+  'https://hospital-backend-production-7d0f.up.railway.app';
 
 const REFRESH_INTERVAL = 5000;
 

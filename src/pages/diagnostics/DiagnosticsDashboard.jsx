@@ -7,7 +7,7 @@ import CorporatePlansTab from '../../components/CorporatePlansTab';
 import ProviderAuth from '../../components/ProviderAuth';
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-7d0f.up.railway.app';
 
 const DiagnosticsDashboard = () => {
   const navigate = useNavigate();

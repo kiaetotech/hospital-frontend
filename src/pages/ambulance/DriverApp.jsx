@@ -13,7 +13,7 @@ import {
   getDriverTripHistory
 } from '../../services/api';
 
-const SOCKET_URL = 'https://hospital-backend-production-f1b1.up.railway.app';
+const SOCKET_URL = 'https://hospital-backend-production-7d0f.up.railway.app';
 
 const DriverApp = () => {
   const navigate = useNavigate();

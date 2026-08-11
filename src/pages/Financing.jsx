@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { patientAuth, patientLoans } from '../services/loanApi';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-7d0f.up.railway.app';
 
 const Financing = () => {
   const navigate = useNavigate();

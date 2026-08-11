@@ -4,7 +4,7 @@
 // PAYMENT API SERVICE - For ALL Tags
 // ============================================
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-f1b1.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-7d0f.up.railway.app';
 
 // ============================================
 // HELPER: Get auth token

@@ -9,7 +9,7 @@ const HealthPackagesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ minPrice: '', maxPrice: '', homeCollection: false });
 
-  const API_URL = 'https://hospital-backend-production-f1b1.up.railway.app/api';
+  const API_URL = 'https://hospital-backend-production-7d0f.up.railway.app/api';
 
   useEffect(() => {
     loadPackages();

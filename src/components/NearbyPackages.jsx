@@ -7,7 +7,7 @@ const NearbyPackages = ({ onSelectPackage }) => {
   const [radius, setRadius] = useState(10);
   const [showNearby, setShowNearby] = useState(false);
 
-  const API_URL = 'https://hospital-backend-production-f1b1.up.railway.app/api';
+  const API_URL = 'https://hospital-backend-production-7d0f.up.railway.app/api';
 
   const getNearbyPackages = () => {
     if (!navigator.geolocation) {

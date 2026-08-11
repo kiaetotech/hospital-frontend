@@ -552,7 +552,7 @@ const handleMasterUpload = async (e) => {
 
   const handleDownloadTemplate = () => {
     const token = localStorage.getItem('providerToken');
-    const baseURL = 'https://hospital-backend-production-f1b1.up.railway.app';
+    const baseURL = 'https://hospital-backend-production-7d0f.up.railway.app';
     const link = document.createElement('a');
     link.href = `${baseURL}/api/hospitals/provider/template/download?token=${token}`;
     link.download = 'hospital_template.xlsx';
@@ -563,7 +563,7 @@ const handleMasterUpload = async (e) => {
 
 const handleDownloadLabTemplate = () => {
     const token = localStorage.getItem('providerToken');
-    const baseURL = 'https://hospital-backend-production-f1b1.up.railway.app';
+    const baseURL = 'https://hospital-backend-production-7d0f.up.railway.app';
     const link = document.createElement('a');
     link.href = `${baseURL}/api/lab-pricing/template?token=${encodeURIComponent(token)}`;
     link.download = 'lab_price_template.xlsx';
@@ -597,7 +597,7 @@ const handleLabPriceUpload = async (e) => {
 
   const handleDownloadPackageTemplate = () => {
     const token = localStorage.getItem('providerToken');
-    const baseURL = 'https://hospital-backend-production-f1b1.up.railway.app';
+    const baseURL = 'https://hospital-backend-production-7d0f.up.railway.app';
     const link = document.createElement('a');
     link.href = `${baseURL}/api/packages/template?token=${token}`;
     link.download = 'package_template.xlsx';
