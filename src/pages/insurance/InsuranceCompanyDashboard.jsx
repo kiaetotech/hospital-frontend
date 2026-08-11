@@ -513,3 +513,4 @@ const inputStyle = {
 };
 
 export default InsuranceCompanyDashboard;
+

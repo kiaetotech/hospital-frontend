@@ -133,3 +133,4 @@ const DiagnosticsRegister = () => {
 };
 
 export default DiagnosticsRegister;
+

@@ -512,3 +512,4 @@ const TherapistEarnings = () => {
 };
 
 export default TherapistEarnings;
+

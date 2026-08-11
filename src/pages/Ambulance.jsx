@@ -1238,3 +1238,4 @@ const menuItemStyle = {
 };
 
 export default Ambulance;
+

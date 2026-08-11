@@ -121,3 +121,4 @@ const DoctorAvailabilityCalendar = ({ availability, onSlotSelect, selectedDate, 
 };
 
 export default DoctorAvailabilityCalendar;
+

@@ -352,3 +352,4 @@ const inputStyle = {
 };
 
 export default CorporateWellness;
+

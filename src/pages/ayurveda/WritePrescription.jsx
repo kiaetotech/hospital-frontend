@@ -133,3 +133,4 @@ const WritePrescription = () => {
 const inputStyle = { width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.9rem', marginBottom: '0.5rem', boxSizing: 'border-box' };
 
 export default WritePrescription;
+

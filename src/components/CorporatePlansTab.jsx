@@ -217,3 +217,4 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
 const lbl = { display: 'block', fontWeight: 600, fontSize: '0.8rem', marginBottom: 4, color: '#374151' };
 
 export default CorporatePlansTab;
+

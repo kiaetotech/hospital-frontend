@@ -259,3 +259,4 @@ const inputStyle = {
 };
 
 export default TherapistRegister;
+

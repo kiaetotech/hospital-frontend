@@ -74,3 +74,4 @@ const HomeopathyAdminPanel = () => {
 };
 
 export default HomeopathyAdminPanel;
+

@@ -508,3 +508,4 @@ const styles = {
 };
 
 export default EmergencyContacts;
+

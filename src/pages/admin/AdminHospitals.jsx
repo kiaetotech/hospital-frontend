@@ -692,3 +692,4 @@ const inputStyle = {
 };
 
 export default AdminHospitals;
+

@@ -806,3 +806,4 @@ const InsuranceDetail = () => {
 };
 
 export default InsuranceDetail;
+

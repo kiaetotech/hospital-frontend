@@ -172,3 +172,4 @@ const inputStyle = {
 };
 
 export default BookPanchakarmaPackage;
+

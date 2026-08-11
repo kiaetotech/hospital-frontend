@@ -48,3 +48,4 @@ const th = { padding:'12px 14px', textAlign:'left', fontWeight:700, fontSize:'0.
 const td = { padding:'10px 14px', fontSize:'0.85rem' };
 
 export default CancellationPolicy;
+

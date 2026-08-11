@@ -285,3 +285,4 @@ const TherapistCard = ({ therapist, onBookmark, onFavorite, onBook }) => {
 };
 
 export default TherapistCard;
+

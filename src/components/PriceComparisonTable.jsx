@@ -130,3 +130,4 @@ const PriceComparisonTable = ({ selectedTests, onBack, onBookNow, filters }) => 
 };
 
 export default PriceComparisonTable;
+

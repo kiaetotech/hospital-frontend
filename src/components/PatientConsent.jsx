@@ -58,3 +58,4 @@ const checkboxStyle = {
 };
 
 export default PatientConsent;
+

@@ -143,3 +143,4 @@ const getCurrentSeason = () => {
 };
 
 export default SeasonalWellness;
+

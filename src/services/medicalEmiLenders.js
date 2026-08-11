@@ -49,3 +49,4 @@ export const medicalEmiLenders = [
     partnerHospitals: true
   }
 ];
+

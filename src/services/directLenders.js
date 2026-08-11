@@ -49,3 +49,4 @@ export const directLenders = [
     description: 'Multiple collateral options available'
   }
 ];
+

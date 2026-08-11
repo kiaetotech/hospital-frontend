@@ -337,3 +337,4 @@ const inputStyle = {
 };
 
 export default AdminAmbulance;
+

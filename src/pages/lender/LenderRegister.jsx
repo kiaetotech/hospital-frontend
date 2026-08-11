@@ -374,3 +374,4 @@ const ls = { display: 'block', fontWeight: 'bold', fontSize: '0.875rem', marginB
 const is = { width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', fontSize: '0.9rem', backgroundColor: 'white', outline: 'none', boxSizing: 'border-box' };
 
 export default LenderRegister;
+

@@ -212,3 +212,4 @@ const WellnessCenterDashboard = () => {
 const inputStyle = { padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.9rem', width: '100%', boxSizing: 'border-box' };
 
 export default WellnessCenterDashboard;
+

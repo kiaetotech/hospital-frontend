@@ -236,3 +236,4 @@ const InsuranceCard = ({ plan, featured = false, popular = false, viewMode = 'gr
 };
 
 export default InsuranceCard;
+

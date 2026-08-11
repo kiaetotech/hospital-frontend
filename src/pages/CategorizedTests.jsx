@@ -77,3 +77,4 @@ const CategorizedTests = ({ selectedTests, setSelectedTests, onCompare }) => {
 };
 
 export default CategorizedTests;
+

@@ -714,3 +714,4 @@ const InsuranceList = () => {
 };
 
 export default InsuranceList;
+

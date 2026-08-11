@@ -58,3 +58,4 @@ const PatientReview = () => {
 };
 
 export default PatientReview;
+

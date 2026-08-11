@@ -44,3 +44,4 @@ const DoctorRegistration = () => {
 };
 
 export default DoctorRegistration;
+

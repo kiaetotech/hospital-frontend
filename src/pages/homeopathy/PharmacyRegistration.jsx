@@ -29,3 +29,4 @@ const PharmacyRegistration = () => {
 };
 
 export default PharmacyRegistration;
+

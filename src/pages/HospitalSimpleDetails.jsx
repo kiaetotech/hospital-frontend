@@ -454,3 +454,4 @@ const tag = { padding: '4px 10px', backgroundColor: '#f3e8ff', color: '#5b21b6',
 const bottomBtn = (bg) => ({ backgroundColor: bg, color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 'bold', flex: 1, maxWidth: '200px', fontSize: '0.9rem' });
 
 export default HospitalSimpleDetails;
+

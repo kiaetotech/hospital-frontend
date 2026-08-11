@@ -217,3 +217,4 @@ const PrakritiQuiz = () => {
 };
 
 export default PrakritiQuiz;
+

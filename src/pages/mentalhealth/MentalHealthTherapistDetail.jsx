@@ -156,3 +156,4 @@ const MentalHealthTherapistDetail = () => {
 };
 
 export default MentalHealthTherapistDetail;
+

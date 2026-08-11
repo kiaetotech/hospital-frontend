@@ -352,3 +352,4 @@ const filterInputStyle = {
 };
 
 export default AyurvedaAdvancedSearch;
+

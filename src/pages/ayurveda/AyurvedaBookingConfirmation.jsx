@@ -55,3 +55,4 @@ const AyurvedaBookingConfirmation = () => {
 };
 
 export default AyurvedaBookingConfirmation;
+

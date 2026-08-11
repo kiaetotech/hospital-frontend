@@ -80,3 +80,4 @@ const CollateralForm = ({ onCollateralSubmit }) => {
 };
 
 export default CollateralForm;
+

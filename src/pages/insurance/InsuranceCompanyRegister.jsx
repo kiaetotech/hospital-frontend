@@ -106,3 +106,4 @@ const inputStyle = {
 };
 
 export default InsuranceCompanyRegister;
+

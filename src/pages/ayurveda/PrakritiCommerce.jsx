@@ -181,3 +181,4 @@ const getProductEmoji = (category) => {
 };
 
 export default PrakritiCommerce;
+

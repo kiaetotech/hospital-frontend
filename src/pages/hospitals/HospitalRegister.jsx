@@ -149,3 +149,4 @@ const HospitalRegister = () => {
 };
 
 export default HospitalRegister;
+

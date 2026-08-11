@@ -142,3 +142,4 @@ const DiagnosticsList = () => {
 };
 
 export default DiagnosticsList;
+

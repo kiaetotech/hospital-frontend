@@ -253,3 +253,4 @@ const PackageCard = ({ package: pkg, onSelect, isSelected, onBook }) => {
 };
 
 export default HealthPackages;
+

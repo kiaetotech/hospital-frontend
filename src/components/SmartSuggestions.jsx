@@ -89,3 +89,4 @@ const SmartSuggestions = ({ onSelectPackage }) => {
 };
 
 export default SmartSuggestions;
+

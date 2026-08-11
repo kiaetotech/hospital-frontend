@@ -302,3 +302,4 @@ const th = { padding: '10px 12px', textAlign: 'left', fontWeight: 700, fontSize:
 const td = { padding: '10px 12px', fontSize: '0.85rem' };
 
 export default DiagnosticsDashboard;
+

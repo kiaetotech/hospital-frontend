@@ -56,3 +56,4 @@ const DoctorRegistration = () => {
 
 const inp = { width:'100%',padding:'0.75rem',marginBottom:'0.75rem',borderRadius:'0.5rem',border:'1px solid #e2e8f0',fontSize:'1rem',boxSizing:'border-box' };
 export default DoctorRegistration;
+

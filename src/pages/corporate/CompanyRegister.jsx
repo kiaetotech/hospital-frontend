@@ -241,3 +241,4 @@ const CompanyRegister = () => {
 };
 
 export default CompanyRegister;
+

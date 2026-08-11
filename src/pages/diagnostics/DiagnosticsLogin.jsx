@@ -93,3 +93,4 @@ const is = { width: '100%', padding: '13px', border: '2px solid #e0e0e0', border
 const cc = { padding: '13px 10px', background: '#f5f5f5', border: '2px solid #e0e0e0', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#555' };
 
 export default DiagnosticsLogin;
+

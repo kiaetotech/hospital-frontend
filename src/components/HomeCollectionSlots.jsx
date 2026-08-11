@@ -90,3 +90,4 @@ const HomeCollectionSlots = ({ onSelectSlot, selectedSlot }) => {
 };
 
 export default HomeCollectionSlots;
+

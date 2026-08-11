@@ -675,3 +675,4 @@ const EmptyState = ({ message }) => (
 );
 
 export default CaregiverProfile;
+

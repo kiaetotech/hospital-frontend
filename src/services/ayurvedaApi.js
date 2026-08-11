@@ -43,3 +43,4 @@ export const verifyPayment = (paymentId) => api.post('/ayurveda/payments/verify'
 // Prakriti APIs
 export const submitPrakritiResult = (resultData) => api.post('/ayurveda/prakriti', resultData);
 export const getPrakritiHistory = (patientId) => api.get(`/ayurveda/prakriti/history/${patientId}`);
+

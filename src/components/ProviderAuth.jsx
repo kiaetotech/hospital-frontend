@@ -38,3 +38,4 @@ const ProviderAuth = ({ children, providerType }) => {
 };
 
 export default ProviderAuth;
+

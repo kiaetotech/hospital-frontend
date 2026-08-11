@@ -283,3 +283,4 @@ const tdValueStyle = { padding: '10px 16px', textAlign: 'center' };
 const badgeStyle = { backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 'bold', display: 'inline-block' };
 
 export default CompareHospitals;
+

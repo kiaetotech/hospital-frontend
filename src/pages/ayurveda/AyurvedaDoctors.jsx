@@ -249,3 +249,4 @@ const AyurvedaDoctors = () => {
 };
 
 export default AyurvedaDoctors;
+

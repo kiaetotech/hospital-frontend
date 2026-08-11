@@ -92,3 +92,4 @@ const AyurvedaDoctorProfile = () => {
 };
 
 export default AyurvedaDoctorProfile;
+

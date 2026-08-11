@@ -187,3 +187,4 @@ const inputStyle = { padding: '7px 10px', border: '1px solid #e2e8f0', borderRad
 const selectStyle = { padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', outline: 'none', width: '100%', background: 'white' };
 
 export default MentalHealthTherapists;
+

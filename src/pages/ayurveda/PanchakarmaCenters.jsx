@@ -285,3 +285,4 @@ const filterStyle = {
 };
 
 export default PanchakarmaCenters;
+

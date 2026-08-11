@@ -86,3 +86,4 @@ const NearbyPackages = ({ onSelectPackage }) => {
 };
 
 export default NearbyPackages;
+

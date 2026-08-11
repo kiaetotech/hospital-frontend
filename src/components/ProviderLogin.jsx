@@ -171,3 +171,4 @@ const ProviderLogin = ({ type, title, icon, registerPath, dashboardPath }) => {
 };
 
 export default ProviderLogin;
+

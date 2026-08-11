@@ -356,3 +356,4 @@ const inputStyle = {
 };
 
 export default AdminDiagnostics;
+

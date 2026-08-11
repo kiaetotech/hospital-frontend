@@ -366,3 +366,4 @@ const AdminInsuranceClaims = () => {
 };
 
 export default AdminInsuranceClaims;
+

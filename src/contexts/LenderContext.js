@@ -50,3 +50,4 @@ export const LenderProvider = ({ children }) => {
     </LenderContext.Provider>
   );
 };
+

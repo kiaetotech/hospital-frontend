@@ -386,3 +386,4 @@ const InsuranceSearchForm = ({ onSearch }) => {
 };
 
 export default InsuranceSearchForm;
+

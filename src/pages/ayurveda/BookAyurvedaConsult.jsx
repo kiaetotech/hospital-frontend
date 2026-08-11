@@ -595,3 +595,4 @@ const inputStyle = {
 };
 
 export default BookAyurvedaConsult;
+

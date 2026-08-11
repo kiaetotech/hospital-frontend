@@ -52,3 +52,4 @@ const LoanOfferCard = ({ lender, amount, onSelect, isSelected }) => {
 };
 
 export default LoanOfferCard;
+

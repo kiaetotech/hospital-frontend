@@ -17,3 +17,4 @@ const PanchakarmaCenterDetail = () => {
 };
 
 export default PanchakarmaCenterDetail;
+

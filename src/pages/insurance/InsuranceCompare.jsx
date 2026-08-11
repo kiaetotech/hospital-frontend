@@ -505,3 +505,4 @@ const InsuranceCompare = () => {
 };
 
 export default InsuranceCompare;
+

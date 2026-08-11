@@ -1484,3 +1484,4 @@ case 'beds': return (
 };
 
 export default HospitalDashboard;
+

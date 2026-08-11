@@ -463,3 +463,4 @@ const cardStyle = { backgroundColor:'white', borderRadius:'0.75rem', padding:'1.
 const quickBtnStyle = { padding:'0.75rem', backgroundColor:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:'0.5rem', cursor:'pointer' };
 
 export default AmbulanceDashboard;
+

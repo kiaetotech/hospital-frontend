@@ -96,3 +96,4 @@ const ConsultHistory = () => {
 };
 
 export default ConsultHistory;
+

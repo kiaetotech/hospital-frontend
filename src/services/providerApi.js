@@ -212,3 +212,4 @@ export const providerAuth = {
   getToken: () => localStorage.getItem('providerToken'),
   isAuthenticated: () => !!localStorage.getItem('providerToken')
 };
+

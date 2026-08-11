@@ -154,3 +154,4 @@ const DiagnosticsCompareSimple = () => {
 };
 
 export default DiagnosticsCompareSimple;
+

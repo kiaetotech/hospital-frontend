@@ -373,3 +373,4 @@ const MentalHealthPayment = () => {
 };
 
 export default MentalHealthPayment;
+

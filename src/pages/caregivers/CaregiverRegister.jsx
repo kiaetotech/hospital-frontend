@@ -268,3 +268,4 @@ const inputStyle = {
 };
 
 export default CaregiverRegister;
+

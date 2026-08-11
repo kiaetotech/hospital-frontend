@@ -30,3 +30,4 @@ const CenterRegistration = () => {
 };
 
 export default CenterRegistration;
+

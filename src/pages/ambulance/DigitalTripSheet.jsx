@@ -498,3 +498,4 @@ const styles = {
 };
 
 export default DigitalTripSheet;
+

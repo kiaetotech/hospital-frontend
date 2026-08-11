@@ -287,3 +287,4 @@ const inputStyle = {
 };
 
 export default AdminCaregivers;
+

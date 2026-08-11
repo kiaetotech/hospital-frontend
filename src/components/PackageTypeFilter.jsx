@@ -53,3 +53,4 @@ const PackageTypeFilter = ({ selectedType, onSelectType }) => {
 };
 
 export default PackageTypeFilter;
+

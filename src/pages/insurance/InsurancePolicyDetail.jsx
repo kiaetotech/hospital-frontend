@@ -189,3 +189,4 @@ const InsurancePolicyDetail = () => {
 };
 
 export default InsurancePolicyDetail;
+

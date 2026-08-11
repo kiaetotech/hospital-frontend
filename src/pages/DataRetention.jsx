@@ -19,3 +19,4 @@ const DataRetention = () => (
 );
 
 export default DataRetention;
+

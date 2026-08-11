@@ -790,3 +790,4 @@ const tdStyle = {
 };
 
 export default AyurvedaAdminPanel;
+

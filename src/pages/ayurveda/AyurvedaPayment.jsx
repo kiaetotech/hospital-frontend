@@ -107,3 +107,4 @@ const AyurvedaPayment = () => {
 };
 
 export default AyurvedaPayment;
+

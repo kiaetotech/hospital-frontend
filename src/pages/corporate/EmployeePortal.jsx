@@ -367,3 +367,4 @@ const inputStyle = {
 const labelStyle = { display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '6px' };
 
 export default EmployeePortal;
+

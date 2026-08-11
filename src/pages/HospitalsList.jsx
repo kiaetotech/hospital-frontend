@@ -630,3 +630,4 @@ const cardStyles = {
 };
 
 export default HospitalsList;
+

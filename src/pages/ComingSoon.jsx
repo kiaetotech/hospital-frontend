@@ -6,3 +6,4 @@ const ComingSoon = ({ title }) => {
 };
 export default ComingSoon;
 
+

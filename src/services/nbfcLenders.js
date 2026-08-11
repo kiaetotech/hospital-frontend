@@ -46,3 +46,4 @@ export const nbfcLenders = [
     description: 'High-value personal loan for treatment'
   }
 ];
+

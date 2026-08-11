@@ -194,3 +194,4 @@ const LenderApplications = () => {
 };
 
 export default LenderApplications;
+

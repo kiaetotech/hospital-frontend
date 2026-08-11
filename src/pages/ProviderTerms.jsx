@@ -31,3 +31,4 @@ const ProviderTerms = () => (
 );
 
 export default ProviderTerms;
+

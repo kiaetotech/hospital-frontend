@@ -92,3 +92,4 @@ const AdminFinancialDashboard = () => {
 };
 
 export default AdminFinancialDashboard;
+

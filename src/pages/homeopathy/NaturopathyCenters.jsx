@@ -121,3 +121,4 @@ const NaturopathyCenters = () => {
 };
 
 export default NaturopathyCenters;
+

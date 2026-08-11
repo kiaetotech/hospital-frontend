@@ -131,3 +131,4 @@ const HomeopathyDoctors = () => {
 
 const s = { padding:'8px 10px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'12px',backgroundColor:'white',outline:'none' };
 export default HomeopathyDoctors;
+

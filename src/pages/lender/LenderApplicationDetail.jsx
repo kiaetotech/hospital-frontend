@@ -327,3 +327,4 @@ const LenderApplicationDetail = () => {
 };
 
 export default LenderApplicationDetail;
+

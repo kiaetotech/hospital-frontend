@@ -45,3 +45,4 @@ const Footer = () => (
 const linkStyle = { display: 'block', color: '#94a3b8', textDecoration: 'none', padding: '4px 0', fontSize: '0.85rem' };
 
 export default Footer;
+
