@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 
 const MyBookings = () => {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState('');
   const [bookings, setBookings] = useState([]);
   const [insurancePolicies, setInsurancePolicies] = useState([]);
   const [searched, setSearched] = useState(false);
@@ -33,32 +32,26 @@ const MyBookings = () => {
   
   const [actionMessage, setActionMessage] = useState('');
 
-  const fetchBookings = async (e) => {
-    e.preventDefault();
-    if (!phone || phone.length < 10) {
-      alert('Please enter a valid 10-digit phone number');
+  const fetchBookings = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to view your bookings');
+      navigate('/login');
       return;
     }
-    
     setLoading(true);
     try {
-      const response = await axios.get(`https://hospital-backend-production-7d0f.up.railway.app/api/bookings/patient/${phone}`);
-      setBookings(response.data);
-      
-      try {
-        const insuranceResponse = await axios.get(`/api/insurance/my-policies`);
-        if (insuranceResponse.data.success) {
-          setInsurancePolicies(insuranceResponse.data.data);
-        }
-      } catch (insuranceError) {
-        console.log('Insurance policies not available');
-        setInsurancePolicies([]);
-      }
-      
+      const response = await axios.get(`https://hospital-backend-production-7d0f.up.railway.app/api/bookings/my-bookings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBookings(response.data.data || response.data || []);
       setSearched(true);
     } catch (error) {
       console.error('Error fetching bookings:', error);
-      alert('Error fetching bookings. Please try again.');
+      if (error.response?.status === 401) {
+        localStorage.clear();
+        navigate('/login');
+      }
     }
     setLoading(false);
   };
