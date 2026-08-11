@@ -5,7 +5,7 @@ import axios from 'axios';
 // ============================================
 
 const api = axios.create({
-  baseURL: 'https://hospital-backend-production-f1b1.up.railway.app/api'
+  baseURL: 'https://hospital-backend-production-7d0f.up.railway.app/api'
 });
 
 api.interceptors.request.use((config) => {
