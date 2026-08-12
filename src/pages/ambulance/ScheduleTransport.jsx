@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api, { scheduleTransport } from '../../services/api';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getNearbyAmbulances, scheduleTransport } from '../../services/api';
 
 const ScheduleTransport = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [loading, setLoading] = useState(false);
   const [loadingAmbulances, setLoadingAmbulances] = useState(false);
@@ -29,7 +30,7 @@ const ScheduleTransport = () => {
 
     hospitalName: '',
 
-    ambulanceType: 'all',
+    ambulanceType: 'basic',
 
     // IMPORTANT:
     // These come from the provider/vehicle selected by patient.
@@ -69,6 +70,23 @@ const ScheduleTransport = () => {
   ];
 
   // ============================================
+  // RESTORE VEHICLE SELECTION FROM SEARCH CARD
+  // ============================================
+
+  useEffect(() => {
+    const providerId = searchParams.get('providerId') || '';
+    const vehicleId = searchParams.get('vehicleId') || '';
+    const type = searchParams.get('type') || 'basic';
+
+    setForm(prev => ({
+      ...prev,
+      providerId: providerId || prev.providerId,
+      vehicleId: vehicleId || prev.vehicleId,
+      ambulanceType: type || prev.ambulanceType
+    }));
+  }, [searchParams]);
+
+  // ============================================
   // GET AVAILABLE AMBULANCES
   // ============================================
 
@@ -84,25 +102,36 @@ const ScheduleTransport = () => {
   const fetchAvailableAmbulances = async () => {
     try {
       setLoadingAmbulances(true);
-      console.log('SEARCHING with:', { lat: form.pickupLat, lng: form.pickupLng });
       setError('');
 
-      const res = await api.get('/ambulance/search', {
-    params: {
-      lat: form.pickupLat,
-      lng: form.pickupLng,
-      radius: 500,
-      type: form.ambulanceType || 'all',
-      limit: 20
-    }
-  });
+      const res = await getNearbyAmbulances({
+          lat: form.pickupLat,
+          lng: form.pickupLng,
+          radius: 25,
+          limit: 20
+        });
 
       const ambulances = res.data?.data || [];
 
       setAvailableAmbulances(ambulances);
 
-      // Do not automatically choose a vehicle.
-      // Patient must select the provider/vehicle.
+      // If the patient arrived here from a search card, restore that exact vehicle.
+      const requestedProviderId = searchParams.get('providerId');
+      const requestedVehicleId = searchParams.get('vehicleId');
+      const restored = requestedVehicleId
+        ? ambulances.find(a => String(a.vehicleId) === String(requestedVehicleId) && (!requestedProviderId || String(a.providerId) === String(requestedProviderId)))
+        : null;
+
+      if (restored) {
+        setSelectedAmbulance(restored);
+        setForm(prev => ({
+          ...prev,
+          providerId: String(restored.providerId || ''),
+          vehicleId: String(restored.vehicleId || ''),
+          ambulanceType: restored.vehicleType || prev.ambulanceType
+        }));
+      }
+
       if (ambulances.length === 0) {
         setSelectedAmbulance(null);
 
@@ -223,32 +252,21 @@ const ScheduleTransport = () => {
       return;
     }
 
-    // IMPORTANT:
-    // Pricing must come from the selected provider/vehicle.
-    // Never use frontend dummy/default prices.
-    const pricing = ambulance.pricing || {};
+    const pricing =
+      ambulance.pricing || {};
 
-    const baseFare = Number(
-      pricing.baseFare ?? ambulance.baseFare
-    );
+    const baseFare =
+      Number(pricing.baseFare);
 
-    const perKmRate = Number(
-      pricing.perKmRate ??
-      ambulance.perKmRate ??
-      ambulance.pricePerKm
-    );
+    const perKmRate =
+      Number(pricing.perKmRate);
 
-    const nightCharge = Number(
-      pricing.nightCharge ??
-      ambulance.nightCharge ??
-      0
-    );
+    const nightCharge =
+      Number(pricing.nightCharge);
 
     if (
       !Number.isFinite(baseFare) ||
-      !Number.isFinite(perKmRate) ||
-      baseFare < 0 ||
-      perKmRate < 0
+      !Number.isFinite(perKmRate)
     ) {
       setFareEstimate(null);
       return;
@@ -265,18 +283,6 @@ const ScheduleTransport = () => {
 
     const destinationLng =
       Number(form.destinationLng);
-
-    // A reliable provider fare requires both pickup and destination
-    // coordinates. Do not silently calculate a zero-distance fare.
-    if (
-      !Number.isFinite(pickupLat) ||
-      !Number.isFinite(pickupLng) ||
-      !Number.isFinite(destinationLat) ||
-      !Number.isFinite(destinationLng)
-    ) {
-      setFareEstimate(null);
-      return;
-    }
 
     const distance =
       calculateDistance(
@@ -489,20 +495,6 @@ const ScheduleTransport = () => {
       return;
     }
 
-    if (
-      !form.pickupLat ||
-      !form.pickupLng ||
-      !form.destinationLat ||
-      !form.destinationLng
-    ) {
-      setError(
-        'Please select valid pickup and destination locations before scheduling.'
-      );
-
-      setLoading(false);
-      return;
-    }
-
     // ------------------------------------------
     // PROVIDER / VEHICLE REQUIRED
     // ------------------------------------------
@@ -525,41 +517,6 @@ const ScheduleTransport = () => {
       return;
     }
 
-    if (!selectedAmbulance) {
-      setError(
-        'Please select the ambulance whose pricing you want to use.'
-      );
-
-      setLoading(false);
-      return;
-    }
-
-    // Provider pricing is required for a production booking.
-    // The backend must independently validate the same pricing from DB.
-    const selectedPricing = selectedAmbulance.pricing || {};
-    const selectedBaseFare = Number(
-      selectedPricing.baseFare ?? selectedAmbulance.baseFare
-    );
-    const selectedPerKmRate = Number(
-      selectedPricing.perKmRate ??
-      selectedAmbulance.perKmRate ??
-      selectedAmbulance.pricePerKm
-    );
-
-    if (
-      !Number.isFinite(selectedBaseFare) ||
-      !Number.isFinite(selectedPerKmRate) ||
-      selectedBaseFare < 0 ||
-      selectedPerKmRate < 0
-    ) {
-      setError(
-        'The selected ambulance provider has not configured valid pricing. Please choose another ambulance or ask the provider to update pricing.'
-      );
-
-      setLoading(false);
-      return;
-    }
-
     // ------------------------------------------
     // SUBMIT EXACTLY THE SELECTED VEHICLE
     // ------------------------------------------
@@ -572,15 +529,7 @@ const ScheduleTransport = () => {
           form.providerId,
 
         vehicleId:
-          form.vehicleId,
-
-        // These are identifiers only. The backend must fetch the authoritative
-        // provider/vehicle pricing from MongoDB and must not trust client prices.
-        selectedProviderId:
-          selectedAmbulance.providerId || form.providerId,
-
-        selectedVehicleId:
-          selectedAmbulance.vehicleId || form.vehicleId
+          form.vehicleId
       };
 
       const res =
@@ -589,16 +538,11 @@ const ScheduleTransport = () => {
         );
 
       if (res.data?.success) {
-  const bookingId = res.data?.data?.bookingId || '';
-
-  setSuccess(
-    'Ambulance scheduled successfully! Booking ID: ' + bookingId
-  );
-
+        const bookingId = res.data?.data?.bookingId || '';
+        setSuccess(`Ambulance booking created successfully. Booking ID: ${bookingId}. Status: ${res.data?.data?.status || 'pending'}.`);
         setTimeout(() => {
           navigate('/ambulance');
         }, 2500);
-
       } else {
         setError(
           res.data?.error ||
@@ -822,7 +766,7 @@ const ScheduleTransport = () => {
             required
           />
 
-                    <button
+          <button
             type="button"
             onClick={() =>
               getCurrentLocation(
@@ -833,33 +777,6 @@ const ScheduleTransport = () => {
           >
             📍 Use Current Location
           </button>
-
-          <div style={styles.row}>
-            <input
-              type="text"
-              placeholder="Latitude"
-              value={form.destinationLat}
-              onChange={(e) =>
-                handleChange(
-                  'destinationLat',
-                  e.target.value
-                )
-              }
-              style={{...styles.input, flex: 1}}
-            />
-            <input
-              type="text"
-              placeholder="Longitude"
-              value={form.destinationLng}
-              onChange={(e) =>
-                handleChange(
-                  'destinationLng',
-                  e.target.value
-                )
-              }
-              style={{...styles.input, flex: 1}}
-            />
-          </div>
 
           {form.destinationLat && (
             <p style={styles.coords}>
@@ -1068,47 +985,24 @@ const ScheduleTransport = () => {
                           styles.pricingBox
                         }
                       >
-                        {Number.isFinite(
-                          Number(
-                            pricing.baseFare ??
-                            ambulance.baseFare
-                          )
-                        ) &&
-                        Number.isFinite(
-                          Number(
-                            pricing.perKmRate ??
-                            ambulance.perKmRate ??
-                            ambulance.pricePerKm
-                          )
-                        ) ? (
-                          <>
-                            <div>
-                              Provider fare
-                            </div>
+                        <div>
+                          Base fare
+                        </div>
 
-                            <strong>
-                              ₹
-                              {Number(
-                                pricing.baseFare ??
-                                ambulance.baseFare
-                              ).toFixed(2)}
-                            </strong>
+                        <strong>
+                          ₹
+                          {Number(
+                            pricing.baseFare || 0
+                          ).toFixed(2)}
+                        </strong>
 
-                            <div>
-                              + ₹
-                              {Number(
-                                pricing.perKmRate ??
-                                ambulance.perKmRate ??
-                                ambulance.pricePerKm
-                              ).toFixed(2)}
-                              /km
-                            </div>
-                          </>
-                        ) : (
-                          <div style={{ color: '#ffb74d' }}>
-                            Provider pricing unavailable
-                          </div>
-                        )}
+                        <div>
+                          + ₹
+                          {Number(
+                            pricing.perKmRate || 0
+                          ).toFixed(2)}
+                          /km
+                        </div>
                       </div>
                     </button>
                   );
@@ -1348,10 +1242,9 @@ const ScheduleTransport = () => {
               </div>
 
               <p style={styles.fareNote}>
-                Estimate uses the selected provider's
-                saved vehicle pricing. The server
-                revalidates the provider, vehicle,
-                distance and final fare before booking.
+                Final fare is calculated by
+                the server using the selected
+                provider's saved pricing.
               </p>
             </div>
           )}
@@ -1714,4 +1607,3 @@ const styles = {
 };
 
 export default ScheduleTransport;
-

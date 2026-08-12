@@ -94,7 +94,7 @@ export const ambulanceArrivedHospital = (bookingId, data) => api.post(`/ambulanc
 export const ambulanceTripComplete = (bookingId, data) => api.post(`/ambulance/trip-complete/${bookingId}`, data);
 export const ambulanceCancelEmergency = (bookingId, data) => api.post(`/ambulance/cancel-emergency/${bookingId}`, data);
 export const ambulanceUpdateLocation = (data) => api.post('/ambulance/update-location', data);
-export const getNearbyAmbulances = (params) => api.get('/ambulance/search', { params });
+export const getNearbyAmbulances = (params) => api.get('/ambulance/nearby-ambulances', { params });
 export const getPatientProfile = () => api.get('/auth/patient/profile');
 export const updatePatientProfile = (data) => api.put('/auth/patient/profile', data);
 export const getActiveEmergency = (bookingId) => api.get(`/ambulance/active-emergency/${bookingId}`);
@@ -103,6 +103,7 @@ export const scheduleTransport = (data) => api.post('/ambulance/schedule-transpo
 export const getScheduledBookings = () => api.get('/ambulance/scheduled-bookings');
 export const getAmbulanceBookings = (params) => api.get('/ambulance/my-bookings', { params });
 export const getAmbulanceBookingById = (bookingId) => api.get(`/ambulance/booking/${bookingId}`);
+export const cancelAmbulanceBooking = (bookingId, data = {}) => api.post(`/ambulance/cancel-booking/${bookingId}`, data);
 export const getTripSheet = (bookingId) => api.get(`/ambulance/trip-sheet/${bookingId}`);
 export const getDriverDashboard = () => api.get('/ambulance/driver/dashboard');
 export const toggleDriverAvailability = (data) => api.post('/ambulance/driver/toggle-availability', data);

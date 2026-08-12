@@ -330,7 +330,7 @@ const Ambulance = () => {
       return;
     }
 
-    navigate(`/ambulance/schedule?type=${selectedType}`);
+    navigate(`/ambulance/schedule?type=${encodeURIComponent(selectedType)}`);
   };
 
   // ============================================================
@@ -346,19 +346,17 @@ const Ambulance = () => {
   // ============================================================
 
   const handleNearbyAmbulance = (ambulance) => {
-    const type =
-      ambulance.vehicleType ||
-      ambulance.type ||
-      selectedType ||
-      'basic';
+    const type = String(
+      ambulance.vehicleType || ambulance.type || selectedType || 'basic'
+    ).toLowerCase();
 
-    setSelectedType(String(type).toLowerCase());
+    setSelectedType(type);
 
-    navigate(
-      `/ambulance/schedule?type=${encodeURIComponent(
-        String(type).toLowerCase()
-      )}`
-    );
+    const params = new URLSearchParams({ type });
+    if (ambulance.providerId) params.set('providerId', String(ambulance.providerId));
+    if (ambulance.vehicleId) params.set('vehicleId', String(ambulance.vehicleId));
+
+    navigate(`/ambulance/schedule?${params.toString()}`);
   };
 
   // ============================================================
