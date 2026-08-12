@@ -21,6 +21,7 @@ const Ambulance = () => {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileForm, setProfileForm] = useState({ city: '', line1: '', state: '', pincode: '' });
   const [manualCity, setManualCity] = useState('');
+  const [useManualLocation, setUseManualLocation] = useState(false);
   const [showManualCityInput, setShowManualCityInput] = useState(false);
   const [selectedAmbulance, setSelectedAmbulance] = useState(null);
   const [fareEstimate, setFareEstimate] = useState(null);
