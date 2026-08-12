@@ -32,6 +32,16 @@ const DriverApp = () => {
   const socketRef = useRef(null);
   const locationInterval = useRef(null);
   const timerInterval = useRef(null);
+  const currentTripRef = useRef(null);
+  const isOnlineRef = useRef(false);
+
+  useEffect(() => {
+    currentTripRef.current = currentTrip;
+  }, [currentTrip]);
+
+  useEffect(() => {
+    isOnlineRef.current = isOnline;
+  }, [isOnline]);
 
   useEffect(() => {
     fetchDashboard();
@@ -39,8 +49,14 @@ const DriverApp = () => {
 
     return () => {
       if (socketRef.current) socketRef.current.disconnect();
-      if (locationInterval.current) clearInterval(locationInterval.current);
-      if (timerInterval.current) clearInterval(timerInterval.current);
+      if (locationInterval.current) {
+        clearInterval(locationInterval.current);
+        locationInterval.current = null;
+      }
+      if (timerInterval.current) {
+        clearInterval(timerInterval.current);
+        timerInterval.current = null;
+      }
     };
   }, []);
 
@@ -65,7 +81,12 @@ const DriverApp = () => {
     socket.on('connect', () => {
       const driverId = localStorage.getItem('driverId');
       if (driverId) {
-        socket.emit('driver:register', { driverId, vehicleType: 'basic' });
+        socket.emit('driver:register', {
+          driverId,
+          vehicleId: dashboard?.vehicleId || dashboard?.vehicle?._id || '',
+          vehicleNumber: dashboard?.vehicleNumber || dashboard?.vehicle?.vehicleNumber || '',
+          vehicleType: dashboard?.vehicleType || dashboard?.vehicle?.type || 'basic'
+        });
       }
     });
 
@@ -100,55 +121,96 @@ const DriverApp = () => {
   };
 
   const handleToggleOnline = async () => {
+    const nextOnline = !isOnline;
     try {
-      await toggleDriverAvailability({ isAvailable: !isOnline });
-      setIsOnline(!isOnline);
+      await toggleDriverAvailability({ isAvailable: nextOnline });
+      isOnlineRef.current = nextOnline;
+      setIsOnline(nextOnline);
+      await fetchDashboard();
 
-      if (!isOnline) {
+      if (nextOnline) {
         startLocationTracking();
         socketRef.current?.emit('driver:register', {
           driverId: localStorage.getItem('driverId'),
-          vehicleType: 'basic'
+          vehicleId: dashboard?.vehicleId || dashboard?.vehicle?._id || '',
+          vehicleNumber: dashboard?.vehicleNumber || dashboard?.vehicle?.vehicleNumber || '',
+          vehicleType: dashboard?.vehicleType || dashboard?.vehicle?.type || 'basic'
         });
       } else {
         stopLocationTracking();
       }
-    } catch (err) {}
-  };
-
-  const startLocationTracking = () => {
-    if (navigator.geolocation) {
-      locationInterval.current = setInterval(() => {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            setLocation(loc);
-            try {
-              await ambulanceUpdateLocation({
-                lat: loc.lat,
-                lng: loc.lng,
-                isAvailable: true,
-                isOnTrip: !!currentTrip,
-                tripId: currentTrip?.bookingId || ''
-              });
-              socketRef.current?.emit('driver:location_update', {
-                lat: loc.lat,
-                lng: loc.lng,
-                isAvailable: true,
-                isOnTrip: !!currentTrip,
-                tripId: currentTrip?.bookingId || ''
-              });
-            } catch (err) {}
-          },
-          () => {},
-          { enableHighAccuracy: true }
-        );
-      }, 5000);
+    } catch (err) {
+      console.error('Availability update failed:', err);
+      alert(err?.response?.data?.message || err?.message || 'Unable to change availability.');
     }
   };
 
-  const stopLocationTracking = () => {
+  const startLocationTracking = () => {
+    if (!navigator.geolocation) {
+      alert('GPS is not supported by this browser.');
+      return;
+    }
+
     if (locationInterval.current) clearInterval(locationInterval.current);
+
+    const sendLocation = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const loc = {
+            lat: Number(pos.coords.latitude),
+            lng: Number(pos.coords.longitude)
+          };
+
+          setLocation(loc);
+
+          const driverId = localStorage.getItem('driverId');
+          const trip = currentTripRef.current;
+
+          if (!driverId) {
+            console.error('driverId missing from localStorage. Cannot update ambulance location.');
+            return;
+          }
+
+          const payload = {
+            driverId,
+            lat: loc.lat,
+            lng: loc.lng,
+            isAvailable: isOnlineRef.current,
+            isOnTrip: Boolean(trip),
+            tripId: trip?.bookingId || trip?._id || '',
+            vehicleId: dashboard?.vehicleId || dashboard?.vehicle?._id || '',
+            vehicleNumber: dashboard?.vehicleNumber || dashboard?.vehicle?.vehicleNumber || '',
+            vehicleType: dashboard?.vehicleType || dashboard?.vehicle?.type || 'basic'
+          };
+
+          try {
+            await ambulanceUpdateLocation(payload);
+
+            socketRef.current?.emit('driver:location_update', payload);
+          } catch (err) {
+            console.error('Ambulance location update failed:', err?.response?.data || err?.message || err);
+          }
+        },
+        (error) => {
+          console.error('GPS error:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 5000
+        }
+      );
+    };
+
+    sendLocation();
+    locationInterval.current = setInterval(sendLocation, 5000);
+  };
+
+  const stopLocationTracking = () => {
+    if (locationInterval.current) {
+      clearInterval(locationInterval.current);
+      locationInterval.current = null;
+    }
   };
 
   const handleAcceptEmergency = async () => {
@@ -157,10 +219,14 @@ const DriverApp = () => {
 
     try {
       await acceptEmergency(emergencyRequest.bookingId, {});
+      currentTripRef.current = emergencyRequest;
       setCurrentTrip(emergencyRequest);
       setStep('accepted');
       socketRef.current?.emit('driver:accept_emergency', { bookingId: emergencyRequest.bookingId });
-    } catch (err) {}
+    } catch (err) {
+      console.error('Accept emergency failed:', err?.response?.data || err?.message || err);
+      alert(err?.response?.data?.message || err?.message || 'Unable to accept this emergency request.');
+    }
   };
 
   const rejectEmergency = () => {
@@ -178,7 +244,10 @@ const DriverApp = () => {
       await ambulanceTripStart(currentTrip.bookingId);
       setStep('arrived_pickup');
       socketRef.current?.emit('driver:arrived_pickup', { bookingId: currentTrip.bookingId });
-    } catch (err) {}
+    } catch (err) {
+      console.error('Trip start failed:', err?.response?.data || err?.message || err);
+      alert(err?.response?.data?.message || err?.message || 'Unable to mark arrival.');
+    }
   };
 
   const patientOnboard = async () => {
@@ -188,7 +257,8 @@ const DriverApp = () => {
       setStep('onboard');
       socketRef.current?.emit('driver:patient_onboard', { bookingId: currentTrip.bookingId, otp });
     } catch (err) {
-      alert('Invalid OTP');
+      console.error('Patient onboard failed:', err?.response?.data || err?.message || err);
+      alert(err?.response?.data?.message || 'Invalid OTP or trip cannot be started.');
     }
   };
 
@@ -197,13 +267,25 @@ const DriverApp = () => {
       await ambulanceArrivedHospital(currentTrip.bookingId, { vitals });
       setStep('arrived_hospital');
       socketRef.current?.emit('driver:arrived_hospital', { bookingId: currentTrip.bookingId, vitals });
-    } catch (err) {}
+    } catch (err) {
+      console.error('Hospital arrival failed:', err?.response?.data || err?.message || err);
+      alert(err?.response?.data?.message || err?.message || 'Unable to mark hospital arrival.');
+    }
   };
 
   const completeTrip = async () => {
     try {
-      const distance = Math.round(Math.random() * 15 + 5);
-      const duration = Math.round(distance * 3);
+      const distance = Number(
+        currentTrip?.actualDistance ??
+        currentTrip?.distance ??
+        currentTrip?.tripDistance ??
+        0
+      );
+      const duration = Number(
+        currentTrip?.actualDuration ??
+        currentTrip?.duration ??
+        0
+      );
       await ambulanceTripComplete(currentTrip.bookingId, {
         distance, duration,
         oxygenAdministered: false,
@@ -224,7 +306,10 @@ const DriverApp = () => {
         setTripNotes('');
         fetchDashboard();
       }, 3000);
-    } catch (err) {}
+    } catch (err) {
+      console.error('Trip completion failed:', err?.response?.data || err?.message || err);
+      alert(err?.response?.data?.message || err?.message || 'Unable to complete trip.');
+    }
   };
 
   const getStatusColor = () => {
@@ -249,6 +334,13 @@ const DriverApp = () => {
           <span style={styles.onlineText}>{isOnline ? 'Online' : 'Offline'}</span>
         </div>
       </div>
+
+      {!localStorage.getItem('driverId') && (
+        <div style={styles.driverWarning}>
+          ⚠️ Driver ID is missing. GPS location cannot be linked to the ambulance.
+          Please log in again through the ambulance driver account.
+        </div>
+      )}
 
       {step === 'idle' && (
         <div style={styles.toggleSection}>
@@ -401,6 +493,7 @@ const styles = {
   onlineIndicator: { display: 'flex', alignItems: 'center', gap: '6px' },
   dot: { width: '10px', height: '10px', borderRadius: '50%', display: 'inline-block' },
   onlineText: { color: '#aaa', fontSize: '12px' },
+  driverWarning: { background: '#3a1f00', color: '#ffcc80', border: '1px solid #8a5a00', borderRadius: '10px', padding: '12px', marginBottom: '15px', fontSize: '12px', lineHeight: 1.5 },
   toggleSection: { textAlign: 'center', marginBottom: '20px' },
   toggleBtn: { width: '100%', padding: '16px', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer' },
   toggleHint: { color: '#888', fontSize: '12px', marginTop: '8px' },
@@ -444,4 +537,3 @@ const styles = {
 };
 
 export default DriverApp;
-
