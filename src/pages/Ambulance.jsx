@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getNearbyAmbulances, getPatientProfile, updatePatientProfile } from '../services/api';
+import api from '../services/api';
 
 const Ambulance = () => {
   const navigate = useNavigate();
@@ -19,14 +20,20 @@ const Ambulance = () => {
   const [patientProfile, setPatientProfile] = useState(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileForm, setProfileForm] = useState({ city: '', line1: '', state: '', pincode: '' });
-  const [useManualLocation, setUseManualLocation] = useState(false);
   const [manualCity, setManualCity] = useState('');
+  const [showManualCityInput, setShowManualCityInput] = useState(false);
+  const [selectedAmbulance, setSelectedAmbulance] = useState(null);
+  const [fareEstimate, setFareEstimate] = useState(null);
+  const [showFareModal, setShowFareModal] = useState(false);
+  const [bookingStep, setBookingStep] = useState('search'); // search | confirm | booked
+  const [bookings, setBookings] = useState([]);
+  const [showBookings, setShowBookings] = useState(false);
 
   // ============================================================
   // LOAD USER + LOCATION
   // ============================================================
 
-    useEffect(() => {
+      useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
@@ -37,10 +44,84 @@ const Ambulance = () => {
         console.error('Unable to read saved user:', error);
       }
       fetchPatientProfile();
+      fetchMyBookings();
     }
 
     getLocation();
   }, []);
+
+	  const fetchPatientProfile = async () => {
+    try {
+      const res = await getPatientProfile();
+      if (res.data?.data) {
+        setPatientProfile(res.data.data);
+        setProfileForm({
+          city: res.data.data.patientAddress?.city || '',
+          line1: res.data.data.patientAddress?.line1 || '',
+          state: res.data.data.patientAddress?.state || '',
+          pincode: res.data.data.patientAddress?.pincode || ''
+        });
+        if (!location && res.data.data.patientLocation?.lat) {
+          const loc = { lat: res.data.data.patientLocation.lat, lng: res.data.data.patientLocation.lng };
+          setLocation(loc);
+          fetchNearbyAmbulances(loc.lat, loc.lng);
+        }
+      }
+    } catch (err) {}
+  };
+
+  const saveProfile = async () => {
+    try {
+      await updatePatientProfile({ patientAddress: profileForm });
+      setPatientProfile(prev => ({ ...prev, patientAddress: profileForm }));
+      setShowProfileEdit(false);
+    } catch (err) { alert('Failed to save profile'); }
+  };
+
+  const fetchMyBookings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const res = await api.get('/ambulance/my-bookings', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBookings(res.data?.data || []);
+    } catch (err) {}
+  };
+
+  const handleCitySearch = () => {
+    if (manualCity.trim()) {
+      setSearchFilter('city');
+      setSearchQuery(manualCity.trim());
+    }
+  };
+
+  const calculateFare = (ambulance) => {
+    if (!ambulance || !location) return null;
+    const baseFare = ambulance.baseFare || 500;
+    const perKmRate = ambulance.perKmRate || 25;
+    const distance = ambulance.distance || 5;
+    const nightCharge = 0;
+    const total = baseFare + (distance * perKmRate) + nightCharge;
+    return { baseFare, perKmRate, distance, nightCharge, total: Math.round(total) };
+  };
+
+  const handleSelectAmbulance = (ambulance) => {
+    setSelectedAmbulance(ambulance);
+    const fare = calculateFare(ambulance);
+    setFareEstimate(fare);
+    setShowFareModal(true);
+  };
+
+  const handleBookAmbulance = () => {
+    if (!user) {
+      navigate('/login?redirect=/ambulance');
+      return;
+    }
+    setShowFareModal(false);
+    const type = selectedAmbulance?.vehicleType || selectedType;
+    navigate(`/ambulance/schedule?type=${type}`);
+  };
 
        const fetchPatientProfile = async () => {
     try {
@@ -540,6 +621,51 @@ const Ambulance = () => {
         </div>
       )}
 
+  {/* ======================================================
+          PATIENT PROFILE CARD
+      ====================================================== */}
+      {user && (
+        <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          {!showProfileEdit ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#333' }}>👤 {user.name || 'Patient'}</div>
+                {patientProfile?.patientAddress?.city ? (
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                    📍 {patientProfile.patientAddress.city}{patientProfile.patientAddress.line1 ? ', ' + patientProfile.patientAddress.line1 : ''}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12px', color: '#e53935', marginTop: '4px' }}>⚠️ Add your city to find nearby ambulances</div>
+                )}
+              </div>
+              <button onClick={() => setShowProfileEdit(true)} style={{ padding: '6px 14px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}>Edit Profile</button>
+            </div>
+          ) : (
+            <div>
+              <input placeholder="City *" value={profileForm.city} onChange={e => setProfileForm({...profileForm, city: e.target.value})} style={{ width: '100%', padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
+              <input placeholder="Address" value={profileForm.line1} onChange={e => setProfileForm({...profileForm, line1: e.target.value})} style={{ width: '100%', padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input placeholder="State" value={profileForm.state} onChange={e => setProfileForm({...profileForm, state: e.target.value})} style={{ flex: 1, padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
+                <input placeholder="Pincode" value={profileForm.pincode} onChange={e => setProfileForm({...profileForm, pincode: e.target.value})} style={{ flex: 1, padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button onClick={saveProfile} style={{ flex: 1, padding: '10px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>💾 Save Profile</button>
+                <button onClick={() => setShowProfileEdit(false)} style={{ flex: 1, padding: '10px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!user && (
+        <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '14px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <input placeholder="Enter your city to find ambulances" value={manualCity} onChange={e => setManualCity(e.target.value)} style={{ width: '100%', padding: '12px', border: '2px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '14px', boxSizing: 'border-box' }} />
+          <button onClick={handleCitySearch} style={{ width: '100%', padding: '12px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>🔍 Find Ambulances</button>
+          <p style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}><a href="/login?redirect=/ambulance" style={{ color: '#e53935' }}>Login</a> for full features</p>
+        </div>
+      )}
+
+
       {/* ======================================================
           EMERGENCY HERO
       ====================================================== */}
@@ -875,7 +1001,7 @@ const Ambulance = () => {
                     index
                   }
                   onClick={() =>
-                    handleNearbyAmbulance(ambulance)
+                    handleSelectAmbulance(ambulance)
                   }
                   style={{
                     minWidth: '145px',
@@ -1142,6 +1268,33 @@ const Ambulance = () => {
       </div>
 
       {/* ======================================================
+          MY BOOKINGS (Quick View)
+      ====================================================== */}
+      {user && bookings.length > 0 && (
+        <div style={{ margin: '0 14px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#333', margin: '0 0 12px 0' }}>📋 Upcoming Bookings</h3>
+          {bookings.filter(b => b.status === 'pending' || b.status === 'confirmed').slice(0, 3).map(booking => (
+            <div key={booking._id} style={{ padding: '10px', backgroundColor: '#f9fafb', borderRadius: '8px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 600 }}>🚑 {booking.ambulanceType?.toUpperCase()}</div>
+                <div style={{ fontSize: '11px', color: '#666' }}>📅 {new Date(booking.appointmentDate).toLocaleDateString()} | 📍 {booking.pickupAddress?.substring(0, 20)}</div>
+              </div>
+              <div>
+                <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, backgroundColor: booking.status === 'confirmed' ? '#d1fae5' : '#fef3c7', color: booking.status === 'confirmed' ? '#065f46' : '#92400e' }}>
+                  {booking.status?.toUpperCase()}
+                </span>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#e53935', marginTop: '4px', textAlign: 'right' }}>₹{booking.finalAmount}</div>
+              </div>
+            </div>
+          ))}
+          <button onClick={() => navigate('/my-bookings')} style={{ width: '100%', padding: '10px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, marginTop: '4px' }}>
+            View All Bookings →
+          </button>
+        </div>
+      )}
+
+
+      {/* ======================================================
           DRIVER / PROVIDER
       ====================================================== */}
 
@@ -1282,6 +1435,65 @@ const Ambulance = () => {
           <span style={{ color: '#ccc' }}>›</span>
         </button>
       </div>
+
+{/* ======================================================
+          FARE ESTIMATE MODAL
+      ====================================================== */}
+      {showFareModal && selectedAmbulance && fareEstimate && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '16px 16px 0 0', padding: '24px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px' }}>💰 Fare Estimate</h3>
+              <button onClick={() => setShowFareModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            
+            <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span>🚑 {selectedAmbulance.vehicleType?.toUpperCase() || 'Ambulance'}</span>
+                <span style={{ fontWeight: 700 }}>{selectedAmbulance.providerName}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', color: '#666' }}>
+                <span>📍 Distance: {selectedAmbulance.distance || '~5'} km</span>
+                <span>⏱ ETA: {selectedAmbulance.estimatedETA || '~10'} min</span>
+              </div>
+              {selectedAmbulance.equipment?.length > 0 && (
+                <div style={{ fontSize: '12px', color: '#666' }}>
+                  🛠️ {selectedAmbulance.equipment.join(', ')}
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <span>Base Fare</span>
+                <span>₹{fareEstimate.baseFare}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <span>Distance ({fareEstimate.distance} km × ₹{fareEstimate.perKmRate}/km)</span>
+                <span>₹{fareEstimate.distance * fareEstimate.perKmRate}</span>
+              </div>
+              {fareEstimate.nightCharge > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                  <span>Night Charge</span>
+                  <span>₹{fareEstimate.nightCharge}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontWeight: 700, fontSize: '16px' }}>
+                <span>Estimated Total</span>
+                <span style={{ color: '#e53935' }}>₹{fareEstimate.total}</span>
+              </div>
+            </div>
+
+            <button onClick={handleBookAmbulance} style={{ width: '100%', padding: '14px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', marginBottom: '8px' }}>
+              🚑 Book Now - ₹{fareEstimate.total}
+            </button>
+            <button onClick={() => setShowFareModal(false)} style={{ width: '100%', padding: '12px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {/* ======================================================
           FOOTER
