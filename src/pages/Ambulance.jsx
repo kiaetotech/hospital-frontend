@@ -123,40 +123,6 @@ const Ambulance = () => {
     navigate(`/ambulance/schedule?type=${type}`);
   };
 
-       const fetchPatientProfile = async () => {
-    try {
-      const res = await getPatientProfile();
-      if (res.data?.data) {
-        setPatientProfile(res.data.data);
-        setProfileForm({
-          city: res.data.data.patientAddress?.city || '',
-          line1: res.data.data.patientAddress?.line1 || '',
-          state: res.data.data.patientAddress?.state || '',
-          pincode: res.data.data.patientAddress?.pincode || ''
-        });
-        if (!location && res.data.data.patientLocation?.lat) {
-          const loc = { lat: res.data.data.patientLocation.lat, lng: res.data.data.patientLocation.lng };
-          setLocation(loc);
-        }
-      }
-    } catch (err) {}
-  };
-
-  const saveProfile = async () => {
-    try {
-      await updatePatientProfile({ patientAddress: profileForm });
-      setPatientProfile(prev => ({ ...prev, patientAddress: profileForm }));
-      setShowProfileEdit(false);
-    } catch (err) { alert('Failed to save profile'); }
-  };
-
-  const handleCitySearch = () => {
-    if (manualCity.trim()) {
-      setSearchFilter('city');
-      setSearchQuery(manualCity.trim());
-    }
-  };
-
   // ============================================================
   // GET CURRENT LOCATION
   // ============================================================
