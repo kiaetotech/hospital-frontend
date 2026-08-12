@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNearbyAmbulances } from '../services/api';
+import { getNearbyAmbulances, getPatientProfile, updatePatientProfile } from '../services/api';
 
 const Ambulance = () => {
   const navigate = useNavigate();
@@ -16,12 +16,17 @@ const Ambulance = () => {
   const [searchFilter, setSearchFilter] = useState('name');
 
   const [selectedType, setSelectedType] = useState('basic');
+  const [patientProfile, setPatientProfile] = useState(null);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [profileForm, setProfileForm] = useState({ city: '', line1: '', state: '', pincode: '' });
+  const [useManualLocation, setUseManualLocation] = useState(false);
+  const [manualCity, setManualCity] = useState('');
 
   // ============================================================
   // LOAD USER + LOCATION
   // ============================================================
 
-  useEffect(() => {
+    useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
@@ -31,10 +36,45 @@ const Ambulance = () => {
       } catch (error) {
         console.error('Unable to read saved user:', error);
       }
+      fetchPatientProfile();
     }
 
     getLocation();
   }, []);
+
+       const fetchPatientProfile = async () => {
+    try {
+      const res = await getPatientProfile();
+      if (res.data?.data) {
+        setPatientProfile(res.data.data);
+        setProfileForm({
+          city: res.data.data.patientAddress?.city || '',
+          line1: res.data.data.patientAddress?.line1 || '',
+          state: res.data.data.patientAddress?.state || '',
+          pincode: res.data.data.patientAddress?.pincode || ''
+        });
+        if (!location && res.data.data.patientLocation?.lat) {
+          const loc = { lat: res.data.data.patientLocation.lat, lng: res.data.data.patientLocation.lng };
+          setLocation(loc);
+        }
+      }
+    } catch (err) {}
+  };
+
+  const saveProfile = async () => {
+    try {
+      await updatePatientProfile({ patientAddress: profileForm });
+      setPatientProfile(prev => ({ ...prev, patientAddress: profileForm }));
+      setShowProfileEdit(false);
+    } catch (err) { alert('Failed to save profile'); }
+  };
+
+  const handleCitySearch = () => {
+    if (manualCity.trim()) {
+      setSearchFilter('city');
+      setSearchQuery(manualCity.trim());
+    }
+  };
 
   // ============================================================
   // GET CURRENT LOCATION
@@ -94,7 +134,7 @@ const Ambulance = () => {
       const response = await getNearbyAmbulances({
         lat,
         lng,
-        radius: 10
+        radius: 100
       });
 
       const data = response?.data?.data;
@@ -461,6 +501,45 @@ const Ambulance = () => {
           </button>
         )}
       </div>
+
+	      {/* ======================================================
+          PATIENT PROFILE / LOCATION
+      ====================================================== */}
+      {user && (
+        <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          {!showProfileEdit ? (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '14px', fontWeight: 700 }}>📍 {patientProfile?.patientAddress?.city || 'Set your city'}</span>
+                  {patientProfile?.patientAddress?.line1 && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>{patientProfile.patientAddress.line1}</p>}
+                </div>
+                <button onClick={() => setShowProfileEdit(true)} style={{ padding: '6px 12px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>Edit</button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <input placeholder="City" value={profileForm.city} onChange={e => setProfileForm({...profileForm, city: e.target.value})} style={{ width: '100%', padding: '10px', border: '1px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '13px' }} />
+              <input placeholder="Address" value={profileForm.line1} onChange={e => setProfileForm({...profileForm, line1: e.target.value})} style={{ width: '100%', padding: '10px', border: '1px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '13px' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input placeholder="State" value={profileForm.state} onChange={e => setProfileForm({...profileForm, state: e.target.value})} style={{ flex: 1, padding: '10px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '13px' }} />
+                <input placeholder="Pincode" value={profileForm.pincode} onChange={e => setProfileForm({...profileForm, pincode: e.target.value})} style={{ flex: 1, padding: '10px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '13px' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <button onClick={saveProfile} style={{ flex: 1, padding: '10px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Save</button>
+                <button onClick={() => setShowProfileEdit(false)} style={{ flex: 1, padding: '10px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!user && (
+        <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '14px', textAlign: 'center' }}>
+          <input placeholder="Enter your city to find ambulances" value={manualCity} onChange={e => setManualCity(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '13px' }} />
+          <button onClick={handleCitySearch} style={{ width: '100%', padding: '10px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>🔍 Find Ambulances</button>
+        </div>
+      )}
 
       {/* ======================================================
           EMERGENCY HERO
