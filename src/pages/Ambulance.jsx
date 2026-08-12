@@ -103,7 +103,7 @@ const Ambulance = () => {
         console.error('Location error:', error);
 
         setLoadingNearby(false);
-        setUseManualCity(true);
+        setUseManualLocation(true);
 
         if (error.code === 1) {
           setNearbyError(
@@ -807,7 +807,7 @@ const Ambulance = () => {
             {nearbyError}
           </div>
         )}
-	        {useManualCity && (
+	        {useManualLocation && (
           <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
             <input
               type="text"
