@@ -15,6 +15,8 @@ const Ambulance = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFilter, setSearchFilter] = useState('name');
+  const [searching, setSearching] = useState(false);
+  const [searchMessage, setSearchMessage] = useState('');
 
   const [selectedType, setSelectedType] = useState('basic');
   const [patientProfile, setPatientProfile] = useState(null);
@@ -90,26 +92,66 @@ const Ambulance = () => {
     } catch (err) {}
   };
 
-  const handleCitySearch = () => {
-    if (manualCity.trim()) {
-      setSearchFilter('city');
-      setSearchQuery(manualCity.trim());
+  const handleCitySearch = async () => {
+    const city = manualCity.trim();
+    if (!city) {
+      setNearbyError('Please enter a city.');
+      return;
+    }
+
+    setSearchFilter('city');
+    setSearchQuery(city);
+    setSearchMessage(`Searching ambulances for ${city}...`);
+
+    if (location?.lat !== undefined && location?.lng !== undefined) {
+      await fetchNearbyAmbulances(location.lat, location.lng);
+    } else {
+      setNearbyError(
+        'City search needs a location to calculate nearby ambulances. Allow location access or use your saved patient location.'
+      );
     }
   };
 
   const calculateFare = (ambulance) => {
-    if (!ambulance || !location) return null;
-    const baseFare = ambulance.baseFare || 500;
-    const perKmRate = ambulance.perKmRate || 25;
-    const distance = ambulance.distance || 5;
-    const nightCharge = 0;
-    const total = baseFare + (distance * perKmRate) + nightCharge;
-    return { baseFare, perKmRate, distance, nightCharge, total: Math.round(total) };
+    if (!ambulance) return null;
+
+    // Provider-entered pricing returned by the backend is authoritative.
+    const pricing = ambulance.pricing || {};
+    const baseFare = Number(pricing.baseFare ?? ambulance.baseFare);
+    const perKmRate = Number(pricing.perKmRate ?? ambulance.perKmRate);
+    const distance = Number(ambulance.distance);
+
+    if (!Number.isFinite(baseFare) || !Number.isFinite(perKmRate)) {
+      return null;
+    }
+
+    const safeDistance = Number.isFinite(distance) ? distance : 0;
+    const nightCharge =
+      Number(pricing.nightCharge ?? ambulance.nightCharge ?? 0) || 0;
+    const waitingCharge =
+      Number(pricing.waitingCharge ?? ambulance.waitingCharge ?? 0) || 0;
+    const total = baseFare + safeDistance * perKmRate + nightCharge;
+
+    return {
+      baseFare,
+      perKmRate,
+      distance: safeDistance,
+      nightCharge,
+      waitingCharge,
+      total: Math.round(total)
+    };
   };
 
   const handleSelectAmbulance = (ambulance) => {
     setSelectedAmbulance(ambulance);
     const fare = calculateFare(ambulance);
+
+    if (!fare) {
+      setNearbyError('Fare information is not available for this ambulance.');
+      return;
+    }
+
+    setNearbyError('');
     setFareEstimate(fare);
     setShowFareModal(true);
   };
@@ -119,9 +161,35 @@ const Ambulance = () => {
       navigate('/login?redirect=/ambulance');
       return;
     }
+
+    if (!selectedAmbulance?.providerId || !selectedAmbulance?.vehicleId) {
+      setShowFareModal(false);
+      setNearbyError(
+        'This ambulance is missing its provider/vehicle assignment. Please refresh and select another ambulance.'
+      );
+      return;
+    }
+
     setShowFareModal(false);
-    const type = selectedAmbulance?.vehicleType || selectedType;
-    navigate(`/ambulance/schedule?type=${type}`);
+
+    const type = String(
+      selectedAmbulance.vehicleType ||
+      selectedAmbulance.type ||
+      selectedType ||
+      'basic'
+    ).toLowerCase();
+
+    const params = new URLSearchParams({
+      type,
+      providerId: String(selectedAmbulance.providerId),
+      vehicleId: String(selectedAmbulance.vehicleId)
+    });
+
+    if (selectedAmbulance.vehicleNumber) {
+      params.set('vehicleNumber', String(selectedAmbulance.vehicleNumber));
+    }
+
+    navigate(`/ambulance/schedule?${params.toString()}`);
   };
 
   // ============================================================
@@ -175,36 +243,65 @@ const Ambulance = () => {
   // GET NEARBY AMBULANCES
   // ============================================================
 
-  const fetchNearbyAmbulances = async (lat, lng) => {
+  const fetchNearbyAmbulances = async (lat, lng, options = {}) => {
     try {
       setLoadingNearby(true);
+      setSearching(Boolean(options.search));
       setNearbyError('');
+      if (options.search) setSearchMessage('Searching ambulances...');
 
-      const response = await getNearbyAmbulances({
-        lat,
-        lng,
-        radius: 100
-      });
+      if (
+        !Number.isFinite(Number(lat)) ||
+        !Number.isFinite(Number(lng))
+      ) {
+        throw new Error('Valid pickup coordinates are required.');
+      }
 
+      const params = {
+        lat: Number(lat),
+        lng: Number(lng),
+        radius: Number(options.radius || 25),
+        limit: 50
+      };
+
+      if (options.vehicleType) {
+        params.vehicleType = String(options.vehicleType).toLowerCase();
+      }
+
+      const response = await getNearbyAmbulances(params);
       const data = response?.data?.data;
 
       if (Array.isArray(data)) {
         setNearbyAmbulances(data);
+        setSearchMessage(
+          data.length
+            ? `${data.length} ambulance${data.length === 1 ? '' : 's'} found.`
+            : 'No available ambulances found for this search.'
+        );
       } else if (Array.isArray(response?.data)) {
         setNearbyAmbulances(response.data);
+        setSearchMessage(
+          response.data.length
+            ? `${response.data.length} ambulances found.`
+            : 'No available ambulances found for this search.'
+        );
       } else {
         setNearbyAmbulances([]);
+        setSearchMessage('No available ambulances found.');
       }
     } catch (error) {
       console.error('Nearby ambulance error:', error);
 
       setNearbyAmbulances([]);
+      setSearchMessage('');
       setNearbyError(
         error?.response?.data?.message ||
+        error?.message ||
         'Unable to load nearby ambulances.'
       );
     } finally {
       setLoadingNearby(false);
+      setSearching(false);
     }
   };
 
@@ -313,10 +410,21 @@ const Ambulance = () => {
       ).toLowerCase();
 
       const specialty = String(
-        ambulance.specialty ||
-        ambulance.services ||
-        ambulance.vehicleType ||
-        ''
+        [
+          ambulance.specialty,
+          ambulance.services,
+          ambulance.vehicleType,
+          ambulance.type,
+          Array.isArray(ambulance.equipment)
+            ? ambulance.equipment.join(' ')
+            : ambulance.equipment
+        ]
+          .filter(Boolean)
+          .join(' ')
+      ).toLowerCase();
+
+      const vehicleNumber = String(
+        ambulance.vehicleNumber || ''
       ).toLowerCase();
 
       if (searchFilter === 'city') {
@@ -329,7 +437,9 @@ const Ambulance = () => {
 
       return (
         providerName.includes(query) ||
-        vehicleType.includes(query)
+        vehicleType.includes(query) ||
+        vehicleNumber.includes(query) ||
+        specialty.includes(query)
       );
     });
   }, [nearbyAmbulances, searchFilter, searchQuery]);
@@ -338,19 +448,43 @@ const Ambulance = () => {
   // SEARCH
   // ============================================================
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const query = searchQuery.trim();
+
+    if (!location?.lat || !location?.lng) {
+      setNearbyError(
+        'Your pickup location is not available. Allow location access or use your saved patient location.'
+      );
+      setUseManualLocation(true);
+      return;
+    }
 
     if (
       !query &&
       searchFilter !== 'nearby' &&
       searchFilter !== 'rated'
     ) {
+      setNearbyError('Enter a provider, city, or ambulance type to search.');
       return;
     }
 
-    // Search is intentionally kept on the ambulance page.
-    // We do NOT redirect to the hospital search page.
+    setNearbyError('');
+    setSearchMessage('');
+
+    const vehicleType =
+      searchFilter === 'specialty'
+        ? query.toLowerCase()
+        : searchFilter === 'name' &&
+          ambulanceTypes.some(type => type.value === query.toLowerCase())
+          ? query.toLowerCase()
+          : null;
+
+    await fetchNearbyAmbulances(location.lat, location.lng, {
+      radius: 25,
+      search: true,
+      vehicleType
+    });
+
     if (searchFilter === 'nearby' || searchFilter === 'rated') {
       setSearchQuery('');
     }
@@ -360,11 +494,31 @@ const Ambulance = () => {
   // FILTER CLICK
   // ============================================================
 
-  const handleFilterClick = (filter) => {
+  const handleFilterClick = async (filter) => {
     setSearchFilter(filter);
 
     if (filter === 'nearby' || filter === 'rated') {
       setSearchQuery('');
+      if (location?.lat !== undefined && location?.lng !== undefined) {
+        await fetchNearbyAmbulances(location.lat, location.lng, {
+          radius: 25,
+          search: true
+        });
+      } else {
+        getLocation();
+      }
+      return;
+    }
+
+    if (filter === 'specialty' && selectedType) {
+      setSearchQuery(selectedType);
+      if (location?.lat !== undefined && location?.lng !== undefined) {
+        await fetchNearbyAmbulances(location.lat, location.lng, {
+          radius: 25,
+          search: true,
+          vehicleType: selectedType
+        });
+      }
     }
   };
 
@@ -372,13 +526,35 @@ const Ambulance = () => {
   // BOOK SELECTED TYPE
   // ============================================================
 
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     if (!user) {
       navigate('/login?redirect=/ambulance');
       return;
     }
 
-    navigate(`/ambulance/schedule?type=${encodeURIComponent(selectedType)}`);
+    const matching = nearbyAmbulances.find(
+      ambulance =>
+        String(ambulance.vehicleType || ambulance.type || '').toLowerCase() ===
+        String(selectedType).toLowerCase()
+    );
+
+    if (matching?.providerId && matching?.vehicleId) {
+      handleSelectAmbulance(matching);
+      return;
+    }
+
+    if (location?.lat !== undefined && location?.lng !== undefined) {
+      await fetchNearbyAmbulances(location.lat, location.lng, {
+        radius: 25,
+        search: true,
+        vehicleType: selectedType
+      });
+      setSearchFilter('specialty');
+      setSearchQuery(selectedType);
+      return;
+    }
+
+    setNearbyError('Please allow location access before booking an ambulance.');
   };
 
   // ============================================================
@@ -394,17 +570,19 @@ const Ambulance = () => {
   // ============================================================
 
   const handleNearbyAmbulance = (ambulance) => {
+    if (!ambulance?.providerId || !ambulance?.vehicleId) {
+      setNearbyError(
+        'This ambulance cannot be booked because its provider/vehicle assignment is missing.'
+      );
+      return;
+    }
+
     const type = String(
       ambulance.vehicleType || ambulance.type || selectedType || 'basic'
     ).toLowerCase();
 
     setSelectedType(type);
-
-    const params = new URLSearchParams({ type });
-    if (ambulance.providerId) params.set('providerId', String(ambulance.providerId));
-    if (ambulance.vehicleId) params.set('vehicleId', String(ambulance.vehicleId));
-
-    navigate(`/ambulance/schedule?${params.toString()}`);
+    handleSelectAmbulance(ambulance);
   };
 
   // ============================================================
@@ -412,8 +590,8 @@ const Ambulance = () => {
   // ============================================================
 
   const handleRefreshNearby = () => {
-    if (location?.lat && location?.lng) {
-      fetchNearbyAmbulances(location.lat, location.lng);
+    if (location?.lat !== undefined && location?.lng !== undefined) {
+      fetchNearbyAmbulances(location.lat, location.lng, { radius: 25 });
     } else {
       getLocation();
     }
@@ -791,7 +969,7 @@ const Ambulance = () => {
               cursor: 'pointer'
             }}
           >
-            Search
+            {searching ? 'Searching...' : 'Search'}
           </button>
         </div>
 
@@ -898,6 +1076,20 @@ const Ambulance = () => {
             {nearbyError}
           </div>
         )}
+        {searchMessage && !nearbyError && (
+          <div
+            style={{
+              padding: '8px 10px',
+              marginBottom: '10px',
+              borderRadius: '8px',
+              backgroundColor: '#f0fdf4',
+              color: '#166534',
+              fontSize: '12px'
+            }}
+          >
+            {searchMessage}
+          </div>
+        )}
 	        {useManualLocation && (
           <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
             <input
@@ -908,10 +1100,7 @@ const Ambulance = () => {
               style={{ flex: 1, padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '13px' }}
             />
             <button
-              onClick={() => {
-                setSearchFilter('city');
-                setSearchQuery(manualCity.trim());
-              }}
+              onClick={handleCitySearch}
               style={{ padding: '10px 16px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
             >
               Search
@@ -1079,9 +1268,22 @@ const Ambulance = () => {
           {ambulanceTypes.map((type) => (
             <button
               key={type.value}
-              onClick={() =>
-                setSelectedType(type.value)
-              }
+              onClick={async () => {
+                setSelectedType(type.value);
+                setSearchFilter('specialty');
+                setSearchQuery(type.value);
+
+                if (location?.lat !== undefined && location?.lng !== undefined) {
+                  await fetchNearbyAmbulances(location.lat, location.lng, {
+                    radius: 25,
+                    search: true,
+                    vehicleType: type.value
+                  });
+                } else {
+                  setNearbyError('Please allow location access to search this ambulance type.');
+                  setUseManualLocation(true);
+                }
+              }}
               style={{
                 minWidth: '110px',
                 padding: '12px 8px',
@@ -1417,8 +1619,15 @@ const Ambulance = () => {
             <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span>🚑 {selectedAmbulance.vehicleType?.toUpperCase() || 'Ambulance'}</span>
-                <span style={{ fontWeight: 700 }}>{selectedAmbulance.providerName}</span>
+                <span style={{ fontWeight: 700 }}>
+                  {selectedAmbulance.providerName || selectedAmbulance.companyName || 'Ambulance Provider'}
+                </span>
               </div>
+              {selectedAmbulance.vehicleNumber && (
+                <div style={{ fontSize: '12px', color: '#555', marginBottom: '8px' }}>
+                  🚘 Vehicle: <strong>{selectedAmbulance.vehicleNumber}</strong>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', color: '#666' }}>
                 <span>📍 Distance: {selectedAmbulance.distance || '~5'} km</span>
                 <span>⏱ ETA: {selectedAmbulance.estimatedETA || '~10'} min</span>
@@ -1445,12 +1654,21 @@ const Ambulance = () => {
                   <span>₹{fareEstimate.nightCharge}</span>
                 </div>
               )}
+              {fareEstimate.waitingCharge > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0', fontSize: '12px', color: '#777' }}>
+                  <span>Waiting Charge</span>
+                  <span>₹{fareEstimate.waitingCharge}/unit</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontWeight: 700, fontSize: '16px' }}>
                 <span>Estimated Total</span>
                 <span style={{ color: '#e53935' }}>₹{fareEstimate.total}</span>
               </div>
             </div>
 
+            <div style={{ fontSize: '11px', color: '#777', marginBottom: '10px', lineHeight: 1.4 }}>
+              Final fare, availability, payment, cancellation and refund are confirmed by the booking service on the next step.
+            </div>
             <button onClick={handleBookAmbulance} style={{ width: '100%', padding: '14px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', marginBottom: '8px' }}>
               🚑 Book Now - ₹{fareEstimate.total}
             </button>
