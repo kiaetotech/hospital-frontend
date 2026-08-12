@@ -99,18 +99,19 @@ const Ambulance = () => {
         setLocation(currentLocation);
         fetchNearbyAmbulances(lat, lng);
       },
-      (error) => {
+            (error) => {
         console.error('Location error:', error);
 
         setLoadingNearby(false);
+        setUseManualCity(true);
 
         if (error.code === 1) {
           setNearbyError(
-            'Location permission denied. Please allow location access to find nearby ambulances.'
+            'Location permission denied. Enter your city below to find ambulances.'
           );
         } else {
           setNearbyError(
-            'Unable to get your location. You can still use Emergency or Schedule Transport.'
+            'Unable to get your location. Enter your city below or use Emergency.'
           );
         }
       },
@@ -804,6 +805,26 @@ const Ambulance = () => {
             }}
           >
             {nearbyError}
+          </div>
+        )}
+	        {useManualCity && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+            <input
+              type="text"
+              placeholder="Enter your city"
+              value={manualCity}
+              onChange={(e) => setManualCity(e.target.value)}
+              style={{ flex: 1, padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '13px' }}
+            />
+            <button
+              onClick={() => {
+                setSearchFilter('city');
+                setSearchQuery(manualCity.trim());
+              }}
+              style={{ padding: '10px 16px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Search
+            </button>
           </div>
         )}
 
