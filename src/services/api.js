@@ -382,5 +382,3 @@ export const employeeBookService = (data) => {
 };
 
 export default api;
-
-D:\hospital-frontend>
