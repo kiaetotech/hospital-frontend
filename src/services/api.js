@@ -5,7 +5,7 @@ import axios from 'axios';
 // ============================================
 
 const api = axios.create({
-  baseURL: 'https://hospital-backend-production-7d0f.up.railway.app/api'
+  baseURL: 'https://hospital-backend-production-f1b1.up.railway.app/api'
 });
 
 api.interceptors.request.use((config) => {
@@ -44,6 +44,8 @@ export const register = (data) => api.post('/auth/register', data);
 export const login = (data) => api.post('/auth/login', data);
 export const getProfile = () => api.get('/auth/profile');
 export const updateProfile = (data) => api.put('/auth/profile', data);
+export const getPatientProfile = () => api.get('/auth/patient/profile');
+export const updatePatientProfile = (data) => api.put('/auth/patient/profile', data);
 
 // ============================================
 // HOSPITALS
@@ -95,17 +97,14 @@ export const ambulanceTripComplete = (bookingId, data) => api.post(`/ambulance/t
 export const ambulanceCancelEmergency = (bookingId, data) => api.post(`/ambulance/cancel-emergency/${bookingId}`, data);
 export const ambulanceUpdateLocation = (data) => api.post('/ambulance/update-location', data);
 export const getNearbyAmbulances = (params) => api.get('/ambulance/nearby-ambulances', { params });
-export const getPatientProfile = () => api.get('/auth/patient/profile');
-export const updatePatientProfile = (data) => api.put('/auth/patient/profile', data);
 export const getActiveEmergency = (bookingId) => api.get(`/ambulance/active-emergency/${bookingId}`);
 export const getSurgeCheck = (params) => api.get('/ambulance/surge-check', { params });
 export const scheduleTransport = (data) => api.post('/ambulance/schedule-transport', data);
 export const getScheduledBookings = () => api.get('/ambulance/scheduled-bookings');
 export const getAmbulanceBookings = (params) => api.get('/ambulance/my-bookings', { params });
 export const getAmbulanceBookingById = (bookingId) => api.get(`/ambulance/booking/${bookingId}`);
-export const cancelAmbulanceBooking = (bookingId, data = {}) => api.post(`/ambulance/cancel-booking/${bookingId}`, data);
 export const getTripSheet = (bookingId) => api.get(`/ambulance/trip-sheet/${bookingId}`);
-export const getDriverDashboard = () => api.get('/ambulance/driver/dashboard');
+export const getDriverDashboard = (params = {}) => api.get('/ambulance/driver/dashboard', { params });
 export const toggleDriverAvailability = (data) => api.post('/ambulance/driver/toggle-availability', data);
 export const getDriverTripHistory = (params) => api.get('/ambulance/driver/trip-history', { params });
 export const getAmbulanceFareEstimate = (params) => api.get('/ambulance/fare-estimate', { params });
@@ -384,3 +383,4 @@ export const employeeBookService = (data) => {
 
 export default api;
 
+D:\hospital-frontend>

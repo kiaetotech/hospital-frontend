@@ -13,7 +13,7 @@ import {
   getDriverTripHistory
 } from '../../services/api';
 
-const SOCKET_URL = 'https://hospital-backend-production-7d0f.up.railway.app';
+const SOCKET_URL = 'https://hospital-backend-production-f1b1.up.railway.app';
 
 const DriverApp = () => {
   const navigate = useNavigate();
@@ -62,14 +62,16 @@ const DriverApp = () => {
 
   const fetchDashboard = async () => {
     try {
-      const res = await getDriverDashboard();
+      const driverId = localStorage.getItem('driverId');
+      const res = await getDriverDashboard(driverId ? { driverId } : {});
       if (res.data?.data) setDashboard(res.data.data);
     } catch (err) {}
   };
 
   const fetchTripHistory = async () => {
     try {
-      const res = await getDriverTripHistory({ limit: 20 });
+      const driverId = localStorage.getItem('driverId');
+      const res = await getDriverTripHistory({ limit: 20, ...(driverId ? { driverId } : {}) });
       if (res.data?.data) setTripHistory(res.data.data);
     } catch (err) {}
   };
@@ -123,7 +125,7 @@ const DriverApp = () => {
   const handleToggleOnline = async () => {
     const nextOnline = !isOnline;
     try {
-      await toggleDriverAvailability({ isAvailable: nextOnline });
+      await toggleDriverAvailability({ driverId: localStorage.getItem('driverId'), isAvailable: nextOnline });
       isOnlineRef.current = nextOnline;
       setIsOnline(nextOnline);
       await fetchDashboard();
@@ -218,7 +220,7 @@ const DriverApp = () => {
     clearInterval(timerInterval.current);
 
     try {
-      await acceptEmergency(emergencyRequest.bookingId, {});
+      await acceptEmergency(emergencyRequest.bookingId, { driverId: localStorage.getItem('driverId') });
       currentTripRef.current = emergencyRequest;
       setCurrentTrip(emergencyRequest);
       setStep('accepted');
