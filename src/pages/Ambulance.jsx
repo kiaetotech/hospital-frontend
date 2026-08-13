@@ -724,39 +724,6 @@ const Ambulance = () => {
   {/* ======================================================
           PATIENT PROFILE CARD
       ====================================================== */}
-      {user && (
-        <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    {!showProfileEdit ? (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#333' }}>👤 {user.name || 'Patient'}</div>
-                {patientProfile?.patientAddress?.city ? (
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                    📍 {patientProfile.patientAddress.city}{patientProfile.patientAddress.line1 ? ', ' + patientProfile.patientAddress.line1 : ''}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '12px', color: '#e53935', marginTop: '4px' }}>⚠️ Add your city to find nearby ambulances</div>
-                )}
-              </div>
-              <button onClick={() => setShowProfileEdit(true)} style={{ padding: '6px 14px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}>Edit Profile</button>
-            </div>
-          ) : (
-            <div>
-              <input placeholder="City *" value={profileForm.city} onChange={e => setProfileForm({...profileForm, city: e.target.value})} style={{ width: '100%', padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
-              <input placeholder="Address" value={profileForm.line1} onChange={e => setProfileForm({...profileForm, line1: e.target.value})} style={{ width: '100%', padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input placeholder="State" value={profileForm.state} onChange={e => setProfileForm({...profileForm, state: e.target.value})} style={{ flex: 1, padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
-                <input placeholder="Pincode" value={profileForm.pincode} onChange={e => setProfileForm({...profileForm, pincode: e.target.value})} style={{ flex: 1, padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
-              </div>
-              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                <button onClick={saveProfile} style={{ flex: 1, padding: '10px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>💾 Save Profile</button>
-                <button onClick={() => setShowProfileEdit(false)} style={{ flex: 1, padding: '10px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
             {!user && (
         <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '14px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <input placeholder="Enter your city to find ambulances" value={manualCity} onChange={e => setManualCity(e.target.value)} style={{ width: '100%', padding: '12px', border: '2px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '14px', boxSizing: 'border-box' }} />
