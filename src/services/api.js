@@ -96,7 +96,7 @@ export const ambulanceArrivedHospital = (bookingId, data) => api.post(`/ambulanc
 export const ambulanceTripComplete = (bookingId, data) => api.post(`/ambulance/trip-complete/${bookingId}`, data);
 export const ambulanceCancelEmergency = (bookingId, data) => api.post(`/ambulance/cancel-emergency/${bookingId}`, data);
 export const ambulanceUpdateLocation = (data) => api.post('/ambulance/update-location', data);
-export const getNearbyAmbulances = (params) => api.get('/ambulance/nearby-ambulances', { params });
+export const getNearbyAmbulances = (params) => api.get('/ambulance/search', { params });
 export const getActiveEmergency = (bookingId) => api.get(`/ambulance/active-emergency/${bookingId}`);
 export const getSurgeCheck = (params) => api.get('/ambulance/surge-check', { params });
 export const scheduleTransport = (data) => api.post('/ambulance/schedule-transport', data);
