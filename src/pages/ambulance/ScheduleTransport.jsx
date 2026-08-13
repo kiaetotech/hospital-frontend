@@ -90,6 +90,24 @@ const ScheduleTransport = () => {
     }));
   }, [searchParams]);
 
+	  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      api.get('/auth/patient/profile', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => {
+          if (res.data?.data?.patientLocation?.lat) {
+            setForm(prev => ({
+              ...prev,
+              pickupLat: String(res.data.data.patientLocation.lat),
+              pickupLng: String(res.data.data.patientLocation.lng),
+              pickupAddress: res.data.data.patientAddress?.line1 || 'Current Location'
+            }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
   // ============================================
   // GET AVAILABLE AMBULANCES
   // ============================================
