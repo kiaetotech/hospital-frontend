@@ -842,13 +842,11 @@ const ScheduleTransport = () => {
                   key={h._id}
                   type="button"
                   onClick={async () => {
-                    handleChange('hospitalName', h.name);
-                    const fullAddress = (h.address?.line1 || '') + ', ' + (h.address?.city || '');
-                    handleChange('destinationAddress', fullAddress);
-                    const coords = await geocodeAddress(fullAddress);
-                    if (coords) {
-                      handleChange('destinationLat', String(coords.lat));
-                      handleChange('destinationLng', String(coords.lng));
+                                        handleChange('hospitalName', h.name);
+                    handleChange('destinationAddress', h.name + ', ' + (h.address?.city || ''));
+                    if (h.location?.lat && h.location?.lng) {
+                      handleChange('destinationLat', String(h.location.lat));
+                      handleChange('destinationLng', String(h.location.lng));
                     }
                     setHospitalSearch(h.name);
                     setShowHospitalResults(false);
