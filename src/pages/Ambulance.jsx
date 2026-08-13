@@ -757,13 +757,15 @@ const Ambulance = () => {
         </div>
       )}
 
-      {!user && (
+            {!user && (
         <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '14px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <input placeholder="Enter your city to find ambulances" value={manualCity} onChange={e => setManualCity(e.target.value)} style={{ width: '100%', padding: '12px', border: '2px solid #e0e0e0', borderRadius: '8px', marginBottom: '8px', fontSize: '14px', boxSizing: 'border-box' }} />
           <button onClick={handleCitySearch} style={{ width: '100%', padding: '12px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>🔍 Find Ambulances</button>
           <p style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}><a href="/login?redirect=/ambulance" style={{ color: '#e53935' }}>Login</a> for full features</p>
         </div>
-	      {user && patientProfile && (
+      )}
+
+      {user && patientProfile && (
         <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>👤 {user.name}</div>
