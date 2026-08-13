@@ -726,7 +726,7 @@ const Ambulance = () => {
       ====================================================== */}
       {user && (
         <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          {!showProfileEdit ? (
+                    {!showProfileEdit ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: '#333' }}>👤 {user.name || 'Patient'}</div>
@@ -753,6 +753,7 @@ const Ambulance = () => {
                 <button onClick={() => setShowProfileEdit(false)} style={{ flex: 1, padding: '10px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
               </div>
             </div>
+          )}
           )}
         </div>
       )}
