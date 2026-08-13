@@ -112,18 +112,23 @@ const ScheduleTransport = () => {
     if (!address || address.trim().length < 5) return null;
     const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
     if (!apiKey) return null;
-    try {
+        try {
       const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`);
       const data = await res.json();
       if (data.status === 'OK' && data.results.length > 0) {
         const location = data.results[0].geometry.location;
-        return { lat: location.lat, lng: location.lng };
+        const lat = parseFloat(location.lat);
+        const lng = parseFloat(location.lng);
+        // Validate India bounds
+        if (lat >= 8 && lat <= 38 && lng >= 68 && lng <= 98) {
+          return { lat, lng };
+        }
+        return null;
       }
       return null;
     } catch (e) {
       return null;
     }
-  };
 
   // ============================================
   // GET AVAILABLE AMBULANCES
@@ -460,7 +465,7 @@ const ScheduleTransport = () => {
       [field]: value
     }));
 
-    if (field === 'destinationAddress' && value.length > 5) {
+        if (field === 'destinationAddress' && value.length > 5) {
       setTimeout(async () => {
         const coords = await geocodeAddress(value);
         if (coords) {
@@ -469,6 +474,8 @@ const ScheduleTransport = () => {
             destinationLat: String(coords.lat),
             destinationLng: String(coords.lng)
           }));
+        } else {
+          setError('Could not find coordinates for destination. Please select from hospital search or use GPS.');
         }
       }, 1500);
     }
