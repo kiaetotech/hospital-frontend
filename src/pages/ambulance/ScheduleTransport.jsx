@@ -108,6 +108,23 @@ const ScheduleTransport = () => {
     }
   }, []);
 
+	  const geocodeAddress = async (address) => {
+    if (!address || address.trim().length < 5) return null;
+    const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
+    if (!apiKey) return null;
+    try {
+      const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`);
+      const data = await res.json();
+      if (data.status === 'OK' && data.results.length > 0) {
+        const location = data.results[0].geometry.location;
+        return { lat: location.lat, lng: location.lng };
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  };
+
   // ============================================
   // GET AVAILABLE AMBULANCES
   // ============================================
@@ -437,7 +454,7 @@ const ScheduleTransport = () => {
   // FORM CHANGE
   // ============================================
 
-  const handleChange = (
+    const handleChange = (
     field,
     value
   ) => {
@@ -445,6 +462,32 @@ const ScheduleTransport = () => {
       ...prev,
       [field]: value
     }));
+
+    if (field === 'destinationAddress' && value.length > 5) {
+      setTimeout(async () => {
+        const coords = await geocodeAddress(value);
+        if (coords) {
+          setForm(prev => ({
+            ...prev,
+            destinationLat: String(coords.lat),
+            destinationLng: String(coords.lng)
+          }));
+        }
+      }, 1500);
+    }
+
+    if (field === 'pickupAddress' && value.length > 5) {
+      setTimeout(async () => {
+        const coords = await geocodeAddress(value);
+        if (coords) {
+          setForm(prev => ({
+            ...prev,
+            pickupLat: String(coords.lat),
+            pickupLng: String(coords.lng)
+          }));
+        }
+      }, 1500);
+    }
 
     if (
       field === 'pickupLat' ||
