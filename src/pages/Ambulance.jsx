@@ -36,7 +36,11 @@ const Ambulance = () => {
   // LOAD USER + LOCATION
   // ============================================================
 
-          if (token && userData) {
+            useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+
+    if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);
         if (parsedUser.role === 'patient') {
