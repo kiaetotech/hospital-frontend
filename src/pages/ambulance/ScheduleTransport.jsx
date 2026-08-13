@@ -129,14 +129,11 @@ const ScheduleTransport = () => {
   // GET AVAILABLE AMBULANCES
   // ============================================
 
-  useEffect(() => {
-    if (
-      form.pickupLat &&
-      form.pickupLng
-    ) {
+    useEffect(() => {
+    if (form.pickupLat && form.pickupLng && !form.providerId) {
       fetchAvailableAmbulances();
     }
-  }, [form.pickupLat, form.pickupLng]);
+  }, [form.pickupLat, form.pickupLng, form.providerId]);
 
 	  const searchHospital = async (query) => {
     if (!query || query.trim().length < 2) {
