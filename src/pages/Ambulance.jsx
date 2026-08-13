@@ -156,17 +156,19 @@ const Ambulance = () => {
     };
   };
 
-  const handleSelectAmbulance = (ambulance) => {
+    const handleSelectAmbulance = (ambulance) => {
     setSelectedAmbulance(ambulance);
-    const fare = calculateFare(ambulance);
-
-    if (!fare) {
-      setNearbyError('Fare information is not available for this ambulance.');
+    
+    const baseFare = Number(ambulance.baseFare || 0);
+    const perKmRate = Number(ambulance.perKmRate || 0);
+    
+    if (!baseFare || !perKmRate) {
+      setNearbyError('Pricing not available for this ambulance.');
       return;
     }
-
+    
     setNearbyError('');
-    setFareEstimate(fare);
+    setFareEstimate({ baseFare, perKmRate });
     setShowFareModal(true);
   };
 
@@ -1628,24 +1630,11 @@ const Ambulance = () => {
                 <span>₹{fareEstimate.baseFare}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <span>Distance ({fareEstimate.distance} km × ₹{fareEstimate.perKmRate}/km)</span>
-                <span>₹{fareEstimate.distance * fareEstimate.perKmRate}</span>
+                <span>Per KM Rate</span>
+                <span>₹{fareEstimate.perKmRate}/km</span>
               </div>
-              {fareEstimate.nightCharge > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                  <span>Night Charge</span>
-                  <span>₹{fareEstimate.nightCharge}</span>
-                </div>
-              )}
-              {fareEstimate.waitingCharge > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0', fontSize: '12px', color: '#777' }}>
-                  <span>Waiting Charge</span>
-                  <span>₹{fareEstimate.waitingCharge}/unit</span>
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontWeight: 700, fontSize: '16px' }}>
-                <span>Estimated Total</span>
-                <span style={{ color: '#e53935' }}>₹{fareEstimate.total}</span>
+              <div style={{ padding: '12px', background: '#fef3c7', borderRadius: 8, marginTop: 10, fontSize: 12, color: '#92400e' }}>
+                📍 Final fare calculated after entering pickup & destination on next step
               </div>
             </div>
 
@@ -1655,9 +1644,9 @@ const Ambulance = () => {
             <button onClick={handleBookAmbulance} style={{ width: '100%', padding: '14px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', marginBottom: '8px' }}>
               🚑 Book Now - ₹{fareEstimate.total}
             </button>
-            <button onClick={() => setShowFareModal(false)} style={{ width: '100%', padding: '12px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px' }}>
-              Cancel
-            </button>
+            <button onClick={handleBookAmbulance} style={{ width: '100%', padding: '14px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', marginBottom: '8px' }}>
+              			🚑 Continue to Booking →
+            			</button>
           </div>
         </div>
       )}
