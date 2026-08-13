@@ -1642,9 +1642,6 @@ const Ambulance = () => {
               Final fare, availability, payment, cancellation and refund are confirmed by the booking service on the next step.
             </div>
             <button onClick={handleBookAmbulance} style={{ width: '100%', padding: '14px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', marginBottom: '8px' }}>
-              🚑 Book Now - ₹{fareEstimate.total}
-            </button>
-            <button onClick={handleBookAmbulance} style={{ width: '100%', padding: '14px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', marginBottom: '8px' }}>
               			🚑 Continue to Booking →
             			</button>
           </div>
