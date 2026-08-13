@@ -754,7 +754,6 @@ const Ambulance = () => {
               </div>
             </div>
           )}
-          )}
         </div>
       )}
 
