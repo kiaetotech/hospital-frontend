@@ -841,6 +841,7 @@ const ScheduleTransport = () => {
             AVAILABLE AMBULANCES
         ====================================== */}
 
+	{!form.providerId && (
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>
             🚑 Available Ambulances
@@ -1011,6 +1012,7 @@ const ScheduleTransport = () => {
             </div>
           )}
         </div>
+	)}
 
         {/* =====================================
             REQUIREMENTS
