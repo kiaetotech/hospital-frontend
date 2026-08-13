@@ -952,176 +952,44 @@ const ScheduleTransport = () => {
             AVAILABLE AMBULANCES
         ====================================== */}
 
-	          {!form.pickupLat ||
-          !form.pickupLng ? (
-            <p style={styles.infoText}>
-              Please select your pickup
-              location first to find
-              available ambulances.
-            </p>
-          ) : loadingAmbulances ? (
-            <p style={styles.infoText}>
-              🔄 Finding available
-              ambulances near you...
-            </p>
-          ) : form.providerId ? (
-            <div style={{ padding: '12px', background: '#d1fae5', borderRadius: 8, color: '#065f46', fontSize: 13, marginBottom: 10 }}>
-              ✅ Selected ambulance confirmed. Fill details below to complete booking.
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>
+            {form.providerId ? '✅ Selected Ambulance' : '🚑 Available Ambulances'}
+          </h3>
+
+          {form.providerId ? (
+            <div style={{ padding: '12px', background: '#d1fae5', borderRadius: 8, color: '#065f46', fontSize: 13 }}>
+              Ambulance selected. Fill details below to complete booking.
             </div>
+          ) : !form.pickupLat || !form.pickupLng ? (
+            <p style={styles.infoText}>Please select your pickup location first.</p>
+          ) : loadingAmbulances ? (
+            <p style={styles.infoText}>🔄 Finding ambulances...</p>
           ) : availableAmbulances.length === 0 ? (
             <div style={styles.warningBox}>
-              <strong>
-                No available ambulance
-                found nearby.
-              </strong>
-
-              <p style={{ margin: '8px 0 0' }}>
-                Please try again or choose
-                Emergency Ambulance if this
-                is an emergency.
-              </p>
-
-              <button
-                type="button"
-                onClick={
-                  fetchAvailableAmbulances
-                }
-                style={styles.retryBtn}
-              >
-                🔄 Search Again
-              </button>
+              <strong>No available ambulance found nearby.</strong>
+              <button type="button" onClick={fetchAvailableAmbulances} style={styles.retryBtn}>🔄 Search Again</button>
             </div>
           ) : (
             <div>
-              {availableAmbulances.map(
-                (ambulance, index) => {
-
-                  const isSelected =
-                    selectedAmbulance?.vehicleId ===
-                    ambulance.vehicleId;
-
-                  const pricing =
-                    ambulance.pricing || {};
-
-                  return (
-                    <button
-                      key={
-                        ambulance.vehicleId ||
-                        ambulance.driverId ||
-                        index
-                      }
-                      type="button"
-                      onClick={() =>
-                        selectAmbulance(
-                          ambulance
-                        )
-                      }
-                      style={{
-                        ...styles.ambulanceCard,
-                        borderColor:
-                          isSelected
-                            ? '#e53935'
-                            : '#333',
-
-                        background:
-                          isSelected
-                            ? 'rgba(229,57,53,0.12)'
-                            : '#0f0f1a'
-                      }}
-                    >
-                      <div
-                        style={
-                          styles.ambulanceHeader
-                        }
-                      >
-                        <strong>
-                          🚑{' '}
-                          {ambulance.vehicleType ||
-                            'Ambulance'}
-                        </strong>
-
-                        {isSelected && (
-                          <span
-                            style={
-                              styles.selectedBadge
-                            }
-                          >
-                            SELECTED
-                          </span>
-                        )}
-                      </div>
-
-                      <div
-                        style={
-                          styles.ambulanceDetails
-                        }
-                      >
-                        <div>
-                          <strong>
-                            Vehicle:
-                          </strong>{' '}
-                          {ambulance.vehicleNumber ||
-                            'Not available'}
-                        </div>
-
-                        <div>
-                          <strong>
-                            Driver:
-                          </strong>{' '}
-                          {ambulance.driverName ||
-                            'Not assigned'}
-                        </div>
-
-                        <div>
-                          <strong>
-                            Distance:
-                          </strong>{' '}
-                          {ambulance.distance ??
-                            'N/A'} km
-                        </div>
-
-                        <div>
-                          <strong>
-                            ETA:
-                          </strong>{' '}
-                          {ambulance.estimatedETA ??
-                            'N/A'} min
-                        </div>
-                      </div>
-
-                      {/* PROVIDER PRICE */}
-                      <div
-                        style={
-                          styles.pricingBox
-                        }
-                      >
-                        <div>
-                          Base fare
-                        </div>
-
-                        <strong>
-                          ₹
-                          {Number(
-                            pricing.baseFare || 0
-                          ).toFixed(2)}
-                        </strong>
-
-                        <div>
-                          + ₹
-                          {Number(
-                            pricing.perKmRate || 0
-                          ).toFixed(2)}
-                          /km
-                        </div>
-                      </div>
-                    </button>
-                  );
-                }
-              )}
+              {availableAmbulances.map((ambulance, index) => {
+                const isSelected = selectedAmbulance?.vehicleId === ambulance.vehicleId;
+                return (
+                  <button
+                    key={ambulance.vehicleId || index}
+                    type="button"
+                    onClick={() => selectAmbulance(ambulance)}
+                    style={{ ...styles.ambulanceCard, borderColor: isSelected ? '#e53935' : '#333', background: isSelected ? 'rgba(229,57,53,0.12)' : '#0f0f1a' }}
+                  >
+                    <strong>🚑 {ambulance.vehicleType || 'Ambulance'}</strong>
+                    <div style={{ fontSize: 12, color: '#bbb' }}>Vehicle: {ambulance.vehicleNumber} | {ambulance.distance || 'N/A'} km</div>
+                    <div style={{ fontSize: 12, color: '#4caf50' }}>₹{ambulance.baseFare || 500} + ₹{ambulance.perKmRate || 25}/km</div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
-	)}
 
         {/* =====================================
             REQUIREMENTS
