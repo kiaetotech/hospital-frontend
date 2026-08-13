@@ -463,8 +463,7 @@ const Ambulance = () => {
       await fetchNearbyAmbulances(fallbackLat, fallbackLng, { radius: 500, search: true });
       return;
     }
-    }
-
+    
     if (
       !query &&
       searchFilter !== 'nearby' &&
