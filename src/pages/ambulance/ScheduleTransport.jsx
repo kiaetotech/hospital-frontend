@@ -952,13 +952,7 @@ const ScheduleTransport = () => {
             AVAILABLE AMBULANCES
         ====================================== */}
 
-	{!form.providerId && (
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>
-            🚑 Available Ambulances
-          </h3>
-
-          {!form.pickupLat ||
+	          {!form.pickupLat ||
           !form.pickupLng ? (
             <p style={styles.infoText}>
               Please select your pickup
@@ -970,9 +964,9 @@ const ScheduleTransport = () => {
               🔄 Finding available
               ambulances near you...
             </p>
-                    ) : form.providerId ? (
-            <div style={{ padding: '12px', background: '#d1fae5', borderRadius: 8, color: '#065f46', fontSize: 13 }}>
-              ✅ Selected ambulance confirmed. Proceed to fill details below.
+          ) : form.providerId ? (
+            <div style={{ padding: '12px', background: '#d1fae5', borderRadius: 8, color: '#065f46', fontSize: 13, marginBottom: 10 }}>
+              ✅ Selected ambulance confirmed. Fill details below to complete booking.
             </div>
           ) : availableAmbulances.length === 0 ? (
             <div style={styles.warningBox}>
