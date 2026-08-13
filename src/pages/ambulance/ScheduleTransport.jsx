@@ -841,12 +841,14 @@ const ScheduleTransport = () => {
                 <button
                   key={h._id}
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     handleChange('hospitalName', h.name);
-                    handleChange('destinationAddress', (h.address?.line1 || '') + ', ' + (h.address?.city || ''));
-                    if (h.address?.coordinates?.lat) {
-                      handleChange('destinationLat', h.address.coordinates.lat);
-                      handleChange('destinationLng', h.address.coordinates.lng);
+                    const fullAddress = (h.address?.line1 || '') + ', ' + (h.address?.city || '');
+                    handleChange('destinationAddress', fullAddress);
+                    const coords = await geocodeAddress(fullAddress);
+                    if (coords) {
+                      handleChange('destinationLat', String(coords.lat));
+                      handleChange('destinationLng', String(coords.lng));
                     }
                     setHospitalSearch(h.name);
                     setShowHospitalResults(false);
