@@ -31,6 +31,9 @@ const Ambulance = () => {
   const [bookingStep, setBookingStep] = useState('search'); // search | confirm | booked
   const [bookings, setBookings] = useState([]);
   const [showBookings, setShowBookings] = useState(false);
+  const [compareList, setCompareList] = useState([]);
+  const [showCompare, setShowCompare] = useState(false);
+  const [sortBy, setSortBy] = useState('nearest');
 
   // ============================================================
   // LOAD USER + LOCATION
@@ -97,7 +100,7 @@ const Ambulance = () => {
     } catch (err) {}
   };
 
-  const handleCitySearch = async () => {
+    const handleCitySearch = async () => {
     const city = manualCity.trim();
     if (!city) {
       setNearbyError('Please enter a city.');
@@ -108,13 +111,10 @@ const Ambulance = () => {
     setSearchQuery(city);
     setSearchMessage(`Searching ambulances for ${city}...`);
 
-    if (location?.lat !== undefined && location?.lng !== undefined) {
-      await fetchNearbyAmbulances(location.lat, location.lng);
-    } else {
-      setNearbyError(
-        'City search needs a location to calculate nearby ambulances. Allow location access or use your saved patient location.'
-      );
-    }
+    const lat = location?.lat || patientProfile?.patientLocation?.lat || 21.1458;
+    const lng = location?.lng || patientProfile?.patientLocation?.lng || 79.0882;
+    setLocation({ lat, lng });
+    await fetchNearbyAmbulances(lat, lng, { radius: 500, search: true });
   };
 
   const calculateFare = (ambulance) => {
@@ -1124,7 +1124,7 @@ const Ambulance = () => {
                     ambulance.vehicleId ||
                     index
                   }
-                  onClick={() =>
+                                    onClick={() =>
                     handleSelectAmbulance(ambulance)
                   }
                   style={{
@@ -1195,6 +1195,26 @@ const Ambulance = () => {
                   >
                     ★ {getRating(ambulance)}
                   </span>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCompare(ambulance);
+                    }}
+                    style={{
+                      marginTop: '8px',
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      border: compareList.some(c => c.vehicleId === ambulance.vehicleId) ? '2px solid #e53935' : '1px solid #ddd',
+                      background: compareList.some(c => c.vehicleId === ambulance.vehicleId) ? '#fff5f5' : '#fff',
+                      color: compareList.some(c => c.vehicleId === ambulance.vehicleId) ? '#e53935' : '#555',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {compareList.some(c => c.vehicleId === ambulance.vehicleId) ? '✓ Added' : '+ Compare'}
+                  </button>
                 </button>
               ))}
           </div>
@@ -1573,6 +1593,26 @@ const Ambulance = () => {
         </button>
       </div>
 
+	      {showCompare && compareList.length >= 2 && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 20, width: '95%', maxWidth: 600, maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}><h3 style={{ margin: 0 }}>Compare Ambulances</h3><button onClick={() => setShowCompare(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>✕</button></div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead><tr><th style={{ textAlign: 'left', padding: 8, borderBottom: '2px solid #eee' }}>Feature</th>{compareList.map(a => <th key={a.vehicleId} style={{ textAlign: 'center', padding: 8, borderBottom: '2px solid #eee' }}>{(a.vehicleType || 'Basic').toUpperCase()}</th>)}</tr></thead>
+              <tbody>
+                <tr><td style={{ padding: 8, fontWeight: 600 }}>Provider</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}>{a.providerName}</td>)}</tr>
+                <tr><td style={{ padding: 8, fontWeight: 600 }}>Base Fare</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8, fontWeight: 700, color: '#e53935' }}>₹{a.baseFare || 500}</td>)}</tr>
+                <tr><td style={{ padding: 8, fontWeight: 600 }}>Per KM</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}>₹{a.perKmRate || 25}</td>)}</tr>
+                <tr><td style={{ padding: 8, fontWeight: 600 }}>Distance</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}>{a.distance || 'N/A'} km</td>)}</tr>
+                <tr><td style={{ padding: 8, fontWeight: 600 }}>Equipment</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}>{a.equipment?.join(', ') || 'Basic'}</td>)}</tr>
+                <tr><td style={{ padding: 8, fontWeight: 600 }}>Action</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}><button onClick={() => { setShowCompare(false); handleSelectAmbulance(a); }} style={{ padding: '8px 14px', background: '#e53935', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>Book</button></td>)}</tr>
+              </tbody>
+            </table>
+            <button onClick={() => setCompareList([])} style={{ marginTop: 16, width: '100%', padding: 10, background: '#f3f4f6', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Clear Compare</button>
+          </div>
+        </div>
+      )}
+
 {/* ======================================================
           FARE ESTIMATE MODAL
       ====================================================== */}
@@ -1645,6 +1685,12 @@ const Ambulance = () => {
             </button>
           </div>
         </div>
+      )}
+
+	      {compareList.length > 0 && (
+        <button onClick={() => setShowCompare(true)} style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', padding: '12px 24px', background: '#e53935', color: '#fff', border: 'none', borderRadius: 25, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(229,57,53,0.4)', zIndex: 90 }}>
+          Compare ({compareList.length})
+        </button>
       )}
 
 
