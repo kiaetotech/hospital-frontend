@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getNearbyAmbulances, scheduleTransport } from '../../services/api';
+import api, { getNearbyAmbulances, scheduleTransport } from '../../services/api';
 
 const ScheduleTransport = () => {
   const navigate = useNavigate();
@@ -69,6 +69,10 @@ const ScheduleTransport = () => {
     'sunday'
   ];
 
+  const [hospitalSearch, setHospitalSearch] = useState('');
+  const [hospitalResults, setHospitalResults] = useState([]);
+  const [showHospitalResults, setShowHospitalResults] = useState(false);
+
   // ============================================
   // RESTORE VEHICLE SELECTION FROM SEARCH CARD
   // ============================================
@@ -99,6 +103,20 @@ const ScheduleTransport = () => {
     }
   }, [form.pickupLat, form.pickupLng]);
 
+	  const searchHospital = async (query) => {
+    if (!query || query.trim().length < 2) {
+      setHospitalResults([]);
+      return;
+    }
+    try {
+      const response = await api.get('/hospitals/search', { params: { q: query, limit: 5 } });
+      setHospitalResults(response.data?.data || response.data || []);
+      setShowHospitalResults(true);
+    } catch (e) {
+      setHospitalResults([]);
+    }
+  };
+
   const fetchAvailableAmbulances = async () => {
     try {
       setLoadingAmbulances(true);
@@ -107,8 +125,9 @@ const ScheduleTransport = () => {
       const res = await getNearbyAmbulances({
           lat: form.pickupLat,
           lng: form.pickupLng,
-          radius: 25,
-          limit: 20
+          radius: 500,
+          limit: 20,
+          city: form.pickupAddress || undefined
         });
 
       const ambulances = res.data?.data || [];
@@ -739,19 +758,50 @@ const ScheduleTransport = () => {
             🏥 Destination
           </h3>
 
-          <input
+                    <input
             type="text"
-            placeholder="Hospital Name"
-            value={form.hospitalName}
-            onChange={(e) =>
-              handleChange(
-                'hospitalName',
-                e.target.value
-              )
-            }
+            placeholder="Search registered hospital..."
+            value={hospitalSearch}
+            onChange={(e) => {
+              setHospitalSearch(e.target.value);
+              searchHospital(e.target.value);
+            }}
             style={styles.input}
           />
-
+          
+          {showHospitalResults && hospitalResults.length > 0 && (
+            <div style={{ marginBottom: 10 }}>
+              {hospitalResults.map(h => (
+                <button
+                  key={h._id}
+                  type="button"
+                  onClick={() => {
+                    handleChange('hospitalName', h.name);
+                    handleChange('destinationAddress', (h.address?.line1 || '') + ', ' + (h.address?.city || ''));
+                    if (h.address?.coordinates?.lat) {
+                      handleChange('destinationLat', h.address.coordinates.lat);
+                      handleChange('destinationLng', h.address.coordinates.lng);
+                    }
+                    setHospitalSearch(h.name);
+                    setShowHospitalResults(false);
+                  }}
+                  style={{ width: '100%', padding: 10, background: '#1a1a2e', border: '1px solid #333', borderRadius: 6, color: '#fff', textAlign: 'left', cursor: 'pointer', marginBottom: 4 }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{h.name}</div>
+                  <div style={{ fontSize: 11, color: '#aaa' }}>{h.address?.line1}, {h.address?.city}</div>
+                </button>
+              ))}
+            </div>
+          )}
+          
+          <input
+            type="text"
+            placeholder="Hospital Name (if not registered)"
+            value={form.hospitalName}
+            onChange={(e) => handleChange('hospitalName', e.target.value)}
+            style={styles.input}
+          />
+         
           <input
             type="text"
             placeholder="Destination Address *"
