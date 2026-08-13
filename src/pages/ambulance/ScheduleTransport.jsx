@@ -129,6 +129,7 @@ const ScheduleTransport = () => {
     } catch (e) {
       return null;
     }
+  };
 
   // ============================================
   // GET AVAILABLE AMBULANCES
