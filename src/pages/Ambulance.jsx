@@ -117,6 +117,15 @@ const Ambulance = () => {
     await fetchNearbyAmbulances(lat, lng, { radius: 500, search: true });
   };
 
+	  const toggleCompare = (ambulance) => {
+    setCompareList(prev => {
+      const exists = prev.find(a => a.vehicleId === ambulance.vehicleId);
+      if (exists) return prev.filter(a => a.vehicleId !== ambulance.vehicleId);
+      if (prev.length >= 3) return prev;
+      return [...prev, ambulance];
+    });
+  };
+
   const calculateFare = (ambulance) => {
     if (!ambulance) return null;
 
@@ -485,7 +494,7 @@ const Ambulance = () => {
           : null;
 
     await fetchNearbyAmbulances(location.lat, location.lng, {
-      radius: 500,
+      radius: 25,
       search: true,
       vehicleType
     });
@@ -539,7 +548,7 @@ const Ambulance = () => {
 
     if (location?.lat !== undefined && location?.lng !== undefined) {
       await fetchNearbyAmbulances(location.lat, location.lng, {
-        radius: 500,
+        radius: 25,
         search: true,
         vehicleType: selectedType
       });
@@ -585,7 +594,7 @@ const Ambulance = () => {
 
   const handleRefreshNearby = () => {
     if (location?.lat !== undefined && location?.lng !== undefined) {
-      fetchNearbyAmbulances(location.lat, location.lng, { radius: 500 });
+      fetchNearbyAmbulances(location.lat, location.lng, { radius: 25 });
     } else {
       getLocation();
     }
@@ -1229,7 +1238,7 @@ const Ambulance = () => {
 
                 if (location?.lat !== undefined && location?.lng !== undefined) {
                   await fetchNearbyAmbulances(location.lat, location.lng, {
-                    radius: 500,
+                    radius: 25,
                     search: true,
                     vehicleType: type.value
                   });
@@ -1654,7 +1663,7 @@ const Ambulance = () => {
       )}
 
 	      {compareList.length > 0 && (
-        <button onClick={() => setShowCompare(true)} style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', padding: '12px 24px', background: '#e53935', color: '#fff', border: 'none', borderradius: 500, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(229,57,53,0.4)', zIndex: 90 }}>
+        <button onClick={() => setShowCompare(true)} style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', padding: '12px 24px', background: '#e53935', color: '#fff', border: 'none', borderRadius: 25, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(229,57,53,0.4)', zIndex: 90 }}>
           Compare ({compareList.length})
         </button>
       )}
