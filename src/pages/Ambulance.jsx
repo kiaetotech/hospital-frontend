@@ -763,9 +763,19 @@ const Ambulance = () => {
           <button onClick={handleCitySearch} style={{ width: '100%', padding: '12px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>🔍 Find Ambulances</button>
           <p style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}><a href="/login?redirect=/ambulance" style={{ color: '#e53935' }}>Login</a> for full features</p>
         </div>
+	      {user && patientProfile && (
+        <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>👤 {user.name}</div>
+            <div style={{ fontSize: 12, color: patientProfile?.patientAddress?.city ? '#666' : '#e53935', marginTop: 4 }}>
+              📍 {patientProfile?.patientAddress?.city || 'Add your city'}
+              {patientProfile?.patientAddress?.line1 ? `, ${patientProfile.patientAddress.line1}` : ''}
+            </div>
+          </div>
+          <button onClick={() => { localStorage.clear(); navigate('/'); }} style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Logout</button>
+        </div>
       )}
-
-
+     
       {/* ======================================================
           EMERGENCY HERO
       ====================================================== */}
