@@ -970,6 +970,10 @@ const ScheduleTransport = () => {
               🔄 Finding available
               ambulances near you...
             </p>
+                    ) : form.providerId ? (
+            <div style={{ padding: '12px', background: '#d1fae5', borderRadius: 8, color: '#065f46', fontSize: 13 }}>
+              ✅ Selected ambulance confirmed. Proceed to fill details below.
+            </div>
           ) : availableAmbulances.length === 0 ? (
             <div style={styles.warningBox}>
               <strong>
