@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { getNearbyAmbulances, scheduleTransport } from '../../services/api';
 
@@ -73,6 +73,10 @@ const ScheduleTransport = () => {
   const [hospitalResults, setHospitalResults] = useState([]);
   const [showHospitalResults, setShowHospitalResults] = useState(false);
 
+  // Prevent stale geocoding responses from overwriting a newer destination.
+  const destinationGeocodeTimer = useRef(null);
+  const geocodeRequestId = useRef(0);
+
   // ============================================
   // RESTORE VEHICLE SELECTION FROM SEARCH CARD
   // ============================================
@@ -109,25 +113,207 @@ const ScheduleTransport = () => {
   }, []);
 
 	  const geocodeAddress = async (address) => {
-    if (!address || address.trim().length < 5) return null;
+    const cleanAddress = String(address || '').trim();
+    if (cleanAddress.length < 5) return null;
+
     const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
-    if (!apiKey) return null;
-        try {
-      const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`);
+    if (!apiKey) {
+      console.error('REACT_APP_GOOGLE_MAPS_KEY is not configured');
+      return null;
+    }
+
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanAddress)}&key=${apiKey}`
+      );
+
+      if (!res.ok) return null;
+
       const data = await res.json();
-      if (data.status === 'OK' && data.results.length > 0) {
-        const location = data.results[0].geometry.location;
-        const lat = parseFloat(location.lat);
-        const lng = parseFloat(location.lng);
-        // Validate India bounds
-        if (lat >= 8 && lat <= 38 && lng >= 68 && lng <= 98) {
-          return { lat, lng };
-        }
+
+      if (data.status !== 'OK' || !Array.isArray(data.results) || data.results.length === 0) {
+        console.warn('Google geocoding failed:', data.status);
         return null;
       }
-      return null;
+
+      // Prefer an Indian result and reject obviously invalid coordinates.
+      const result =
+        data.results.find(r =>
+          Array.isArray(r.address_components) &&
+          r.address_components.some(c =>
+            Array.isArray(c.types) && c.types.includes('country') && c.short_name === 'IN'
+          )
+        ) || data.results[0];
+
+      const lat = Number(result?.geometry?.location?.lat);
+      const lng = Number(result?.geometry?.location?.lng);
+
+      if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lng) ||
+        lat < 8 ||
+        lat > 38 ||
+        lng < 68 ||
+        lng > 98
+      ) {
+        return null;
+      }
+
+      return {
+        lat,
+        lng,
+        formattedAddress: result.formatted_address || cleanAddress
+      };
     } catch (e) {
+      console.error('Geocoding error:', e);
       return null;
+    }
+  };
+
+  // Extract coordinates from the hospital API regardless of whether the
+  // backend returns location.lat/lng, latitude/longitude, GeoJSON coordinates,
+  // or a nested coordinates object.
+  const extractHospitalCoordinates = (hospital) => {
+    if (!hospital || typeof hospital !== 'object') return null;
+
+    const candidates = [
+      {
+        lat: hospital?.location?.lat,
+        lng: hospital?.location?.lng
+      },
+      {
+        lat: hospital?.location?.latitude,
+        lng: hospital?.location?.longitude
+      },
+      {
+        lat: hospital?.coordinates?.lat,
+        lng: hospital?.coordinates?.lng
+      },
+      {
+        lat: hospital?.coordinates?.latitude,
+        lng: hospital?.coordinates?.longitude
+      },
+      {
+        lat: hospital?.latitude,
+        lng: hospital?.longitude
+      },
+      {
+        lat: hospital?.lat,
+        lng: hospital?.lng
+      }
+    ];
+
+    for (const candidate of candidates) {
+      const lat = Number(candidate.lat);
+      const lng = Number(candidate.lng);
+
+      if (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= 8 &&
+        lat <= 38 &&
+        lng >= 68 &&
+        lng <= 98
+      ) {
+        return { lat, lng };
+      }
+    }
+
+    // GeoJSON: [longitude, latitude]
+    const geoJson =
+      hospital?.location?.coordinates ||
+      hospital?.geometry?.coordinates ||
+      hospital?.coordinates;
+
+    if (Array.isArray(geoJson) && geoJson.length >= 2) {
+      const lng = Number(geoJson[0]);
+      const lat = Number(geoJson[1]);
+
+      if (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= 8 &&
+        lat <= 38 &&
+        lng >= 68 &&
+        lng <= 98
+      ) {
+        return { lat, lng };
+      }
+    }
+
+    return null;
+  };
+
+  const selectHospital = async (hospital) => {
+    // Cancel any pending manual-address geocode before applying the hospital.
+    if (destinationGeocodeTimer.current) {
+      clearTimeout(destinationGeocodeTimer.current);
+      destinationGeocodeTimer.current = null;
+    }
+    const requestId = ++geocodeRequestId.current;
+
+    const name = hospital?.name || hospital?.hospitalName || '';
+    const addressObject = hospital?.address || {};
+    const addressParts = [
+      addressObject?.line1,
+      addressObject?.line2,
+      addressObject?.area,
+      addressObject?.city,
+      addressObject?.state,
+      addressObject?.pincode || addressObject?.zip
+    ].filter(Boolean);
+
+    const destinationAddress =
+      addressParts.join(', ') ||
+      hospital?.fullAddress ||
+      hospital?.addressText ||
+      name;
+
+    setError('');
+    setHospitalSearch(name);
+    setShowHospitalResults(false);
+
+    // First clear old coordinates so a previous hospital can never be reused.
+    setForm(prev => ({
+      ...prev,
+      hospitalName: name,
+      destinationAddress,
+      destinationLat: '',
+      destinationLng: ''
+    }));
+    setFareEstimate(null);
+
+    // Best case: use coordinates already returned by the hospital API.
+    const existingCoords = extractHospitalCoordinates(hospital);
+
+    if (existingCoords) {
+      setForm(prev => ({
+        ...prev,
+        hospitalName: name,
+        destinationAddress,
+        destinationLat: String(existingCoords.lat),
+        destinationLng: String(existingCoords.lng)
+      }));
+      return;
+    }
+
+    // Fallback: geocode the complete hospital address.
+    const coords = await geocodeAddress(destinationAddress);
+
+    if (requestId !== geocodeRequestId.current) return;
+
+    if (coords) {
+      setForm(prev => ({
+        ...prev,
+        hospitalName: name,
+        destinationAddress: coords.formattedAddress || destinationAddress,
+        destinationLat: String(coords.lat),
+        destinationLng: String(coords.lng)
+      }));
+    } else {
+      setError(
+        'Hospital found, but its location could not be verified. Please choose another hospital or use "Use Current Location".'
+      );
     }
   };
 
@@ -309,64 +495,68 @@ const ScheduleTransport = () => {
       return;
     }
 
-     const pricing = ambulance.pricing || {};
-    const baseFare = Number(pricing.baseFare ?? ambulance.baseFare ?? 0);
-    const perKmRate = Number(pricing.perKmRate ?? ambulance.perKmRate ?? 0);
+    const pricing = ambulance.pricing || {};
+    const baseFare = Number(pricing.baseFare ?? ambulance.baseFare);
+    const perKmRate = Number(pricing.perKmRate ?? ambulance.perKmRate);
     const nightCharge = Number(pricing.nightCharge ?? ambulance.nightCharge ?? 0);
+
+    const pickupLat = Number(form.pickupLat);
+    const pickupLng = Number(form.pickupLng);
+    const destinationLat = Number(form.destinationLat);
+    const destinationLng = Number(form.destinationLng);
 
     if (
       !Number.isFinite(baseFare) ||
-      !Number.isFinite(perKmRate)
+      !Number.isFinite(perKmRate) ||
+      !Number.isFinite(pickupLat) ||
+      !Number.isFinite(pickupLng) ||
+      !Number.isFinite(destinationLat) ||
+      !Number.isFinite(destinationLng) ||
+      pickupLat < 8 || pickupLat > 38 ||
+      destinationLat < 8 || destinationLat > 38 ||
+      pickupLng < 68 || pickupLng > 98 ||
+      destinationLng < 68 || destinationLng > 98
     ) {
       setFareEstimate(null);
       return;
     }
 
-    const pickupLat =
-      Number(form.pickupLat);
+    const distance = calculateDistance(
+      pickupLat,
+      pickupLng,
+      destinationLat,
+      destinationLng
+    );
 
-    const pickupLng =
-      Number(form.pickupLng);
-
-    const destinationLat =
-      Number(form.destinationLat);
-
-    const destinationLng =
-      Number(form.destinationLng);
-
-    const distance =
-      calculateDistance(
-        pickupLat,
-        pickupLng,
-        destinationLat,
-        destinationLng
-      );
+    // Zero distance is not a valid ambulance trip for this screen.
+    if (!Number.isFinite(distance) || distance <= 0 || distance > 1000) {
+      setFareEstimate(null);
+      return;
+    }
 
     let appliedNightCharge = 0;
 
     if (form.scheduledTime) {
-      const hour =
-        Number(
-          form.scheduledTime
-            .split(':')[0]
-        );
+      const hour = Number(form.scheduledTime.split(':')[0]);
 
       if (
         (hour >= 22 || hour < 6) &&
-        Number.isFinite(nightCharge)
+        Number.isFinite(nightCharge) &&
+        nightCharge >= 0
       ) {
-        appliedNightCharge =
-          nightCharge;
+        appliedNightCharge = nightCharge;
       }
     }
 
-    const distanceCharge =
-      distance * perKmRate;
+    const distanceCharge = distance * perKmRate;
+    const total = baseFare + distanceCharge + appliedNightCharge;
 
-    const total =
-      baseFare +
-      distanceCharge +
-      appliedNightCharge;
+    // Guard against obviously corrupt provider pricing producing absurd totals.
+    if (!Number.isFinite(total) || total < 0 || total > 100000) {
+      setFareEstimate(null);
+      setError('The selected ambulance has invalid pricing. Please select another ambulance.');
+      return;
+    }
 
     setFareEstimate({
       baseFare,
@@ -374,8 +564,7 @@ const ScheduleTransport = () => {
       distanceKm: distance,
       distanceCharge,
       nightCharge: appliedNightCharge,
-      total:
-        Math.round(total * 100) / 100
+      total: Math.round(total * 100) / 100
     });
   };
 
@@ -450,33 +639,68 @@ const ScheduleTransport = () => {
   // FORM CHANGE
   // ============================================
 
-    const handleChange = (
-    field,
-    value
-  ) => {
+    const handleChange = (field, value) => {
     setForm(prev => ({
       ...prev,
       [field]: value
     }));
 
-        if (field === 'destinationAddress' && value.length > 5) {
-      setTimeout(async () => {
-        const coords = await geocodeAddress(value);
-        if (coords) {
-          setForm(prev => ({
-            ...prev,
-            destinationLat: String(coords.lat),
-            destinationLng: String(coords.lng)
-          }));
-        } else {
-          setError('Could not find coordinates for destination. Please select from hospital search or use GPS.');
-        }
-      }, 1500);
+    if (field === 'destinationAddress') {
+      // Any manual edit invalidates the previous destination coordinates.
+      // This is critical: never calculate fare using coordinates from an old address.
+      setFareEstimate(null);
+      setError('');
+
+      setForm(prev => ({
+        ...prev,
+        destinationAddress: value,
+        destinationLat: '',
+        destinationLng: ''
+      }));
+
+      if (destinationGeocodeTimer.current) {
+        clearTimeout(destinationGeocodeTimer.current);
+      }
+
+      if (String(value).trim().length >= 5) {
+        const requestId = ++geocodeRequestId.current;
+
+        destinationGeocodeTimer.current = setTimeout(async () => {
+          const coords = await geocodeAddress(value);
+
+          if (requestId !== geocodeRequestId.current) return;
+
+          if (coords) {
+            setForm(prev => ({
+              ...prev,
+              destinationLat: String(coords.lat),
+              destinationLng: String(coords.lng)
+            }));
+            setError('');
+          } else {
+            setError(
+              'Could not verify this destination address. Please select a registered hospital or use Current Location.'
+            );
+          }
+        }, 800);
+      } else {
+        ++geocodeRequestId.current;
+      }
     }
 
-    if (field === 'pickupAddress' && value.length > 5) {
-      setTimeout(async () => {
+    if (field === 'pickupAddress' && String(value).trim().length > 5) {
+      // Pickup geocoding also uses a single cancellable timer.
+      if (destinationGeocodeTimer.current) {
+        clearTimeout(destinationGeocodeTimer.current);
+      }
+
+      const requestId = ++geocodeRequestId.current;
+
+      destinationGeocodeTimer.current = setTimeout(async () => {
         const coords = await geocodeAddress(value);
+
+        if (requestId !== geocodeRequestId.current) return;
+
         if (coords) {
           setForm(prev => ({
             ...prev,
@@ -484,15 +708,11 @@ const ScheduleTransport = () => {
             pickupLng: String(coords.lng)
           }));
         }
-      }, 1500);
+      }, 800);
     }
 
-    if (
-      field === 'pickupLat' ||
-      field === 'pickupLng'
-    ) {
+    if (field === 'pickupLat' || field === 'pickupLng') {
       setSelectedAmbulance(null);
-
       setFareEstimate(null);
 
       setForm(prev => ({
@@ -502,6 +722,15 @@ const ScheduleTransport = () => {
       }));
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (destinationGeocodeTimer.current) {
+        clearTimeout(destinationGeocodeTimer.current);
+      }
+      geocodeRequestId.current += 1;
+    };
+  }, []);
 
   // ============================================
   // RECURRING DAYS
@@ -573,14 +802,46 @@ const ScheduleTransport = () => {
       return;
     }
 
-	    if (
-      !form.destinationLat ||
-      !form.destinationLng
-    ) {
+	    const pickupLat = Number(form.pickupLat);
+    const pickupLng = Number(form.pickupLng);
+    const destinationLat = Number(form.destinationLat);
+    const destinationLng = Number(form.destinationLng);
+
+    const validIndiaCoordinate = (lat, lng) =>
+      Number.isFinite(lat) &&
+      Number.isFinite(lng) &&
+      lat >= 8 &&
+      lat <= 38 &&
+      lng >= 68 &&
+      lng <= 98;
+
+    if (!validIndiaCoordinate(pickupLat, pickupLng)) {
       setError(
-        'Destination coordinates missing. Please select hospital from search or use GPS.'
+        'Pickup location is not valid. Please use Current Location or enter a valid pickup address.'
       );
 
+      setLoading(false);
+      return;
+    }
+
+    if (!validIndiaCoordinate(destinationLat, destinationLng)) {
+      setError(
+        'Destination location is not verified. Please select a hospital from the search results, enter a valid address and wait for verification, or use Current Location.'
+      );
+
+      setLoading(false);
+      return;
+    }
+
+    const tripDistance = calculateDistance(
+      pickupLat,
+      pickupLng,
+      destinationLat,
+      destinationLng
+    );
+
+    if (!Number.isFinite(tripDistance) || tripDistance <= 0 || tripDistance > 1000) {
+      setError('Invalid trip distance. Please verify the pickup and destination locations.');
       setLoading(false);
       return;
     }
@@ -846,16 +1107,7 @@ const ScheduleTransport = () => {
                 <button
                   key={h._id}
                   type="button"
-                  onClick={async () => {
-                                        handleChange('hospitalName', h.name);
-                    handleChange('destinationAddress', h.name + ', ' + (h.address?.city || ''));
-                    if (h.location?.lat && h.location?.lng) {
-                      handleChange('destinationLat', String(h.location.lat));
-                      handleChange('destinationLng', String(h.location.lng));
-                    }
-                    setHospitalSearch(h.name);
-                    setShowHospitalResults(false);
-                  }}
+                  onClick={() => selectHospital(h)}
                   style={{ width: '100%', padding: 10, background: '#1a1a2e', border: '1px solid #333', borderRadius: 6, color: '#fff', textAlign: 'left', cursor: 'pointer', marginBottom: 4 }}
                 >
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{h.name}</div>
@@ -1263,7 +1515,11 @@ const ScheduleTransport = () => {
           disabled={
             loading ||
             !form.providerId ||
-            !form.vehicleId
+            !form.vehicleId ||
+            !Number.isFinite(Number(form.pickupLat)) ||
+            !Number.isFinite(Number(form.pickupLng)) ||
+            !Number.isFinite(Number(form.destinationLat)) ||
+            !Number.isFinite(Number(form.destinationLng))
           }
           style={{
             ...styles.submitBtn,
@@ -1271,7 +1527,11 @@ const ScheduleTransport = () => {
             opacity:
               loading ||
               !form.providerId ||
-              !form.vehicleId
+              !form.vehicleId ||
+              !Number.isFinite(Number(form.pickupLat)) ||
+              !Number.isFinite(Number(form.pickupLng)) ||
+              !Number.isFinite(Number(form.destinationLat)) ||
+              !Number.isFinite(Number(form.destinationLng))
                 ? 0.5
                 : 1
           }}
