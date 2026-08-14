@@ -309,17 +309,10 @@ const ScheduleTransport = () => {
       return;
     }
 
-    const pricing =
-      ambulance.pricing || {};
-
-    const baseFare =
-      Number(pricing.baseFare);
-
-    const perKmRate =
-      Number(pricing.perKmRate);
-
-    const nightCharge =
-      Number(pricing.nightCharge);
+     const pricing = ambulance.pricing || {};
+    const baseFare = Number(pricing.baseFare ?? ambulance.baseFare ?? 0);
+    const perKmRate = Number(pricing.perKmRate ?? ambulance.perKmRate ?? 0);
+    const nightCharge = Number(pricing.nightCharge ?? ambulance.nightCharge ?? 0);
 
     if (
       !Number.isFinite(baseFare) ||
@@ -574,6 +567,18 @@ const ScheduleTransport = () => {
     ) {
       setError(
         'Please enter the destination address.'
+      );
+
+      setLoading(false);
+      return;
+    }
+
+	    if (
+      !form.destinationLat ||
+      !form.destinationLng
+    ) {
+      setError(
+        'Destination coordinates missing. Please select hospital from search or use GPS.'
       );
 
       setLoading(false);
