@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { getNearbyAmbulances, scheduleTransport } from '../../services/api';
 
+
+
 const ScheduleTransport = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -94,7 +96,9 @@ const ScheduleTransport = () => {
     }));
   }, [searchParams]);
 
-	  useEffect(() => {
+	    loadGoogleMapsScript();
+
+  useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       api.get('/auth/patient/profile', { headers: { Authorization: `Bearer ${token}` } })
@@ -1026,16 +1030,12 @@ const ScheduleTransport = () => {
             📍 Pickup Location
           </h3>
 
-          <input
+                    <input
             type="text"
             placeholder="Pickup Address *"
             value={form.pickupAddress}
-            onChange={(e) =>
-              handleChange(
-                'pickupAddress',
-                e.target.value
-              )
-            }
+            onChange={(e) => handleChange('pickupAddress', e.target.value)}
+            onFocus={(e) => initAutocomplete(e.target, 'pickup', setForm)}
             style={styles.input}
             required
           />
@@ -1107,16 +1107,12 @@ const ScheduleTransport = () => {
             style={styles.input}
           />
          
-          <input
+                    <input
             type="text"
             placeholder="Destination Address *"
             value={form.destinationAddress}
-            onChange={(e) =>
-              handleChange(
-                'destinationAddress',
-                e.target.value
-              )
-            }
+            onChange={(e) => handleChange('destinationAddress', e.target.value)}
+            onFocus={(e) => initAutocomplete(e.target, 'destination', setForm)}
             style={styles.input}
             required
           />
