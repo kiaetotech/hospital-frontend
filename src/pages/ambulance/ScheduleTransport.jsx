@@ -149,6 +149,8 @@ const ScheduleTransport = () => {
       }
     }
       return null;
+  };
+
 
   // Extract coordinates from the hospital API regardless of whether the
   // backend returns location.lat/lng, latitude/longitude, GeoJSON coordinates,
