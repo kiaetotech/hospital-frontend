@@ -628,47 +628,15 @@ const ScheduleTransport = () => {
       [field]: value
     }));
 
-    if (field === 'destinationAddress') {
-      // Any manual edit invalidates the previous destination coordinates.
-      // This is critical: never calculate fare using coordinates from an old address.
+        if (field === 'destinationAddress') {
       setFareEstimate(null);
       setError('');
-
       setForm(prev => ({
         ...prev,
         destinationAddress: value,
         destinationLat: '',
         destinationLng: ''
       }));
-
-      if (destinationGeocodeTimer.current) {
-        clearTimeout(destinationGeocodeTimer.current);
-      }
-
-      if (String(value).trim().length >= 5) {
-        const requestId = ++geocodeRequestId.current;
-
-        destinationGeocodeTimer.current = setTimeout(async () => {
-          const coords = await geocodeAddress(value);
-
-          if (requestId !== geocodeRequestId.current) return;
-
-          if (coords) {
-            setForm(prev => ({
-              ...prev,
-              destinationLat: String(coords.lat),
-              destinationLng: String(coords.lng)
-            }));
-            setError('');
-          } else {
-            setError(
-              'Could not verify this destination address. Please select a registered hospital or use Current Location.'
-            );
-          }
-        }, 800);
-      } else {
-        ++geocodeRequestId.current;
-      }
     }
 
     if (field === 'pickupAddress' && String(value).trim().length > 5) {
@@ -1103,11 +1071,26 @@ const ScheduleTransport = () => {
             style={styles.input}
           />
          
-                    <input
+             <input
             type="text"
             placeholder="Destination Address *"
             value={form.destinationAddress}
             onChange={(e) => handleChange('destinationAddress', e.target.value)}
+            onBlur={async () => {
+              if (form.destinationAddress.trim().length >= 3) {
+                const coords = await geocodeAddress(form.destinationAddress);
+                if (coords) {
+                  setForm(prev => ({
+                    ...prev,
+                    destinationLat: String(coords.lat),
+                    destinationLng: String(coords.lng)
+                  }));
+                  setError('');
+                } else {
+                  setError('Address not found. Try adding city and state, or select from hospital search.');
+                }
+              }
+            }}
             style={styles.input}
             required
           />
