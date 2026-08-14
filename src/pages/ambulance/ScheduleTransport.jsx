@@ -112,62 +112,77 @@ const ScheduleTransport = () => {
     }
   }, []);
 
-	  const geocodeAddress = async (address) => {
+	    const geocodeAddress = async (address) => {
     const cleanAddress = String(address || '').trim();
     if (cleanAddress.length < 5) return null;
 
     const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
-    if (!apiKey) {
-      console.error('REACT_APP_GOOGLE_MAPS_KEY is not configured');
-      return null;
+    
+    // Try Google first
+    if (apiKey) {
+      try {
+        const res = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanAddress)}&key=${apiKey}`
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+
+          if (data.status === 'OK' && Array.isArray(data.results) && data.results.length > 0) {
+            const result =
+              data.results.find(r =>
+                Array.isArray(r.address_components) &&
+                r.address_components.some(c =>
+                  Array.isArray(c.types) && c.types.includes('country') && c.short_name === 'IN'
+                )
+              ) || data.results[0];
+
+            const lat = Number(result?.geometry?.location?.lat);
+            const lng = Number(result?.geometry?.location?.lng);
+
+            if (
+              Number.isFinite(lat) &&
+              Number.isFinite(lng) &&
+              lat >= 8 && lat <= 38 &&
+              lng >= 68 && lng <= 98
+            ) {
+              return { lat, lng };
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Google geocoding error:', e);
+      }
     }
 
+    // Fallback to free Nominatim
     try {
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanAddress)}&key=${apiKey}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanAddress)}&limit=1&countrycodes=in`
       );
 
-      if (!res.ok) return null;
+      if (res.ok) {
+        const data = await res.json();
 
-      const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const lat = Number(data[0].lat);
+          const lng = Number(data[0].lon);
 
-      if (data.status !== 'OK' || !Array.isArray(data.results) || data.results.length === 0) {
-        console.warn('Google geocoding failed:', data.status);
-        return null;
+          if (
+            Number.isFinite(lat) &&
+            Number.isFinite(lng) &&
+            lat >= 8 && lat <= 38 &&
+            lng >= 68 && lng <= 98
+          ) {
+            return { lat, lng };
+          }
+        }
       }
-
-      // Prefer an Indian result and reject obviously invalid coordinates.
-      const result =
-        data.results.find(r =>
-          Array.isArray(r.address_components) &&
-          r.address_components.some(c =>
-            Array.isArray(c.types) && c.types.includes('country') && c.short_name === 'IN'
-          )
-        ) || data.results[0];
-
-      const lat = Number(result?.geometry?.location?.lat);
-      const lng = Number(result?.geometry?.location?.lng);
-
-      if (
-        !Number.isFinite(lat) ||
-        !Number.isFinite(lng) ||
-        lat < 8 ||
-        lat > 38 ||
-        lng < 68 ||
-        lng > 98
-      ) {
-        return null;
-      }
-
-      return {
-        lat,
-        lng,
-        formattedAddress: result.formatted_address || cleanAddress
-      };
     } catch (e) {
-      console.error('Geocoding error:', e);
-      return null;
+      console.error('Nominatim geocoding error:', e);
     }
+
+    return null;
   };
 
   // Extract coordinates from the hospital API regardless of whether the
