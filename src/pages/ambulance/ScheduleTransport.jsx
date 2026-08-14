@@ -4,10 +4,12 @@ import api, { getNearbyAmbulances, scheduleTransport } from '../../services/api'
 
 
 const loadGoogleMapsScript = () => {
-  if (window.google?.maps) return;
+  if (window.google?.maps || window.__googleMapsLoading) return;
+  window.__googleMapsLoading = true;
   const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_KEY}&libraries=places`;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_KEY}&libraries=places&loading=async`;
   script.async = true;
+  script.onload = () => { window.__googleMapsLoading = false; };
   document.head.appendChild(script);
 };
 
@@ -131,8 +133,10 @@ const ScheduleTransport = () => {
     }));
   }, [searchParams]);
 
-	    loadGoogleMapsScript();
-
+   useEffect(() => {
+    loadGoogleMapsScript();
+  }, []);
+	    
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
