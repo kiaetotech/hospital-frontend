@@ -112,77 +112,68 @@ const ScheduleTransport = () => {
     }
   }, []);
 
-	    const geocodeAddress = async (address) => {
+	  const geocodeAddress = async (address) => {
     const cleanAddress = String(address || '').trim();
     if (cleanAddress.length < 5) return null;
 
+    const validCoords = (lat, lng) => (
+      Number.isFinite(lat) && Number.isFinite(lng) &&
+      lat >= 8 && lat <= 38 && lng >= 68 && lng <= 98
+    );
+
+    // Prefer Google when configured. If it is not configured or fails,
+    // use the backend-independent OpenStreetMap/Nominatim fallback.
     const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
-    
-    // Try Google first
+
     if (apiKey) {
       try {
         const res = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanAddress)}&key=${apiKey}`
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanAddress + ', India')}&key=${apiKey}`
         );
-
         if (res.ok) {
           const data = await res.json();
-
-          if (data.status === 'OK' && Array.isArray(data.results) && data.results.length > 0) {
-            const result =
-              data.results.find(r =>
-                Array.isArray(r.address_components) &&
-                r.address_components.some(c =>
-                  Array.isArray(c.types) && c.types.includes('country') && c.short_name === 'IN'
-                )
-              ) || data.results[0];
-
+          if (data.status === 'OK' && Array.isArray(data.results) && data.results.length) {
+            const result = data.results.find(r =>
+              Array.isArray(r.address_components) &&
+              r.address_components.some(c => Array.isArray(c.types) && c.types.includes('country') && c.short_name === 'IN')
+            ) || data.results[0];
             const lat = Number(result?.geometry?.location?.lat);
             const lng = Number(result?.geometry?.location?.lng);
-
-            if (
-              Number.isFinite(lat) &&
-              Number.isFinite(lng) &&
-              lat >= 8 && lat <= 38 &&
-              lng >= 68 && lng <= 98
-            ) {
-              return { lat, lng };
+            if (validCoords(lat, lng)) {
+              return { lat, lng, formattedAddress: result.formatted_address || cleanAddress };
             }
           }
         }
       } catch (e) {
-        console.error('Google geocoding error:', e);
+        console.warn('Google geocoding unavailable; trying fallback.', e);
       }
     }
 
-    // Fallback to free Nominatim
+    // Public fallback for address verification. This is only used for
+    // geocoding; the server remains the authority for the final booking/fare.
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanAddress)}&limit=1&countrycodes=in`
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=in&addressdetails=1&q=${encodeURIComponent(cleanAddress)}`,
+        { headers: { Accept: 'application/json' } }
       );
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) return null;
 
-      if (res.ok) {
-        const data = await res.json();
+      const result = data.find(r => validCoords(Number(r.lat), Number(r.lon))) || data[0];
+      const lat = Number(result?.lat);
+      const lng = Number(result?.lon);
+      if (!validCoords(lat, lng)) return null;
 
-        if (Array.isArray(data) && data.length > 0) {
-          const lat = Number(data[0].lat);
-          const lng = Number(data[0].lon);
-
-          if (
-            Number.isFinite(lat) &&
-            Number.isFinite(lng) &&
-            lat >= 8 && lat <= 38 &&
-            lng >= 68 && lng <= 98
-          ) {
-            return { lat, lng };
-          }
-        }
-      }
+      return {
+        lat,
+        lng,
+        formattedAddress: result.display_name || cleanAddress
+      };
     } catch (e) {
-      console.error('Nominatim geocoding error:', e);
+      console.error('Address geocoding failed:', e);
+      return null;
     }
-
-    return null;
   };
 
   // Extract coordinates from the hospital API regardless of whether the
