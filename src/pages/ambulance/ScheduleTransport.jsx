@@ -3,44 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { getNearbyAmbulances, scheduleTransport } from '../../services/api';
 
 
-const loadGoogleMapsScript = () => {
-  if (window.google?.maps || window.__googleMapsLoading) return;
-  window.__googleMapsLoading = true;
-  const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_KEY}&libraries=places&loading=async`;
-  script.async = true;
-  script.onload = () => { window.__googleMapsLoading = false; };
-  document.head.appendChild(script);
-};
-
-const initAutocomplete = (input, type, setForm) => {
-  if (!window.google?.maps) return;
-  const autocomplete = new window.google.maps.places.Autocomplete(input, {
-    componentRestrictions: { country: 'in' },
-    fields: ['formatted_address', 'geometry']
-  });
-  autocomplete.addListener('place_changed', () => {
-    const place = autocomplete.getPlace();
-    if (place.geometry) {
-      if (type === 'destination') {
-        setForm(prev => ({
-          ...prev,
-          destinationAddress: place.formatted_address,
-          destinationLat: String(place.geometry.location.lat()),
-          destinationLng: String(place.geometry.location.lng())
-        }));
-      } else {
-        setForm(prev => ({
-          ...prev,
-          pickupAddress: place.formatted_address,
-          pickupLat: String(place.geometry.location.lat()),
-          pickupLng: String(place.geometry.location.lng())
-        }));
-      }
-    }
-  });
-};
-
 const ScheduleTransport = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -132,10 +94,6 @@ const ScheduleTransport = () => {
       ambulanceType: type || prev.ambulanceType
     }));
   }, [searchParams]);
-
-   useEffect(() => {
-    loadGoogleMapsScript();
-  }, []);
 	    
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -1074,7 +1032,6 @@ const ScheduleTransport = () => {
             placeholder="Pickup Address *"
             value={form.pickupAddress}
             onChange={(e) => handleChange('pickupAddress', e.target.value)}
-            onFocus={(e) => initAutocomplete(e.target, 'pickup', setForm)}
             style={styles.input}
             required
           />
@@ -1151,7 +1108,6 @@ const ScheduleTransport = () => {
             placeholder="Destination Address *"
             value={form.destinationAddress}
             onChange={(e) => handleChange('destinationAddress', e.target.value)}
-            onFocus={(e) => initAutocomplete(e.target, 'destination', setForm)}
             style={styles.input}
             required
           />
