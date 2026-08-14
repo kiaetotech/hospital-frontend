@@ -148,33 +148,7 @@ const ScheduleTransport = () => {
         console.warn('Google geocoding unavailable; trying fallback.', e);
       }
     }
-
-    // Public fallback for address verification. This is only used for
-    // geocoding; the server remains the authority for the final booking/fare.
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=in&addressdetails=1&q=${encodeURIComponent(cleanAddress)}`,
-        { headers: { Accept: 'application/json' } }
-      );
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0) return null;
-
-      const result = data.find(r => validCoords(Number(r.lat), Number(r.lon))) || data[0];
-      const lat = Number(result?.lat);
-      const lng = Number(result?.lon);
-      if (!validCoords(lat, lng)) return null;
-
-      return {
-        lat,
-        lng,
-        formattedAddress: result.display_name || cleanAddress
-      };
-    } catch (e) {
-      console.error('Address geocoding failed:', e);
       return null;
-    }
-  };
 
   // Extract coordinates from the hospital API regardless of whether the
   // backend returns location.lat/lng, latitude/longitude, GeoJSON coordinates,
