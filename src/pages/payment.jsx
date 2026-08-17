@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useLender } from '../context/LenderContext';
+import { useLender } from '../contexts/LenderContext';
 
 const Payment = () => {
   const location = useLocation();
