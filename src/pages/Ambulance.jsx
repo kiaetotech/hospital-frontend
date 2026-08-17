@@ -743,7 +743,7 @@ const Ambulance = () => {
         </div>
       )}
 
-      {user && patientProfile && (
+          {user && patientProfile && (
         <div style={{ margin: '12px 14px', backgroundColor: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>👤 {user.name}</div>
@@ -752,7 +752,10 @@ const Ambulance = () => {
               {patientProfile?.patientAddress?.line1 ? `, ${patientProfile.patientAddress.line1}` : ''}
             </div>
           </div>
-          <button onClick={() => { localStorage.clear(); navigate('/'); }} style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Logout</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => navigate('/profile')} style={{ padding: '8px 14px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Edit Profile</button>
+            <button onClick={() => { localStorage.clear(); navigate('/'); }} style={{ padding: '8px 14px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Logout</button>
+          </div>
         </div>
       )}
      
