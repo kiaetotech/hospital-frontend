@@ -33,7 +33,11 @@ const MyBookings = () => {
   
   const [actionMessage, setActionMessage] = useState('');
 
-  const fetchBookings = async () => {
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+    const fetchBookings = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Please login to view your bookings');
@@ -42,10 +46,11 @@ const MyBookings = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.get(`https://hospital-backend-production-7d0f.up.railway.app/api/bookings/patient/${phone}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setBookings(response.data.data || response.data || []);
+      const response = await axios.get(
+        'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/my-bookings',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setBookings(response.data?.data || response.data || []);
       setSearched(true);
     } catch (error) {
       console.error('Error fetching bookings:', error);
