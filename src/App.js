@@ -11,7 +11,7 @@ import CompareHospitals from './pages/CompareHospitals';
 import EmergencySearch from './pages/EmergencySearch';
 import BookOPD from './pages/BookOPD';
 import BookAdmission from './pages/BookAdmission';
-import Payment from './pages/Payment';
+import Payment from './pages/payment';
 import MyBookings from './pages/MyBookings';
 import Ambulance from './pages/Ambulance';
 import PatientProfile from './pages/PatientProfile';
