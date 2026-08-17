@@ -414,13 +414,7 @@ const EmergencyRequest = () => {
           onPointerDown={handleHoldStart}
           onPointerUp={handleHoldEnd}
           onPointerCancel={handleHoldEnd}
-          onPointerLeave={(event) => {
-            // Only cancel when the pointer is actually
-            // leaving while the button is being held.
-            if (holding) {
-              handleHoldEnd(event);
-            }
-          }}
+           
           disabled={loading}
           aria-label="Press and hold for emergency ambulance"
           style={{
