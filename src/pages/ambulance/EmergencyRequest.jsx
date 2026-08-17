@@ -14,12 +14,13 @@ const EmergencyRequest = () => {
   const [holdProgress, setHoldProgress] = useState(0);
   const [location, setLocation] = useState(null);
 
-  const [triage, setTriage] = useState({
+    const [triage, setTriage] = useState({
     isBreathing: true,
     isConscious: true,
     isBleeding: false,
     chiefComplaint: '',
-    ageGroup: 'adult'
+    ageGroup: 'adult',
+    patientPhone: ''
   });
 
   const [surge, setSurge] = useState(null);
@@ -302,8 +303,16 @@ const EmergencyRequest = () => {
     setError('');
 
     try {
-      const patientPhone =
+         const patientPhone =
+        triage.patientPhone ||
         getPatientPhone();
+	      
+	if (!patientPhone) {
+        setError('Patient phone number is required for emergency dispatch.');
+        dispatchStartedRef.current = false;
+        setLoading(false);
+        return;
+      }
 
       const payload = {
         patientName: 'Emergency Patient',
@@ -734,6 +743,24 @@ const EmergencyRequest = () => {
         </div>
 
       </div>
+
+	      <div style={styles.triageGroup}>
+        <label style={styles.label}>
+          Patient Phone Number *
+        </label>
+        <input
+          type="tel"
+          value={triage.patientPhone}
+          onChange={(e) =>
+            handleTriageChange(
+              'patientPhone',
+              e.target.value
+            )
+          }
+          placeholder="Enter phone number for emergency contact"
+          style={styles.input}
+        />
+      </div> 
 
       {error && (
         <div style={styles.error}>
