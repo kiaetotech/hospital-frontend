@@ -942,6 +942,13 @@ const EmergencyRequest = () => {
             </strong>
           </div>
 
+	     {result?.fareEstimate && (
+            <div style={styles.resultRow}>
+              <span>💰 Estimated Fare:</span>
+              <strong>₹{result.fareEstimate.baseFare} + ₹{result.fareEstimate.perKmRate}/km</strong>
+            </div>
+          )}
+
           <div style={styles.resultRow}>
             <span>🔢 OTP:</span>
 
