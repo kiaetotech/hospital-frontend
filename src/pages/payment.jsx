@@ -15,7 +15,7 @@ const Payment = () => {
   const [paymentMethod, setPaymentMethod] = useState('direct'); // 'direct' or 'loan'
   const [loanData, setLoanData] = useState(null);
   
-  const { clearLoan } = useLender();
+    const { lender } = useLender();
 
   // Check for loan data from session storage
   useEffect(() => {
@@ -123,7 +123,6 @@ const Payment = () => {
       
       // Clear loan data from session
       sessionStorage.removeItem('healthEmiLoan');
-      clearLoan();
       
       alert(`✅ Loan Approved!\n\nLender: ${loanData.lender}\nLoan Amount: ₹${loanData.amount}\nEMI: ₹${loanData.emi}/month for ${loanData.tenure} months\n\nHospital will confirm your booking.`);
       navigate('/my-bookings');
