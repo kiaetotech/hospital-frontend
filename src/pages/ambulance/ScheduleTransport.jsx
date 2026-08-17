@@ -837,14 +837,14 @@ const ScheduleTransport = () => {
           bookingData
         );
 
-            if (res.data?.success) {
+         if (res.data?.success) {
         const bookingId = res.data?.data?.bookingId || '';
         const totalAmount = res.data?.data?.fareEstimate?.total || form.finalAmount || 0;
         setSuccess('Booking created. Redirecting to payment...');
         setTimeout(() => {
           navigate(`/payment?bookingId=${bookingId}&amount=${totalAmount}&type=ambulance`);
         }, 1000);
-      }
+      } else {
         setError(
           res.data?.error ||
           res.data?.message ||
