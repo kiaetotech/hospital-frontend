@@ -37,59 +37,94 @@ const Payment = () => {
     });
   };
 
-  const handleDirectPayment = async () => {
+    const handleDirectPayment = async () => {
     setLoading(true);
-    
+
     const isScriptLoaded = await loadRazorpayScript();
     if (!isScriptLoaded) {
       alert('Failed to load payment gateway. Please try again.');
       setLoading(false);
       return;
     }
-    
+
     try {
+      const bookingId = queryParams.get('bookingId') || '';
+      const token = localStorage.getItem('token');
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+
       const orderRes = await api.post('/payment/create-order', {
         amount: parseInt(amountParam),
         currency: 'INR',
-        receipt: `${bookingType}_${Date.now()}`
+        bookingId,
+        bookingType,
+        patientName: userData.name || 'Patient',
+        patientPhone: userData.phone || '',
+        patientEmail: userData.email || '',
+        userId: userData.id || 'guest'
       });
-      
-      const { order } = orderRes.data;
-      
+
+      if (!orderRes.data?.success) {
+        throw new Error(orderRes.data?.message || 'Failed to create order');
+      }
+
+      const { order, key_id } = orderRes.data;
+
       const options = {
-        key: orderRes.data.key_id,
+        key: key_id,
         amount: order.amount,
         currency: order.currency,
-        name: 'KiaetoCare',
+        name: 'HospitalHub',
         description: `${bookingType.toUpperCase()} Booking - ${hospitalName}`,
         order_id: order.id,
-        handler: function(response) {
-          api.post('/payment/verify', {
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature
-          }).then(() => {
-            alert('Payment successful! Booking confirmed.');
-            navigate('/my-bookings');
-          }).catch(() => {
+        handler: async function(response) {
+          setLoading(true);
+          try {
+            const verifyRes = await api.post('/payment/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              bookingId: queryParams.get('bookingId') || '',
+              bookingType,
+              patientName: userData.name || 'Patient',
+              patientPhone: userData.phone || '',
+              patientEmail: userData.email || '',
+              userId: userData.id || 'guest',
+              totalAmount: parseInt(amountParam),
+              finalAmount: parseInt(amountParam)
+            });
+
+            if (verifyRes.data?.success) {
+              alert('✅ Payment successful! Booking confirmed.');
+              navigate('/my-bookings');
+            } else {
+              throw new Error(verifyRes.data?.message || 'Verification failed');
+            }
+          } catch (verifyError) {
+            console.error('Verify error:', verifyError);
             alert('Payment verification failed. Please contact support.');
-          });
+          }
+          setLoading(false);
         },
         prefill: {
-          name: 'Patient Name',
-          email: 'patient@example.com',
-          contact: '9999999999'
+          name: userData.name || 'Patient',
+          email: userData.email || '',
+          contact: (userData.phone || '').replace('+91', '')
         },
         theme: {
-          color: '#10b981'
+          color: '#e53935'
+        },
+        modal: {
+          ondismiss: () => {
+            alert('Payment cancelled');
+          }
         }
       };
-      
+
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Payment failed. Please try again.');
+      alert(error.response?.data?.message || 'Payment failed. Please try again.');
     } finally {
       setLoading(false);
     }
