@@ -34,6 +34,8 @@ const EmergencyRequest = () => {
   const holdTimerRef = useRef(null);
   const holdStartRef = useRef(null);
   const dispatchStartedRef = useRef(false);
+  const clickCountRef = useRef(0);
+  const clickTimerRef = useRef(null);
 
   // ============================================================
   // GET LOCATION ON PAGE LOAD
@@ -210,6 +212,21 @@ const EmergencyRequest = () => {
 
     if (!completed && step === 0) {
       setHoldProgress(0);
+    }
+  };
+
+  const handleClickFallback = () => {
+    clickCountRef.current += 1;
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+    }
+    clickTimerRef.current = setTimeout(() => {
+      clickCountRef.current = 0;
+    }, 2000);
+
+    if (clickCountRef.current >= 3) {
+      clickCountRef.current = 0;
+      setStep(1);
     }
   };
 
@@ -412,6 +429,7 @@ const EmergencyRequest = () => {
         <button
           type="button"
           onPointerDown={handleHoldStart}
+	  onClick={handleClickFallback}
           onPointerUp={handleHoldEnd}
           onPointerCancel={handleHoldEnd}
            
