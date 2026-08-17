@@ -82,7 +82,7 @@ const ScheduleTransport = () => {
   // RESTORE VEHICLE SELECTION FROM SEARCH CARD
   // ============================================
 
-    useEffect(() => {
+      useEffect(() => {
     const providerId = searchParams.get('providerId') || '';
     const vehicleId = searchParams.get('vehicleId') || '';
     const type = searchParams.get('type') || 'basic';
@@ -99,29 +99,17 @@ const ScheduleTransport = () => {
         .then(res => {
           if (res.data?.data) {
             setSelectedAmbulance(res.data.data);
+            const pricing = res.data.data.pricing || {};
+            const baseFare = Number(pricing.baseFare ?? res.data.data.baseFare ?? 0);
+            const perKmRate = Number(pricing.perKmRate ?? res.data.data.perKmRate ?? 0);
+            if (baseFare > 0 && perKmRate > 0) {
+              setFareEstimate({ baseFare, perKmRate, distanceKm: 0, distanceCharge: 0, nightCharge: 0, total: baseFare });
+            }
           }
         })
         .catch(() => {});
     }
   }, [searchParams]);
-	    
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.get('/auth/patient/profile', { headers: { Authorization: `Bearer ${token}` } })
-        .then(res => {
-          if (res.data?.data?.patientLocation?.lat) {
-            setForm(prev => ({
-              ...prev,
-              pickupLat: String(res.data.data.patientLocation.lat),
-              pickupLng: String(res.data.data.patientLocation.lng),
-              pickupAddress: res.data.data.patientAddress?.line1 || 'Current Location'
-            }));
-          }
-        })
-        .catch(() => {});
-    }
-  }, []);
 
 	  const geocodeAddress = async (address) => {
     const cleanAddress = String(address || '').trim();
