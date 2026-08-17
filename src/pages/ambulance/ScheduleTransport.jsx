@@ -82,7 +82,7 @@ const ScheduleTransport = () => {
   // RESTORE VEHICLE SELECTION FROM SEARCH CARD
   // ============================================
 
-  useEffect(() => {
+    useEffect(() => {
     const providerId = searchParams.get('providerId') || '';
     const vehicleId = searchParams.get('vehicleId') || '';
     const type = searchParams.get('type') || 'basic';
@@ -93,6 +93,16 @@ const ScheduleTransport = () => {
       vehicleId: vehicleId || prev.vehicleId,
       ambulanceType: type || prev.ambulanceType
     }));
+
+    if (providerId && vehicleId) {
+      api.get(`/ambulance/vehicle/${providerId}/${vehicleId}`)
+        .then(res => {
+          if (res.data?.data) {
+            setSelectedAmbulance(res.data.data);
+          }
+        })
+        .catch(() => {});
+    }
   }, [searchParams]);
 	    
   useEffect(() => {
