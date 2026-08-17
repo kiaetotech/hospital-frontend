@@ -65,23 +65,26 @@ const MyBookings = () => {
   };
 
   // 🆕 Confirm cancel
-  const confirmCancel = async () => {
+    const confirmCancel = async () => {
     setCancelLoading(true);
     try {
       const token = localStorage.getItem('token');
       const res = await axios.put(
-        `https://hospital-backend-production-7d0f.up.railway.app/api/bookings/${cancellingId}/cancel`,
+        `https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/cancel-booking/${cancellingId}`,
         { reason: cancelReason || 'Cancelled by patient' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (res.data.success) {
         const refundInfo = res.data.data;
-        setActionMessage(`✅ Booking cancelled! Refund: ₹${refundInfo.refundAmount} (${refundInfo.refundPercentage}%)`);
+        setActionMessage(`✅ Booking cancelled! Refund: ₹${refundInfo?.refundAmount || 0} (${refundInfo?.refundPercentage || 0}%)`);
         
-        // Refresh bookings
-        const response = await axios.get(`https://hospital-backend-production-7d0f.up.railway.app/api/bookings/patient/${phone}`);
-        setBookings(response.data);
+        // Refresh bookings using token
+        const response = await axios.get(
+          'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/my-bookings',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setBookings(response.data?.data || response.data || []);
       }
       
       setShowCancelModal(false);
