@@ -48,7 +48,7 @@ const Payment = () => {
     }
     
     try {
-      const orderRes = await api.post('/payments/create-order', {
+      const orderRes = await api.post('/payment/create-order', {
         amount: parseInt(amountParam),
         currency: 'INR',
         receipt: `${bookingType}_${Date.now()}`
@@ -57,14 +57,14 @@ const Payment = () => {
       const { order } = orderRes.data;
       
       const options = {
-        key: 'rzp_test_xxxxxxxxxxxxx',
+        key: orderRes.data.key_id,
         amount: order.amount,
         currency: order.currency,
         name: 'KiaetoCare',
         description: `${bookingType.toUpperCase()} Booking - ${hospitalName}`,
         order_id: order.id,
         handler: function(response) {
-          api.post('/payments/verify', {
+          api.post('/payment/verify', {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature
