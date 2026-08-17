@@ -14,6 +14,7 @@ import BookAdmission from './pages/BookAdmission';
 import Payment from './pages/PaymentPage';
 import MyBookings from './pages/MyBookings';
 import Ambulance from './pages/Ambulance';
+import PatientProfile from './pages/PatientProfile';
 import Caregivers from './pages/Caregivers';
 import CaregiverProfile from './pages/CaregiverProfile';
 import BookCaregiver from './pages/BookCaregiver';
@@ -244,6 +245,7 @@ function App() {
 
           {/* 🚑 AMBULANCE TAG (ENHANCED) */}
           <Route path="/ambulance" element={<Ambulance />} />
+          <Route path="/profile" element={<PatientProfile />} />
           <Route path="/ambulance/emergency" element={<EmergencyRequest />} />
           <Route path="/ambulance/tracking/:bookingId" element={<LiveTracking />} />
           <Route path="/ambulance/schedule" element={<ScheduleTransport />} />
