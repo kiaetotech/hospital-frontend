@@ -514,30 +514,25 @@ const EmergencyRequest = () => {
 
       </div>
 
-	 <button
+	       <button
         type="button"
         onClick={() => setStep(1)}
         style={{
-          marginTop: '20px',
-          padding: '12px 20px',
-          background: 'none',
-          border: '1px solid #e53935',
-          borderRadius: '8px',
+          marginTop: '25px',
+          marginBottom: '15px',
+          padding: '14px 20px',
+          background: '#fff',
+          border: '2px solid #e53935',
+          borderRadius: '10px',
           color: '#e53935',
-          fontSize: '14px',
+          fontSize: '15px',
           fontWeight: 'bold',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          display: 'block',
+          width: '100%'
         }}
       >
         Can't hold? Tap here for emergency
-      </button>
-
-      <button
-        type="button"
-        onClick={call108}
-        style={styles.callButton}
-      >
-        📞 Call 108
       </button>
 
       <button
