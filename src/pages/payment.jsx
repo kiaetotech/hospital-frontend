@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useLoan } from '../context/LoanContext';
+import { useLender } from '../context/LenderContext';
 
 const Payment = () => {
   const location = useLocation();
@@ -15,7 +15,7 @@ const Payment = () => {
   const [paymentMethod, setPaymentMethod] = useState('direct'); // 'direct' or 'loan'
   const [loanData, setLoanData] = useState(null);
   
-  const { clearLoan } = useLoan();
+  const { clearLoan } = useLender();
 
   // Check for loan data from session storage
   useEffect(() => {
