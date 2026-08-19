@@ -281,6 +281,24 @@ const MyBookings = () => {
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
       <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>📋 My Bookings</h1>
+	      <button 
+        onClick={async () => {
+          if (confirm('Delete all cancelled bookings older than 30 days?')) {
+            try {
+              const token = localStorage.getItem('token');
+              const res = await axios.post('https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/cleanup-bookings', 
+                { days: 30, status: 'cancelled' },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              alert(res.data?.message || 'Cleanup done');
+              fetchBookings();
+            } catch (e) { alert('Cleanup failed'); }
+          }
+        }}
+        style={{ padding: '8px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, float: 'right' }}
+      >
+        🗑️ Delete Old Cancelled
+      </button>
       <p style={{ color: '#6b7280', marginBottom: '20px' }}>View, cancel, and review all your bookings</p>
       
       {/* 🆕 Action Message */}
