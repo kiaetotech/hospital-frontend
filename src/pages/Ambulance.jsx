@@ -1081,7 +1081,7 @@ const Ambulance = () => {
             >
               {nearbyAmbulances.length === 0
                 ? 'No nearby ambulances found.'
-                : 'No ambulances match your search.'}
+               			 : `No ambulances found for "${searchQuery}". Try a different city or type.`}
             </div>
           )}
 
