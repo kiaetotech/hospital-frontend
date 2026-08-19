@@ -33,9 +33,19 @@ const MyBookings = () => {
   
   const [actionMessage, setActionMessage] = useState('');
 
+  const [selectedBookings, setSelectedBookings] = useState([]);
+
   useEffect(() => {
     fetchBookings();
   }, []);
+
+	const toggleSelect = (bookingId) => {
+    setSelectedBookings(prev => 
+      prev.includes(bookingId) 
+        ? prev.filter(id => id !== bookingId) 
+        : [...prev, bookingId]
+    );
+  };
 
     const fetchBookings = async () => {
     const token = localStorage.getItem('token');
@@ -299,6 +309,26 @@ const MyBookings = () => {
       >
         🗑️ Delete Old Cancelled
       </button>
+	      {selectedBookings.length > 0 && (
+        <button 
+          onClick={async () => {
+            if (confirm(`Delete ${selectedBookings.length} selected bookings?`)) {
+              try {
+                const token = localStorage.getItem('token');
+                await axios.post('https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/delete-bookings', 
+                  { bookingIds: selectedBookings },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setSelectedBookings([]);
+                fetchBookings();
+              } catch (e) { alert('Delete failed'); }
+            }
+          }}
+          style={{ padding: '8px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, float: 'right', marginLeft: 10 }}
+        >
+          🗑️ Delete Selected ({selectedBookings.length})
+        </button>
+      )}
       <p style={{ color: '#6b7280', marginBottom: '20px' }}>View, cancel, and review all your bookings</p>
       
       {/* 🆕 Action Message */}
