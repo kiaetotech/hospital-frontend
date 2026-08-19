@@ -441,15 +441,7 @@ const MyBookings = () => {
                 
                 return (
                 <div key={booking._id} style={{ backgroundColor: 'white', borderRadius: '10px', padding: '15px', marginBottom: '15px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: `4px solid ${getStatusColor(booking.status)}` }}>
-	              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <input 
-                  type="checkbox" 
-                  checked={selectedBookings.includes(booking.bookingId)}
-                  onChange={() => toggleSelect(booking.bookingId)}
-                  style={{ width: 18, height: 18, cursor: 'pointer' }}
-                />
-                <span style={{ fontSize: 12, color: '#666' }}>Select</span>
-              </div>
+	              
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <span style={{ fontSize: '20px', marginRight: '8px' }}>{getBookingTypeIcon(booking.bookingType)}</span>
