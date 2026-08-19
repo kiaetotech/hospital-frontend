@@ -327,12 +327,11 @@ const ScheduleTransport = () => {
       setLoadingAmbulances(true);
       setError('');
 
-      const res = await getNearbyAmbulances({
+          const res = await getNearbyAmbulances({
           lat: form.pickupLat,
           lng: form.pickupLng,
           radius: 500,
-          limit: 20,
-          city: form.pickupAddress || undefined
+          limit: 20
         });
 
       const ambulances = res.data?.data || [];
