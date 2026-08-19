@@ -1573,25 +1573,95 @@ const Ambulance = () => {
         </button>
       </div>
 
-	      {showCompare && compareList.length >= 2 && (
+	            {showCompare && compareList.length >= 2 && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 20, width: '95%', maxWidth: 600, maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}><h3 style={{ margin: 0 }}>Compare Ambulances</h3><button onClick={() => setShowCompare(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>✕</button></div>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 20, width: '95%', maxWidth: 700, maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontSize: 18 }}>⚖️ Compare Ambulances</h3>
+              <button onClick={() => setShowCompare(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>✕</button>
+            </div>
+            
+            {/* Sort buttons */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 15, flexWrap: 'wrap' }}>
+              <button onClick={() => setCompareList([...compareList].sort((a,b) => (a.baseFare||0) - (b.baseFare||0)))} style={sortBtnStyle}>💰 Cheapest First</button>
+              <button onClick={() => setCompareList([...compareList].sort((a,b) => (a.distance||999) - (b.distance||999)))} style={sortBtnStyle}>📍 Nearest First</button>
+              <button onClick={() => setCompareList([...compareList].sort((a,b) => (b.rating||0) - (a.rating||0)))} style={sortBtnStyle}>⭐ Top Rated</button>
+              <button onClick={() => setCompareList([...compareList].sort((a,b) => (a.estimatedETA||999) - (b.estimatedETA||999)))} style={sortBtnStyle}>⏱ Fastest ETA</button>
+            </div>
+            
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead><tr><th style={{ textAlign: 'left', padding: 8, borderBottom: '2px solid #eee' }}>Feature</th>{compareList.map(a => <th key={a.vehicleId} style={{ textAlign: 'center', padding: 8, borderBottom: '2px solid #eee' }}>{(a.vehicleType || 'Basic').toUpperCase()}</th>)}</tr></thead>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: 10, borderBottom: '2px solid #eee', position: 'sticky', top: 0, background: '#fff' }}>Feature</th>
+                  {compareList.map(a => (
+                    <th key={a.vehicleId} style={{ textAlign: 'center', padding: 10, borderBottom: '2px solid #eee', position: 'sticky', top: 0, background: '#fff' }}>
+                      {(a.vehicleType || 'Basic').toUpperCase()}
+                      {(a.baseFare || 0) === Math.min(...compareList.map(x => x.baseFare || 0)) && (
+                        <span style={{ display: 'block', fontSize: 9, background: '#10b981', color: '#fff', padding: '2px 6px', borderRadius: 8, marginTop: 3 }}>BEST PRICE</span>
+                      )}
+                      {(a.distance || 0) === Math.min(...compareList.map(x => x.distance || 999)) && (
+                        <span style={{ display: 'block', fontSize: 9, background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: 8, marginTop: 3 }}>NEAREST</span>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
-                <tr><td style={{ padding: 8, fontWeight: 600 }}>Provider</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}>{a.providerName}</td>)}</tr>
-                <tr><td style={{ padding: 8, fontWeight: 600 }}>Base Fare</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8, fontWeight: 700, color: '#e53935' }}>₹{a.baseFare || 500}</td>)}</tr>
-                <tr><td style={{ padding: 8, fontWeight: 600 }}>Per KM</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}>₹{a.perKmRate || 25}</td>)}</tr>
-                <tr><td style={{ padding: 8, fontWeight: 600 }}>Distance</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}>{a.distance || 'N/A'} km</td>)}</tr>
-                <tr><td style={{ padding: 8, fontWeight: 600 }}>Equipment</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}>{a.equipment?.join(', ') || 'Basic'}</td>)}</tr>
-                <tr><td style={{ padding: 8, fontWeight: 600 }}>Action</td>{compareList.map(a => <td key={a.vehicleId} style={{ textAlign: 'center', padding: 8 }}><button onClick={() => { setShowCompare(false); handleSelectAmbulance(a); }} style={{ padding: '8px 14px', background: '#e53935', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>Book</button></td>)}</tr>
+                <tr>
+                  <td style={tdStyle}>Provider</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>{a.providerName}</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>💰 Base Fare</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center', fontWeight: 700, color: '#e53935'}}>₹{a.baseFare || 0}</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>📏 Per KM</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>₹{a.perKmRate || 0}</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>📍 Distance</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>{a.distance || 'N/A'} km</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>⏱ ETA</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>{a.estimatedETA || 'N/A'} min</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>⭐ Rating</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>{a.rating || 'New'}</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>🛠️ Equipment</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>{a.equipment?.length > 0 ? a.equipment.map(e => '• ' + e).join('\n') : 'Basic'}</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>🌙 Night Charge</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>₹{a.nightCharge || 0}</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>🚐 Vehicle No.</td>
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>{a.vehicleNumber}</td>)}
+                </tr>
+                <tr>
+                  <td style={tdStyle}>Action</td>
+                  {compareList.map(a => (
+                    <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>
+                      <button onClick={() => { setShowCompare(false); handleSelectAmbulance(a); }} style={{ padding: '8px 14px', background: '#e53935', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11 }}>
+                        Book Now
+                      </button>
+                    </td>
+                  ))}
+                </tr>
               </tbody>
             </table>
-            <button onClick={() => setCompareList([])} style={{ marginTop: 16, width: '100%', padding: 10, background: '#f3f4f6', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Clear Compare</button>
+            <button onClick={() => setCompareList([])} style={{ marginTop: 16, width: '100%', padding: 12, background: '#f3f4f6', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+              Clear Compare
+            </button>
           </div>
         </div>
       )}
+           
 
 {/* ======================================================
           FARE ESTIMATE MODAL
@@ -1694,6 +1764,21 @@ const Ambulance = () => {
 // ============================================================
 // COMMON MENU BUTTON STYLE
 // ============================================================
+const sortBtnStyle = {
+  padding: '6px 12px',
+  borderRadius: 20,
+  border: '1px solid #ddd',
+  background: '#fff',
+  cursor: 'pointer',
+  fontSize: 11,
+  fontWeight: 600
+};
+
+const tdStyle = {
+  padding: 10,
+  borderBottom: '1px solid #f0f0f0',
+  fontWeight: 500
+};
 
 const menuItemStyle = {
   width: '100%',
