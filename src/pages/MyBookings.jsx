@@ -441,6 +441,15 @@ const MyBookings = () => {
                 
                 return (
                 <div key={booking._id} style={{ backgroundColor: 'white', borderRadius: '10px', padding: '15px', marginBottom: '15px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: `4px solid ${getStatusColor(booking.status)}` }}>
+	              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <input 
+                  type="checkbox" 
+                  checked={selectedBookings.includes(booking.bookingId)}
+                  onChange={() => toggleSelect(booking.bookingId)}
+                  style={{ width: 18, height: 18, cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: 12, color: '#666' }}>Select</span>
+              </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <span style={{ fontSize: '20px', marginRight: '8px' }}>{getBookingTypeIcon(booking.bookingType)}</span>
@@ -510,7 +519,7 @@ const MyBookings = () => {
                       </div>
                     )}
                     
-                    {/* 🆕 Cancellation info */}
+                                        {/* 🆕 Cancellation info */}
                     {booking.status === 'cancelled' && booking.cancellation && (
                       <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#fee2e2', borderRadius: '8px' }}>
                         <p style={{ fontWeight: 'bold', margin: '0 0 5px 0', color: '#dc2626' }}>❌ Cancelled</p>
@@ -523,6 +532,19 @@ const MyBookings = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* 🆕 Delete checkbox for cancelled bookings */}
+                  {booking.status === 'cancelled' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedBookings.includes(booking.bookingId)}
+                        onChange={() => toggleSelect(booking.bookingId)}
+                        style={{ width: 18, height: 18, cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: 12, color: '#666' }}>Select to delete permanently</span>
+                    </div>
+                  )}
 
                   {/* 🆕 Action Buttons */}
                   <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap', borderTop: '1px solid #f3f4f6', paddingTop: '10px' }}>
