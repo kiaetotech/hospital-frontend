@@ -15,7 +15,7 @@ const DriverLogin = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/otp/send', { phone: `+91${phone}` });
+      await api.post('/otp/send', { phone: `+91${phone}`, type: 'login' });
       setOtpSent(true);
     } catch (e) { setError('Failed to send OTP'); }
     setLoading(false);
@@ -26,7 +26,7 @@ const DriverLogin = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/otp/verify', { phone: `+91${phone}`, otp });
+      const res = await api.post('/otp/verify', { phone: `+91${phone}`, otp, type: 'login' });
       if (res.data?.success) {
         localStorage.setItem('driverId', phone);
         localStorage.setItem('driverPhone', phone);
