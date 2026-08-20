@@ -19,6 +19,9 @@ const AmbulanceDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editingDriver, setEditingDriver] = useState(null);
+  const [toast, setToast] = useState('');
   const [isAvailable, setIsAvailable] = useState(false);
   const [newVehicle, setNewVehicle] = useState({
     vehicleNumber: '', type: 'basic', model: '', year: '',
@@ -110,6 +113,11 @@ const AmbulanceDashboard = () => {
     } catch (error) {
       if (error.response?.status === 401) { localStorage.clear(); navigate('/ambulance/login'); }
     } finally { setLoading(false); }
+  };
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
   };
 
   const handleLogout = () => {
@@ -281,26 +289,36 @@ const AmbulanceDashboard = () => {
                 <div><label style={S.label}>Driver Phone</label><input value={newVehicle.driverPhone} onChange={e=>setNewVehicle({...newVehicle, driverPhone:e.target.value})} style={S.input} /></div>
               </div>
 
-              <button onClick={async()=>{
+                            <button onClick={async()=>{
     if(!newVehicle.vehicleNumber) return alert('Vehicle number required');
     if(!newVehicle.baseFare || !newVehicle.perKmRate) return alert('Base fare and per km rate required');
-    await ambulanceApi.addVehicle({
+    const data = {
       ...newVehicle,
       year: newVehicle.year ? parseInt(newVehicle.year) : undefined,
       baseFare: parseInt(newVehicle.baseFare) || 0,
       perKmRate: parseInt(newVehicle.perKmRate) || 0,
       nightCharge: parseInt(newVehicle.nightCharge) || 0,
       waitingCharge: parseInt(newVehicle.waitingCharge) || 0,
-    });
-    setNewVehicle({vehicleNumber:'',type:'basic',model:'',year:'',equipment:[],baseFare:'',perKmRate:'',nightCharge:'',waitingCharge:'',driverName:'',driverPhone:''});
-    setShowVehicleForm(false);
-    const r=await ambulanceApi.getVehicles();
-    setVehicles(Array.isArray(r.data?.data)?r.data.data:[]);
-}} style={{...S.btn,background:'#10b981',color:'white',marginTop:12,padding:'12px 24px'}}>💾 Save Vehicle</button>
+    };
+    try {
+      if (editingVehicle) {
+        await ambulanceApi.updateVehicle(editingVehicle._id, data);
+        showToast('Vehicle updated');
+      } else {
+        await ambulanceApi.addVehicle(data);
+        showToast('Vehicle added');
+      }
+      setNewVehicle({vehicleNumber:'',type:'basic',model:'',year:'',equipment:[],baseFare:'',perKmRate:'',nightCharge:'',waitingCharge:'',driverName:'',driverPhone:''});
+      setEditingVehicle(null);
+      setShowVehicleForm(false);
+      const r = await ambulanceApi.getVehicles();
+      setVehicles(r.data?.data || []);
+    } catch (e) { showToast('Save failed: ' + (e.response?.data?.message || e.message)); }
+}} style={{...S.btn,background:'#10b981',color:'white',marginTop:12,padding:'12px 24px'}}>{editingVehicle ? 'Update Vehicle' : '💾 Save Vehicle'}</button>
             </div>
           )}
           {vehicles.length===0 && !showVehicleForm && <p style={{color:'#6b7280',textAlign:'center',padding:'2rem'}}>No vehicles yet. Click + to add.</p>}
-          <ProviderTable 
+                    <ProviderTable 
             columns={[
               {key:'vehicleNumber',label:'Vehicle #'},
               {key:'type',label:'Type'},
@@ -311,7 +329,34 @@ const AmbulanceDashboard = () => {
               {key:'status',label:'Status',render:(s)=>(<span style={{padding:'0.15rem 0.5rem',borderRadius:'10px',fontSize:'0.7rem',backgroundColor:s==='available'?'#dcfce7':'#fef3c7',color:'#166534'}}>{s||'available'}</span>)}
             ]} 
             data={vehicles} 
-            loading={loading} 
+            loading={loading}
+            onEdit={(vehicle) => {
+              setEditingVehicle(vehicle);
+              setNewVehicle({
+                vehicleNumber: vehicle.vehicleNumber || '',
+                type: vehicle.type || 'basic',
+                model: vehicle.model || '',
+                year: vehicle.year || '',
+                equipment: vehicle.equipment || [],
+                baseFare: vehicle.baseFare || '',
+                perKmRate: vehicle.perKmRate || '',
+                nightCharge: vehicle.nightCharge || '',
+                waitingCharge: vehicle.waitingCharge || '',
+                driverName: vehicle.driver || '',
+                driverPhone: vehicle.driverPhone || ''
+              });
+              setShowVehicleForm(true);
+            }}
+            onDelete={async (vehicle) => {
+              if (confirm(`Delete vehicle ${vehicle.vehicleNumber}?`)) {
+                try {
+                  await ambulanceApi.deleteVehicle(vehicle._id);
+                  showToast('Vehicle deleted');
+                  const r = await ambulanceApi.getVehicles();
+                  setVehicles(r.data?.data || []);
+                } catch (e) { showToast('Delete failed'); }
+              }
+            }}
           />
         </div>
       );
@@ -332,18 +377,27 @@ const AmbulanceDashboard = () => {
                 <div><label style={S.label}>License Number</label><input value={newDriver.licenseNumber} onChange={e=>setNewDriver({...newDriver, licenseNumber:e.target.value})} style={S.input} /></div>
                 <div><label style={S.label}>Experience (years)</label><input value={newDriver.experience} onChange={e=>setNewDriver({...newDriver, experience:e.target.value})} style={S.input} /></div>
               </div>
-              <button onClick={async()=>{
+                   <button onClick={async()=>{
                 if(!newDriver.name||!newDriver.phone) return alert('Name and phone required');
-                await ambulanceApi.addDriver(newDriver);
-                setNewDriver({name:'',phone:'',licenseNumber:'',experience:''});
-                setShowDriverForm(false);
-                const r=await ambulanceApi.getDrivers();
-                setDrivers(Array.isArray(r.data?.data)?r.data.data:[]);
-              }} style={{...S.btn,background:'#10b981',color:'white',marginTop:8,padding:'12px 24px'}}>💾 Save Driver</button>
+                try {
+                  if (editingDriver) {
+                    await ambulanceApi.updateDriver(editingDriver._id, newDriver);
+                    showToast('Driver updated');
+                  } else {
+                    await ambulanceApi.addDriver(newDriver);
+                    showToast('Driver added');
+                  }
+                  setNewDriver({name:'',phone:'',licenseNumber:'',experience:''});
+                  setEditingDriver(null);
+                  setShowDriverForm(false);
+                  const r = await ambulanceApi.getDrivers();
+                  setDrivers(r.data?.data || []);
+                } catch (e) { showToast('Save failed'); }
+              }} style={{...S.btn,background:'#10b981',color:'white',marginTop:8,padding:'12px 24px'}}>{editingDriver ? 'Update Driver' : '💾 Save Driver'}</button>
             </div>
           )}
           {drivers.length===0 && !showDriverForm && <p style={{color:'#6b7280',textAlign:'center',padding:'2rem'}}>No drivers yet.</p>}
-          <ProviderTable 
+                    <ProviderTable 
             columns={[
               {key:'name',label:'Name'},
               {key:'phone',label:'Phone'},
@@ -352,7 +406,27 @@ const AmbulanceDashboard = () => {
               {key:'status',label:'Status',render:(s)=>(<span style={{padding:'0.15rem 0.5rem',borderRadius:'10px',fontSize:'0.7rem',backgroundColor:s==='available'?'#dcfce7':'#fef3c7',color:'#166534'}}>{s||'available'}</span>)}
             ]} 
             data={drivers} 
-            loading={loading} 
+            loading={loading}
+            onEdit={(driver) => {
+              setEditingDriver(driver);
+              setNewDriver({
+                name: driver.name || '',
+                phone: driver.phone || '',
+                licenseNumber: driver.licenseNumber || '',
+                experience: driver.experience || ''
+              });
+              setShowDriverForm(true);
+            }}
+            onDelete={async (driver) => {
+              if (confirm(`Delete driver ${driver.name}?`)) {
+                try {
+                  await ambulanceApi.deleteDriver(driver._id);
+                  showToast('Driver deleted');
+                  const r = await ambulanceApi.getDrivers();
+                  setDrivers(r.data?.data || []);
+                } catch (e) { showToast('Delete failed'); }
+              }
+            }}
           />
         </div>
       );
@@ -446,21 +520,28 @@ const AmbulanceDashboard = () => {
     }
   };
 
-  return (
-    <ProviderAuth providerType="ambulance">
-      <ProviderDashboardLayout 
-        title="Ambulance Dashboard" 
-        icon="🚑" 
-        sidebarItems={sidebarItems} 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-        userName={profile?.name||'Ambulance Admin'} 
-        userRole="Ambulance Service" 
-        logout={handleLogout}
-      >
-        {renderContent()}
-      </ProviderDashboardLayout>
-    </ProviderAuth>
+      return (
+    <>
+      {toast && (
+        <div style={{ position: 'fixed', top: 20, right: 20, background: '#10b981', color: '#fff', padding: '12px 20px', borderRadius: 8, zIndex: 999, fontWeight: 600 }}>
+          {toast}
+        </div>
+      )}
+      <ProviderAuth providerType="ambulance">
+        <ProviderDashboardLayout  
+          title="Ambulance Dashboard" 
+          icon="🚑" 
+          sidebarItems={sidebarItems} 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+          userName={profile?.name||'Ambulance Admin'} 
+          userRole="Ambulance Service" 
+          logout={handleLogout}
+        >
+          {renderContent()}
+        </ProviderDashboardLayout>
+      </ProviderAuth>
+    </>
   );
 };
 
