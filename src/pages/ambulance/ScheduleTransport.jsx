@@ -509,7 +509,7 @@ const ScheduleTransport = () => {
     );
 
     // Zero distance is not a valid ambulance trip for this screen.
-    if (!Number.isFinite(distance) || distance <= 0 || distance > 1000) {
+        if (!Number.isFinite(distance) || distance <= 0) {
       setFareEstimate(null);
       return;
     }
@@ -532,7 +532,7 @@ const ScheduleTransport = () => {
     const total = baseFare + distanceCharge + appliedNightCharge;
 
     // Guard against obviously corrupt provider pricing producing absurd totals.
-    if (!Number.isFinite(total) || total < 0 || total > 100000) {
+    if (!Number.isFinite(total) || total < 0) {
       setFareEstimate(null);
       setError('The selected ambulance has invalid pricing. Please select another ambulance.');
       return;
