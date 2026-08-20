@@ -26,11 +26,17 @@ const DriverLogin = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/otp/verify', { phone: `+91${phone}`, otp, type: 'login' });
+            const res = await api.post('/otp/verify', { phone: `+91${phone}`, otp, type: 'login' });
       if (res.data?.success) {
-        localStorage.setItem('driverId', phone);
-        localStorage.setItem('driverPhone', phone);
-        navigate('/ambulance/driver/app');
+        const driverRes = await api.post('/ambulance/driver-login', { phone: `+91${phone}` });
+        if (driverRes.data?.token) {
+          localStorage.setItem('token', driverRes.data.token);
+          localStorage.setItem('driverId', driverRes.data.driver.id);
+          localStorage.setItem('driverPhone', phone);
+          navigate('/ambulance/driver/app');
+        } else {
+          setError('Driver not found');
+        }
       } else {
         setError('Invalid OTP');
       }
