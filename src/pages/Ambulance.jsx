@@ -14,6 +14,8 @@ const Ambulance = () => {
   const [nearbyError, setNearbyError] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [cities, setCities] = useState([]);
+  const [selectedCity, setSelectedCity] = useState('');
   const [searchFilter, setSearchFilter] = useState('name');
   const [searching, setSearching] = useState(false);
   const [searchMessage, setSearchMessage] = useState('');
@@ -38,6 +40,16 @@ const Ambulance = () => {
   // ============================================================
   // LOAD USER + LOCATION
   // ============================================================
+
+	  useEffect(() => {
+    api.get('/ambulance/cities')
+      .then(res => {
+        setCities(res.data?.data || []);
+        const savedCity = patientProfile?.patientAddress?.city;
+        if (savedCity) setSelectedCity(savedCity);
+      })
+      .catch(() => {});
+  }, [patientProfile]);
 
             useEffect(() => {
     const token = localStorage.getItem('token');
@@ -843,7 +855,7 @@ const Ambulance = () => {
         </div>
       </div>
 
-      {/* ======================================================
+            {/* ======================================================
           SEARCH
       ====================================================== */}
 
@@ -863,32 +875,18 @@ const Ambulance = () => {
             marginBottom: '10px'
           }}
         >
-          <input
-            type="text"
-            placeholder={
-              searchFilter === 'nearby'
-                ? 'Showing nearby ambulances...'
-                : searchFilter === 'rated'
-                  ? 'Showing top rated ambulances...'
-                  : searchFilter === 'specialty'
-                    ? 'Search ambulance type/service...'
-                    : searchFilter === 'city'
-                      ? 'Search city...'
-                      : 'Search ambulance provider...'
-            }
-            value={searchQuery}
-            onChange={(e) =>
-              setSearchQuery(e.target.value)
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSearch();
+          <select
+            value={selectedCity}
+            onChange={(e) => {
+              setSelectedCity(e.target.value);
+              if (e.target.value) {
+                fetchNearbyAmbulances(
+                  location?.lat || 21.1458,
+                  location?.lng || 79.0882,
+                  { radius: 500, search: true, city: e.target.value }
+                );
               }
             }}
-            disabled={
-              searchFilter === 'nearby' ||
-              searchFilter === 'rated'
-            }
             style={{
               flex: 1,
               padding: '12px',
@@ -896,29 +894,14 @@ const Ambulance = () => {
               borderRadius: '10px',
               fontSize: '14px',
               outline: 'none',
-              backgroundColor:
-                searchFilter === 'nearby' ||
-                searchFilter === 'rated'
-                  ? '#f5f5f5'
-                  : '#fff'
-            }}
-          />
-
-          <button
-            onClick={handleSearch}
-            style={{
-              padding: '12px 18px',
-              backgroundColor: '#e53935',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '10px',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer'
+              backgroundColor: '#fff'
             }}
           >
-            {searching ? 'Searching...' : 'Search'}
-          </button>
+            <option value="">Select City</option>
+            {cities.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
 
         <div
