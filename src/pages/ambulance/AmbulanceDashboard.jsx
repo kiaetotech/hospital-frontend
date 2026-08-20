@@ -45,8 +45,8 @@ const AmbulanceDashboard = () => {
   const S = { input: { width:'100%', padding:'10px', marginBottom:'10px', border:'1px solid #d1d5db', borderRadius:'6px', fontSize:'14px', boxSizing:'border-box' }, btn: { padding:'8px 18px', border:'none', borderRadius:'6px', fontWeight:'bold', cursor:'pointer', fontSize:'14px' }, label: { display:'block', fontSize:'12px', fontWeight:600, color:'#555', marginBottom:'4px' } };
 
     const ambulanceTypes = [
-    { value: 'basic', label: '🚑 BLS (Basic Life Support)' },
-    { value: 'bls', label: '🚨 ALS (Advanced Life Support)' },
+    { value: 'bls', label: '🚑 BLS (Basic Life Support)' },
+    { value: 'als', label: '🚨 ALS (Advanced Life Support)' },
     { value: 'cardiac', label: '❤️ Cardiac' },
     { value: 'ventilator', label: '🫁 Ventilator/ICU' },
     { value: 'neonatal', label: '👶 Neonatal' },
