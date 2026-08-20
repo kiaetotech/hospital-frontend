@@ -210,6 +210,7 @@ import EmergencyRequest from './pages/ambulance/EmergencyRequest';
 import LiveTracking from './pages/ambulance/LiveTracking';
 import ScheduleTransport from './pages/ambulance/ScheduleTransport';
 import DriverApp from './pages/ambulance/DriverApp';
+import DriverApp from './pages/ambulance/DriverApp';
 import EmergencyContacts from './pages/ambulance/EmergencyContacts';
 import DigitalTripSheet from './pages/ambulance/DigitalTripSheet';
 
@@ -250,6 +251,7 @@ function App() {
           <Route path="/ambulance/tracking/:bookingId" element={<LiveTracking />} />
           <Route path="/ambulance/schedule" element={<ScheduleTransport />} />
           <Route path="/ambulance/driver/app" element={<DriverApp />} />
+	  <Route path="/ambulance/driver/login" element={<DriverLogin />} />
           <Route path="/ambulance/emergency-contacts" element={<EmergencyContacts />} />
           <Route path="/ambulance/trip-sheet/:bookingId" element={<DigitalTripSheet />} />
           <Route path="/ambulance/register" element={<AmbulanceRegister />} />

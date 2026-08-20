@@ -43,6 +43,11 @@ const DriverApp = () => {
     isOnlineRef.current = isOnline;
   }, [isOnline]);
 
+    if (!localStorage.getItem('driverId')) {
+      navigate('/ambulance/driver/login');
+      return;
+    }
+
   useEffect(() => {
     fetchDashboard();
     connectSocket();
