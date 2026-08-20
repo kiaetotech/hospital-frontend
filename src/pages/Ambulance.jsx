@@ -292,8 +292,8 @@ const Ambulance = () => {
         limit: 50
       };
 
-      if (options.vehicleType) {
-        params.vehicleType = String(options.vehicleType).toLowerCase();
+         if (options.vehicleType) {
+        params.type = String(options.vehicleType).toLowerCase();
       }
 
       const response = await getNearbyAmbulances(params);
