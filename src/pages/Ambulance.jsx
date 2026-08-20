@@ -20,7 +20,7 @@ const Ambulance = () => {
   const [searching, setSearching] = useState(false);
   const [searchMessage, setSearchMessage] = useState('');
 
-  const [selectedType, setSelectedType] = useState('basic');
+  const [selectedType, setSelectedType] = useState('bls');
   const [patientProfile, setPatientProfile] = useState(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileForm, setProfileForm] = useState({ city: '', line1: '', state: '', pincode: '' });
@@ -338,8 +338,8 @@ const Ambulance = () => {
   // ============================================================
 
     const ambulanceTypes = [
-    { icon: '🚑', name: 'BLS (Basic)', shortName: 'BLS', desc: 'Oxygen, first aid, stretcher', value: 'basic' },
-    { icon: '🚨', name: 'ALS (Advanced)', shortName: 'ALS', desc: 'Advanced life support', value: 'bls' },
+    { icon: '🚑', name: 'BLS (Basic)', shortName: 'BLS', desc: 'Oxygen, first aid, stretcher', value: 'bls' },
+    { icon: '🚨', name: 'ALS (Advanced)', shortName: 'ALS', desc: 'Advanced life support', value: 'als' },
     { icon: '❤️', name: 'Cardiac', shortName: 'Cardiac', desc: 'Defibrillator, ECG monitor', value: 'cardiac' },
     { icon: '🫁', name: 'Ventilator/ICU', shortName: 'ICU', desc: 'ICU setup, ventilator', value: 'ventilator' },
     { icon: '👶', name: 'Neonatal', shortName: 'Neonatal', desc: 'Newborn & infant care', value: 'neonatal' },
@@ -1194,14 +1194,14 @@ const Ambulance = () => {
           {ambulanceTypes.map((type) => (
             <button
               key={type.value}
-              onClick={async () => {
+                            onClick={async () => {
                 setSelectedType(type.value);
                 setSearchFilter('specialty');
                 setSearchQuery(type.value);
 
                 if (location?.lat !== undefined && location?.lng !== undefined) {
                   await fetchNearbyAmbulances(location.lat, location.lng, {
-                    radius: 25,
+                    radius: 500,
                     search: true,
                     vehicleType: type.value
                   });
