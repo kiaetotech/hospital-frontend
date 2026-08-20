@@ -210,7 +210,6 @@ import EmergencyRequest from './pages/ambulance/EmergencyRequest';
 import LiveTracking from './pages/ambulance/LiveTracking';
 import ScheduleTransport from './pages/ambulance/ScheduleTransport';
 import DriverApp from './pages/ambulance/DriverApp';
-import DriverApp from './pages/ambulance/DriverApp';
 import EmergencyContacts from './pages/ambulance/EmergencyContacts';
 import DigitalTripSheet from './pages/ambulance/DigitalTripSheet';
 
