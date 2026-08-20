@@ -337,42 +337,17 @@ const Ambulance = () => {
   // AMBULANCE TYPES
   // ============================================================
 
-  const ambulanceTypes = [
-    {
-      icon: '🚑',
-      name: 'Basic Life Support',
-      shortName: 'Basic',
-      desc: 'Oxygen, first aid, stretcher',
-      value: 'basic'
-    },
-    {
-      icon: '❤️',
-      name: 'Cardiac',
-      shortName: 'Cardiac',
-      desc: 'Defibrillator, ECG monitor',
-      value: 'cardiac'
-    },
-    {
-      icon: '🫁',
-      name: 'Ventilator',
-      shortName: 'Ventilator',
-      desc: 'ICU setup, ventilator',
-      value: 'ventilator'
-    },
-    {
-      icon: '👶',
-      name: 'Neonatal',
-      shortName: 'Neonatal',
-      desc: 'Newborn & infant care',
-      value: 'neonatal'
-    },
-    {
-      icon: '♿',
-      name: 'Wheelchair',
-      shortName: 'Wheelchair',
-      desc: 'Non-emergency transport',
-      value: 'wheelchair'
-    }
+    const ambulanceTypes = [
+    { icon: '🚑', name: 'BLS (Basic)', shortName: 'BLS', desc: 'Oxygen, first aid, stretcher', value: 'basic' },
+    { icon: '🚨', name: 'ALS (Advanced)', shortName: 'ALS', desc: 'Advanced life support', value: 'bls' },
+    { icon: '❤️', name: 'Cardiac', shortName: 'Cardiac', desc: 'Defibrillator, ECG monitor', value: 'cardiac' },
+    { icon: '🫁', name: 'Ventilator/ICU', shortName: 'ICU', desc: 'ICU setup, ventilator', value: 'ventilator' },
+    { icon: '👶', name: 'Neonatal', shortName: 'Neonatal', desc: 'Newborn & infant care', value: 'neonatal' },
+    { icon: '✈️', name: 'Air Ambulance', shortName: 'Air', desc: 'Aircraft transport', value: 'air' },
+    { icon: '🏍️', name: 'Bike Ambulance', shortName: 'Bike', desc: 'Quick response', value: 'bike' },
+    { icon: '⚰️', name: 'Mortuary Van', shortName: 'Mortuary', desc: 'Deceased transport', value: 'mortuary' },
+    { icon: '♿', name: 'Patient Transport', shortName: 'PTV', desc: 'Non-emergency transport', value: 'ptv' },
+    { icon: '♿', name: 'Wheelchair', shortName: 'Wheelchair', desc: 'Wheelchair accessible', value: 'wheelchair' }
   ];
 
   // ============================================================
@@ -904,7 +879,7 @@ const Ambulance = () => {
           </select>
         </div>
 
-        <div
+                <div
           style={{
             display: 'flex',
             gap: '8px',
