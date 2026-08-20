@@ -27,12 +27,15 @@ const DriverLogin = () => {
     setError('');
     try {
             const res = await api.post('/otp/verify', { phone: `+91${phone}`, otp, type: 'login' });
-      if (res.data?.success) {
+            if (res.data?.success) {
         const driverRes = await api.post('/ambulance/driver-login', { phone: `+91${phone}` });
         if (driverRes.data?.token) {
+          localStorage.clear();
           localStorage.setItem('token', driverRes.data.token);
           localStorage.setItem('driverId', driverRes.data.driver.id);
           localStorage.setItem('driverPhone', phone);
+          localStorage.setItem('driverName', driverRes.data.driver.name);
+          localStorage.setItem('userType', 'ambulance_driver');
           navigate('/ambulance/driver/app');
         } else {
           setError('Driver not found');
