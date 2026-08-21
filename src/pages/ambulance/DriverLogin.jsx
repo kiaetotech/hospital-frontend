@@ -36,6 +36,20 @@ const DriverLogin = () => {
           localStorage.setItem('driverPhone', phone);
           localStorage.setItem('driverName', driverRes.data.driver.name);
           localStorage.setItem('userType', 'ambulance_driver');
+          
+          // Verify token role before navigating
+          try {
+            const decoded = JSON.parse(atob(driverRes.data.token.split('.')[1]));
+            console.log('Driver token role:', decoded.role);
+            if (decoded.role !== 'ambulance_driver') {
+              setError('Login failed: Invalid driver token');
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error('Token decode failed:', e);
+          }
+          
           navigate('/ambulance/driver/app');
         } else {
           setError('Driver not found');
