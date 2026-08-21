@@ -112,9 +112,12 @@ const DriverApp = () => {
   const connectSocket = () => {
     const token = localStorage.getItem('token');
     const socket = io(SOCKET_URL, { 
-      auth: { token, userType: 'ambulance_driver' }, 
-      transports: ['websocket', 'polling'] 
-    });
+  auth: { token, userType: 'ambulance_driver' }, 
+  transports: ['polling', 'websocket'],
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000
+});
 
     socket.on('connect', () => {
       setSocketStatus('connected');
