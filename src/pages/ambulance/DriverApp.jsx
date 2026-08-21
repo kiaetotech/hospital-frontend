@@ -381,6 +381,23 @@ const DriverApp = () => {
         </div>
       )}
 
+	{step === 'idle' && dashboard && (
+  <div style={{ background: '#1a1a2e', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+      <span style={{ color: '#888', fontSize: '12px' }}>Driver</span>
+      <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>{dashboard.driverName || 'N/A'}</span>
+    </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+      <span style={{ color: '#888', fontSize: '12px' }}>Vehicle</span>
+      <span style={{ color: '#fff', fontSize: '14px' }}>{dashboard.vehicleNumber || 'N/A'} ({dashboard.vehicleType || 'basic'})</span>
+    </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <span style={{ color: '#888', fontSize: '12px' }}>Status</span>
+      <span style={{ color: '#4caf50', fontSize: '14px' }}>🟢 Available</span>
+    </div>
+  </div>
+)}
+
       {step === 'emergency_alert' && emergencyRequest && (
         <div style={styles.alertCard}>
           <div style={styles.alertHeader}>
@@ -540,7 +557,7 @@ const styles = {
   historyRow: { display: 'flex', justifyContent: 'space-between' },
   historyLabel: { color: '#ccc', fontSize: '13px' },
   historyValue: { color: '#4caf50', fontSize: '14px', fontWeight: 'bold' },
-  locationFooter: { position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a1a2e', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', color: '#4caf50', fontSize: '12px', borderTop: '1px solid #333' }
+  locationFooter: { position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a1a2e', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', color: '#4caf50', fontSize: '12px', borderTop: '1px solid #333', zIndex: 100 }
 };
 
 export default DriverApp;
