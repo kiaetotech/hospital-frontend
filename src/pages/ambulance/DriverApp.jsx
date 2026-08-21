@@ -29,6 +29,7 @@ const DriverApp = () => {
   const [tripNotes, setTripNotes] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [tripHistory, setTripHistory] = useState([]);
+  const [earnings, setEarnings] = useState({ today: 0, week: 0, month: 0 });
   const socketRef = useRef(null);
   const locationInterval = useRef(null);
   const timerInterval = useRef(null);
@@ -43,25 +44,19 @@ const DriverApp = () => {
     isOnlineRef.current = isOnline;
   }, [isOnline]);
 
+  useEffect(() => {
     if (!localStorage.getItem('driverId')) {
       navigate('/ambulance/driver/login');
       return;
     }
-
-  useEffect(() => {
     fetchDashboard();
+    fetchTripHistory();
     connectSocket();
 
     return () => {
       if (socketRef.current) socketRef.current.disconnect();
-      if (locationInterval.current) {
-        clearInterval(locationInterval.current);
-        locationInterval.current = null;
-      }
-      if (timerInterval.current) {
-        clearInterval(timerInterval.current);
-        timerInterval.current = null;
-      }
+      if (locationInterval.current) clearInterval(locationInterval.current);
+      if (timerInterval.current) clearInterval(timerInterval.current);
     };
   }, []);
 
@@ -69,30 +64,44 @@ const DriverApp = () => {
     try {
       const driverId = localStorage.getItem('driverId');
       const res = await getDriverDashboard(driverId ? { driverId } : {});
-      if (res.data?.data) setDashboard(res.data.data);
-    } catch (err) {}
+      if (res.data?.data) {
+        setDashboard(res.data.data);
+        setEarnings({
+          today: res.data.data.todayEarnings || 0,
+          week: res.data.data.weekEarnings || 0,
+          month: res.data.data.monthEarnings || 0
+        });
+      }
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+    }
   };
 
   const fetchTripHistory = async () => {
     try {
       const driverId = localStorage.getItem('driverId');
-      const res = await getDriverTripHistory({ limit: 20, ...(driverId ? { driverId } : {}) });
+      const res = await getDriverTripHistory({ limit: 10, ...(driverId ? { driverId } : {}) });
       if (res.data?.data) setTripHistory(res.data.data);
-    } catch (err) {}
+    } catch (err) {
+      console.error('Trip history fetch error:', err);
+    }
   };
 
   const connectSocket = () => {
     const token = localStorage.getItem('token');
-    const socket = io(SOCKET_URL, { auth: { token, userType: 'ambulance_driver' }, transports: ['websocket'] });
+    const socket = io(SOCKET_URL, { 
+      auth: { token, userType: 'ambulance_driver' }, 
+      transports: ['websocket', 'polling'] 
+    });
 
     socket.on('connect', () => {
       const driverId = localStorage.getItem('driverId');
       if (driverId) {
         socket.emit('driver:register', {
           driverId,
-          vehicleId: dashboard?.vehicleId || dashboard?.vehicle?._id || '',
-          vehicleNumber: dashboard?.vehicleNumber || dashboard?.vehicle?.vehicleNumber || '',
-          vehicleType: dashboard?.vehicleType || dashboard?.vehicle?.type || 'basic'
+          vehicleId: dashboard?.vehicleId || '',
+          vehicleNumber: dashboard?.vehicleNumber || '',
+          vehicleType: dashboard?.vehicleType || 'basic'
         });
       }
     });
@@ -110,11 +119,16 @@ const DriverApp = () => {
       if (timerInterval.current) clearInterval(timerInterval.current);
     });
 
+    socket.on('driver:accept_confirmed', (data) => {
+      setStep('accepted');
+    });
+
     socketRef.current = socket;
   };
 
   const startAcceptTimer = () => {
     setAcceptTimer(15);
+    if (timerInterval.current) clearInterval(timerInterval.current);
     timerInterval.current = setInterval(() => {
       setAcceptTimer(prev => {
         if (prev <= 1) {
@@ -130,25 +144,19 @@ const DriverApp = () => {
   const handleToggleOnline = async () => {
     const nextOnline = !isOnline;
     try {
-      await toggleDriverAvailability({ driverId: localStorage.getItem('driverId'), isAvailable: nextOnline });
+      const driverId = localStorage.getItem('driverId');
+      await toggleDriverAvailability({ driverId, isAvailable: nextOnline });
       isOnlineRef.current = nextOnline;
       setIsOnline(nextOnline);
-      await fetchDashboard();
-
+      
       if (nextOnline) {
         startLocationTracking();
-        socketRef.current?.emit('driver:register', {
-          driverId: localStorage.getItem('driverId'),
-          vehicleId: dashboard?.vehicleId || dashboard?.vehicle?._id || '',
-          vehicleNumber: dashboard?.vehicleNumber || dashboard?.vehicle?.vehicleNumber || '',
-          vehicleType: dashboard?.vehicleType || dashboard?.vehicle?.type || 'basic'
-        });
       } else {
         stopLocationTracking();
       }
     } catch (err) {
       console.error('Availability update failed:', err);
-      alert(err?.response?.data?.message || err?.message || 'Unable to change availability.');
+      alert('Unable to change availability. Please try again.');
     }
   };
 
@@ -167,45 +175,34 @@ const DriverApp = () => {
             lat: Number(pos.coords.latitude),
             lng: Number(pos.coords.longitude)
           };
-
           setLocation(loc);
 
           const driverId = localStorage.getItem('driverId');
-          const trip = currentTripRef.current;
-
-          if (!driverId) {
-            console.error('driverId missing from localStorage. Cannot update ambulance location.');
-            return;
-          }
+          if (!driverId) return;
 
           const payload = {
             driverId,
             lat: loc.lat,
             lng: loc.lng,
             isAvailable: isOnlineRef.current,
-            isOnTrip: Boolean(trip),
-            tripId: trip?.bookingId || trip?._id || '',
-            vehicleId: dashboard?.vehicleId || dashboard?.vehicle?._id || '',
-            vehicleNumber: dashboard?.vehicleNumber || dashboard?.vehicle?.vehicleNumber || '',
-            vehicleType: dashboard?.vehicleType || dashboard?.vehicle?.type || 'basic'
+            isOnTrip: Boolean(currentTripRef.current),
+            tripId: currentTripRef.current?.bookingId || '',
+            vehicleId: dashboard?.vehicleId || '',
+            vehicleNumber: dashboard?.vehicleNumber || '',
+            vehicleType: dashboard?.vehicleType || 'basic'
           };
 
           try {
             await ambulanceUpdateLocation(payload);
-
             socketRef.current?.emit('driver:location_update', payload);
           } catch (err) {
-            console.error('Ambulance location update failed:', err?.response?.data || err?.message || err);
+            console.error('Location update failed:', err);
           }
         },
         (error) => {
-          console.error('GPS error:', error);
+          console.error('GPS error:', error.message);
         },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 5000
-        }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
       );
     };
 
@@ -222,22 +219,23 @@ const DriverApp = () => {
 
   const handleAcceptEmergency = async () => {
     if (!emergencyRequest) return;
-    clearInterval(timerInterval.current);
+    if (timerInterval.current) clearInterval(timerInterval.current);
 
     try {
-      await acceptEmergency(emergencyRequest.bookingId, { driverId: localStorage.getItem('driverId') });
+      const driverId = localStorage.getItem('driverId');
+      await acceptEmergency(emergencyRequest.bookingId, { driverId });
       currentTripRef.current = emergencyRequest;
       setCurrentTrip(emergencyRequest);
       setStep('accepted');
       socketRef.current?.emit('driver:accept_emergency', { bookingId: emergencyRequest.bookingId });
     } catch (err) {
-      console.error('Accept emergency failed:', err?.response?.data || err?.message || err);
-      alert(err?.response?.data?.message || err?.message || 'Unable to accept this emergency request.');
+      console.error('Accept emergency failed:', err);
+      alert('Unable to accept this emergency request.');
     }
   };
 
   const rejectEmergency = () => {
-    clearInterval(timerInterval.current);
+    if (timerInterval.current) clearInterval(timerInterval.current);
     socketRef.current?.emit('driver:reject_emergency', {
       bookingId: emergencyRequest?.bookingId,
       reason: 'Unable to accept'
@@ -250,10 +248,8 @@ const DriverApp = () => {
     try {
       await ambulanceTripStart(currentTrip.bookingId);
       setStep('arrived_pickup');
-      socketRef.current?.emit('driver:arrived_pickup', { bookingId: currentTrip.bookingId });
     } catch (err) {
-      console.error('Trip start failed:', err?.response?.data || err?.message || err);
-      alert(err?.response?.data?.message || err?.message || 'Unable to mark arrival.');
+      alert('Unable to mark arrival.');
     }
   };
 
@@ -262,10 +258,8 @@ const DriverApp = () => {
     try {
       await ambulancePatientOnboard(currentTrip.bookingId, { otp });
       setStep('onboard');
-      socketRef.current?.emit('driver:patient_onboard', { bookingId: currentTrip.bookingId, otp });
     } catch (err) {
-      console.error('Patient onboard failed:', err?.response?.data || err?.message || err);
-      alert(err?.response?.data?.message || 'Invalid OTP or trip cannot be started.');
+      alert('Invalid OTP or trip cannot be started.');
     }
   };
 
@@ -273,37 +267,20 @@ const DriverApp = () => {
     try {
       await ambulanceArrivedHospital(currentTrip.bookingId, { vitals });
       setStep('arrived_hospital');
-      socketRef.current?.emit('driver:arrived_hospital', { bookingId: currentTrip.bookingId, vitals });
     } catch (err) {
-      console.error('Hospital arrival failed:', err?.response?.data || err?.message || err);
-      alert(err?.response?.data?.message || err?.message || 'Unable to mark hospital arrival.');
+      alert('Unable to mark hospital arrival.');
     }
   };
 
   const completeTrip = async () => {
     try {
-      const distance = Number(
-        currentTrip?.actualDistance ??
-        currentTrip?.distance ??
-        currentTrip?.tripDistance ??
-        0
-      );
-      const duration = Number(
-        currentTrip?.actualDuration ??
-        currentTrip?.duration ??
-        0
-      );
       await ambulanceTripComplete(currentTrip.bookingId, {
-        distance, duration,
-        oxygenAdministered: false,
+        distance: currentTrip?.distance || 5,
+        duration: currentTrip?.duration || 15,
         vitals,
         notes: tripNotes
       });
       setStep('completed');
-      socketRef.current?.emit('driver:trip_completed', {
-        bookingId: currentTrip.bookingId,
-        distance, duration, vitals, notes: tripNotes
-      });
       setTimeout(() => {
         setCurrentTrip(null);
         setEmergencyRequest(null);
@@ -312,10 +289,10 @@ const DriverApp = () => {
         setVitals({ bloodPressure: '', pulse: '', spo2: '', temperature: '' });
         setTripNotes('');
         fetchDashboard();
+        fetchTripHistory();
       }, 3000);
     } catch (err) {
-      console.error('Trip completion failed:', err?.response?.data || err?.message || err);
-      alert(err?.response?.data?.message || err?.message || 'Unable to complete trip.');
+      alert('Unable to complete trip.');
     }
   };
 
@@ -333,6 +310,7 @@ const DriverApp = () => {
 
   return (
     <div style={styles.page}>
+      {/* Header */}
       <div style={styles.header}>
         <button onClick={() => navigate('/ambulance')} style={styles.backBtn}>← Exit</button>
         <h1 style={styles.title}>🚑 Driver App</h1>
@@ -342,84 +320,130 @@ const DriverApp = () => {
         </div>
       </div>
 
-      {!localStorage.getItem('driverId') && (
-        <div style={styles.driverWarning}>
-          ⚠️ Driver ID is missing. GPS location cannot be linked to the ambulance.
-          Please log in again through the ambulance driver account.
+      {/* Emergency Alert Modal */}
+      {step === 'emergency_alert' && emergencyRequest && (
+        <div style={styles.alertOverlay}>
+          <div style={styles.alertCard}>
+            <div style={styles.alertHeader}>
+              <span style={styles.alertIcon}>🚨</span>
+              <h2 style={styles.alertTitle}>EMERGENCY REQUEST</h2>
+            </div>
+            <div style={{ ...styles.timerBar, width: `${(acceptTimer / 15) * 100}%`, background: acceptTimer <= 5 ? '#e53935' : '#ff9800' }} />
+            <p style={styles.timerText}>{acceptTimer}s remaining</p>
+            <div style={styles.alertDetails}>
+              <p><strong>Patient:</strong> {emergencyRequest.patientName}</p>
+              <p><strong>Condition:</strong> {emergencyRequest.patientCondition || 'Emergency'}</p>
+              <p><strong>Pickup:</strong> {emergencyRequest.pickupAddress}</p>
+              <p><strong>Distance:</strong> {emergencyRequest.distance || 'N/A'} km</p>
+              <p><strong>Est. Fare:</strong> ₹{emergencyRequest.estimatedFare || 0}</p>
+            </div>
+            <div style={styles.alertActions}>
+              <button onClick={handleAcceptEmergency} style={styles.acceptBtn}>✅ Accept</button>
+              <button onClick={rejectEmergency} style={styles.rejectBtn}>❌ Decline</button>
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Idle State - Dashboard */}
       {step === 'idle' && (
-        <div style={styles.toggleSection}>
+        <>
+          {/* Driver Info Card */}
+          <div style={styles.infoCard}>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>👤 Driver</span>
+              <span style={styles.infoValue}>{dashboard?.driverName || localStorage.getItem('driverName') || 'N/A'}</span>
+            </div>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>🚙 Vehicle</span>
+              <span style={styles.infoValue}>{dashboard?.vehicleNumber || 'N/A'} ({dashboard?.vehicleType || 'basic'})</span>
+            </div>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>⭐ Rating</span>
+              <span style={styles.infoValue}>{dashboard?.rating || 'N/A'} ({(dashboard?.todayTrips || 0) + (tripHistory?.length || 0)} trips)</span>
+            </div>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>📞 Phone</span>
+              <span style={styles.infoValue}>{localStorage.getItem('driverPhone') || 'N/A'}</span>
+            </div>
+          </div>
+
+          {/* Earnings Summary */}
+          <div style={styles.earningsCard}>
+            <div style={styles.earningsRow}>
+              <span style={styles.earningsLabel}>💰 Today's Earnings</span>
+              <span style={styles.earningsValue}>₹{earnings.today || 0}</span>
+            </div>
+            <div style={styles.earningsRow}>
+              <span style={styles.earningsLabel}>📅 This Week</span>
+              <span style={styles.earningsValue}>₹{earnings.week || 0}</span>
+            </div>
+            <div style={styles.earningsRow}>
+              <span style={styles.earningsLabel}>📆 This Month</span>
+              <span style={styles.earningsValue}>₹{earnings.month || 0}</span>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div style={styles.statsGrid}>
+            <div style={styles.statCard}>
+              <span style={styles.statIcon}>🚑</span>
+              <strong style={styles.statValue}>{dashboard?.todayTrips || 0}</strong>
+              <span style={styles.statLabel}>Today's Trips</span>
+            </div>
+            <div style={styles.statCard}>
+              <span style={styles.statIcon}>✅</span>
+              <strong style={styles.statValue}>{dashboard?.totalTrips || tripHistory?.length || 0}</strong>
+              <span style={styles.statLabel}>Total Trips</span>
+            </div>
+            <div style={styles.statCard}>
+              <span style={styles.statIcon}>⭐</span>
+              <strong style={styles.statValue}>{dashboard?.rating || 'N/A'}</strong>
+              <span style={styles.statLabel}>Rating</span>
+            </div>
+          </div>
+
+          {/* Toggle Online Button */}
           <button
             onClick={handleToggleOnline}
-            style={{ ...styles.toggleBtn, background: isOnline ? '#4caf50' : '#e53935' }}
+            style={{ ...styles.toggleBtn, background: isOnline ? '#e53935' : '#4caf50' }}
           >
-            {isOnline ? '🟢 Go Offline' : '🔴 Go Online'}
+            {isOnline ? '🔴 Go Offline' : '🟢 Go Online'}
           </button>
           {!isOnline && <p style={styles.toggleHint}>Go online to receive emergency requests</p>}
-        </div>
+
+          {/* Recent Trips */}
+          <button 
+            onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchTripHistory(); }} 
+            style={styles.historyToggle}
+          >
+            📋 {showHistory ? 'Hide' : 'View'} Trip History
+          </button>
+
+          {showHistory && (
+            <div style={styles.historySection}>
+              {tripHistory.length === 0 ? (
+                <p style={styles.emptyText}>No trips completed yet</p>
+              ) : (
+                tripHistory.map((trip, i) => (
+                  <div key={i} style={styles.historyCard}>
+                    <div style={styles.historyRow}>
+                      <span style={styles.historyLabel}>📅 {new Date(trip.completedAt || trip.createdAt).toLocaleDateString('en-IN')}</span>
+                      <span style={styles.historyValue}>₹{trip.finalAmount || trip.fareBreakdown?.total || 'N/A'}</span>
+                    </div>
+                    <div style={styles.historyRow}>
+                      <span style={styles.historySubLabel}>{trip.patientName || 'Patient'}</span>
+                      <span style={styles.historySubValue}>{trip.status || 'completed'}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </>
       )}
 
-      {step === 'idle' && dashboard && (
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <span style={styles.statIcon}>📅</span>
-            <strong style={styles.statValue}>{dashboard.todayTrips || 0}</strong>
-            <span style={styles.statLabel}>Today</span>
-          </div>
-          <div style={styles.statCard}>
-            <span style={styles.statIcon}>💰</span>
-            <strong style={styles.statValue}>₹{dashboard.todayEarnings || 0}</strong>
-            <span style={styles.statLabel}>Earnings</span>
-          </div>
-          <div style={styles.statCard}>
-            <span style={styles.statIcon}>⭐</span>
-            <strong style={styles.statValue}>{dashboard.rating || 'N/A'}</strong>
-            <span style={styles.statLabel}>Rating</span>
-          </div>
-        </div>
-      )}
-
-	{step === 'idle' && dashboard && (
-  <div style={{ background: '#1a1a2e', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-      <span style={{ color: '#888', fontSize: '12px' }}>Driver</span>
-      <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>{dashboard.driverName || 'N/A'}</span>
-    </div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-      <span style={{ color: '#888', fontSize: '12px' }}>Vehicle</span>
-      <span style={{ color: '#fff', fontSize: '14px' }}>{dashboard.vehicleNumber || 'N/A'} ({dashboard.vehicleType || 'basic'})</span>
-    </div>
-    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-      <span style={{ color: '#888', fontSize: '12px' }}>Status</span>
-      <span style={{ color: '#4caf50', fontSize: '14px' }}>🟢 Available</span>
-    </div>
-  </div>
-)}
-
-      {step === 'emergency_alert' && emergencyRequest && (
-        <div style={styles.alertCard}>
-          <div style={styles.alertHeader}>
-            <span style={styles.alertIcon}>🚨</span>
-            <h2 style={styles.alertTitle}>EMERGENCY REQUEST</h2>
-          </div>
-          <div style={{ ...styles.timerBar, width: `${(acceptTimer / 15) * 100}%`, background: acceptTimer <= 5 ? '#e53935' : '#ff9800' }} />
-          <p style={styles.timerText}>{acceptTimer}s remaining</p>
-          <div style={styles.alertDetails}>
-            <p><strong>Patient:</strong> {emergencyRequest.patientName}</p>
-            <p><strong>Condition:</strong> {emergencyRequest.patientCondition}</p>
-            <p><strong>Pickup:</strong> {emergencyRequest.pickupAddress}</p>
-            <p><strong>Distance:</strong> {emergencyRequest.distance}km</p>
-            <p><strong>Est. Fare:</strong> ₹{emergencyRequest.estimatedFare}</p>
-          </div>
-          <div style={styles.alertActions}>
-            <button onClick={handleAcceptEmergency} style={styles.acceptBtn}>✅ Accept</button>
-            <button onClick={rejectEmergency} style={styles.rejectBtn}>❌ Decline</button>
-          </div>
-        </div>
-      )}
-
+      {/* Active Trip States */}
       {(step === 'accepted' || step === 'arrived_pickup' || step === 'onboard' || step === 'arrived_hospital') && (
         <div style={styles.tripCard}>
           <div style={{ ...styles.tripStatus, borderColor: getStatusColor() }}>
@@ -438,7 +462,14 @@ const DriverApp = () => {
 
             {step === 'arrived_pickup' && (
               <>
-                <input type="text" placeholder="Enter OTP from patient" value={otp} onChange={(e) => setOtp(e.target.value)} style={styles.otpInput} maxLength={4} />
+                <input 
+                  type="text" 
+                  placeholder="Enter OTP from patient" 
+                  value={otp} 
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))} 
+                  style={styles.otpInput} 
+                  maxLength={4} 
+                />
                 <button onClick={patientOnboard} style={styles.actionBtn}>✅ Confirm & Start Trip</button>
               </>
             )}
@@ -460,7 +491,13 @@ const DriverApp = () => {
 
             {step === 'arrived_hospital' && (
               <>
-                <textarea placeholder="Trip notes..." value={tripNotes} onChange={(e) => setTripNotes(e.target.value)} style={styles.textarea} rows={3} />
+                <textarea 
+                  placeholder="Trip notes..." 
+                  value={tripNotes} 
+                  onChange={(e) => setTripNotes(e.target.value)} 
+                  style={styles.textarea} 
+                  rows={3} 
+                />
                 <button onClick={completeTrip} style={{ ...styles.actionBtn, background: '#4caf50' }}>✅ Complete Trip</button>
               </>
             )}
@@ -468,6 +505,7 @@ const DriverApp = () => {
         </div>
       )}
 
+      {/* Completed State */}
       {step === 'completed' && (
         <div style={styles.completedCard}>
           <span style={styles.completedIcon}>✅</span>
@@ -476,29 +514,7 @@ const DriverApp = () => {
         </div>
       )}
 
-      {step === 'idle' && (
-        <button onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchTripHistory(); }} style={styles.historyToggle}>
-          📋 {showHistory ? 'Hide' : 'View'} Trip History
-        </button>
-      )}
-
-      {showHistory && (
-        <div style={styles.historySection}>
-          {tripHistory.length === 0 ? (
-            <p style={styles.emptyText}>No trips yet</p>
-          ) : (
-            tripHistory.map((trip, i) => (
-              <div key={i} style={styles.historyCard}>
-                <div style={styles.historyRow}>
-                  <span style={styles.historyLabel}>📅 {new Date(trip.completedAt || trip.createdAt).toLocaleDateString('en-IN')}</span>
-                  <span style={styles.historyValue}>₹{trip.fareBreakdown?.total || trip.finalAmount || 'N/A'}</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
+      {/* GPS Footer */}
       {location && (
         <div style={styles.locationFooter}>
           <span>📍 GPS Active</span>
@@ -510,54 +526,364 @@ const DriverApp = () => {
 };
 
 const styles = {
-  page: { minHeight: '100vh', background: '#0f0f1a', padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: 'Arial, sans-serif' },
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' },
-  backBtn: { background: 'none', border: 'none', color: '#e53935', fontSize: '14px', cursor: 'pointer' },
-  title: { color: '#fff', fontSize: '20px', margin: 0 },
-  onlineIndicator: { display: 'flex', alignItems: 'center', gap: '6px' },
-  dot: { width: '10px', height: '10px', borderRadius: '50%', display: 'inline-block' },
-  onlineText: { color: '#aaa', fontSize: '12px' },
-  driverWarning: { background: '#3a1f00', color: '#ffcc80', border: '1px solid #8a5a00', borderRadius: '10px', padding: '12px', marginBottom: '15px', fontSize: '12px', lineHeight: 1.5 },
-  toggleSection: { textAlign: 'center', marginBottom: '20px' },
-  toggleBtn: { width: '100%', padding: '16px', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer' },
-  toggleHint: { color: '#888', fontSize: '12px', marginTop: '8px' },
-  statsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '20px' },
-  statCard: { background: '#1a1a2e', borderRadius: '12px', padding: '16px', textAlign: 'center' },
-  statIcon: { fontSize: '24px', display: 'block', marginBottom: '6px' },
-  statValue: { color: '#fff', fontSize: '20px', display: 'block' },
-  statLabel: { color: '#888', fontSize: '11px' },
-  alertCard: { background: '#1a0000', border: '2px solid #e53935', borderRadius: '16px', padding: '20px', marginBottom: '20px' },
-  alertHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' },
-  alertIcon: { fontSize: '40px' },
-  alertTitle: { color: '#e53935', fontSize: '20px', margin: 0 },
-  timerBar: { height: '4px', borderRadius: '2px', transition: 'width 1s linear', marginBottom: '5px' },
-  timerText: { color: '#ff9800', fontSize: '14px', textAlign: 'center', margin: '5px 0 15px 0' },
-  alertDetails: { color: '#ccc', fontSize: '14px', lineHeight: '1.8', marginBottom: '20px' },
-  alertActions: { display: 'flex', gap: '10px' },
-  acceptBtn: { flex: 1, padding: '14px', background: '#4caf50', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' },
-  rejectBtn: { flex: 1, padding: '14px', background: '#e53935', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' },
-  tripCard: { background: '#1a1a2e', borderRadius: '16px', padding: '20px', marginBottom: '20px' },
-  tripStatus: { border: '2px solid #333', borderRadius: '10px', padding: '16px', textAlign: 'center', marginBottom: '20px' },
-  tripActions: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  actionBtn: { width: '100%', padding: '14px', background: '#2196f3', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' },
-  otpInput: { width: '100%', padding: '14px', border: '2px solid #333', borderRadius: '10px', fontSize: '20px', textAlign: 'center', letterSpacing: '10px', background: '#0f0f1a', color: '#fff', boxSizing: 'border-box' },
-  vitalsForm: { marginBottom: '10px' },
-  vitalsTitle: { color: '#ccc', fontSize: '14px', margin: '0 0 10px 0' },
-  vitalsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
-  vitalInput: { padding: '10px', border: '1px solid #333', borderRadius: '8px', background: '#0f0f1a', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
-  textarea: { width: '100%', padding: '12px', border: '1px solid #333', borderRadius: '8px', background: '#0f0f1a', color: '#fff', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' },
-  completedCard: { background: '#1a3a1a', borderRadius: '16px', padding: '40px', textAlign: 'center', marginBottom: '20px' },
-  completedIcon: { fontSize: '60px', display: 'block', marginBottom: '15px' },
-  completedTitle: { color: '#4caf50', fontSize: '22px', margin: '0 0 10px 0' },
-  completedText: { color: '#aaa', fontSize: '14px' },
-  historyToggle: { width: '100%', padding: '12px', background: '#333', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', cursor: 'pointer', marginBottom: '15px' },
+  page: { 
+    minHeight: '100vh', 
+    background: '#0f0f1a', 
+    padding: '20px 20px 70px', 
+    maxWidth: '500px', 
+    margin: '0 auto', 
+    fontFamily: 'Arial, sans-serif' 
+  },
+  header: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    marginBottom: '20px' 
+  },
+  backBtn: { 
+    background: 'none', 
+    border: 'none', 
+    color: '#e53935', 
+    fontSize: '14px', 
+    cursor: 'pointer' 
+  },
+  title: { 
+    color: '#fff', 
+    fontSize: '20px', 
+    margin: 0 
+  },
+  onlineIndicator: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '6px' 
+  },
+  dot: { 
+    width: '10px', 
+    height: '10px', 
+    borderRadius: '50%', 
+    display: 'inline-block' 
+  },
+  onlineText: { 
+    color: '#aaa', 
+    fontSize: '12px' 
+  },
+  infoCard: { 
+    background: '#1a1a2e', 
+    borderRadius: '12px', 
+    padding: '16px', 
+    marginBottom: '15px' 
+  },
+  infoRow: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    marginBottom: '8px' 
+  },
+  infoLabel: { 
+    color: '#888', 
+    fontSize: '13px' 
+  },
+  infoValue: { 
+    color: '#fff', 
+    fontSize: '14px', 
+    fontWeight: 'bold' 
+  },
+  earningsCard: { 
+    background: '#1a2e1a', 
+    borderRadius: '12px', 
+    padding: '16px', 
+    marginBottom: '15px' 
+  },
+  earningsRow: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    marginBottom: '8px' 
+  },
+  earningsLabel: { 
+    color: '#aaa', 
+    fontSize: '13px' 
+  },
+  earningsValue: { 
+    color: '#4caf50', 
+    fontSize: '14px', 
+    fontWeight: 'bold' 
+  },
+  statsGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: '1fr 1fr 1fr', 
+    gap: '10px', 
+    marginBottom: '20px' 
+  },
+  statCard: { 
+    background: '#1a1a2e', 
+    borderRadius: '12px', 
+    padding: '16px', 
+    textAlign: 'center' 
+  },
+  statIcon: { 
+    fontSize: '24px', 
+    display: 'block', 
+    marginBottom: '6px' 
+  },
+  statValue: { 
+    color: '#fff', 
+    fontSize: '20px', 
+    display: 'block' 
+  },
+  statLabel: { 
+    color: '#888', 
+    fontSize: '11px' 
+  },
+  toggleBtn: { 
+    width: '100%', 
+    padding: '16px', 
+    color: '#fff', 
+    border: 'none', 
+    borderRadius: '12px', 
+    fontSize: '18px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer', 
+    marginBottom: '10px' 
+  },
+  toggleHint: { 
+    color: '#888', 
+    fontSize: '12px', 
+    textAlign: 'center', 
+    marginTop: '0' 
+  },
+  historyToggle: { 
+    width: '100%', 
+    padding: '12px', 
+    background: '#333', 
+    color: '#fff', 
+    border: 'none', 
+    borderRadius: '10px', 
+    fontSize: '14px', 
+    cursor: 'pointer', 
+    marginBottom: '15px' 
+  },
   historySection: {},
-  emptyText: { color: '#888', textAlign: 'center', padding: '20px' },
-  historyCard: { background: '#1a1a2e', borderRadius: '8px', padding: '12px', marginBottom: '8px' },
-  historyRow: { display: 'flex', justifyContent: 'space-between' },
-  historyLabel: { color: '#ccc', fontSize: '13px' },
-  historyValue: { color: '#4caf50', fontSize: '14px', fontWeight: 'bold' },
-  locationFooter: { position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a1a2e', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', color: '#4caf50', fontSize: '12px', borderTop: '1px solid #333', zIndex: 100 }
+  emptyText: { 
+    color: '#888', 
+    textAlign: 'center', 
+    padding: '20px' 
+  },
+  historyCard: { 
+    background: '#1a1a2e', 
+    borderRadius: '8px', 
+    padding: '12px', 
+    marginBottom: '8px' 
+  },
+  historyRow: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    marginBottom: '4px' 
+  },
+  historyLabel: { 
+    color: '#ccc', 
+    fontSize: '13px' 
+  },
+  historyValue: { 
+    color: '#4caf50', 
+    fontSize: '14px', 
+    fontWeight: 'bold' 
+  },
+  historySubLabel: { 
+    color: '#888', 
+    fontSize: '11px' 
+  },
+  historySubValue: { 
+    color: '#aaa', 
+    fontSize: '11px' 
+  },
+  alertOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.8)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px'
+  },
+  alertCard: { 
+    background: '#1a0000', 
+    border: '2px solid #e53935', 
+    borderRadius: '16px', 
+    padding: '20px', 
+    width: '100%',
+    maxWidth: '450px',
+    animation: 'pulse 1s infinite'
+  },
+  alertHeader: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '10px', 
+    marginBottom: '15px' 
+  },
+  alertIcon: { 
+    fontSize: '40px' 
+  },
+  alertTitle: { 
+    color: '#e53935', 
+    fontSize: '20px', 
+    margin: 0 
+  },
+  timerBar: { 
+    height: '4px', 
+    borderRadius: '2px', 
+    transition: 'width 1s linear', 
+    marginBottom: '5px' 
+  },
+  timerText: { 
+    color: '#ff9800', 
+    fontSize: '14px', 
+    textAlign: 'center', 
+    margin: '5px 0 15px 0' 
+  },
+  alertDetails: { 
+    color: '#ccc', 
+    fontSize: '14px', 
+    lineHeight: '1.8', 
+    marginBottom: '20px' 
+  },
+  alertActions: { 
+    display: 'flex', 
+    gap: '10px' 
+  },
+  acceptBtn: { 
+    flex: 1, 
+    padding: '14px', 
+    background: '#4caf50', 
+    color: '#fff', 
+    border: 'none', 
+    borderRadius: '10px', 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer' 
+  },
+  rejectBtn: { 
+    flex: 1, 
+    padding: '14px', 
+    background: '#e53935', 
+    color: '#fff', 
+    border: 'none', 
+    borderRadius: '10px', 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer' 
+  },
+  tripCard: { 
+    background: '#1a1a2e', 
+    borderRadius: '16px', 
+    padding: '20px', 
+    marginBottom: '20px' 
+  },
+  tripStatus: { 
+    border: '2px solid #333', 
+    borderRadius: '10px', 
+    padding: '16px', 
+    textAlign: 'center', 
+    marginBottom: '20px' 
+  },
+  tripActions: { 
+    display: 'flex', 
+    flexDirection: 'column', 
+    gap: '10px' 
+  },
+  actionBtn: { 
+    width: '100%', 
+    padding: '14px', 
+    background: '#2196f3', 
+    color: '#fff', 
+    border: 'none', 
+    borderRadius: '10px', 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer' 
+  },
+  otpInput: { 
+    width: '100%', 
+    padding: '14px', 
+    border: '2px solid #333', 
+    borderRadius: '10px', 
+    fontSize: '20px', 
+    textAlign: 'center', 
+    letterSpacing: '10px', 
+    background: '#0f0f1a', 
+    color: '#fff', 
+    boxSizing: 'border-box' 
+  },
+  vitalsForm: { 
+    marginBottom: '10px' 
+  },
+  vitalsTitle: { 
+    color: '#ccc', 
+    fontSize: '14px', 
+    margin: '0 0 10px 0' 
+  },
+  vitalsGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: '1fr 1fr', 
+    gap: '8px' 
+  },
+  vitalInput: { 
+    padding: '10px', 
+    border: '1px solid #333', 
+    borderRadius: '8px', 
+    background: '#0f0f1a', 
+    color: '#fff', 
+    fontSize: '14px', 
+    boxSizing: 'border-box' 
+  },
+  textarea: { 
+    width: '100%', 
+    padding: '12px', 
+    border: '1px solid #333', 
+    borderRadius: '8px', 
+    background: '#0f0f1a', 
+    color: '#fff', 
+    fontSize: '14px', 
+    resize: 'vertical', 
+    boxSizing: 'border-box' 
+  },
+  completedCard: { 
+    background: '#1a3a1a', 
+    borderRadius: '16px', 
+    padding: '40px', 
+    textAlign: 'center', 
+    marginBottom: '20px' 
+  },
+  completedIcon: { 
+    fontSize: '60px', 
+    display: 'block', 
+    marginBottom: '15px' 
+  },
+  completedTitle: { 
+    color: '#4caf50', 
+    fontSize: '22px', 
+    margin: '0 0 10px 0' 
+  },
+  completedText: { 
+    color: '#aaa', 
+    fontSize: '14px' 
+  },
+  locationFooter: { 
+    position: 'fixed', 
+    bottom: 0, 
+    left: 0, 
+    right: 0, 
+    background: '#1a1a2e', 
+    padding: '10px 20px', 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    color: '#4caf50', 
+    fontSize: '12px', 
+    borderTop: '1px solid #333', 
+    zIndex: 100 
+  }
 };
 
 export default DriverApp;
