@@ -21,47 +21,22 @@ const DriverLogin = () => {
     setLoading(false);
   };
 
-  const handleVerifyOTP = async () => {
+    const handleVerifyOTP = async () => {
     if (!otp || otp.length < 4) { setError('Enter OTP'); return; }
     setLoading(true);
     setError('');
     try {
-            const res = await api.post('/otp/verify', { phone: `+91${phone}`, otp, type: 'login' });
-            if (res.data?.success) {
+      const res = await api.post('/otp/verify', { phone: `+91${phone}`, otp, type: 'login' });
+      if (res.data?.success) {
         const driverRes = await api.post('/ambulance/driver-login', { phone: `+91${phone}` });
         if (driverRes.data?.token) {
-  // Clear everything first
-  localStorage.clear();
-  
-  // Set driver token LAST to prevent overwrite
-  localStorage.setItem('driverId', driverRes.data.driver.id);
-  localStorage.setItem('driverPhone', phone);
-  localStorage.setItem('driverName', driverRes.data.driver.name);
-  localStorage.setItem('userType', 'ambulance_driver');
-  localStorage.setItem('token', driverRes.data.token);
-  localStorage.setItem('driverToken', driverRes.data.token);
-  
-  // Verify immediately
-  const checkToken = localStorage.getItem('token');
-  const decoded = JSON.parse(atob(checkToken.split('.')[1]));
-  console.log('Token set as:', decoded.role);
-  
-  navigate('/ambulance/driver/app');
-}
-          
-          // Verify token role before navigating
-          try {
-            const decoded = JSON.parse(atob(driverRes.data.token.split('.')[1]));
-            console.log('Driver token role:', decoded.role);
-            if (decoded.role !== 'ambulance_driver') {
-              setError('Login failed: Invalid driver token');
-              setLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.error('Token decode failed:', e);
-          }
-          
+          localStorage.clear();
+          localStorage.setItem('driverId', driverRes.data.driver.id);
+          localStorage.setItem('driverPhone', phone);
+          localStorage.setItem('driverName', driverRes.data.driver.name);
+          localStorage.setItem('userType', 'ambulance_driver');
+          localStorage.setItem('token', driverRes.data.token);
+          localStorage.setItem('driverToken', driverRes.data.token);
           navigate('/ambulance/driver/app');
         } else {
           setError('Driver not found');
@@ -69,7 +44,9 @@ const DriverLogin = () => {
       } else {
         setError('Invalid OTP');
       }
-    } catch (e) { setError('Verification failed'); }
+    } catch (e) {
+      setError('Verification failed');
+    }
     setLoading(false);
   };
 
