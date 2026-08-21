@@ -9,7 +9,15 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token') || localStorage.getItem('providerToken') || localStorage.getItem('doctorToken');
+  const userType = localStorage.getItem('userType');
+  let token = localStorage.getItem('token');
+  
+  if (userType === 'ambulance_driver') {
+    token = localStorage.getItem('driverToken') || token;
+  } else {
+    token = token || localStorage.getItem('providerToken') || localStorage.getItem('doctorToken');
+  }
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
