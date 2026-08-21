@@ -30,6 +30,8 @@ const DriverApp = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [tripHistory, setTripHistory] = useState([]);
   const [earnings, setEarnings] = useState({ today: 0, week: 0, month: 0 });
+  const [socketStatus, setSocketStatus] = useState('connecting');
+  const [emergencyCount, setEmergencyCount] = useState(0);
   const socketRef = useRef(null);
   const locationInterval = useRef(null);
   const timerInterval = useRef(null);
@@ -87,6 +89,26 @@ const DriverApp = () => {
     }
   };
 
+  const playEmergencySound = () => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.value = 800;
+      oscillator.type = 'square';
+      gainNode.gain.value = 0.3;
+      oscillator.start();
+      setTimeout(() => {
+        oscillator.stop();
+        audioContext.close();
+      }, 2000);
+    } catch (e) {
+      console.log('Sound alert failed:', e);
+    }
+  };
+
   const connectSocket = () => {
     const token = localStorage.getItem('token');
     const socket = io(SOCKET_URL, { 
@@ -95,6 +117,7 @@ const DriverApp = () => {
     });
 
     socket.on('connect', () => {
+      setSocketStatus('connected');
       const driverId = localStorage.getItem('driverId');
       if (driverId) {
         socket.emit('driver:register', {
@@ -106,10 +129,26 @@ const DriverApp = () => {
       }
     });
 
+    socket.on('disconnect', () => {
+      setSocketStatus('disconnected');
+    });
+
+    socket.on('connect_error', () => {
+      setSocketStatus('error');
+    });
+
+    socket.on('driver:registered', (data) => {
+      console.log('Driver registered on socket:', data);
+    });
+
     socket.on('emergency:new_request', (data) => {
+      console.log('🚨 EMERGENCY REQUEST RECEIVED:', data);
       setEmergencyRequest(data);
+      setEmergencyCount(prev => prev + 1);
       setStep('emergency_alert');
       startAcceptTimer();
+      playEmergencySound();
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
     });
 
     socket.on('emergency:cancelled', () => {
@@ -314,13 +353,22 @@ const DriverApp = () => {
       <div style={styles.header}>
         <button onClick={() => navigate('/ambulance')} style={styles.backBtn}>← Exit</button>
         <h1 style={styles.title}>🚑 Driver App</h1>
-        <div style={styles.onlineIndicator}>
-          <span style={{ ...styles.dot, background: isOnline ? '#4caf50' : '#e53935' }} />
-          <span style={styles.onlineText}>{isOnline ? 'Online' : 'Offline'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {emergencyCount > 0 && step === 'idle' && (
+            <span style={styles.emergencyBadge}>{emergencyCount}</span>
+          )}
+          <div style={styles.onlineIndicator}>
+            <span style={{ ...styles.dot, background: socketStatus === 'connected' ? '#4caf50' : socketStatus === 'error' ? '#e53935' : '#ff9800' }} />
+            <span style={styles.onlineText}>{socketStatus === 'connected' ? 'Connected' : socketStatus === 'error' ? 'Error' : 'Connecting...'}</span>
+          </div>
+          <div style={styles.onlineIndicator}>
+            <span style={{ ...styles.dot, background: isOnline ? '#4caf50' : '#e53935' }} />
+            <span style={styles.onlineText}>{isOnline ? 'Online' : 'Offline'}</span>
+          </div>
         </div>
       </div>
 
-      {/* Emergency Alert Modal */}
+      {/* Emergency Alert Overlay */}
       {step === 'emergency_alert' && emergencyRequest && (
         <div style={styles.alertOverlay}>
           <div style={styles.alertCard}>
@@ -549,23 +597,36 @@ const styles = {
   },
   title: { 
     color: '#fff', 
-    fontSize: '20px', 
+    fontSize: '18px', 
     margin: 0 
+  },
+  emergencyBadge: {
+    background: '#e53935',
+    color: '#fff',
+    borderRadius: '50%',
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    animation: 'pulse 1s infinite'
   },
   onlineIndicator: { 
     display: 'flex', 
     alignItems: 'center', 
-    gap: '6px' 
+    gap: '4px' 
   },
   dot: { 
-    width: '10px', 
-    height: '10px', 
+    width: '8px', 
+    height: '8px', 
     borderRadius: '50%', 
     display: 'inline-block' 
   },
   onlineText: { 
     color: '#aaa', 
-    fontSize: '12px' 
+    fontSize: '10px' 
   },
   infoCard: { 
     background: '#1a1a2e', 
@@ -701,7 +762,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(0,0,0,0.8)',
+    background: 'rgba(0,0,0,0.85)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -714,8 +775,7 @@ const styles = {
     borderRadius: '16px', 
     padding: '20px', 
     width: '100%',
-    maxWidth: '450px',
-    animation: 'pulse 1s infinite'
+    maxWidth: '450px'
   },
   alertHeader: { 
     display: 'flex', 
