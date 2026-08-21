@@ -30,13 +30,17 @@ const DriverLogin = () => {
       if (res.data?.success) {
         const driverRes = await api.post('/ambulance/driver-login', { phone: `+91${phone}` });
         if (driverRes.data?.token) {
-          localStorage.clear();
+                    localStorage.clear();
           localStorage.setItem('driverId', driverRes.data.driver.id);
           localStorage.setItem('driverPhone', phone);
           localStorage.setItem('driverName', driverRes.data.driver.name);
           localStorage.setItem('userType', 'ambulance_driver');
           localStorage.setItem('token', driverRes.data.token);
           localStorage.setItem('driverToken', driverRes.data.token);
+          
+          // Remove any patient token that may have been set during OTP
+          localStorage.removeItem('patientToken');
+          
           navigate('/ambulance/driver/app');
         } else {
           setError('Driver not found');

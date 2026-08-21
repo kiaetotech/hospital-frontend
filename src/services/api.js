@@ -33,6 +33,15 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
+      const userType = localStorage.getItem('userType');
+      
+      // Don't redirect ambulance drivers to patient login
+      if (userType === 'ambulance_driver') {
+        localStorage.clear();
+        window.location.href = '/ambulance/driver/login';
+        return Promise.reject(error);
+      }
+      
       localStorage.removeItem('token');
       localStorage.removeItem('providerToken');
       localStorage.removeItem('doctorToken');
