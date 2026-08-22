@@ -69,10 +69,10 @@ const DriverApp = () => {
       if (res.data?.data) {
         setDashboard(res.data.data);
         setEarnings({
-          today: res.data.data.todayEarnings || 0,
-          week: res.data.data.weekEarnings || 0,
-          month: res.data.data.monthEarnings || 0
-        });
+  today: res.data.data.stats?.todayEarnings || 0,
+  week: res.data.data.stats?.weekEarnings || 0,
+  month: res.data.data.stats?.monthEarnings || 0
+});
       }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
@@ -439,12 +439,12 @@ const DriverApp = () => {
           <div style={styles.statsGrid}>
             <div style={styles.statCard}>
               <span style={styles.statIcon}>🚑</span>
-              <strong style={styles.statValue}>{dashboard?.todayTrips || 0}</strong>
+              <strong style={styles.statValue}>{dashboard?.stats?.todayTrips || 0}</strong>
               <span style={styles.statLabel}>Today's Trips</span>
             </div>
             <div style={styles.statCard}>
               <span style={styles.statIcon}>✅</span>
-              <strong style={styles.statValue}>{dashboard?.totalTrips || tripHistory?.length || 0}</strong>
+              <strong style={styles.statValue}>{dashboard?.stats?.totalTrips || tripHistory?.length || 0}</strong>
               <span style={styles.statLabel}>Total Trips</span>
             </div>
             <div style={styles.statCard}>
