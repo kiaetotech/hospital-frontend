@@ -128,21 +128,23 @@ const MyBookings = () => {
   const submitReview = async () => {
     setReviewLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       const res = await axios.post(
-        `https://hospital-backend-production-7d0f.up.railway.app/api/bookings/${selectedBooking.bookingId}/review`,
-        reviewData,
+        `https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/rate-trip/${selectedBooking.bookingId}`,
+        {
+          rating: reviewData.rating,
+          review: reviewData.review,
+          waitTimeRating: reviewData.waitTimeRating,
+          valueForMoneyRating: reviewData.valueForMoneyRating
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (res.data.success) {
-        setActionMessage('✅ Review submitted successfully! Thank you for your feedback.');
-        
-        // Refresh bookings
-        const response = await axios.get(`https://hospital-backend-production-7d0f.up.railway.app/api/bookings/patient/${phone}`);
-        setBookings(response.data);
+        setActionMessage(`✅ Rating submitted! Driver rating: ${res.data.data.driverAvgRating} ⭐`);
+        fetchBookings();
       }
-      
+
       setShowReviewModal(false);
       setTimeout(() => setActionMessage(''), 5000);
     } catch (error) {
