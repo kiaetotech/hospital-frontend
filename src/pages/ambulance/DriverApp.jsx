@@ -47,7 +47,7 @@ const DriverApp = () => {
   }, [isOnline]);
 
   useEffect(() => {
-    if (!localStorage.getItem('driverId')) {
+    if (!sessionStorage.getItem('driverId')) {
       navigate('/ambulance/driver/login');
       return;
     }
@@ -64,7 +64,7 @@ const DriverApp = () => {
 
   const fetchDashboard = async () => {
     try {
-      const driverId = localStorage.getItem('driverId');
+      const driverId = sessionStorage.getItem('driverId');
       const res = await getDriverDashboard(driverId ? { driverId } : {});
       if (res.data?.data) {
         setDashboard(res.data.data);
@@ -81,7 +81,7 @@ const DriverApp = () => {
 
   const fetchTripHistory = async () => {
     try {
-      const driverId = localStorage.getItem('driverId');
+      const driverId = sessionStorage.getItem('driverId');
       const res = await getDriverTripHistory({ limit: 10, ...(driverId ? { driverId } : {}) });
       if (res.data?.data) setTripHistory(res.data.data);
     } catch (err) {
@@ -110,7 +110,7 @@ const DriverApp = () => {
   };
 
   const connectSocket = () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     const socket = io(SOCKET_URL, { 
   auth: { token, userType: 'ambulance_driver' }, 
   transports: ['polling', 'websocket'],
@@ -121,7 +121,7 @@ const DriverApp = () => {
 
     socket.on('connect', () => {
       setSocketStatus('connected');
-      const driverId = localStorage.getItem('driverId');
+      const driverId = sessionStorage.getItem('driverId');
       if (driverId) {
         socket.emit('driver:register', {
           driverId,
@@ -186,7 +186,7 @@ const DriverApp = () => {
   const handleToggleOnline = async () => {
     const nextOnline = !isOnline;
     try {
-      const driverId = localStorage.getItem('driverId');
+      const driverId = sessionStorage.getItem('driverId');
       await toggleDriverAvailability({ driverId, isAvailable: nextOnline });
       isOnlineRef.current = nextOnline;
       setIsOnline(nextOnline);
@@ -219,7 +219,7 @@ const DriverApp = () => {
           };
           setLocation(loc);
 
-          const driverId = localStorage.getItem('driverId');
+          const driverId = sessionStorage.getItem('driverId');
           if (!driverId) return;
 
           const payload = {
@@ -264,7 +264,7 @@ const DriverApp = () => {
     if (timerInterval.current) clearInterval(timerInterval.current);
 
     try {
-      const driverId = localStorage.getItem('driverId');
+      const driverId = sessionStorage.getItem('driverId');
       await acceptEmergency(emergencyRequest.bookingId, { driverId });
       currentTripRef.current = emergencyRequest;
       setCurrentTrip(emergencyRequest);
@@ -403,7 +403,7 @@ const DriverApp = () => {
           <div style={styles.infoCard}>
             <div style={styles.infoRow}>
               <span style={styles.infoLabel}>👤 Driver</span>
-              <span style={styles.infoValue}>{dashboard?.driverName || localStorage.getItem('driverName') || 'N/A'}</span>
+              <span style={styles.infoValue}>{dashboard?.driverName || sessionStorage.getItem('driverName') || 'N/A'}</span>
             </div>
             <div style={styles.infoRow}>
               <span style={styles.infoLabel}>🚙 Vehicle</span>
@@ -415,7 +415,7 @@ const DriverApp = () => {
             </div>
             <div style={styles.infoRow}>
               <span style={styles.infoLabel}>📞 Phone</span>
-              <span style={styles.infoValue}>{localStorage.getItem('driverPhone') || 'N/A'}</span>
+              <span style={styles.infoValue}>{sessionStorage.getItem('driverPhone') || 'N/A'}</span>
             </div>
           </div>
 
