@@ -354,7 +354,10 @@ const DriverApp = () => {
     <div style={styles.page}>
       {/* Header */}
       <div style={styles.header}>
-        <button onClick={() => navigate('/ambulance')} style={styles.backBtn}>← Exit</button>
+        <button onClick={() => {
+  sessionStorage.clear();
+  navigate('/ambulance/driver/login');
+}} style={styles.backBtn}>← Exit</button>
         <h1 style={styles.title}>🚑 Driver App</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {emergencyCount > 0 && step === 'idle' && (
