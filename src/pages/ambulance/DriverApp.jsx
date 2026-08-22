@@ -414,7 +414,7 @@ const DriverApp = () => {
             </div>
             <div style={styles.infoRow}>
               <span style={styles.infoLabel}>⭐ Rating</span>
-              <span style={styles.infoValue}>{dashboard?.rating || 'N/A'} ({(dashboard?.todayTrips || 0) + (tripHistory?.length || 0)} trips)</span>
+              <span style={styles.infoValue}>{dashboard?.stats?.rating || 'N/A'} ({dashboard?.stats?.totalRatings || 0} ratings)</span>
             </div>
             <div style={styles.infoRow}>
               <span style={styles.infoLabel}>📞 Phone</span>
@@ -452,7 +452,7 @@ const DriverApp = () => {
             </div>
             <div style={styles.statCard}>
               <span style={styles.statIcon}>⭐</span>
-              <strong style={styles.statValue}>{dashboard?.rating || 'N/A'}</strong>
+              <strong style={styles.statValue}>{dashboard?.stats?.rating || 'N/A'}</strong>
               <span style={styles.statLabel}>Rating</span>
             </div>
           </div>
