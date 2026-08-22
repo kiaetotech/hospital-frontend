@@ -938,9 +938,8 @@ const EmergencyRequest = () => {
           <div style={styles.resultRow}>
             <span>⭐ Rating:</span>
 
-            <strong>
-              {result?.driver?.rating ||
-                'N/A'}
+               <strong>
+              {result?.driver?.rating > 0 ? result.driver.rating : 'New'}
             </strong>
           </div>
 
