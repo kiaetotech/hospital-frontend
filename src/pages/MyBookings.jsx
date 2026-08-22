@@ -57,7 +57,7 @@ const MyBookings = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/my-bookings',
+        'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/my-bookings?limit=100&page=1',
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setBookings(response.data?.data || response.data || []);
