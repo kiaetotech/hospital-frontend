@@ -4,18 +4,14 @@ import axios from 'axios';
 // AXIOS INSTANCE
 // ============================================
 
-const api = axios.create({
-  baseURL: 'https://hospital-backend-production-7d0f.up.railway.app/api'
-});
-
 api.interceptors.request.use((config) => {
-  const userType = localStorage.getItem('userType');
-  let token = localStorage.getItem('token');
+  const userType = sessionStorage.getItem('userType') || localStorage.getItem('userType');
+  let token;
   
   if (userType === 'ambulance_driver') {
-    token = localStorage.getItem('driverToken') || token;
+    token = sessionStorage.getItem('token') || sessionStorage.getItem('driverToken');
   } else {
-    token = token || localStorage.getItem('providerToken') || localStorage.getItem('doctorToken');
+    token = localStorage.getItem('token') || localStorage.getItem('providerToken') || localStorage.getItem('doctorToken');
   }
   
   if (token) {
