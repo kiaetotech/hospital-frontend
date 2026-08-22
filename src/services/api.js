@@ -4,6 +4,10 @@ import axios from 'axios';
 // AXIOS INSTANCE
 // ============================================
 
+const api = axios.create({
+  baseURL: 'https://hospital-backend-production-7d0f.up.railway.app/api'
+});
+
 api.interceptors.request.use((config) => {
   const userType = sessionStorage.getItem('userType') || localStorage.getItem('userType');
   let token;
