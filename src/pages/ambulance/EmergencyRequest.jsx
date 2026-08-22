@@ -365,6 +365,8 @@ const EmergencyRequest = () => {
         }
 
         setResult(dispatchResult);
+	console.log('DISPATCH RESULT SET:', dispatchResult);
+	console.log('DRIVER:', dispatchResult?.driver);
         setStep(2);
       } else {
         setError(
