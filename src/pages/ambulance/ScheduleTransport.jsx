@@ -53,7 +53,8 @@ const ScheduleTransport = () => {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
+  const [tripOtp, setTripOtp] = useState('');
+  const [tripStatus, setTripStatus] = useState('');
   const mobilityTypes = [
     { value: 'walking', label: '🚶 Walking' },
     { value: 'wheelchair', label: '♿ Wheelchair' },
@@ -840,6 +841,7 @@ const ScheduleTransport = () => {
         const bookingId = res.data?.data?.bookingId || '';
         const totalAmount = res.data?.data?.fareEstimate?.total || form.finalAmount || 0;
         setSuccess('Booking created. Redirecting to payment...');
+        setTripOtp(res.data?.data?.tripOtp || '');
         setTimeout(() => {
           navigate(`/payment?bookingId=${bookingId}&amount=${totalAmount}&type=ambulance`);
         }, 1000);
@@ -1454,9 +1456,15 @@ const ScheduleTransport = () => {
           </div>
         )}
 
-        {success && (
+                {success && (
           <div style={styles.success}>
             {success}
+            {tripOtp && (
+              <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                <p style={{ fontSize: '13px', margin: '0 0 5px' }}>Share this OTP with driver:</p>
+                <strong style={{ fontSize: '24px', letterSpacing: '6px', color: '#2e7d32' }}>{tripOtp}</strong>
+              </div>
+            )}
           </div>
         )}
 
