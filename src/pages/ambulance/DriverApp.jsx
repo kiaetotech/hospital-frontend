@@ -32,6 +32,7 @@ const DriverApp = () => {
   const [earnings, setEarnings] = useState({ today: 0, week: 0, month: 0 });
   const [socketStatus, setSocketStatus] = useState('connecting');
   const [emergencyCount, setEmergencyCount] = useState(0);
+  const [scheduledRequest, setScheduledRequest] = useState(null);
   const socketRef = useRef(null);
   const locationInterval = useRef(null);
   const timerInterval = useRef(null);
@@ -143,6 +144,14 @@ const DriverApp = () => {
     socket.on('driver:registered', (data) => {
       console.log('Driver registered on socket:', data);
     });
+
+	socket.on('scheduled:new_request', (data) => {
+  console.log('📅 SCHEDULED TRIP REQUEST:', data);
+  setScheduledRequest(data);
+  setStep('scheduled_alert');
+  playEmergencySound();
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+});
 
     socket.on('emergency:new_request', (data) => {
       console.log('🚨 EMERGENCY REQUEST RECEIVED:', data);
@@ -259,6 +268,29 @@ const DriverApp = () => {
     }
   };
 
+	const handleAcceptScheduled = async () => {
+  if (!scheduledRequest) return;
+  try {
+    await api.post(`/ambulance/accept-scheduled/${scheduledRequest.bookingId}`);
+    setScheduledRequest(null);
+    setStep('idle');
+    fetchTripHistory();
+  } catch (err) {
+    alert('Unable to accept trip');
+  }
+};
+
+const handleDeclineScheduled = async () => {
+  if (!scheduledRequest) return;
+  try {
+    await api.post(`/ambulance/decline-scheduled/${scheduledRequest.bookingId}`);
+    setScheduledRequest(null);
+    setStep('idle');
+  } catch (err) {
+    alert('Unable to decline trip');
+  }
+};
+
   const handleAcceptEmergency = async () => {
     if (!emergencyRequest) return;
     if (timerInterval.current) clearInterval(timerInterval.current);
@@ -373,6 +405,28 @@ const DriverApp = () => {
           </div>
         </div>
       </div>
+
+	{/* Scheduled Trip Alert */}
+{step === 'scheduled_alert' && scheduledRequest && (
+  <div style={styles.alertOverlay}>
+    <div style={styles.alertCard}>
+      <div style={styles.alertHeader}>
+        <span style={styles.alertIcon}>📅</span>
+        <h2 style={styles.alertTitle}>SCHEDULED TRIP</h2>
+      </div>
+      <div style={styles.alertDetails}>
+        <p><strong>Patient:</strong> {scheduledRequest.patientName}</p>
+        <p><strong>Pickup:</strong> {scheduledRequest.pickupAddress}</p>
+        <p><strong>Drop:</strong> {scheduledRequest.dropAddress}</p>
+        <p><strong>Fare:</strong> ₹{scheduledRequest.amount}</p>
+      </div>
+      <div style={styles.alertActions}>
+        <button onClick={handleAcceptScheduled} style={styles.acceptBtn}>✅ Accept</button>
+        <button onClick={handleDeclineScheduled} style={styles.rejectBtn}>❌ Decline</button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Emergency Alert Overlay */}
       {step === 'emergency_alert' && emergencyRequest && (
