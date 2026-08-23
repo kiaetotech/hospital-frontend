@@ -34,6 +34,8 @@ const DriverApp = () => {
   const [socketStatus, setSocketStatus] = useState('connecting');
   const [emergencyCount, setEmergencyCount] = useState(0);
   const [scheduledRequest, setScheduledRequest] = useState(null);
+  const [activeScheduledTrip, setActiveScheduledTrip] = useState(null);
+  const [scheduledOtp, setScheduledOtp] = useState('');
   const socketRef = useRef(null);
   const locationInterval = useRef(null);
   const timerInterval = useRef(null);
@@ -293,8 +295,9 @@ const DriverApp = () => {
   if (!scheduledRequest) return;
   try {
     await api.post(`/ambulance/accept-scheduled/${scheduledRequest.bookingId}`);
+    setActiveScheduledTrip(scheduledRequest);
     setScheduledRequest(null);
-    setStep('idle');
+    setStep('scheduled_active');
     fetchTripHistory();
   } catch (err) {
     alert('Unable to accept trip');
@@ -632,6 +635,65 @@ const handleDeclineScheduled = async () => {
           </div>
         </div>
       )}
+
+	{step === 'scheduled_active' && activeScheduledTrip && (
+  <div style={styles.tripCard}>
+    <div style={styles.tripStatus}>
+      <h3 style={{ color: '#4caf50', margin: 0 }}>📅 Scheduled Trip Active</h3>
+      <p style={{ color: '#ccc', fontSize: '13px', margin: '10px 0' }}>
+        Patient: {activeScheduledTrip.patientName}<br/>
+        Pickup: {activeScheduledTrip.pickupAddress}<br/>
+        Drop: {activeScheduledTrip.dropAddress}
+      </p>
+    </div>
+    <div style={styles.tripActions}>
+      <button onClick={async () => {
+        await api.post(`/ambulance/start-scheduled/${activeScheduledTrip.bookingId}`);
+        setStep('scheduled_arrived');
+      }} style={styles.actionBtn}>📍 I've Arrived</button>
+    </div>
+  </div>
+)}
+
+{step === 'scheduled_arrived' && activeScheduledTrip && (
+  <div style={styles.tripCard}>
+    <input 
+      type="text" 
+      placeholder="Enter OTP" 
+      value={scheduledOtp} 
+      onChange={(e) => setScheduledOtp(e.target.value)}
+      style={styles.otpInput}
+      maxLength={4}
+    />
+    <button onClick={async () => {
+      try {
+        await api.post(`/ambulance/patient-onboard-scheduled/${activeScheduledTrip.bookingId}`, { otp: scheduledOtp });
+        setStep('scheduled_onboard');
+      } catch (err) {
+        alert('Invalid OTP');
+      }
+    }} style={styles.actionBtn}>✅ Start Trip</button>
+  </div>
+)}
+
+{step === 'scheduled_onboard' && activeScheduledTrip && (
+  <div style={styles.tripCard}>
+    <button onClick={async () => {
+      try {
+        await api.post(`/ambulance/complete-scheduled/${activeScheduledTrip.bookingId}`, { distance: 5, duration: 15 });
+        setStep('completed');
+        setTimeout(() => {
+          setActiveScheduledTrip(null);
+          setStep('idle');
+          fetchDashboard();
+          fetchTripHistory();
+        }, 3000);
+      } catch (err) {
+        alert('Unable to complete trip');
+      }
+    }} style={{ ...styles.actionBtn, background: '#4caf50' }}>✅ Complete Trip</button>
+  </div>
+)}
 
       {/* Completed State */}
       {step === 'completed' && (
