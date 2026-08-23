@@ -110,6 +110,26 @@ const DriverApp = () => {
     }
   };
 
+	const playScheduledSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.frequency.value = 600;
+    oscillator.type = 'sine';
+    gainNode.gain.value = 0.2;
+    oscillator.start();
+    setTimeout(() => {
+      oscillator.stop();
+      audioContext.close();
+    }, 800);
+  } catch (e) {
+    console.log('Scheduled sound failed:', e);
+  }
+};
+
   const connectSocket = () => {
     const token = sessionStorage.getItem('token');
     const socket = io(SOCKET_URL, { 
@@ -149,8 +169,8 @@ const DriverApp = () => {
   console.log('📅 SCHEDULED TRIP REQUEST:', data);
   setScheduledRequest(data);
   setStep('scheduled_alert');
-  playEmergencySound();
-  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  playScheduledSound();
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 });
 
     socket.on('emergency:new_request', (data) => {
@@ -408,23 +428,22 @@ const handleDeclineScheduled = async () => {
 
 	{/* Scheduled Trip Alert */}
 {step === 'scheduled_alert' && scheduledRequest && (
-  <div style={styles.alertOverlay}>
-    <div style={styles.alertCard}>
-      <div style={styles.alertHeader}>
-        <span style={styles.alertIcon}>📅</span>
-        <h2 style={styles.alertTitle}>SCHEDULED TRIP</h2>
+  <div style={styles.scheduledBanner}>
+    <div style={styles.scheduledBannerContent}>
+      <span style={styles.scheduledIcon}>📅</span>
+      <div style={styles.scheduledInfo}>
+        <strong style={styles.scheduledTitle}>New Scheduled Trip</strong>
+        <span style={styles.scheduledText}>
+          {scheduledRequest.patientName} • {scheduledRequest.pickupAddress}
+        </span>
+        <span style={styles.scheduledFare}>₹{scheduledRequest.amount}</span>
       </div>
-      <div style={styles.alertDetails}>
-        <p><strong>Patient:</strong> {scheduledRequest.patientName}</p>
-        <p><strong>Pickup:</strong> {scheduledRequest.pickupAddress}</p>
-        <p><strong>Drop:</strong> {scheduledRequest.dropAddress}</p>
-        <p><strong>Fare:</strong> ₹{scheduledRequest.amount}</p>
-      </div>
-      <div style={styles.alertActions}>
-        <button onClick={handleAcceptScheduled} style={styles.acceptBtn}>✅ Accept</button>
-        <button onClick={handleDeclineScheduled} style={styles.rejectBtn}>❌ Decline</button>
+      <div style={styles.scheduledActions}>
+        <button onClick={handleAcceptScheduled} style={styles.scheduledAccept}>Accept</button>
+        <button onClick={handleDeclineScheduled} style={styles.scheduledDecline}>Decline</button>
       </div>
     </div>
+    <p style={styles.scheduledTimer}>Respond within 5 minutes</p>
   </div>
 )}
 
@@ -990,7 +1009,7 @@ const styles = {
     color: '#aaa', 
     fontSize: '14px' 
   },
-  locationFooter: { 
+    locationFooter: { 
     position: 'fixed', 
     bottom: 0, 
     left: 0, 
@@ -1003,7 +1022,29 @@ const styles = {
     fontSize: '12px', 
     borderTop: '1px solid #333', 
     zIndex: 100 
-  }
+  },
+
+  scheduledBanner: {
+    background: '#1a2e3a',
+    border: '2px solid #4caf50',
+    borderRadius: '12px',
+    padding: '15px',
+    marginBottom: '15px'
+  },
+  scheduledBannerContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  scheduledIcon: { fontSize: '30px' },
+  scheduledInfo: { flex: 1 },
+  scheduledTitle: { color: '#4caf50', fontSize: '14px', display: 'block' },
+  scheduledText: { color: '#ccc', fontSize: '12px', display: 'block' },
+  scheduledFare: { color: '#4caf50', fontSize: '14px', fontWeight: 'bold' },
+  scheduledActions: { display: 'flex', flexDirection: 'column', gap: '6px' },
+  scheduledAccept: { background: '#4caf50', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', cursor: 'pointer' },
+  scheduledDecline: { background: '#e53935', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', cursor: 'pointer' },
+  scheduledTimer: { color: '#888', fontSize: '11px', textAlign: 'center', marginTop: '8px' }
 };
 
 export default DriverApp;
