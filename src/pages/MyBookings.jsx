@@ -471,16 +471,16 @@ const MyBookings = () => {
                         <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                         {booking.homeCollectionRequested && <p><strong>🏠 Home Collection:</strong> Yes</p>}
                       </>
-                                        ) : booking.bookingType === 'ambulance' ? (
+                                                            ) : booking.bookingType === 'ambulance' ? (
                       <>
                         <p><strong>🚑 Type:</strong> {booking.ambulanceType}</p>
                         <p><strong>📍 Pickup:</strong> {booking.pickupAddress}</p>
                         <p><strong>📍 Drop:</strong> {booking.dropAddress}</p>
                         <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                         {booking.driverName && <p><strong>🚑 Driver:</strong> {booking.driverName}</p>}
-                        {booking.driverPhone && <p><strong>📞 Contact:</strong> {booking.driverPhone}</p>}
+                        {booking.driverPhone && <p><strong>📞 Driver Contact:</strong> {booking.driverPhone}</p>}
                         {booking.vehicleNumber && <p><strong>🚐 Vehicle:</strong> {booking.vehicleNumber}</p>}
-                        {booking.tripOtp && (
+                        {booking.tripOtp && booking.status !== 'completed' && (
                           <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#d1fae5', borderRadius: '6px', textAlign: 'center' }}>
                             <p style={{ fontSize: '12px', margin: '0 0 3px', color: '#065f46' }}>Share this OTP with driver:</p>
                             <strong style={{ fontSize: '20px', letterSpacing: '5px', color: '#065f46' }}>{booking.tripOtp}</strong>
@@ -505,7 +505,7 @@ const MyBookings = () => {
                     )}
                     <p><strong>📅 Date:</strong> {new Date(booking.appointmentDate || booking.bookingDate).toLocaleDateString()}</p>
                     <p><strong>👤 Patient:</strong> {booking.patientName} ({booking.patientAge} yrs, {booking.patientGender})</p>
-                    <p><strong>📞 Phone:</strong> {booking.patientPhone}</p>
+                    <p><strong>📞 Patient Contact:</strong> {booking.patientPhone}</p>
                     {booking.paymentStatus && (
                       <p><strong>💳 Payment:</strong> <span style={{ color: booking.paymentStatus === 'paid' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{booking.paymentStatus.toUpperCase()}</span></p>
                     )}
