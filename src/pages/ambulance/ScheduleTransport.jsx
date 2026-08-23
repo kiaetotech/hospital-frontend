@@ -55,6 +55,7 @@ const ScheduleTransport = () => {
   const [success, setSuccess] = useState('');
   const [tripOtp, setTripOtp] = useState('');
   const [tripStatus, setTripStatus] = useState('');
+  const [driverDetails, setDriverDetails] = useState(null);
   const mobilityTypes = [
     { value: 'walking', label: '🚶 Walking' },
     { value: 'wheelchair', label: '♿ Wheelchair' },
@@ -842,6 +843,7 @@ const ScheduleTransport = () => {
         const totalAmount = res.data?.data?.fareEstimate?.total || form.finalAmount || 0;
         setSuccess('Booking created. Redirecting to payment...');
         setTripOtp(res.data?.data?.tripOtp || '');
+        setDriverDetails(res.data?.data?.driver || null);
         setTimeout(() => {
           navigate(`/payment?bookingId=${bookingId}&amount=${totalAmount}&type=ambulance`);
         }, 1000);
@@ -1456,9 +1458,24 @@ const ScheduleTransport = () => {
           </div>
         )}
 
-                {success && (
+                        {success && (
           <div style={styles.success}>
             {success}
+
+            {driverDetails && (
+              <div style={{ marginTop: '10px', textAlign: 'center', background: '#1a1a2e', padding: '12px', borderRadius: '8px' }}>
+                <p style={{ fontSize: '13px', margin: '0 0 5px', color: '#ccc' }}>
+                  🚑 Driver: {driverDetails.name}
+                </p>
+                <p style={{ fontSize: '13px', margin: '0 0 5px', color: '#ccc' }}>
+                  📞 Contact: {driverDetails.phone}
+                </p>
+                <p style={{ fontSize: '13px', margin: '0 0 10px', color: '#ccc' }}>
+                  🚐 Vehicle: {driverDetails.vehicleNumber}
+                </p>
+              </div>
+            )}
+
             {tripOtp && (
               <div style={{ marginTop: '10px', textAlign: 'center' }}>
                 <p style={{ fontSize: '13px', margin: '0 0 5px' }}>Share this OTP with driver:</p>
