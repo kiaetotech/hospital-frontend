@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import api from '../../services/api';
 import {
   getDriverDashboard,
   toggleDriverAvailability,
