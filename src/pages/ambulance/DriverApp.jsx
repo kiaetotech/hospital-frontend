@@ -281,7 +281,7 @@ const DriverApp = () => {
     };
 
     sendLocation();
-    locationInterval.current = setInterval(sendLocation, 5000);
+    locationInterval.current = setInterval(sendLocation, 15000);
   };
 
   const stopLocationTracking = () => {
