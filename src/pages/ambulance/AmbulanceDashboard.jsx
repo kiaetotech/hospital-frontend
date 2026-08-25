@@ -101,7 +101,7 @@ const AmbulanceDashboard = () => {
           const fRes = await ambulanceApi.getFinancialSummary({ period: financialPeriod });
           setFinancialSummary(fRes.data?.data || {});
           break;
-	        case 'tracking':
+        case 'tracking':
           const tRes = await ambulanceApi.getActiveTrips();
           setActiveTrips(tRes.data?.data || []);
           break;
