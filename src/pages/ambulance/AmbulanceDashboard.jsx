@@ -23,6 +23,7 @@ const AmbulanceDashboard = () => {
   const [editingDriver, setEditingDriver] = useState(null);
   const [toast, setToast] = useState('');
   const [isAvailable, setIsAvailable] = useState(false);
+  const [financialSummary, setFinancialSummary] = useState(null);
   const [newVehicle, setNewVehicle] = useState({
     vehicleNumber: '', type: 'basic', model: '', year: '',
     equipment: [], baseFare: '', perKmRate: '', nightCharge: '', waitingCharge: '',
@@ -65,6 +66,7 @@ const AmbulanceDashboard = () => {
     { id: 'bookings', label: '📋 Bookings', icon: '📋' },
     { id: 'tracking', label: '📍 Live Tracking', icon: '📍' },
     { id: 'corporate', label: '🏢 Corporate Plans', icon: '🏢' },
+    { id: 'financials', label: '💰 Financials', icon: '💰' },
     { id: 'reports', label: '📊 Reports', icon: '📊' },
     { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
   ];
@@ -492,6 +494,38 @@ const AmbulanceDashboard = () => {
       case 'corporate': return (
         <div><h2 style={{fontWeight:700,fontSize:'1.2rem',marginBottom:8}}>🏢 Corporate Plans</h2><p style={{color:'#64748b',marginBottom:16}}>Offer corporate ambulance retainers.</p><CorporatePlansTab providerType="ambulance" providerId={providerId} token={token} /></div>
       );
+
+	case 'financials':
+  const fRes = await ambulanceApi.getFinancialSummary();
+  setFinancialSummary(fRes.data?.data || {});
+  break;
+	case 'financials': return (
+  <div>
+    <h2 style={{fontSize:'1.25rem',fontWeight:'bold',marginBottom:'1.5rem'}}>💰 Financial Summary</h2>
+    {financialSummary?.overall && (
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'1rem',marginBottom:'1.5rem'}}>
+        <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#2563eb'}}>₹{financialSummary.overall.totalRevenue||0}</div><div style={{color:'#6b7280'}}>Total Revenue</div></div>
+        <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#10b981'}}>₹{financialSummary.overall.netEarnings||0}</div><div style={{color:'#6b7280'}}>Net Earnings</div></div>
+        <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#f59e0b'}}>₹{financialSummary.pendingSettlement||0}</div><div style={{color:'#6b7280'}}>Pending Settlement</div></div>
+      </div>
+    )}
+    {financialSummary?.vehicleBreakdown && (
+      <ProviderTable 
+        columns={[
+          {key:'vehicleNumber',label:'Vehicle'},
+          {key:'vehicleType',label:'Type'},
+          {key:'driverName',label:'Driver'},
+          {key:'trips',label:'Trips'},
+          {key:'revenue',label:'Revenue', render: v => `₹${v}`},
+          {key:'commission',label:'Commission', render: v => `₹${v}`},
+          {key:'net',label:'Net', render: v => `₹${v}`}
+        ]} 
+        data={financialSummary.vehicleBreakdown} 
+        loading={loading} 
+      />
+    )}
+  </div>
+);
 
       case 'reports': return (
         <div>

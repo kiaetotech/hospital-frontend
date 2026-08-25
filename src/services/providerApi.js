@@ -102,7 +102,8 @@ export const ambulanceApi = {
   getBookings: (params) => providerApi.get('/ambulance/bookings', { params }),
   updateBookingStatus: (id, data) => providerApi.put(`/ambulance/bookings/${id}`, data),
   getReports: (params) => providerApi.get('/ambulance/reports', { params }),
-  getStats: () => providerApi.get('/ambulance/stats')
+  getStats: () => providerApi.get('/ambulance/stats'),
+  getFinancialSummary: () => providerApi.get('/ambulance/financial-summary')
 };
 
 export const caregiverApi = {
