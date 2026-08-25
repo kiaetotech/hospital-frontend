@@ -107,8 +107,6 @@ const AmbulanceDashboard = () => {
           break;
         case 'profile':
           const pRes = await ambulanceApi.getProfile();
-        case 'profile':
-          const pRes = await ambulanceApi.getProfile();
           const p = pRes.data?.data || {};
           setProfile(p);
           setProfileForm({
