@@ -24,6 +24,7 @@ const AmbulanceDashboard = () => {
   const [toast, setToast] = useState('');
   const [isAvailable, setIsAvailable] = useState(false);
   const [financialSummary, setFinancialSummary] = useState(null);
+  const [activeTrips, setActiveTrips] = useState([]);
   const [financialPeriod, setFinancialPeriod] = useState('total');
   const [newVehicle, setNewVehicle] = useState({
     vehicleNumber: '', type: 'basic', model: '', year: '',
@@ -100,6 +101,12 @@ const AmbulanceDashboard = () => {
           const fRes = await ambulanceApi.getFinancialSummary({ period: financialPeriod });
           setFinancialSummary(fRes.data?.data || {});
           break;
+	        case 'tracking':
+          const tRes = await ambulanceApi.getActiveTrips();
+          setActiveTrips(tRes.data?.data || []);
+          break;
+        case 'profile':
+          const pRes = await ambulanceApi.getProfile();
         case 'profile':
           const pRes = await ambulanceApi.getProfile();
           const p = pRes.data?.data || {};
@@ -121,6 +128,15 @@ const AmbulanceDashboard = () => {
       if (error.response?.status === 401) { localStorage.clear(); navigate('/ambulance/login'); }
     } finally { setLoading(false); }
   };
+
+   const loadActiveTrips = async () => {
+  try {
+    const res = await ambulanceApi.getActiveTrips();
+    setActiveTrips(res.data?.data || []);
+  } catch (err) {
+    console.error('Failed to load active trips:', err);
+  }
+};
 
   const showToast = (msg) => {
     setToast(msg);
@@ -467,34 +483,34 @@ const AmbulanceDashboard = () => {
       );
 
       case 'tracking': return (
-        <div>
-          <h2 style={{fontSize:'1.25rem',fontWeight:'bold',marginBottom:'1.5rem'}}>📍 Live Tracking</h2>
-          <div style={cardStyle}>
-            <p style={{color:'#6b7280',marginBottom:'1rem'}}>Real-time GPS tracking for active trips. Drivers update location via the Driver App.</p>
-            <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'8px',padding:'16px',marginBottom:'12px'}}>
-              <h4 style={{fontWeight:'bold',marginBottom:'8px'}}>📱 Driver App Links</h4>
-              <div style={{display:'flex',gap:'12px'}}>
-                <a href="/ambulance/driver-app" style={{...S.btn,background:'#2563eb',color:'white',textDecoration:'none',display:'inline-block'}}>🌐 Web App</a>
-                <span style={{...S.btn,background:'#6b7280',color:'white'}}>📱 Android (Coming soon)</span>
-                <span style={{...S.btn,background:'#6b7280',color:'white'}}>🍎 iOS (Coming soon)</span>
-              </div>
-            </div>
-            {bookings.filter(b=>b.status==='en_route'||b.status==='in_progress').length === 0 ? (
-              <p style={{textAlign:'center',padding:'2rem',color:'#6b7280'}}>No active trips being tracked</p>
-            ) : (
-              bookings.filter(b=>b.status==='en_route'||b.status==='in_progress').map((b,i)=>(
-                <div key={i} style={{background:'#f9fafb',padding:'12px',borderRadius:'8px',marginBottom:'8px'}}>
-                  <div style={{display:'flex',justifyContent:'space-between'}}>
-                    <span><strong>{b.vehicleNumber}</strong> - {b.driverName}</span>
-                    <span style={{color:'#10b981',fontWeight:'bold'}}>● Live</span>
-                  </div>
-                  <div style={{fontSize:'13px',color:'#6b7280'}}>📍 {b.currentLocation || 'Tracking...'} → 🏥 {b.dropLocation}</div>
-                </div>
-              ))
-            )}
+  <div>
+    <h2 style={{fontSize:'1.25rem',fontWeight:'bold',marginBottom:'1rem'}}>📍 Live Tracking</h2>
+    <button onClick={loadActiveTrips} style={{padding:'8px 16px',background:'#2563eb',color:'white',border:'none',borderRadius:'6px',cursor:'pointer',marginBottom:'1rem'}}>🔄 Refresh</button>
+    {activeTrips.length === 0 ? (
+      <p style={{textAlign:'center',padding:'2rem',color:'#6b7280'}}>No active trips</p>
+    ) : (
+      activeTrips.map((trip, i) => (
+        <div key={i} style={{background:'#f9fafb',padding:'12px',borderRadius:'8px',marginBottom:'8px'}}>
+          <div style={{display:'flex',justifyContent:'space-between'}}>
+            <span><strong>{trip.vehicleNumber}</strong> - {trip.driverName}</span>
+            <span style={{color: trip.location ? '#10b981' : '#ef4444',fontWeight:'bold'}}>
+              {trip.location ? '● Live' : '○ Offline'}
+            </span>
           </div>
+          <div style={{fontSize:'13px',color:'#6b7280'}}>
+            Patient: {trip.patientName} | Status: {trip.status}
+          </div>
+          {trip.location && (
+            <div style={{fontSize:'12px',color:'#4caf50'}}>
+              📍 {trip.location.lat.toFixed(5)}, {trip.location.lng.toFixed(5)}
+              <br/>Updated: {new Date(trip.lastUpdate).toLocaleTimeString()}
+            </div>
+          )}
         </div>
-      );
+      ))
+    )}
+  </div>
+);
 
       case 'corporate': return (
         <div><h2 style={{fontWeight:700,fontSize:'1.2rem',marginBottom:8}}>🏢 Corporate Plans</h2><p style={{color:'#64748b',marginBottom:16}}>Offer corporate ambulance retainers.</p><CorporatePlansTab providerType="ambulance" providerId={providerId} token={token} /></div>
