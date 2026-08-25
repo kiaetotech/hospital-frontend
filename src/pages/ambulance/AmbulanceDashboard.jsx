@@ -74,6 +74,14 @@ const AmbulanceDashboard = () => {
   ];
 
   useEffect(() => { loadData(); }, [activeTab, financialPeriod]);
+	
+  useEffect(() => {
+    if (activeTab === 'tracking') {
+      loadActiveTrips();
+      const interval = setInterval(loadActiveTrips, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
 
   const loadData = async () => {
     setLoading(true);
