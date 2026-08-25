@@ -373,8 +373,8 @@ const handleDeclineScheduled = async () => {
   const completeTrip = async () => {
     try {
       await ambulanceTripComplete(currentTrip.bookingId, {
-        distance: currentTrip?.distance || 5,
-        duration: currentTrip?.duration || 15,
+        distance: currentTrip?.distance || 0,
+        duration: currentTrip?.duration || 0,
         vitals,
         notes: tripNotes
       });
