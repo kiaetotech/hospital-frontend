@@ -274,8 +274,15 @@ const DriverApp = () => {
           }
         },
         (error) => {
-          console.error('GPS error:', error.message);
-        },
+  console.error('GPS error:', error.message);
+  if (error.code === error.PERMISSION_DENIED) {
+    alert('Location permission denied. Please enable GPS/location access.');
+  } else if (error.code === error.TIMEOUT) {
+    alert('GPS signal not found. Move to an open area and try again.');
+  } else {
+    alert('Unable to get GPS location. Please check your device settings.');
+  }
+}
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
       );
     };
