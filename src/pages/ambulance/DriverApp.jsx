@@ -680,7 +680,7 @@ const handleDeclineScheduled = async () => {
   <div style={styles.tripCard}>
     <button onClick={async () => {
       try {
-        await api.post(`/ambulance/complete-scheduled/${activeScheduledTrip.bookingId}`, { distance: 5, duration: 15 });
+        await api.post(`/ambulance/complete-scheduled/${activeScheduledTrip.bookingId}`, { distance: 0, duration: 0 });
         setStep('completed');
         setTimeout(() => {
           setActiveScheduledTrip(null);
