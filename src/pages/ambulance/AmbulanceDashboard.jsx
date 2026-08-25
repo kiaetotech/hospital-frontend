@@ -24,6 +24,7 @@ const AmbulanceDashboard = () => {
   const [toast, setToast] = useState('');
   const [isAvailable, setIsAvailable] = useState(false);
   const [financialSummary, setFinancialSummary] = useState(null);
+  const [financialPeriod, setFinancialPeriod] = useState('total');
   const [newVehicle, setNewVehicle] = useState({
     vehicleNumber: '', type: 'basic', model: '', year: '',
     equipment: [], baseFare: '', perKmRate: '', nightCharge: '', waitingCharge: '',
@@ -71,7 +72,7 @@ const AmbulanceDashboard = () => {
     { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
   ];
 
-  useEffect(() => { loadData(); }, [activeTab]);
+  useEffect(() => { loadData(); }, [activeTab, financialPeriod]);
 
   const loadData = async () => {
     setLoading(true);
@@ -96,7 +97,7 @@ const AmbulanceDashboard = () => {
           setDrivers(Array.isArray(dRes.data?.data) ? dRes.data.data : []);
           break;
 	case 'financials':
-          const fRes = await ambulanceApi.getFinancialSummary();
+          const fRes = await ambulanceApi.getFinancialSummary({ period: financialPeriod });
           setFinancialSummary(fRes.data?.data || {});
           break;
         case 'profile':
@@ -501,7 +502,17 @@ const AmbulanceDashboard = () => {
 
 	case 'financials': return (
   <div>
-    <h2 style={{fontSize:'1.25rem',fontWeight:'bold',marginBottom:'1.5rem'}}>💰 Financial Summary</h2>
+    <h2 style={{fontSize:'1.25rem',fontWeight:'bold',marginBottom:'1rem'}}>💰 Financial Summary</h2>
+    <div style={{display:'flex',gap:'8px',marginBottom:'1rem'}}>
+      {['today','week','month','total'].map(p => (
+        <button key={p} onClick={() => setFinancialPeriod(p)} style={{
+          padding:'8px 16px',borderRadius:'20px',cursor:'pointer',border:'none',
+          background: financialPeriod === p ? '#2563eb' : '#e5e7eb',
+          color: financialPeriod === p ? 'white' : '#4b5563',
+          fontWeight:'bold'
+        }}>{p === 'total' ? 'Total' : p.charAt(0).toUpperCase() + p.slice(1)}</button>
+      ))}
+    </div>
     {financialSummary?.overall && (
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'1rem',marginBottom:'1.5rem'}}>
         <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#2563eb'}}>₹{financialSummary.overall.totalRevenue||0}</div><div style={{color:'#6b7280'}}>Total Revenue</div></div>
