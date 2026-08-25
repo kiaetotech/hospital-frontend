@@ -282,7 +282,7 @@ const DriverApp = () => {
   } else {
     alert('Unable to get GPS location. Please check your device settings.');
   }
-}
+},
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
       );
     };
