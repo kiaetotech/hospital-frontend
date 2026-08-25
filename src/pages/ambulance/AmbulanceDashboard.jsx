@@ -95,6 +95,10 @@ const AmbulanceDashboard = () => {
           const dRes = await ambulanceApi.getDrivers();
           setDrivers(Array.isArray(dRes.data?.data) ? dRes.data.data : []);
           break;
+	case 'financials':
+          const fRes = await ambulanceApi.getFinancialSummary();
+          setFinancialSummary(fRes.data?.data || {});
+          break;
         case 'profile':
           const pRes = await ambulanceApi.getProfile();
           const p = pRes.data?.data || {};
@@ -495,10 +499,6 @@ const AmbulanceDashboard = () => {
         <div><h2 style={{fontWeight:700,fontSize:'1.2rem',marginBottom:8}}>🏢 Corporate Plans</h2><p style={{color:'#64748b',marginBottom:16}}>Offer corporate ambulance retainers.</p><CorporatePlansTab providerType="ambulance" providerId={providerId} token={token} /></div>
       );
 
-	case 'financials':
-  const fRes = await ambulanceApi.getFinancialSummary();
-  setFinancialSummary(fRes.data?.data || {});
-  break;
 	case 'financials': return (
   <div>
     <h2 style={{fontSize:'1.25rem',fontWeight:'bold',marginBottom:'1.5rem'}}>💰 Financial Summary</h2>
