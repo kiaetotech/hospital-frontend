@@ -513,10 +513,13 @@ const AmbulanceDashboard = () => {
         }}>{p === 'total' ? 'Total' : p.charAt(0).toUpperCase() + p.slice(1)}</button>
       ))}
     </div>
-    {financialSummary?.overall && (
+        {financialSummary?.overall && (
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'1rem',marginBottom:'1.5rem'}}>
-        <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#2563eb'}}>₹{financialSummary.overall.totalRevenue||0}</div><div style={{color:'#6b7280'}}>Total Revenue</div></div>
+        <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#2563eb'}}>₹{financialSummary.overall.grossRevenue||0}</div><div style={{color:'#6b7280'}}>Gross Revenue</div></div>
+        <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#ef4444'}}>₹{financialSummary.overall.totalCommission||0}</div><div style={{color:'#6b7280'}}>Commission</div></div>
         <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#10b981'}}>₹{financialSummary.overall.netEarnings||0}</div><div style={{color:'#6b7280'}}>Net Earnings</div></div>
+        <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#f59e0b'}}>₹{financialSummary.overall.totalRefunds||0}</div><div style={{color:'#6b7280'}}>Refunds</div></div>
+        <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#8b5cf6'}}>₹{financialSummary.overall.totalCancellationFees||0}</div><div style={{color:'#6b7280'}}>Cancellation Fees</div></div>
         <div style={{...cardStyle,textAlign:'center'}}><div style={{fontSize:'1.5rem',fontWeight:'bold',color:'#f59e0b'}}>₹{financialSummary.pendingSettlement||0}</div><div style={{color:'#6b7280'}}>Pending Settlement</div></div>
       </div>
     )}
