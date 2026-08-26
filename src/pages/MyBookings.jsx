@@ -29,6 +29,8 @@ const MyBookings = () => {
     cleanlinessRating: 5,
     waitTimeRating: 5
   });
+const [showComplaintModal, setShowComplaintModal] = useState(false);
+const [complaintData, setComplaintData] = useState({ category: 'other', description: '', priority: 'medium' });
   const [reviewLoading, setReviewLoading] = useState(false);
   
   const [actionMessage, setActionMessage] = useState('');
@@ -559,6 +561,17 @@ const MyBookings = () => {
                         ❌ Cancel Booking
                       </button>
                     )}
+			{booking.status === 'completed' && (
+  <button
+    onClick={() => {
+      setSelectedBooking(booking);
+      setShowComplaintModal(true);
+    }}
+    style={{ padding: '6px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+  >
+    🚨 Report Issue
+  </button>
+)}
                     {isReviewable && (
                       <button
                         onClick={() => handleOpenReview(booking)}
@@ -640,6 +653,76 @@ const MyBookings = () => {
           </div>
         </div>
       )}
+
+	{showComplaintModal && selectedBooking && (
+  <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1005, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%' }}>
+      <h3 style={{ marginBottom: '10px' }}>🚨 Report Issue</h3>
+      <select 
+        value={complaintData.category} 
+        onChange={e => setComplaintData({...complaintData, category: e.target.value})} 
+        style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+      >
+        <option value="driver_behaviour">Driver Behaviour</option>
+        <option value="vehicle_condition">Vehicle Condition</option>
+        <option value="late_arrival">Late Arrival</option>
+        <option value="wrong_fare">Wrong Fare</option>
+        <option value="overcharging">Overcharging</option>
+        <option value="medical_assistance">Medical Assistance Issue</option>
+        <option value="unsafe_driving">Unsafe Driving</option>
+        <option value="equipment_problem">Equipment Problem</option>
+        <option value="other">Other</option>
+      </select>
+      <textarea 
+        value={complaintData.description} 
+        onChange={e => setComplaintData({...complaintData, description: e.target.value})} 
+        placeholder="Describe the issue..." 
+        rows="4" 
+        style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+      />
+      <select 
+        value={complaintData.priority} 
+        onChange={e => setComplaintData({...complaintData, priority: e.target.value})} 
+        style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+      >
+        <option value="low">Low Priority</option>
+        <option value="medium">Medium Priority</option>
+        <option value="high">High Priority</option>
+        <option value="critical">Critical</option>
+      </select>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button 
+          onClick={() => setShowComplaintModal(false)} 
+          style={{ flex: 1, padding: '10px', background: '#f3f4f6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+        >
+          Cancel
+        </button>
+        <button 
+          onClick={async () => {
+            try {
+              const token = localStorage.getItem('token');
+              const res = await axios.post(
+                'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/complaints',
+                { bookingId: selectedBooking.bookingId, ...complaintData },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              if (res.data.success) {
+                setActionMessage('✅ Complaint submitted successfully');
+              }
+              setShowComplaintModal(false);
+            } catch (error) {
+              alert(error.response?.data?.message || 'Failed to submit complaint');
+            }
+          }} 
+          style={{ flex: 1, padding: '10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+        >
+          Submit Complaint
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* 🆕 Review Modal */}
       {showReviewModal && selectedBooking && (
