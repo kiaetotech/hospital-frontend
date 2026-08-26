@@ -117,20 +117,27 @@ const Ambulance = () => {
   
   let filtered = [...nearbyAmbulances];
   
-  if (filterValue === 'top_rated') {
+  if (filterValue === 'rated' || filterValue === 'top_rated') {
     filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
   } else if (filterValue === 'nearby') {
     filtered.sort((a, b) => (a.distance || 999) - (b.distance || 999));
   } else if (filterValue === 'specialty') {
-    filtered = filtered.filter(a => a.vehicleType === selectedType);
+    const uniqueTypes = [...new Set(filtered.map(a => a.vehicleType || a.type))];
+    filtered = uniqueTypes.map(type => 
+      filtered.find(a => (a.vehicleType || a.type) === type)
+    ).filter(Boolean);
   } else if (filterValue === 'city') {
-    if (selectedCity) {
-      filtered = filtered.filter(a => 
-        a.city?.toLowerCase() === selectedCity.toLowerCase()
+    if (searchQuery) {
+      const cityQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(a =>
+        (a.city || a.providerCity || '').toLowerCase().includes(cityQuery)
       );
     }
+  } else if (filterValue === 'name') {
+    filtered.sort((a, b) => 
+      String(a.providerName || a.name || '').localeCompare(String(b.providerName || b.name || ''))
+    );
   }
-  // 'name' — default, no sorting
   
   setNearbyAmbulances(filtered);
 };
@@ -851,7 +858,7 @@ const Ambulance = () => {
         </div>
       </div>
 
-            {/* ======================================================
+                  {/* ======================================================
           SEARCH
       ====================================================== */}
 
@@ -871,15 +878,18 @@ const Ambulance = () => {
             marginBottom: '10px'
           }}
         >
-          <select
-            value={selectedCity}
+          <input
+            type="text"
+            placeholder="🔍 Search your city (e.g., Mumbai, Delhi, Nagpur)"
+            value={manualCity}
             onChange={(e) => {
-  const city = e.target.value;
-  setSelectedCity(city);
-  if (city) {
-    handleCitySearch(city);
-  }
-}}
+              const value = e.target.value;
+              setManualCity(value);
+              setSelectedCity(value);
+              if (value.length >= 2) {
+                handleCitySearch(value);
+              }
+            }}
             style={{
               flex: 1,
               padding: '12px',
@@ -889,15 +899,55 @@ const Ambulance = () => {
               outline: 'none',
               backgroundColor: '#fff'
             }}
+          />
+          <button
+            onClick={() => handleCitySearch(manualCity)}
+            style={{
+              padding: '12px 16px',
+              backgroundColor: '#e53935',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '10px',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
           >
-            <option value="">Select City</option>
-            {cities.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+            Search
+          </button>
         </div>
 
-                <div
+        {cities.length > 0 && manualCity.length >= 2 && (
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {cities
+                .filter(c => c.toLowerCase().includes(manualCity.toLowerCase()))
+                .map(c => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      setManualCity(c);
+                      setSelectedCity(c);
+                      handleCitySearch(c);
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: '#f0fdf4',
+                      border: '1px solid #bbf7d0',
+                      borderRadius: '16px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      color: '#166534'
+                    }}
+                  >
+                    📍 {c}
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+
+        <div
           style={{
             display: 'flex',
             gap: '8px',
