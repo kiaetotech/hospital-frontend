@@ -113,21 +113,36 @@ const Ambulance = () => {
   };
 
     const handleCitySearch = async () => {
-    const city = manualCity.trim();
-    if (!city) {
-      setNearbyError('Please enter a city.');
-      return;
+  const city = manualCity.trim();
+  if (!city) {
+    setNearbyError('Please enter a city.');
+    return;
+  }
+  setSearchFilter('city');
+  setSearchQuery(city);
+  setSearchMessage(`Searching ambulances in ${city}...`);
+  setLoadingNearby(true);
+  
+  try {
+    const response = await api.get('/ambulance/search', {
+      params: { city, limit: 50 }
+    });
+    
+    const data = response?.data?.data;
+    if (Array.isArray(data) && data.length > 0) {
+      setNearbyAmbulances(data);
+      setNearbyError('');
+      setSearchMessage(`${data.length} ambulances found in ${city}`);
+    } else {
+      setNearbyAmbulances([]);
+      setNearbyError(`No ambulances found in ${city}`);
     }
-
-    setSearchFilter('city');
-    setSearchQuery(city);
-    setSearchMessage(`Searching ambulances for ${city}...`);
-
-    const lat = location?.lat || patientProfile?.patientLocation?.lat || 21.1458;
-    const lng = location?.lng || patientProfile?.patientLocation?.lng || 79.0882;
-    setLocation({ lat, lng });
-    await fetchNearbyAmbulances(lat, lng, { radius: 500, search: true });
-  };
+  } catch (err) {
+    setNearbyError('Search failed. Please try again.');
+  } finally {
+    setLoadingNearby(false);
+  }
+};
 
 	  const toggleCompare = (ambulance) => {
     setCompareList(prev => {
@@ -288,7 +303,7 @@ const Ambulance = () => {
       const params = {
         lat: Number(lat),
         lng: Number(lng),
-        radius: Number(options.radius || 500),
+        radius: Number(options.radius || 25),
         limit: 50
       };
 
