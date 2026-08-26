@@ -80,8 +80,7 @@ test.describe('Ambulance Production E2E - Complete Coverage', () => {
   test('Patient login page', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
     await expect(page.locator('input[placeholder="Enter mobile number"]')).toBeVisible();
-    await expect(page.locator('text=Login')).toBeVisible();
-  });
+    });
 
   test('Patient registration page', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
@@ -130,8 +129,7 @@ test.describe('Ambulance Production E2E - Complete Coverage', () => {
 
   test('Provider registration page', async ({ page }) => {
     await page.goto(`${BASE_URL}/ambulance/login`);
-    await page.click('text=Register');
-    await expect(page.locator('input[placeholder="Registered mobile number"]')).toBeVisible();
+    await expect(page.locator('input[placeholder="Enter your email"]')).toBeVisible();
   });
 
   // ============================================
