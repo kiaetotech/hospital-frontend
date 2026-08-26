@@ -406,7 +406,10 @@ const Ambulance = () => {
   // ============================================================
 
   const filteredAmbulances = useMemo(() => {
-    let result = [...nearbyAmbulances];
+    const uniqueAmbulances = [...new Map(
+      nearbyAmbulances.map(item => [item.vehicleId || item.vehicleNumber || item._id, item])
+    ).values()];
+    let result = [...uniqueAmbulances];
 
     // Top rated
     if (searchFilter === 'rated') {
