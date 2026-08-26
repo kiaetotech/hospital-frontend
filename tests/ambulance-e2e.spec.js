@@ -28,10 +28,9 @@ test.describe('Ambulance E2E Tests', () => {
   });
 
   test('Patient login page loads', async ({ page }) => {
-    await page.goto(`${BASE_URL}/login`);
-    await expect(page.locator('input[placeholder="Enter email"]')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('input[placeholder="Enter password"]')).toBeVisible({ timeout: 10000 });
-  });
+  await page.goto(`${BASE_URL}/login`);
+  await expect(page.locator('input[placeholder="Enter mobile number"]')).toBeVisible({ timeout: 10000 });
+});
 
   test('Scheduled booking form loads', async ({ page }) => {
     await page.goto(`${BASE_URL}/ambulance`);
