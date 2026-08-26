@@ -135,6 +135,17 @@ const AmbulanceDashboard = () => {
     } finally { setLoading(false); }
   };
 
+	const requestSettlement = async () => {
+  try {
+    const res = await ambulanceApi.requestSettlement();
+    if (res.data?.success) {
+      showToast('Settlement requested: ₹' + res.data.data.amount);
+    }
+  } catch (err) {
+    showToast('Settlement request failed');
+  }
+};
+
    const loadActiveTrips = async () => {
   try {
     const res = await ambulanceApi.getActiveTrips();
@@ -525,6 +536,9 @@ const AmbulanceDashboard = () => {
 	case 'financials': return (
   <div>
     <h2 style={{fontSize:'1.25rem',fontWeight:'bold',marginBottom:'1rem'}}>💰 Financial Summary</h2>
+    <button onClick={requestSettlement} style={{padding:'10px 20px',background:'#10b981',color:'white',border:'none',borderRadius:'8px',cursor:'pointer',fontWeight:'bold',marginBottom:'1rem'}}>
+      💰 Request Settlement
+    </button>
     <div style={{display:'flex',gap:'8px',marginBottom:'1rem'}}>
       {['today','week','month','total'].map(p => (
         <button key={p} onClick={() => setFinancialPeriod(p)} style={{

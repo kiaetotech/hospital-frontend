@@ -104,6 +104,7 @@ export const ambulanceApi = {
   getReports: (params) => providerApi.get('/ambulance/reports', { params }),
   getStats: () => providerApi.get('/ambulance/stats'),
   getFinancialSummary: (params) => providerApi.get('/ambulance/financial-summary', { params }),
+  requestSettlement: () => providerApi.post('/ambulance/settlements/request'),
   getActiveTrips: () => providerApi.get('/ambulance/active-trips'),
 };
 
