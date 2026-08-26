@@ -37,6 +37,14 @@ const Ambulance = () => {
   const [showCompare, setShowCompare] = useState(false);
   const [sortBy, setSortBy] = useState('nearest');
 
+const filterOptions = [
+  { value: 'name', label: '🔤 Name' },
+  { value: 'nearby', label: '📍 Nearby' },
+  { value: 'top_rated', label: '⭐ Top Rated' },
+  { value: 'specialty', label: '🚑 Specialty' },
+  { value: 'city', label: '🏙️ City' }
+];
+
   // ============================================================
   // LOAD USER + LOCATION
   // ============================================================
@@ -112,8 +120,31 @@ const Ambulance = () => {
     } catch (err) {}
   };
 
-    const handleCitySearch = async () => {
-  const city = manualCity.trim();
+	const handleFilterClick = (filterValue) => {
+  setSearchFilter(filterValue);
+  
+  let filtered = [...nearbyAmbulances];
+  
+  if (filterValue === 'top_rated') {
+    filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  } else if (filterValue === 'nearby') {
+    filtered.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+  } else if (filterValue === 'specialty') {
+    filtered = filtered.filter(a => a.vehicleType === selectedType);
+  } else if (filterValue === 'city') {
+    if (selectedCity) {
+      filtered = filtered.filter(a => 
+        a.city?.toLowerCase() === selectedCity.toLowerCase()
+      );
+    }
+  }
+  // 'name' — default, no sorting
+  
+  setNearbyAmbulances(filtered);
+};
+
+    const handleCitySearch = async (cityParam) => {
+  const city = (cityParam || manualCity).trim();
   if (!city) {
     setNearbyError('Please enter a city.');
     return;
@@ -315,7 +346,8 @@ const Ambulance = () => {
       const data = response?.data?.data;
 
       if (Array.isArray(data)) {
-        setNearbyAmbulances(data);
+  const uniqueData = [...new Map(data.map(item => [item.vehicleId || item.vehicleNumber, item])).values()];
+  setNearbyAmbulances(uniqueData);
         setSearchMessage(
           data.length
             ? `${data.length} ambulance${data.length === 1 ? '' : 's'} found.`
@@ -868,15 +900,12 @@ const Ambulance = () => {
           <select
             value={selectedCity}
             onChange={(e) => {
-              setSelectedCity(e.target.value);
-              if (e.target.value) {
-                fetchNearbyAmbulances(
-                  location?.lat || 21.1458,
-                  location?.lng || 79.0882,
-                  { radius: 500, search: true, city: e.target.value }
-                );
-              }
-            }}
+  const city = e.target.value;
+  setSelectedCity(city);
+  if (city) {
+    handleCitySearch(city);
+  }
+}}
             style={{
               flex: 1,
               padding: '12px',
