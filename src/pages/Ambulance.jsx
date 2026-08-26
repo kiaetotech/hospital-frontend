@@ -37,14 +37,6 @@ const Ambulance = () => {
   const [showCompare, setShowCompare] = useState(false);
   const [sortBy, setSortBy] = useState('nearest');
 
-const filterOptions = [
-  { value: 'name', label: '🔤 Name' },
-  { value: 'nearby', label: '📍 Nearby' },
-  { value: 'top_rated', label: '⭐ Top Rated' },
-  { value: 'specialty', label: '🚑 Specialty' },
-  { value: 'city', label: '🏙️ City' }
-];
-
   // ============================================================
   // LOAD USER + LOCATION
   // ============================================================
