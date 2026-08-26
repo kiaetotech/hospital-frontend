@@ -533,27 +533,6 @@ const Ambulance = () => {
   };
 
   // ============================================================
-  // FILTER CLICK
-  // ============================================================
-
-    const handleFilterClick = async (filter) => {
-    setSearchFilter(filter);
-    setSearchQuery('');
-
-    const lat = location?.lat || patientProfile?.patientLocation?.lat || 21.1458;
-    const lng = location?.lng || patientProfile?.patientLocation?.lng || 79.0882;
-
-    const options = { radius: 500, search: true };
-    
-    if (filter === 'specialty' && selectedType) {
-      options.vehicleType = selectedType;
-      setSearchQuery(selectedType);
-    }
-    
-    await fetchNearbyAmbulances(lat, lng, options);
-  };
-
-  // ============================================================
   // BOOK SELECTED TYPE
   // ============================================================
 
