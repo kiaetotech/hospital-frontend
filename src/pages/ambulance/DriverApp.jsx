@@ -261,7 +261,7 @@ const DriverApp = () => {
             isAvailable: isOnlineRef.current,
             isOnTrip: Boolean(currentTripRef.current),
             tripId: currentTripRef.current?.bookingId || '',
-            vehicleId: dashboard?.vehicleId || '',
+            vehicleId: sessionStorage.getItem('driverId') || dashboard?.vehicleId || '',
             vehicleNumber: dashboard?.vehicleNumber || '',
             vehicleType: dashboard?.vehicleType || 'basic'
           };
