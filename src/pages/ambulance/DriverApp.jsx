@@ -149,7 +149,7 @@ const DriverApp = () => {
       if (driverId) {
         socket.emit('driver:register', {
           driverId,
-          vehicleId: dashboard?.vehicleId || '',
+          vehicleId: sessionStorage.getItem('driverId') || '',
           vehicleNumber: dashboard?.vehicleNumber || '',
           vehicleType: dashboard?.vehicleType || 'basic'
         });
