@@ -338,8 +338,8 @@ const Ambulance = () => {
       };
 
          if (options.vehicleType) {
-        params.type = String(options.vehicleType).toLowerCase();
-      }
+  params.vehicleType = String(options.vehicleType).toLowerCase();
+}
 
       const response = await getNearbyAmbulances(params);
       const data = response?.data?.data;
