@@ -41,7 +41,7 @@ const Ambulance = () => {
   // LOAD USER + LOCATION
   // ============================================================
 
-	    useEffect(() => {
+useEffect(() => {
     api.get('/ambulance/cities')
       .then(res => {
         setCities(res.data?.data || []);
@@ -100,6 +100,19 @@ const Ambulance = () => {
         state: profile.patientAddress?.state || '',
         pincode: profile.patientAddress?.pincode || ''
       });
+
+      // Auto-search using profile location
+      if (profile.patientLocation?.lat) {
+        const lat = profile.patientLocation.lat;
+        const lng = profile.patientLocation.lng;
+        setLocation({ lat, lng });
+        fetchNearbyAmbulances(lat, lng, { radius: 25 });
+      }
+
+      // Also try GPS
+      getLocation();
+    } catch (err) {}
+  };
 
       // ============================================================
       // SAVE PATIENT PROFILE LOCATION AS FALLBACK
@@ -1364,7 +1377,7 @@ if (location?.lat && location?.lng) {
     radius: 25,
     search: true,
     vehicleType: type.value
-  });
+  });getLocation();
 } else if (selectedCity) {
   const res = await api.get('/ambulance/search', {
     params: { city: selectedCity, vehicleType: type.value, limit: 50 }
