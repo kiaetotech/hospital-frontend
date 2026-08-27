@@ -41,23 +41,28 @@ const Ambulance = () => {
   // LOAD USER + LOCATION
   // ============================================================
 
-	  useEffect(() => {
+	    useEffect(() => {
     api.get('/ambulance/cities')
       .then(res => {
         setCities(res.data?.data || []);
+
         const savedCity = patientProfile?.patientAddress?.city;
-        if (savedCity) setSelectedCity(savedCity);
+
+        if (savedCity) {
+          setSelectedCity(savedCity);
+        }
       })
       .catch(() => {});
   }, [patientProfile]);
 
-            useEffect(() => {
+    useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
     if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);
+
         if (parsedUser.role === 'patient') {
           setUser(parsedUser);
           fetchPatientProfile();
@@ -66,31 +71,74 @@ const Ambulance = () => {
           localStorage.clear();
         }
       } catch (error) {
-        console.error('Unable to read saved user:', error);
+        console.error(
+          'Unable to read saved user:',
+          error
+        );
       }
     }
-
-    getLocation();
   }, []);
 
-	  const fetchPatientProfile = async () => {
+  const fetchPatientProfile = async () => {
     try {
       const res = await getPatientProfile();
-      if (res.data?.data) {
-        setPatientProfile(res.data.data);
-        setProfileForm({
-          city: res.data.data.patientAddress?.city || '',
-          line1: res.data.data.patientAddress?.line1 || '',
-          state: res.data.data.patientAddress?.state || '',
-          pincode: res.data.data.patientAddress?.pincode || ''
-        });
-        if (!location && res.data.data.patientLocation?.lat) {
-          const loc = { lat: res.data.data.patientLocation.lat, lng: res.data.data.patientLocation.lng };
-          setLocation(loc);
-          fetchNearbyAmbulances(loc.lat, loc.lng);
-        }
+
+      if (!res.data?.data) {
+        // No patient profile available.
+        // Use current GPS.
+        getLocation();
+        return;
       }
-    } catch (err) {}
+
+      const profile = res.data.data;
+
+      setPatientProfile(profile);
+
+      setProfileForm({
+        city: profile.patientAddress?.city || '',
+        line1: profile.patientAddress?.line1 || '',
+        state: profile.patientAddress?.state || '',
+        pincode: profile.patientAddress?.pincode || ''
+      });
+
+      // ============================================================
+      // SAVE PATIENT PROFILE LOCATION AS FALLBACK
+      // ============================================================
+      const patientLat = Number(
+        profile.patientLocation?.lat
+      );
+
+      const patientLng = Number(
+        profile.patientLocation?.lng
+      );
+
+      if (
+        Number.isFinite(patientLat) &&
+        Number.isFinite(patientLng)
+      ) {
+        setLocation({
+          lat: patientLat,
+          lng: patientLng
+        });
+      }
+
+      // ============================================================
+      // GPS-FIRST
+      // Always try fresh current location for ambulance search.
+      // Saved patient location remains available as fallback.
+      // ============================================================
+      getLocation();
+
+    } catch (err) {
+      console.error(
+        'Failed to load patient profile:',
+        err
+      );
+
+      // Profile request failed.
+      // Try fresh GPS.
+      getLocation();
+    }
   };
 
   const saveProfile = async () => {
@@ -271,7 +319,9 @@ const Ambulance = () => {
 
   const getLocation = () => {
     if (!navigator.geolocation) {
-      setNearbyError('Location services are not supported by this browser.');
+      setNearbyError(
+        'Location services are not supported by this browser.'
+      );
       return;
     }
 
@@ -279,17 +329,51 @@ const Ambulance = () => {
     setNearbyError('');
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+      async (position) => {
+        try {
+          const lat = Number(position.coords.latitude);
+          const lng = Number(position.coords.longitude);
 
-        const currentLocation = { lat, lng };
+          if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng)
+          ) {
+            throw new Error('Invalid GPS coordinates');
+          }
 
-        setLocation(currentLocation);
-        fetchNearbyAmbulances(lat, lng);
+          const currentLocation = {
+            lat,
+            lng
+          };
+
+          setLocation(currentLocation);
+
+          // Current GPS is used only as the fallback
+          // when a saved patient pickup location is unavailable.
+          await fetchNearbyAmbulances(
+            lat,
+            lng
+          );
+
+        } catch (error) {
+          console.error(
+            'GPS location processing error:',
+            error
+          );
+
+          setNearbyError(
+            'Unable to use your current location. Please try again.'
+          );
+        } finally {
+          setLoadingNearby(false);
+        }
       },
-            (error) => {
-        console.error('Location error:', error);
+
+      (error) => {
+        console.error(
+          'Location error:',
+          error
+        );
 
         setLoadingNearby(false);
         setUseManualLocation(true);
@@ -298,12 +382,21 @@ const Ambulance = () => {
           setNearbyError(
             'Location permission denied. Enter your city below to find ambulances.'
           );
+        } else if (error.code === 2) {
+          setNearbyError(
+            'Your location could not be determined. Please try again or enter your city.'
+          );
+        } else if (error.code === 3) {
+          setNearbyError(
+            'Location request timed out. Please try again.'
+          );
         } else {
           setNearbyError(
             'Unable to get your location. Enter your city below or use Emergency.'
           );
         }
       },
+
       {
         enableHighAccuracy: true,
         timeout: 10000,
