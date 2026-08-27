@@ -188,6 +188,13 @@ const Ambulance = () => {
   }
   
   setNearbyAmbulances(filtered);
+if (location?.lat && location?.lng) {
+  fetchNearbyAmbulances(location.lat, location.lng, { 
+    radius: 25, 
+    search: true,
+    vehicleType: filterValue === 'specialty' ? selectedType : undefined
+  });
+}
 };
 
     const handleCitySearch = async (cityParam) => {
@@ -600,7 +607,7 @@ const Ambulance = () => {
       const fallbackLat = patientProfile?.patientLocation?.lat || 21.1458;
       const fallbackLng = patientProfile?.patientLocation?.lng || 79.0882;
       setLocation({ lat: fallbackLat, lng: fallbackLng });
-      await fetchNearbyAmbulances(fallbackLat, fallbackLng, { radius: 500, search: true });
+      await fetchNearbyAmbulances(fallbackLat, fallbackLng, { radius: 25, search: true });
       return;
     }
     
@@ -1110,24 +1117,7 @@ const Ambulance = () => {
           >
             🚑 Nearby Ambulances
           </h3>
-
-          <button
-            onClick={handleRefreshNearby}
-            disabled={loadingNearby}
-            style={{
-              border: 'none',
-              background: 'transparent',
-              color: '#e53935',
-              fontWeight: 700,
-              cursor: loadingNearby
-                ? 'not-allowed'
-                : 'pointer',
-              fontSize: '12px'
-            }}
-          >
-            {loadingNearby ? 'Loading...' : '↻ Refresh'}
-          </button>
-        </div>
+      </div>
 
         {nearbyError && (
           <div
