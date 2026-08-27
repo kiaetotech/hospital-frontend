@@ -1119,24 +1119,7 @@ useEffect(() => {
             {searchMessage}
           </div>
         )}
-	        {useManualLocation && (
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-            <input
-              type="text"
-              placeholder="Enter your city"
-              value={manualCity}
-              onChange={(e) => setManualCity(e.target.value)}
-              style={{ flex: 1, padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '13px' }}
-            />
-            <button
-              onClick={handleCitySearch}
-              style={{ padding: '10px 16px', backgroundColor: '#e53935', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              Search
-            </button>
-          </div>
-        )}
-
+	        
         {loadingNearby && nearbyAmbulances.length === 0 && (
           <div
             style={{
@@ -1346,8 +1329,7 @@ useEffect(() => {
     setNearbyError('');
   }
 } else {
-  setNearbyError('Please enter your city or allow location access.');
-  setUseManualLocation(true);
+  setNearbyError('Please allow location access or search by city above.');
 }
               }}
               style={{
