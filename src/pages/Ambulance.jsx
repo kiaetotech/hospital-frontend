@@ -160,14 +160,14 @@ useEffect(() => {
     );
   }
   
-  setNearbyAmbulances(filtered);
-if (location?.lat && location?.lng) {
-  fetchNearbyAmbulances(location.lat, location.lng, { 
-    radius: 25, 
-    search: true,
-    vehicleType: filterValue === 'specialty' ? selectedType : undefined
-  });
-}
+    setNearbyAmbulances(filtered);
+  if (location?.lat && location?.lng) {
+    fetchNearbyAmbulances(location.lat, location.lng, { 
+      radius: 25, 
+      search: true,
+      vehicleType: selectedType && selectedType !== 'bls' ? selectedType : undefined
+    });
+  }
 };
 
     const handleCitySearch = async (cityParam) => {
@@ -477,7 +477,6 @@ if (location?.lat && location?.lng) {
     { value: 'name', label: 'Name' },
     { value: 'nearby', label: 'Nearby' },
     { value: 'rated', label: 'Top Rated' },
-    { value: 'specialty', label: 'Specialty' },
     { value: 'city', label: 'City' }
   ];
 
