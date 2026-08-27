@@ -114,46 +114,6 @@ useEffect(() => {
     } catch (err) {}
   };
 
-      // ============================================================
-      // SAVE PATIENT PROFILE LOCATION AS FALLBACK
-      // ============================================================
-      const patientLat = Number(
-        profile.patientLocation?.lat
-      );
-
-      const patientLng = Number(
-        profile.patientLocation?.lng
-      );
-
-      if (
-        Number.isFinite(patientLat) &&
-        Number.isFinite(patientLng)
-      ) {
-        setLocation({
-          lat: patientLat,
-          lng: patientLng
-        });
-      }
-
-      // ============================================================
-      // GPS-FIRST
-      // Always try fresh current location for ambulance search.
-      // Saved patient location remains available as fallback.
-      // ============================================================
-      getLocation();
-
-    } catch (err) {
-      console.error(
-        'Failed to load patient profile:',
-        err
-      );
-
-      // Profile request failed.
-      // Try fresh GPS.
-      getLocation();
-    }
-  };
-
   const saveProfile = async () => {
     try {
       await updatePatientProfile({ patientAddress: profileForm });
