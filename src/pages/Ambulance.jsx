@@ -1082,29 +1082,7 @@ if (location?.lat && location?.lng) {
             >
               {filter.label}
             </button>
-          ))}
-	          <button
-            onClick={() => {
-              if (location?.lat && location?.lng) {
-                fetchNearbyAmbulances(location.lat, location.lng, { radius: 25, search: true });
-              } else {
-                getLocation();
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#e53935',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '10px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              marginTop: '10px'
-            }}
-          >
-            🔍 Search Ambulances
-          </button>
+          ))}   
         </div>
       </div>
 
