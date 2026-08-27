@@ -267,11 +267,10 @@ const DriverApp = () => {
           };
 
           try {
-            await ambulanceUpdateLocation(payload);
-            socketRef.current?.emit('driver:location_update', payload);
-          } catch (err) {
-            console.error('Location update failed:', err);
-          }
+  socketRef.current?.emit('driver:location_update', payload);
+} catch (err) {
+  console.error('Location update failed:', err);
+}
         },
         (error) => {
   console.error('GPS error:', error.message);
