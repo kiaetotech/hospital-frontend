@@ -244,8 +244,8 @@ useEffect(() => {
     const handleSelectAmbulance = (ambulance) => {
     setSelectedAmbulance(ambulance);
     
-    const baseFare = Number(ambulance.baseFare || 0);
-    const perKmRate = Number(ambulance.perKmRate || 0);
+    const baseFare = Number(ambulance.pricing?.baseFare || ambulance.baseFare || 0);
+const perKmRate = Number(ambulance.pricing?.perKmRate || ambulance.perKmRate || 0);
     
     if (!baseFare || !perKmRate) {
       setNearbyError('Pricing not available for this ambulance.');
