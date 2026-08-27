@@ -1350,16 +1350,33 @@ if (location?.lat && location?.lng) {
                 setSearchFilter('specialty');
                 setSearchQuery(type.value);
 
-                if (location?.lat !== undefined && location?.lng !== undefined) {
-                  await fetchNearbyAmbulances(location.lat, location.lng, {
-                    radius: 500,
-                    search: true,
-                    vehicleType: type.value
-                  });
-                } else {
-                  setNearbyError('Please allow location access to search this ambulance type.');
-                  setUseManualLocation(true);
-                }
+                   if (location?.lat !== undefined && location?.lng !== undefined) {
+  await fetchNearbyAmbulances(location.lat, location.lng, {
+    radius: 25,
+    search: true,
+    vehicleType: type.value
+  });
+} else if (patientProfile?.patientLocation?.lat) {
+  const profileLat = patientProfile.patientLocation.lat;
+  const profileLng = patientProfile.patientLocation.lng;
+  setLocation({ lat: profileLat, lng: profileLng });
+  await fetchNearbyAmbulances(profileLat, profileLng, {
+    radius: 25,
+    search: true,
+    vehicleType: type.value
+  });
+} else if (selectedCity) {
+  const res = await api.get('/ambulance/search', {
+    params: { city: selectedCity, vehicleType: type.value, limit: 50 }
+  });
+  if (res.data?.data) {
+    setNearbyAmbulances(res.data.data);
+    setNearbyError('');
+  }
+} else {
+  setNearbyError('Please enter your city or allow location access.');
+  setUseManualLocation(true);
+}
               }}
               style={{
                 minWidth: '110px',
