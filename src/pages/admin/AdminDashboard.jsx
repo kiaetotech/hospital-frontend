@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   });
   const [recentInsuranceCompanies, setRecentInsuranceCompanies] = useState([]);
   const [pendingSettlements, setPendingSettlements] = useState([]);
+  const [ambulanceSettlements, setAmbulanceSettlements] = useState([]);
   
   const [corporateStats, setCorporateStats] = useState({
     totalPlans: 0, pending: 0, active: 0, employees: 0
@@ -367,6 +368,48 @@ const AdminDashboard = () => {
               {activityLog.map((a,i)=>(
                 <div key={i} style={{ padding:'4px 0', borderBottom:'1px solid #f8fafc', fontSize:'0.85rem', color:'#64748b' }}>🕐 {a.time} — {a.action}</div>
               ))}
+            </div>
+
+            {/* Ambulance Settlements */}
+            <div style={{ backgroundColor:'#fff', borderRadius:16, padding:'1.5rem', marginTop:'1rem' }}>
+              <h3 style={{ fontWeight:700, marginBottom:8 }}>🚑 Ambulance Settlements</h3>
+              <button 
+                onClick={async () => {
+                  try {
+                    const res = await axios.get(`${API_BASE}/admin/settlements`, cfg);
+                    setAmbulanceSettlements(res.data?.data || []);
+                  } catch (err) {}
+                }}
+                style={{ padding:'8px 14px', background:'#2563eb', color:'#fff', border:'none', borderRadius:6, cursor:'pointer', fontWeight:600, fontSize:'0.8rem', marginBottom:'10px' }}
+              >
+                Load Settlements
+              </button>
+              {ambulanceSettlements.length === 0 ? (
+                <p style={{ color:'#6b7280', textAlign:'center', padding:'1rem', fontSize:'0.85rem' }}>No settlements loaded</p>
+              ) : (
+                ambulanceSettlements.map(s => (
+                  <div key={s._id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:'1px solid #f1f5f9', fontSize:'0.85rem' }}>
+                    <span>{s.settlementId}</span>
+                    <span>₹{(s.amount || 0).toLocaleString()}</span>
+                    <span style={{ color: s.status === 'pending' ? '#f59e0b' : '#10b981', fontWeight:600 }}>{s.status}</span>
+                    {s.status === 'pending' && (
+                      <button 
+                        onClick={async () => {
+                          try {
+                            await axios.put(`${API_BASE}/admin/settlements/${s._id}/settle`, {}, cfg);
+                            alert('✅ Settlement approved');
+                            const res = await axios.get(`${API_BASE}/admin/settlements`, cfg);
+                            setAmbulanceSettlements(res.data?.data || []);
+                          } catch (err) { alert('Failed to approve'); }
+                        }}
+                        style={{ padding:'4px 10px', background:'#10b981', color:'#fff', border:'none', borderRadius:4, cursor:'pointer', fontSize:'0.75rem' }}
+                      >
+                        Approve
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </>
         )}
