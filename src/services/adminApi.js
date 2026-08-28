@@ -325,4 +325,40 @@ export const adminLenders = {
   getStats: () => lenderAdminApi.get('/stats/overview')
 };
 
+// ============================================
+// ADMIN - REPORTS (FIXED)
+// ============================================
+
+export const adminReports = {
+  getApplications: (params) => {
+    const token = localStorage.getItem('adminToken');
+    return axios.get(`${API_URL}/api/admin/applications`, {
+      headers: { 
+        'X-Admin-Key': ADMIN_KEY,
+        Authorization: `Bearer ${token}`
+      },
+      params
+    });
+  },
+  getCommission: (params) => {
+    const token = localStorage.getItem('adminToken');
+    return axios.get(`${API_URL}/api/admin/reports/commission`, {
+      headers: { 
+        'X-Admin-Key': ADMIN_KEY,
+        Authorization: `Bearer ${token}`
+      },
+      params
+    });
+  },
+  payCommission: (data) => {
+    const token = localStorage.getItem('adminToken');
+    return axios.put(`${API_URL}/api/admin/commission/pay`, data, {
+      headers: { 
+        'X-Admin-Key': ADMIN_KEY,
+        Authorization: `Bearer ${token}`
+      }
+    });
+  }
+};
+
 export default adminApi;
