@@ -1223,9 +1223,9 @@ const perKmRate = Number(ambulance.pricing?.perKmRate || ambulance.perKmRate || 
                       marginTop: '4px'
                     }}
                   >
-                    {ambulance.distance !== undefined
-                      ? `${ambulance.distance} km`
-                      : 'Distance unavailable'}
+                    {ambulance.distance !== undefined && ambulance.distance !== null
+  ? `${Number(ambulance.distance).toFixed(1)} km`
+  : 'Distance unavailable'}
                   </span>
 
                   <span
