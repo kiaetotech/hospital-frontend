@@ -86,6 +86,24 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     setCancelLoading(true);
     try {
       const token = localStorage.getItem('token');
+      
+      // First get cancellation quote
+      const quoteRes = await axios.post(
+        `https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/cancellation-quote/${cancellingId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (quoteRes.data?.success) {
+        const quote = quoteRes.data.data;
+        const confirmMsg = `Cancellation Fee: ₹${quote.cancellationFee}\nRefund: ₹${quote.refundAmount}\n\nConfirm cancellation?`;
+        if (!window.confirm(confirmMsg)) {
+          setCancelLoading(false);
+          setShowCancelModal(false);
+          return;
+        }
+      }
+      
       const res = await axios.put(
         `https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/cancel-booking/${cancellingId}`,
         { reason: cancelReason || 'Cancelled by patient' },
@@ -96,7 +114,6 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
         const refundInfo = res.data.data;
         setActionMessage(`✅ Booking cancelled! Refund: ₹${refundInfo?.refundAmount || 0} (${refundInfo?.refundPercentage || 0}%)`);
         
-        // Refresh bookings using token
         const response = await axios.get(
           'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/my-bookings',
           { headers: { Authorization: `Bearer ${token}` } }
