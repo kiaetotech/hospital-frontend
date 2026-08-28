@@ -1693,15 +1693,15 @@ const perKmRate = Number(ambulance.pricing?.perKmRate || ambulance.perKmRate || 
                 </tr>
                 <tr>
                   <td style={tdStyle}>💰 Base Fare</td>
-                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center', fontWeight: 700, color: '#e53935'}}>₹{a.baseFare || 0}</td>)}
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center', fontWeight: 700, color: '#e53935'}}>₹{a.pricing?.baseFare || a.baseFare || 0}</td>)}
                 </tr>
                 <tr>
                   <td style={tdStyle}>📏 Per KM</td>
-                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>₹{a.perKmRate || 0}</td>)}
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>₹{a.pricing?.perKmRate || a.perKmRate || 0}</td>)}
                 </tr>
                 <tr>
                   <td style={tdStyle}>📍 Distance</td>
-                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>{a.distance || 'N/A'} km</td>)}
+                  {compareList.map(a => <td key={a.vehicleId} style={{...tdStyle, textAlign: 'center'}}>{a.distance ? `${a.distance} km` : 'Calculating...'}</td>)}
                 </tr>
                 <tr>
                   <td style={tdStyle}>⏱ ETA</td>
