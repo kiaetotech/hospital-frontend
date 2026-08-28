@@ -69,7 +69,7 @@ const AdminDashboard = () => {
         axios.get(`${API_BASE}/api/corporate/stats`, cfg).catch(() => ({ data: { data: {} } })),
         axios.get(`${API_BASE}/api/corporate/admin/pending`, cfg).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/admin/hospitals`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { pagination: { totalHospitals: 0 } } })),
-        axios.get(`${API_BASE}/api/ambulance`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { count: 0 } })),
+        axios.get(`${API_BASE}/api/admin/ambulance`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { count: 0 } })),
         axios.get(`${API_BASE}/api/caregivers`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/diagnostics/provider/stats`, cfg).catch(() => ({ data: { data: {} } })),
         axios.get(`${API_BASE}/api/mentalhealth/admin/dashboard`, cfg).catch(() => ({ data: { data: {} } })),
