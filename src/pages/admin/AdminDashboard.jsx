@@ -62,22 +62,22 @@ const AdminDashboard = () => {
       
       const [lenderStats, lendersList, insuranceCos, insuranceSet, insuranceSum, corpStats, corpPending, hospRes, ambRes, careRes, diagRes, mhRes, mhTherapists, odRes, userRes, ayurRes, homeoRes] = await Promise.all([
         adminLenders.getStats().catch(() => ({ data: { stats: { lenders: { total: 0, pending: 0, active: 0 }, commission: { total: 0, paid: 0, pending: 0 } } } })),
-        adminLenders.getAll({ limit: 5 }).catch(() => ({ data: { lenders: [] } })),
-        axios.get(`${API_BASE}/api/insurance-admin/companies`, cfg)
-	axios.get(`${API_BASE}/api/insurance-admin/settlements/pending`, cfg)
-	axios.get(`${API_BASE}/api/insurance-admin/reports/summary`, cfg)
-	axios.get(`${API_BASE}/api/corporate/stats`, cfg)
-	axios.get(`${API_BASE}/api/corporate/admin/pending`, cfg)
-	axios.get(`${API_BASE}/api/admin/hospitals`, { ...cfg, params: { limit: 1 } })
-	axios.get(`${API_BASE}/api/ambulance`, { ...cfg, params: { limit: 1 } })
-	axios.get(`${API_BASE}/api/caregivers`, { ...cfg, params: { limit: 1 } })
-	axios.get(`${API_BASE}/api/diagnostics/provider/stats`, cfg)
-	axios.get(`${API_BASE}/api/mentalhealth/admin/dashboard`, cfg)
-	axios.get(`${API_BASE}/api/mentalhealth/admin/therapists`, { ...cfg, params: { limit: 5 } })
-	axios.get(`${API_BASE}/api/online-doctor/admin/doctors`, cfg)
-	axios.get(`${API_BASE}/api/admin/users`, { ...cfg, params: { limit: 1 } })
-	axios.get(`${API_BASE}/api/ayurveda/admin/pending-doctors`, cfg)
-	axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, cfg)
+                adminLenders.getAll({ limit: 5 }).catch(() => ({ data: { lenders: [] } })),
+        axios.get(`${API_BASE}/api/insurance-admin/companies`, cfg).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/insurance-admin/settlements/pending`, cfg).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/insurance-admin/reports/summary`, cfg).catch(() => ({ data: { data: {} } })),
+        axios.get(`${API_BASE}/api/corporate/stats`, cfg).catch(() => ({ data: { data: {} } })),
+        axios.get(`${API_BASE}/api/corporate/admin/pending`, cfg).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/admin/hospitals`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { pagination: { totalHospitals: 0 } } })),
+        axios.get(`${API_BASE}/api/ambulance`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { count: 0 } })),
+        axios.get(`${API_BASE}/api/caregivers`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/diagnostics/provider/stats`, cfg).catch(() => ({ data: { data: {} } })),
+        axios.get(`${API_BASE}/api/mentalhealth/admin/dashboard`, cfg).catch(() => ({ data: { data: {} } })),
+        axios.get(`${API_BASE}/api/mentalhealth/admin/therapists`, { ...cfg, params: { limit: 5 } }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/online-doctor/admin/doctors`, cfg).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/admin/users`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { pagination: { totalUsers: 0 } } })),
+        axios.get(`${API_BASE}/api/ayurveda/admin/pending-doctors`, cfg).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, cfg).catch(() => ({ data: { data: [] } }))
       ]);
 
       setStats(lenderStats.data.stats || { lenders: { total: 0, pending: 0, active: 0 }, commission: { total: 0, paid: 0, pending: 0 } });
