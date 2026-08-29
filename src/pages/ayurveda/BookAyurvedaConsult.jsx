@@ -1,598 +1,793 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { createBooking, getAyurvedaDoctorById } from '../../services/ayurvedaApi';
+import { 
+  FaVideo, FaBuilding, FaHome, FaStar, FaClock, 
+  FaShieldAlt, FaTag, FaUser, FaCalendarAlt, 
+  FaChevronRight, FaCheckCircle, FaTimesCircle,
+  FaInfoCircle, FaPhone, FaEnvelope, FaUserPlus
+} from 'react-icons/fa';
 
 const BookAyurvedaConsult = () => {
-  const { doctorId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const doctorData = location.state || {};
+  const doctorId = location.state?.doctorId || location.state?.doctor?._id;
 
-  const doctor = doctorData.doctor || {
-    _id: doctorId, 
-    name: doctorData.doctorName || 'Doctor', 
-    specialization: doctorData.specialization || '', 
-    consultationFee: doctorData.fee || 500,
-    wellnessCenter: doctorData.wellnessCenter || ''
-  };
-  const consultationType = doctorData.consultationType || 'online';
+  const [doctor, setDoctor] = useState(location.state?.doctor || null);
+  const [loading, setLoading] = useState(!doctor);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
-  const [step, setStep] = useState(1); // 1=Form, 2=Payment, 3=Confirmation
-  const [form, setForm] = useState({
-    patientName: '', phone: '', email: '', date: '', time: '',
-    symptoms: '', age: '', gender: ''
+  // Advanced State
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [consultationType, setConsultationType] = useState('online');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponApplied, setCouponApplied] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [cancellationProtection, setCancellationProtection] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState('self');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  const [showReferral, setShowReferral] = useState(false);
+  const [queuePosition, setQueuePosition] = useState(null);
+  const [waitTime, setWaitTime] = useState(null);
+
+  // Patient Profiles (from localStorage)
+  const [patientProfiles, setPatientProfiles] = useState([]);
+  const [showAddPatient, setShowAddPatient] = useState(false);
+  const [newPatient, setNewPatient] = useState({
+    name: '', age: '', gender: 'male', phone: '', relation: 'self'
   });
-  const [discountCode, setDiscountCode] = useState('');
-  const [discountInfo, setDiscountInfo] = useState(null);
-  const [validatingDiscount, setValidatingDiscount] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('razorpay');
-  const [bookingData, setBookingData] = useState(null);
 
-  // Generate time slots every 30 minutes from 6 AM to 10 PM
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 6; hour <= 22; hour++) {
-      for (let min = 0; min < 60; min += 30) {
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour > 12 ? hour - 12 : hour;
-        const displayMin = min.toString().padStart(2, '0');
-        slots.push(`${displayHour}:${displayMin} ${ampm}`);
-      }
-    }
-    return slots;
-  };
+  // Form Data
+  const [formData, setFormData] = useState({
+    patientName: '',
+    patientPhone: '',
+    patientEmail: '',
+    patientAge: '',
+    patientGender: '',
+    symptoms: '',
+    medicalHistory: '',
+    prakritiType: '',
+    allergies: '',
+    currentMedications: ''
+  });
 
-  const timeSlots = generateTimeSlots();
-  const today = new Date().toISOString().split('T')[0];
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + 30);
-  const maxDateStr = maxDate.toISOString().split('T')[0];
+  // Generated Slots
+  const timeSlots = useMemo(() => [
+    { time: '09:00 AM', type: 'morning', available: true, peak: false },
+    { time: '09:30 AM', type: 'morning', available: true, peak: false },
+    { time: '10:00 AM', type: 'morning', available: true, peak: false },
+    { time: '10:30 AM', type: 'morning', available: true, peak: false },
+    { time: '11:00 AM', type: 'morning', available: true, peak: false },
+    { time: '11:30 AM', type: 'morning', available: true, peak: false },
+    { time: '12:00 PM', type: 'afternoon', available: true, peak: false },
+    { time: '02:00 PM', type: 'afternoon', available: true, peak: false },
+    { time: '02:30 PM', type: 'afternoon', available: true, peak: false },
+    { time: '03:00 PM', type: 'afternoon', available: true, peak: false },
+    { time: '04:00 PM', type: 'evening', available: true, peak: true },
+    { time: '05:00 PM', type: 'evening', available: true, peak: true },
+    { time: '06:00 PM', type: 'evening', available: true, peak: true },
+    { time: '07:00 PM', type: 'evening', available: true, peak: true },
+  ], []);
 
-  // Calculate amounts
-  const consultationFee = doctor.consultationFee || 500;
-  const platformFee = Math.round(consultationFee * 0.15); // 15% commission
-  const discountAmount = discountInfo?.discountAmount || 0;
-  const totalAmount = consultationFee - discountAmount;
-  const gst = Math.round(totalAmount * 0.18); // 18% GST
-  const finalAmount = totalAmount + gst;
-
-  // Validate discount code
-  const validateDiscount = async () => {
-    if (!discountCode.trim()) return;
-    setValidatingDiscount(true);
-    try {
-      // Try API first
-      const api = (await import('../../services/api')).default;
-      const response = await api.get(`/discounts/validate/${discountCode.toUpperCase()}`, {
-        params: { type: 'ayurveda_consultation', amount: consultationFee }
+  // Next 7 days
+  const nextDays = useMemo(() => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      days.push({
+        date: date.toISOString().split('T')[0],
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        dayNumber: date.getDate(),
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        isToday: i === 0,
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
       });
-      if (response.data?.success) {
-        setDiscountInfo(response.data.data);
-        alert(`✅ Discount applied! You save ₹${response.data.data.discountAmount}`);
-      }
-    } catch (error) {
-      // Fallback: Check local discount codes
-      const localDiscounts = {
-        'AYUR50': { code: 'AYUR50', discountAmount: Math.round(consultationFee * 0.5), type: 'percentage', value: 50 },
-        'FIRST100': { code: 'FIRST100', discountAmount: 100, type: 'fixed', value: 100 },
-        'WELLNESS20': { code: 'WELLNESS20', discountAmount: Math.round(consultationFee * 0.2), type: 'percentage', value: 20 },
-      };
-      const code = discountCode.toUpperCase();
-      if (localDiscounts[code]) {
-        setDiscountInfo(localDiscounts[code]);
-        alert(`✅ Discount applied! You save ₹${localDiscounts[code].discountAmount}`);
-      } else {
-        alert('❌ Invalid or expired discount code');
-        setDiscountCode('');
-      }
-    } finally {
-      setValidatingDiscount(false);
     }
-  };
+    return days;
+  }, []);
 
-  // Step 1: Validate form and go to payment
-  const handleContinueToPayment = (e) => {
-    e.preventDefault();
-    if (!form.patientName || !form.phone || !form.date || !form.time) {
-      alert('Please fill all required fields (*)');
-      return;
-    }
-    if (form.phone.length < 10) {
-      alert('Please enter a valid phone number');
-      return;
-    }
-    setStep(2);
-    window.scrollTo(0, 0);
-  };
-
-  // Step 2: Process Payment
-  const handlePayment = async () => {
-    setLoading(true);
-    
-    const bookingId = 'AYB' + Date.now();
-    
-    try {
-      // Try Razorpay integration
-      if (paymentMethod === 'razorpay') {
+  // Fetch doctor details if not in state
+  useEffect(() => {
+    const fetchDoctor = async () => {
+      if (doctorId && !doctor) {
         try {
-          const api = (await import('../../services/api')).default;
-          
-          // Create Razorpay order
-          const orderResponse = await api.post('/ayurveda/payments/create-order', {
-            amount: finalAmount,
-            bookingId,
-            doctorId: doctor._id,
-            patientName: form.patientName,
-            patientPhone: form.phone
-          });
-
-          if (orderResponse.data?.success) {
-            const { razorpayOrderId, razorpayKeyId } = orderResponse.data.data;
-            
-            // Load Razorpay script
-            const script = document.createElement('script');
-            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-            script.onload = () => {
-              const options = {
-                key: razorpayKeyId || 'rzp_test_YourTestKey',
-                amount: finalAmount * 100, // in paise
-                currency: 'INR',
-                name: 'Ayurveda Wellness Hub',
-                description: `Consultation with ${doctor.name}`,
-                order_id: razorpayOrderId,
-                prefill: {
-                  name: form.patientName,
-                  contact: form.phone,
-                  email: form.email
-                },
-                theme: { color: '#4CAF50' },
-                handler: function(response) {
-                  // Payment successful
-                  completeBooking(bookingId, response.razorpay_payment_id);
-                },
-                modal: {
-                  ondismiss: function() {
-                    setLoading(false);
-                    alert('Payment cancelled. Please try again.');
-                  }
-                }
-              };
-              const rzp = new window.Razorpay(options);
-              rzp.open();
-            };
-            document.body.appendChild(script);
-            return;
+          const response = await getAyurvedaDoctorById(doctorId);
+          if (response.data.success) {
+            setDoctor(response.data.data);
           }
-        } catch (razorpayError) {
-          console.log('Razorpay not configured, using demo payment');
+        } catch (err) {
+          setError('Failed to load doctor details');
+        } finally {
+          setLoading(false);
         }
       }
-      
-      // Demo/Test Payment (for development)
-      setTimeout(() => {
-        completeBooking(bookingId, 'DEMO_PAYMENT_' + Date.now());
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Payment error:', error);
-      setLoading(false);
-      alert('Payment failed. Please try again.');
+    };
+    fetchDoctor();
+  }, [doctorId, doctor]);
+
+  // Load patient profiles
+  useEffect(() => {
+    const profiles = JSON.parse(localStorage.getItem('patientProfiles') || '[]');
+    setPatientProfiles(profiles);
+    
+    // Pre-fill self data
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    if (userData) {
+      setFormData(prev => ({
+        ...prev,
+        patientName: userData.name || '',
+        patientPhone: userData.phone || '',
+        patientEmail: userData.email || ''
+      }));
+    }
+  }, []);
+
+  // Calculate fees
+  const fees = useMemo(() => {
+    const consultationFee = doctor?.consultationFee || 0;
+    const platformFee = consultationType === 'home' ? 50 : 30;
+    const peakCharge = selectedSlot?.peak ? 50 : 0;
+    const cancellationProtectionFee = cancellationProtection ? 29 : 0;
+    const discountAmount = couponApplied?.discountAmount || 0;
+    
+    const subtotal = consultationFee + platformFee + peakCharge + cancellationProtectionFee;
+    const gst = Math.round(subtotal * 0.18);
+    const total = subtotal + gst - discountAmount;
+    
+    return { consultationFee, platformFee, peakCharge, cancellationProtectionFee, discountAmount, subtotal, gst, total };
+  }, [doctor, consultationType, selectedSlot, cancellationProtection, couponApplied]);
+
+  // Estimate wait time
+  useEffect(() => {
+    if (selectedDate && selectedSlot) {
+      const hour = parseInt(selectedSlot.time);
+      const isPeak = selectedSlot.peak;
+      const estimatedWait = isPeak ? 20 + Math.floor(Math.random() * 15) : 5 + Math.floor(Math.random() * 10);
+      const queuePos = isPeak ? 4 + Math.floor(Math.random() * 5) : 1 + Math.floor(Math.random() * 3);
+      setWaitTime(estimatedWait);
+      setQueuePosition(queuePos);
+    }
+  }, [selectedDate, selectedSlot]);
+
+  const handleApplyCoupon = () => {
+    setCouponError('');
+    // Mock coupon validation - in production, call API
+    const validCoupons = {
+      'AYUR10': { discountPercentage: 10, maxDiscount: 200 },
+      'WELLNESS20': { discountPercentage: 20, maxDiscount: 500 },
+      'FIRST50': { discountPercentage: 50, maxDiscount: 300 }
+    };
+    
+    const coupon = validCoupons[couponCode.toUpperCase()];
+    if (coupon) {
+      const discountAmount = Math.min(
+        Math.round(fees.subtotal * coupon.discountPercentage / 100),
+        coupon.maxDiscount
+      );
+      setCouponApplied({ code: couponCode.toUpperCase(), discountAmount });
+    } else {
+      setCouponError('Invalid coupon code');
     }
   };
 
-  // Complete booking after payment
-  const completeBooking = (bookingId, paymentId) => {
-    const bookingInfo = {
-      bookingId,
-      doctorId: doctor._id,
-      doctorName: doctor.name,
-      consultationType,
-      patientName: form.patientName,
-      phone: form.phone,
-      email: form.email,
-      date: form.date,
-      time: form.time,
-      symptoms: form.symptoms,
-      age: form.age,
-      gender: form.gender,
-      consultationFee,
-      discount: discountAmount,
-      gst,
-      platformFee,
-      finalAmount,
-      paymentMethod,
-      paymentId,
-      paymentStatus: 'paid',
-      paidAt: new Date().toISOString(),
-      wellnessCenter: doctor.wellnessCenter,
-      specialization: doctor.specialization
-    };
-
-    setBookingData(bookingInfo);
-    setStep(3);
-    setLoading(false);
-    window.scrollTo(0, 0);
+  const handleAddPatient = () => {
+    if (newPatient.name && newPatient.phone) {
+      const updatedProfiles = [...patientProfiles, { ...newPatient, id: Date.now() }];
+      setPatientProfiles(updatedProfiles);
+      localStorage.setItem('patientProfiles', JSON.stringify(updatedProfiles));
+      setShowAddPatient(false);
+      setNewPatient({ name: '', age: '', gender: 'male', phone: '', relation: 'self' });
+    }
   };
 
-  // ============================================
-  // STEP 3: CONFIRMATION SCREEN
-  // ============================================
-  if (step === 3 && bookingData) {
+  const handleSelectPatient = (profileId) => {
+    const profile = patientProfiles.find(p => p.id === profileId);
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        patientName: profile.name,
+        patientPhone: profile.phone,
+        patientAge: profile.age,
+        patientGender: profile.gender
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Validations
+    if (!selectedDate) {
+      setError('Please select a date');
+      return;
+    }
+    if (!selectedSlot) {
+      setError('Please select a time slot');
+      return;
+    }
+    if (!formData.patientName || !formData.patientPhone) {
+      setError('Patient name and phone are required');
+      return;
+    }
+    if (!acceptedTerms) {
+      setError('Please accept the terms and conditions');
+      return;
+    }
+
+    setBookingLoading(true);
+
+    try {
+      const response = await createBooking({
+        type: 'doctor_consultation',
+        doctorId: doctor._id,
+        consultationType,
+        bookingDate: selectedDate,
+        slotTime: selectedSlot.time,
+        symptoms: formData.symptoms,
+        medicalHistory: formData.medicalHistory,
+        prakritiType: formData.prakritiType,
+        patientName: formData.patientName,
+        patientPhone: formData.patientPhone,
+        patientEmail: formData.patientEmail,
+        patientAge: formData.patientAge,
+        patientGender: formData.patientGender,
+        discountCode: couponApplied?.code,
+        cancellationProtection,
+        referralCode: referralCode || undefined
+      });
+
+      if (response.data.success) {
+        navigate('/ayurveda/payment', {
+          state: {
+            bookingData: response.data.data,
+            doctor: doctor
+          }
+        });
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create booking');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>✅</div>
-        <h1 style={{ color: '#2E7D32', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-          Booking Confirmed!
-        </h1>
-        <p style={{ color: '#64748b', marginBottom: '2rem' }}>
-          Your consultation has been booked successfully. Confirmation sent to {bookingData.phone}
-        </p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
-        {/* Booking Details Card */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '1rem',
-          padding: '1.5rem',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          textAlign: 'left',
-          marginBottom: '1.5rem'
-        }}>
-          <h3 style={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '1rem', borderBottom: '2px solid #4CAF50', paddingBottom: '0.5rem' }}>
-            📋 Booking Details
-          </h3>
-          {[
-            ['Booking ID', bookingData.bookingId],
-            ['Doctor', `👨‍⚕️ ${bookingData.doctorName}`],
-            ['Specialization', bookingData.specialization],
-            ['Center', bookingData.wellnessCenter],
-            ['Consultation Type', bookingData.consultationType === 'online' ? '💻 Online Video Call' : '🏥 Clinic Visit'],
-            ['Patient Name', bookingData.patientName],
-            ['Phone', bookingData.phone],
-            ['Date', new Date(bookingData.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
-            ['Time', bookingData.time],
-            ['Consultation Fee', `₹${bookingData.consultationFee}`],
-            ...(bookingData.discount > 0 ? [['Discount', `-₹${bookingData.discount}`]] : []),
-            ['GST (18%)', `₹${bookingData.gst}`],
-            ['Platform Fee', `₹${bookingData.platformFee} (included)`],
-          ].map(([label, value], i) => (
-            <div key={i} style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              padding: '0.6rem 0', 
-              borderBottom: '1px solid #e2e8f0',
-              fontSize: '0.9rem'
-            }}>
-              <span style={{ color: '#64748b' }}>{label}</span>
-              <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{value}</span>
-            </div>
-          ))}
-
-          {/* Total */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            padding: '0.8rem 0', 
-            marginTop: '0.5rem',
-            backgroundColor: '#f0fdf4',
-            borderRadius: '0.5rem',
-            padding: '0.8rem'
-          }}>
-            <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#1e293b' }}>💰 Total Paid</span>
-            <span style={{ fontWeight: 'bold', fontSize: '1.3rem', color: '#4CAF50' }}>₹{bookingData.finalAmount}</span>
-          </div>
-
-          <div style={{ 
-            marginTop: '1rem', 
-            padding: '0.5rem', 
-            backgroundColor: '#e8f5e9', 
-            borderRadius: '0.5rem',
-            textAlign: 'center',
-            fontSize: '0.8rem',
-            color: '#2E7D32'
-          }}>
-            Payment ID: {bookingData.paymentId} | Status: {bookingData.paymentStatus.toUpperCase()}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => navigate('/ayurveda')} style={{
-            padding: '0.75rem 2rem', backgroundColor: '#4CAF50', color: 'white',
-            border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem'
-          }}>
-            🏠 Go to Home
-          </button>
-          <button onClick={() => navigate('/my-bookings')} style={{
-            padding: '0.75rem 2rem', backgroundColor: '#2196F3', color: 'white',
-            border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem'
-          }}>
-            📋 My Bookings
-          </button>
-          <button onClick={() => window.print()} style={{
-            padding: '0.75rem 2rem', backgroundColor: '#FF9800', color: 'white',
-            border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem'
-          }}>
-            🖨️ Print Receipt
+  if (!doctor) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-gray-600">Doctor not found</p>
+          <button onClick={() => navigate('/ayurveda/doctors')} className="mt-4 text-green-600">
+            Browse Doctors
           </button>
         </div>
       </div>
     );
   }
 
-  // ============================================
-  // STEP 2: PAYMENT SCREEN
-  // ============================================
-  if (step === 2) {
-    return (
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.5rem' }}>
-        <button onClick={() => setStep(1)} style={{
-          padding: '0.5rem 1rem', backgroundColor: '#f1f5f9', border: 'none',
-          borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold', marginBottom: '1rem'
-        }}>
-          ← Back to Details
-        </button>
-
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: '#1e293b' }}>
-          💳 Payment
-        </h1>
-
-        {/* Order Summary */}
-        <div style={{
-          backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '1.5rem'
-        }}>
-          <h3 style={{ fontWeight: 'bold', marginBottom: '1rem', color: '#1e293b' }}>Order Summary</h3>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', color: '#64748b' }}>
-            <span>Consultation Fee</span>
-            <span>₹{consultationFee}</span>
-          </div>
-          
-          {discountAmount > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', color: '#4CAF50' }}>
-              <span>Discount ({discountInfo?.code})</span>
-              <span>-₹{discountAmount}</span>
-            </div>
-          )}
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', color: '#64748b' }}>
-            <span>Platform Fee (15%)</span>
-            <span>₹{platformFee}</span>
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', color: '#64748b' }}>
-            <span>GST (18%)</span>
-            <span>₹{gst}</span>
-          </div>
-          
-          <hr style={{ margin: '0.5rem 0', border: '1px solid #e2e8f0' }} />
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontWeight: 'bold', fontSize: '1.2rem' }}>
-            <span>Total Amount</span>
-            <span style={{ color: '#FF9800' }}>₹{finalAmount}</span>
-          </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 py-8">
+      <div className="max-w-5xl mx-auto px-4">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <button onClick={() => navigate('/ayurveda')} className="hover:text-green-600">Ayurveda</button>
+          <FaChevronRight className="text-xs" />
+          <button onClick={() => navigate('/ayurveda/doctors')} className="hover:text-green-600">Doctors</button>
+          <FaChevronRight className="text-xs" />
+          <span className="font-medium">Book Consultation</span>
         </div>
 
-        {/* Payment Methods */}
-        <div style={{
-          backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '1.5rem'
-        }}>
-          <h3 style={{ fontWeight: 'bold', marginBottom: '1rem', color: '#1e293b' }}>Select Payment Method</h3>
-          
-          {[
-            { id: 'razorpay', label: '💳 Pay Online', desc: 'UPI, Credit/Debit Card, NetBanking, Wallet', icon: '💳' },
-            { id: 'cod', label: '🏥 Pay at Clinic', desc: 'Pay when you visit the clinic', icon: '🏥' },
-          ].map(method => (
-            <div key={method.id} onClick={() => setPaymentMethod(method.id)} style={{
-              padding: '1rem', marginBottom: '0.5rem', borderRadius: '0.5rem',
-              border: `2px solid ${paymentMethod === method.id ? '#4CAF50' : '#e2e8f0'}`,
-              cursor: 'pointer', backgroundColor: paymentMethod === method.id ? '#f0fdf4' : 'white',
-              display: 'flex', alignItems: 'center', gap: '1rem'
-            }}>
-              <span style={{ fontSize: '1.5rem' }}>{method.icon}</span>
-              <div>
-                <p style={{ fontWeight: 'bold', color: '#1e293b' }}>{method.label}</p>
-                <p style={{ color: '#64748b', fontSize: '0.85rem' }}>{method.desc}</p>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg mb-6 flex items-center gap-2">
+            <FaTimesCircle />
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* LEFT: Booking Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Doctor Card */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-green-600 to-green-500 p-6 text-white">
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-3xl font-bold">
+                    {doctor.name?.charAt(0) || 'D'}
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold">{doctor.name}</h1>
+                    <p className="text-green-100">{doctor.specialization}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span className="flex items-center gap-1">
+                        <FaStar className="text-yellow-400" /> {doctor.rating || 'New'}
+                      </span>
+                      <span>{doctor.experience} years exp.</span>
+                      <span className="flex items-center gap-1">
+                        <FaShieldAlt /> Verified
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              {paymentMethod === method.id && (
-                <span style={{ marginLeft: 'auto', color: '#4CAF50', fontWeight: 'bold', fontSize: '1.2rem' }}>✓</span>
+              <div className="p-4 bg-green-50 flex items-center gap-4 text-sm">
+                <span className="flex items-center gap-1">
+                  <FaVideo className="text-green-600" /> {doctor.consultationTypes?.online ? 'Online' : 'No Online'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <FaBuilding className="text-green-600" /> {doctor.consultationTypes?.clinic ? 'Clinic' : 'No Clinic'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <FaHome className="text-green-600" /> {doctor.consultationTypes?.homeVisit ? 'Home Visit' : 'No Home'}
+                </span>
+              </div>
+            </div>
+
+            {/* Consultation Type */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4">Select Consultation Type</h2>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { type: 'online', icon: FaVideo, label: 'Video Consult', desc: '15-30 min' },
+                  { type: 'clinic', icon: FaBuilding, label: 'Clinic Visit', desc: 'In-person' },
+                  { type: 'home', icon: FaHome, label: 'Home Visit', desc: 'At your home' }
+                ].map(({ type, icon: Icon, label, desc }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setConsultationType(type)}
+                    className={`p-4 rounded-lg border-2 text-center transition-all ${
+                      consultationType === type
+                        ? 'border-green-600 bg-green-50 shadow-lg'
+                        : 'border-gray-200 hover:border-green-300'
+                    }`}
+                  >
+                    <Icon className={`mx-auto text-2xl mb-2 ${consultationType === type ? 'text-green-600' : 'text-gray-400'}`} />
+                    <p className="font-medium">{label}</p>
+                    <p className="text-xs text-gray-500">{desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date Selection */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <FaCalendarAlt className="text-green-600" /> Select Date
+              </h2>
+              <div className="grid grid-cols-7 gap-2">
+                {nextDays.map((day) => (
+                  <button
+                    key={day.date}
+                    type="button"
+                    onClick={() => setSelectedDate(day.date)}
+                    className={`p-3 rounded-lg border-2 text-center transition-all ${
+                      selectedDate === day.date
+                        ? 'border-green-600 bg-green-50'
+                        : 'border-gray-200 hover:border-green-300'
+                    } ${day.isWeekend ? 'bg-orange-50' : ''}`}
+                  >
+                    <p className="text-xs text-gray-500">{day.dayName}</p>
+                    <p className="text-lg font-bold">{day.dayNumber}</p>
+                    <p className="text-xs text-gray-500">{day.month}</p>
+                    {day.isToday && <p className="text-xs text-green-600 font-medium">Today</p>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Slots */}
+            {selectedDate && (
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <FaClock className="text-green-600" /> Select Time Slot
+                </h2>
+                <div className="grid grid-cols-4 gap-2">
+                  {timeSlots.map((slot) => (
+                    <button
+                      key={slot.time}
+                      type="button"
+                      onClick={() => setSelectedSlot(slot)}
+                      disabled={!slot.available}
+                      className={`p-3 rounded-lg border-2 text-center transition-all ${
+                        selectedSlot?.time === slot.time
+                          ? 'border-green-600 bg-green-50'
+                          : slot.available
+                          ? 'border-gray-200 hover:border-green-300'
+                          : 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                      }`}
+                    >
+                      <p className="font-medium text-sm">{slot.time}</p>
+                      {slot.peak && (
+                        <p className="text-xs text-orange-500">Peak +₹50</p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {selectedSlot && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center gap-2 text-sm">
+                    <FaInfoCircle className="text-blue-600" />
+                    <span>
+                      Est. wait: {waitTime} min • Queue: {queuePosition} patient(s) ahead
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Patient Details */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <FaUser className="text-green-600" /> Patient Details
+              </h2>
+
+              {/* Patient Profiles */}
+              {patientProfiles.length > 0 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Book for</label>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPatient('self')}
+                      className={`px-3 py-2 rounded-lg border ${selectedPatient === 'self' ? 'border-green-600 bg-green-50' : 'border-gray-200'}`}
+                    >
+                      Self
+                    </button>
+                    {patientProfiles.map((profile) => (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPatient(profile.id);
+                          handleSelectPatient(profile.id);
+                        }}
+                        className={`px-3 py-2 rounded-lg border ${selectedPatient === profile.id ? 'border-green-600 bg-green-50' : 'border-gray-200'}`}
+                      >
+                        {profile.name} ({profile.relation})
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPatient(true)}
+                      className="px-3 py-2 rounded-lg border border-dashed border-green-400 text-green-600 flex items-center gap-1"
+                    >
+                      <FaUserPlus /> Add
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Add Patient Modal */}
+              {showAddPatient && (
+                <div className="mb-4 p-4 border border-green-200 rounded-lg bg-green-50">
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={newPatient.name}
+                      onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone"
+                      value={newPatient.phone}
+                      onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Age"
+                      value={newPatient.age}
+                      onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <select
+                      value={newPatient.gender}
+                      onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
+                      className="p-2 border rounded"
+                    >
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <select
+                      value={newPatient.relation}
+                      onChange={(e) => setNewPatient({ ...newPatient, relation: e.target.value })}
+                      className="p-2 border rounded"
+                    >
+                      <option value="self">Self</option>
+                      <option value="spouse">Spouse</option>
+                      <option value="parent">Parent</option>
+                      <option value="child">Child</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAddPatient}
+                        className="flex-1 bg-green-600 text-white p-2 rounded"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddPatient(false)}
+                        className="flex-1 bg-gray-300 p-2 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={formData.patientName}
+                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                    required
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone *</label>
+                  <input
+                    type="tel"
+                    value={formData.patientPhone}
+                    onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
+                    required
+                    pattern="[0-9]{10}"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.patientEmail}
+                    onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Age</label>
+                    <input
+                      type="number"
+                      value={formData.patientAge}
+                      onChange={(e) => setFormData({ ...formData, patientAge: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Gender</label>
+                    <select
+                      value={formData.patientGender}
+                      onChange={(e) => setFormData({ ...formData, patientGender: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Select</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Medical Details */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4">Medical Details</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Symptoms *</label>
+                  <textarea
+                    value={formData.symptoms}
+                    onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
+                    required
+                    rows="3"
+                    placeholder="Describe your symptoms..."
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Prakriti Type</label>
+                  <select
+                    value={formData.prakritiType}
+                    onChange={(e) => setFormData({ ...formData, prakritiType: e.target.value })}
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="">Not sure</option>
+                    <option value="Vata">Vata</option>
+                    <option value="Pitta">Pitta</option>
+                    <option value="Kapha">Kapha</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Options */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                className="w-full flex items-center justify-between font-semibold"
+              >
+                <span>Advanced Options</span>
+                <span className="text-green-600">{showAdvancedOptions ? '−' : '+'}</span>
+              </button>
+              {showAdvancedOptions && (
+                <div className="mt-4 space-y-4">
+                  {/* Coupon Code */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2 flex items-center gap-1">
+                      <FaTag className="text-green-600" /> Coupon Code
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Enter coupon code"
+                        className="flex-1 p-2.5 border rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {couponError && <p className="text-red-500 text-sm mt-1">{couponError}</p>}
+                    {couponApplied && (
+                      <p className="text-green-600 text-sm mt-1">
+                        ✅ {couponApplied.code} applied - Save ₹{couponApplied.discountAmount}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Cancellation Protection */}
+                  <div className="flex items-center gap-3 p-3 border rounded-lg">
+                    <input
+                      type="checkbox"
+                      checked={cancellationProtection}
+                      onChange={(e) => setCancellationProtection(e.target.checked)}
+                      className="w-5 h-5"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">Cancellation Protection</p>
+                      <p className="text-sm text-gray-500">Get full refund anytime for ₹29</p>
+                    </div>
+                  </div>
+
+                  {/* Referral */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setShowReferral(!showReferral)}
+                      className="text-green-600 text-sm"
+                    >
+                      Have a referral code?
+                    </button>
+                    {showReferral && (
+                      <input
+                        type="text"
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value)}
+                        placeholder="Enter referral code"
+                        className="w-full mt-2 p-2.5 border rounded-lg"
+                      />
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-          ))}
-        </div>
-
-        {/* Patient Info Summary */}
-        <div style={{
-          backgroundColor: '#f8fafc', borderRadius: '0.75rem', padding: '1rem',
-          marginBottom: '1.5rem', fontSize: '0.9rem'
-        }}>
-          <p><strong>Patient:</strong> {form.patientName}</p>
-          <p><strong>Date:</strong> {new Date(form.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-          <p><strong>Time:</strong> {form.time}</p>
-          <p><strong>Doctor:</strong> {doctor.name}</p>
-        </div>
-
-        {/* Pay Button */}
-        <button onClick={handlePayment} disabled={loading} style={{
-          width: '100%', padding: '1rem', backgroundColor: loading ? '#a5d6a7' : '#4CAF50',
-          color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold',
-          fontSize: '1.2rem', cursor: loading ? 'not-allowed' : 'pointer'
-        }}>
-          {loading ? '⏳ Processing Payment...' : `💳 Pay ₹${finalAmount}`}
-        </button>
-        
-        <p style={{ textAlign: 'center', color: '#64748b', fontSize: '0.8rem', marginTop: '1rem' }}>
-          🔒 Secured by 256-bit SSL encryption. Your payment info is safe.
-        </p>
-      </div>
-    );
-  }
-
-  // ============================================
-  // STEP 1: BOOKING FORM
-  // ============================================
-  return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.5rem' }}>
-      
-      {/* Back Button */}
-      <button onClick={() => navigate(-1)} style={{
-        padding: '0.5rem 1rem', backgroundColor: '#f1f5f9', border: 'none',
-        borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold', marginBottom: '1rem'
-      }}>
-        ← Back
-      </button>
-
-      {/* Progress Steps */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', gap: '2rem' }}>
-        {[
-          { num: 1, label: 'Details', active: step >= 1 },
-          { num: 2, label: 'Payment', active: step >= 2 },
-          { num: 3, label: 'Confirm', active: step >= 3 },
-        ].map((s, i) => (
-          <div key={i} style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '35px', height: '35px', borderRadius: '50%',
-              backgroundColor: s.active ? '#4CAF50' : '#e2e8f0',
-              color: s.active ? 'white' : '#64748b',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 'bold', margin: '0 auto 0.3rem', fontSize: '0.9rem'
-            }}>
-              {s.active ? '✓' : s.num}
-            </div>
-            <span style={{ fontSize: '0.75rem', color: s.active ? '#4CAF50' : '#64748b' }}>{s.label}</span>
           </div>
-        ))}
-      </div>
 
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#1e293b' }}>
-        📞 Book {consultationType === 'online' ? 'Online' : 'Clinic'} Consultation
-      </h1>
+          {/* RIGHT: Fee Summary */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-md p-6 sticky top-4">
+              <h2 className="text-lg font-semibold mb-4">Fee Summary</h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Consultation Fee</span>
+                  <span>₹{fees.consultationFee}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Platform Fee</span>
+                  <span>₹{fees.platformFee}</span>
+                </div>
+                {fees.peakCharge > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Peak Hour Charge</span>
+                    <span className="text-orange-500">₹{fees.peakCharge}</span>
+                  </div>
+                )}
+                {cancellationProtection && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Cancellation Protection</span>
+                    <span>₹{fees.cancellationProtectionFee}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">GST (18%)</span>
+                  <span>₹{fees.gst}</span>
+                </div>
+                {fees.discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span>-₹{fees.discountAmount}</span>
+                  </div>
+                )}
+                <div className="border-t pt-3 flex justify-between items-center">
+                  <span className="font-bold">Total</span>
+                  <span className="font-bold text-2xl text-green-600">₹{fees.total}</span>
+                </div>
+              </div>
 
-      {/* Doctor Summary */}
-      <div style={{ 
-        backgroundColor: '#f0fdf4', borderRadius: '0.75rem', padding: '1rem', 
-        marginBottom: '1.5rem', border: '1px solid #bbf7d0' 
-      }}>
-        <p style={{ fontWeight: 'bold', color: '#1e293b' }}>👨‍⚕️ {doctor.name}</p>
-        <p style={{ color: '#4CAF50', fontSize: '0.9rem' }}>{doctor.specialization}</p>
-        {doctor.wellnessCenter && <p style={{ color: '#64748b', fontSize: '0.85rem' }}>🏥 {doctor.wellnessCenter}</p>}
-        <p style={{ fontWeight: 'bold', color: '#FF9800', marginTop: '0.5rem' }}>Fee: ₹{consultationFee}</p>
-        <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
-          Type: {consultationType === 'online' ? '💻 Online Video Call' : '🏥 Clinic Visit'}
-        </p>
-        <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.3rem' }}>
-          ⚠️ Platform fee (15%) + GST (18%) will be added at payment
-        </p>
-      </div>
+              {/* Terms */}
+              <div className="mt-4">
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <span className="text-gray-600">
+                    I agree to the <span className="text-green-600">Terms & Conditions</span> and 
+                    <span className="text-green-600"> Privacy Policy</span>
+                  </span>
+                </label>
+              </div>
 
-      <form onSubmit={handleContinueToPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <input required placeholder="Full Name *" value={form.patientName} 
-          onChange={(e) => setForm({...form, patientName: e.target.value})} style={inputStyle} />
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <input required placeholder="Phone Number *" value={form.phone} type="tel"
-            onChange={(e) => setForm({...form, phone: e.target.value})} style={inputStyle} />
-          <input placeholder="Email" value={form.email} type="email"
-            onChange={(e) => setForm({...form, email: e.target.value})} style={inputStyle} />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <input placeholder="Age" value={form.age} type="number"
-            onChange={(e) => setForm({...form, age: e.target.value})} style={inputStyle} />
-          <select value={form.gender} onChange={(e) => setForm({...form, gender: e.target.value})} style={inputStyle}>
-            <option value="">Select Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        {/* Date */}
-        <div>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.3rem', color: '#1e293b', fontSize: '0.9rem' }}>
-            📅 Select Date *
-          </label>
-          <input required type="date" value={form.date} min={today} max={maxDateStr}
-            onChange={(e) => setForm({...form, date: e.target.value})} style={inputStyle} />
-        </div>
-
-        {/* Time Slots */}
-        <div>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.3rem', color: '#1e293b', fontSize: '0.9rem' }}>
-            🕐 Select Time Slot *
-          </label>
-          <select required value={form.time} onChange={(e) => setForm({...form, time: e.target.value})} style={inputStyle}>
-            <option value="">Select Time</option>
-            {timeSlots.map(slot => (
-              <option key={slot} value={slot}>{slot}</option>
-            ))}
-          </select>
-          <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
-            33 slots available • 6:00 AM - 10:00 PM • Every 30 minutes
-          </p>
-        </div>
-
-        {/* Discount Code */}
-        <div>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.3rem', color: '#1e293b', fontSize: '0.9rem' }}>
-            🏷️ Discount Code (Optional)
-          </label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              placeholder="Enter code (e.g., AYUR50)"
-              value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-              style={{ ...inputStyle, flex: 1 }}
-            />
-            <button type="button" onClick={validateDiscount} disabled={validatingDiscount || !discountCode.trim()}
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: discountInfo ? '#4CAF50' : '#FF9800',
-                color: 'white', border: 'none', borderRadius: '0.5rem',
-                fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap'
-              }}>
-              {validatingDiscount ? '...' : discountInfo ? '✅' : 'Apply'}
-            </button>
-          </div>
-          {discountInfo && (
-            <div style={{ 
-              marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#e8f5e9', 
-              borderRadius: '0.5rem', fontSize: '0.9rem', color: '#2E7D32',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-            }}>
-              <span>✅ {discountInfo.code}: Save ₹{discountInfo.discountAmount}</span>
-              <button type="button" onClick={() => { setDiscountCode(''); setDiscountInfo(null); }}
-                style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-                ✕
+              {/* Submit */}
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={bookingLoading}
+                className="w-full mt-4 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+              >
+                {bookingLoading ? 'Processing...' : 'Proceed to Payment →'}
               </button>
+
+              {/* Trust Badges */}
+              <div className="mt-4 space-y-2 text-xs text-gray-500">
+                <p className="flex items-center gap-1">
+                  <FaShieldAlt className="text-green-600" /> 100% Secure Payment
+                </p>
+                <p className="flex items-center gap-1">
+                  <FaCheckCircle className="text-green-600" /> Verified Doctor
+                </p>
+                <p className="flex items-center gap-1">
+                  <FaClock className="text-green-600" /> Free Rescheduling (up to 2 times)
+                </p>
+              </div>
             </div>
-          )}
-          <p style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.2rem' }}>
-            Try: AYUR50 (50% off) | FIRST100 (₹100 off) | WELLNESS20 (20% off)
-          </p>
+          </div>
         </div>
-
-        <textarea placeholder="Describe your symptoms / health concerns..."
-          value={form.symptoms} onChange={(e) => setForm({...form, symptoms: e.target.value})} 
-          style={{...inputStyle, height: '80px', resize: 'vertical'}} />
-
-        <button type="submit" style={{
-          padding: '1rem', backgroundColor: '#4CAF50', color: 'white',
-          border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem',
-          cursor: 'pointer', marginTop: '0.5rem'
-        }}>
-          Continue to Payment → ₹{finalAmount}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };
 
-const inputStyle = {
-  padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0',
-  fontSize: '1rem', width: '100%', boxSizing: 'border-box'
-};
-
 export default BookAyurvedaConsult;
-
