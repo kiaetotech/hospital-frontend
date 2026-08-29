@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { 
   FaUserMd, FaPhone, FaEnvelope, FaLock, FaGraduationCap,
   FaCertificate, FaCity, FaRupeeSign, FaBuilding, FaStar,
-  FaCheckCircle, FaArrowLeft
+  FaCheckCircle, FaArrowLeft, FaUpload, FaFileImage, FaIdCard
 } from 'react-icons/fa';
 
 const DoctorRegistration = () => {
@@ -31,23 +31,63 @@ const DoctorRegistration = () => {
     about: ''
   });
 
+  // Document upload state
+  const [documents, setDocuments] = useState({
+    ayushCertificate: null,
+    degreeCertificate: null,
+    idProof: null,
+    photo: null,
+    clinicLicense: null
+  });
+  
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [uploadedUrls, setUploadedUrls] = useState({});
+
   const specializations = [
-    'Panchakarma',
-    'General Ayurveda',
-    'Kerala Ayurveda',
-    'Ayurvedic Dermatology',
-    'Kayachikitsa',
-    'Rasayana Therapy',
-    'Shalya Tantra',
-    'Shalakya Tantra',
-    'Prasuti & Stri Roga',
-    'Bal Roga',
-    'Swasthavritta'
+    'Panchakarma', 'General Ayurveda', 'Kerala Ayurveda',
+    'Ayurvedic Dermatology', 'Kayachikitsa', 'Rasayana Therapy',
+    'Shalya Tantra', 'Shalakya Tantra', 'Prasuti & Stri Roga',
+    'Bal Roga', 'Swasthavritta'
   ];
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
+  };
+
+  const handleFileChange = (field, file) => {
+    if (file) {
+      setDocuments({ ...documents, [field]: file });
+      // Upload file immediately
+      uploadDocument(field, file);
+    }
+  };
+
+  const uploadDocument = async (field, file) => {
+    setUploadProgress({ ...uploadProgress, [field]: 0 });
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', `ayurveda-doctors/${form.phone || 'pending'}`);
+      
+      const response = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(prev => ({ ...prev, [field]: percent }));
+        }
+      });
+      
+      if (response.data.success) {
+        setUploadedUrls({ ...uploadedUrls, [field]: response.data.url || response.data.fileUrl });
+        setUploadProgress(prev => ({ ...prev, [field]: 100 }));
+      }
+    } catch (err) {
+      console.error(`Failed to upload ${field}:`, err);
+      setUploadProgress(prev => ({ ...prev, [field]: -1 }));
+      setError(`Failed to upload ${field}. Please try again.`);
+    }
   };
 
   const validateForm = () => {
@@ -63,6 +103,11 @@ const DoctorRegistration = () => {
     if (!form.city) return 'City is required';
     if (!form.consultationFee || form.consultationFee < 100) return 'Consultation fee must be at least ₹100';
     if (!form.clinicName) return 'Clinic name is required';
+    
+    // Document validation
+    if (!uploadedUrls.ayushCertificate) return 'AYUSH Certificate is required';
+    if (!uploadedUrls.idProof) return 'ID Proof is required';
+    
     return null;
   };
 
@@ -93,7 +138,14 @@ const DoctorRegistration = () => {
         state: form.state || form.city,
         clinicName: form.clinicName,
         languages: form.languages,
-        about: form.about
+        about: form.about,
+        documents: {
+          ayushCertificate: uploadedUrls.ayushCertificate,
+          degreeCertificate: uploadedUrls.degreeCertificate || '',
+          idProof: uploadedUrls.idProof,
+          photo: uploadedUrls.photo || '',
+          clinicLicense: uploadedUrls.clinicLicense || ''
+        }
       };
 
       const response = await api.post('/ayurveda/doctor/register', registrationData);
@@ -102,7 +154,7 @@ const DoctorRegistration = () => {
         setSuccess(true);
         setTimeout(() => {
           navigate('/ayurveda/doctor/login');
-        }, 2000);
+        }, 3000);
       } else {
         setError(response.data.error || 'Registration failed');
       }
@@ -112,6 +164,41 @@ const DoctorRegistration = () => {
       setLoading(false);
     }
   };
+
+  const DocumentUploadField = ({ field, label, required, icon: Icon, accept = 'image/*,.pdf' }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label} {required && '*'}
+      </label>
+      <div className="relative">
+        <input
+          type="file"
+          onChange={(e) => handleFileChange(field, e.target.files[0])}
+          accept={accept}
+          className="hidden"
+          id={`file-${field}`}
+        />
+        <label
+          htmlFor={`file-${field}`}
+          className={`flex items-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
+            uploadedUrls[field] 
+              ? 'border-green-500 bg-green-50' 
+              : 'border-gray-300 hover:border-green-500'
+          }`}
+        >
+          <Icon className={`text-xl ${uploadedUrls[field] ? 'text-green-600' : 'text-gray-400'}`} />
+          <span className="text-sm flex-1">
+            {uploadedUrls[field] 
+              ? '✅ Uploaded successfully' 
+              : uploadProgress[field] > 0 
+              ? `Uploading... ${uploadProgress[field]}%` 
+              : `Click to upload ${label}`}
+          </span>
+          {!uploadedUrls[field] && <FaUpload className="text-gray-400" />}
+        </label>
+      </div>
+    </div>
+  );
 
   if (success) {
     return (
@@ -159,91 +246,66 @@ const DoctorRegistration = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Personal Information */}
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Personal Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name *
-                  </label>
-                  <div className="relative">
-                    <FaUserMd className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="text"
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
-                      placeholder="Dr. Full Name"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="Dr. Full Name"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone *
-                  </label>
-                  <div className="relative">
-                    <FaPhone className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                      placeholder="10-digit mobile"
-                      maxLength="10"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    placeholder="10-digit mobile"
+                    maxLength="10"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email *
-                  </label>
-                  <div className="relative">
-                    <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      placeholder="doctor@email.com"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="doctor@email.com"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password *
-                  </label>
-                  <div className="relative">
-                    <FaLock className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="password"
-                      name="password"
-                      value={form.password}
-                      onChange={handleChange}
-                      placeholder="Min 6 characters"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Min 6 characters"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm Password *
-                  </label>
-                  <div className="relative">
-                    <FaLock className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={form.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="Re-enter password"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Re-enter password"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
               </div>
             </div>
@@ -253,9 +315,7 @@ const DoctorRegistration = () => {
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Professional Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Specialization *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Specialization *</label>
                   <select
                     name="specialization"
                     value={form.specialization}
@@ -268,9 +328,7 @@ const DoctorRegistration = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Experience (Years) *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience (Years) *</label>
                   <input
                     type="number"
                     name="experience"
@@ -283,37 +341,57 @@ const DoctorRegistration = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Education *
-                  </label>
-                  <div className="relative">
-                    <FaGraduationCap className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="text"
-                      name="education"
-                      value={form.education}
-                      onChange={handleChange}
-                      placeholder="BAMS, MD (Panchakarma)"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Education *</label>
+                  <input
+                    type="text"
+                    name="education"
+                    value={form.education}
+                    onChange={handleChange}
+                    placeholder="BAMS, MD (Panchakarma)"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    AYUSH Registration Number *
-                  </label>
-                  <div className="relative">
-                    <FaCertificate className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="text"
-                      name="ayushRegNo"
-                      value={form.ayushRegNo}
-                      onChange={handleChange}
-                      placeholder="AYUSH-XX-YYYY-XXXXX"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">AYUSH Registration Number *</label>
+                  <input
+                    type="text"
+                    name="ayushRegNo"
+                    value={form.ayushRegNo}
+                    onChange={handleChange}
+                    placeholder="AYUSH-XX-YYYY-XXXXX"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
+              </div>
+            </div>
+
+            {/* Document Upload */}
+            <div className="border-t pt-5">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Required Documents</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DocumentUploadField 
+                  field="ayushCertificate" 
+                  label="AYUSH Certificate" 
+                  required 
+                  icon={FaCertificate} 
+                />
+                <DocumentUploadField 
+                  field="idProof" 
+                  label="ID Proof (Aadhaar/PAN)" 
+                  required 
+                  icon={FaIdCard} 
+                />
+                <DocumentUploadField 
+                  field="degreeCertificate" 
+                  label="Degree Certificate" 
+                  icon={FaGraduationCap} 
+                />
+                <DocumentUploadField 
+                  field="photo" 
+                  label="Profile Photo" 
+                  icon={FaFileImage} 
+                  accept="image/*"
+                />
               </div>
             </div>
 
@@ -322,41 +400,29 @@ const DoctorRegistration = () => {
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Clinic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Clinic Name *
-                  </label>
-                  <div className="relative">
-                    <FaBuilding className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="text"
-                      name="clinicName"
-                      value={form.clinicName}
-                      onChange={handleChange}
-                      placeholder="Your Clinic Name"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Clinic Name *</label>
+                  <input
+                    type="text"
+                    name="clinicName"
+                    value={form.clinicName}
+                    onChange={handleChange}
+                    placeholder="Your Clinic Name"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City *
-                  </label>
-                  <div className="relative">
-                    <FaCity className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="text"
-                      name="city"
-                      value={form.city}
-                      onChange={handleChange}
-                      placeholder="e.g., Mumbai"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={form.city}
+                    onChange={handleChange}
+                    placeholder="e.g., Mumbai"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    State
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                   <input
                     type="text"
                     name="state"
@@ -367,33 +433,26 @@ const DoctorRegistration = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Consultation Fee (₹) *
-                  </label>
-                  <div className="relative">
-                    <FaRupeeSign className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="number"
-                      name="consultationFee"
-                      value={form.consultationFee}
-                      onChange={handleChange}
-                      placeholder="e.g., 500"
-                      min="100"
-                      className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Consultation Fee (₹) *</label>
+                  <input
+                    type="number"
+                    name="consultationFee"
+                    value={form.consultationFee}
+                    onChange={handleChange}
+                    placeholder="e.g., 500"
+                    min="100"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
               </div>
               <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  About You (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">About You (Optional)</label>
                 <textarea
                   name="about"
                   value={form.about}
                   onChange={handleChange}
                   rows="3"
-                  placeholder="Brief description of your expertise and experience..."
+                  placeholder="Brief description of your expertise..."
                   className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                 />
               </div>
@@ -405,17 +464,7 @@ const DoctorRegistration = () => {
               disabled={loading}
               className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Submitting Application...
-                </span>
-              ) : (
-                'Submit Registration'
-              )}
+              {loading ? 'Submitting Application...' : 'Submit Registration'}
             </button>
 
             <p className="text-center text-sm text-gray-500">
