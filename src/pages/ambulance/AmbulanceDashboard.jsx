@@ -25,6 +25,7 @@ const AmbulanceDashboard = () => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [financialSummary, setFinancialSummary] = useState(null);
   const [activeTrips, setActiveTrips] = useState([]);
+  const [complaints, setComplaints] = useState([]);
   const [financialPeriod, setFinancialPeriod] = useState('total');
   const [newVehicle, setNewVehicle] = useState({
     vehicleNumber: '', type: 'basic', model: '', year: '',
@@ -69,6 +70,7 @@ const AmbulanceDashboard = () => {
     { id: 'tracking', label: '📍 Live Tracking', icon: '📍' },
     { id: 'corporate', label: '🏢 Corporate Plans', icon: '🏢' },
     { id: 'financials', label: '💰 Financials', icon: '💰' },
+    { id: 'complaints', label: '🚨 Complaints', icon: '🚨' },
     { id: 'reports', label: '📊 Reports', icon: '📊' },
     { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
   ];
@@ -105,6 +107,10 @@ const AmbulanceDashboard = () => {
           const dRes = await ambulanceApi.getDrivers();
           setDrivers(Array.isArray(dRes.data?.data) ? dRes.data.data : []);
           break;
+        case 'complaints':
+  	  const cRes = await ambulanceApi.getComplaints();
+  	  setComplaints(cRes.data?.data || []);
+  	  break;
 	case 'financials':
           const fRes = await ambulanceApi.getFinancialSummary({ period: financialPeriod });
           setFinancialSummary(fRes.data?.data || {});
@@ -532,6 +538,27 @@ const AmbulanceDashboard = () => {
       case 'corporate': return (
         <div><h2 style={{fontWeight:700,fontSize:'1.2rem',marginBottom:8}}>🏢 Corporate Plans</h2><p style={{color:'#64748b',marginBottom:16}}>Offer corporate ambulance retainers.</p><CorporatePlansTab providerType="ambulance" providerId={providerId} token={token} /></div>
       );
+
+	case 'complaints': return (
+  <div>
+    <h2 style={{fontSize:'1.25rem',fontWeight:'bold',marginBottom:'1rem'}}>🚨 Complaints</h2>
+    <ProviderTable 
+      columns={[
+        {key:'complaintId',label:'ID'},
+        {key:'category',label:'Category'},
+        {key:'description',label:'Description'},
+        {key:'priority',label:'Priority', render: p => (
+          <span style={{padding:'3px 8px',borderRadius:'10px',fontSize:'10px',fontWeight:600,backgroundColor:p==='critical'?'#ef4444':p==='high'?'#f59e0b':p==='medium'?'#3b82f6':'#10b981',color:'white'}}>{p}</span>
+        )},
+        {key:'status',label:'Status', render: s => (
+          <span style={{padding:'3px 8px',borderRadius:'10px',fontSize:'10px',fontWeight:600,backgroundColor:s==='open'?'#ef4444':s==='resolved'?'#10b981':'#f59e0b',color:'white'}}>{s}</span>
+        )}
+      ]} 
+      data={complaints} 
+      loading={loading} 
+    />
+  </div>
+);
 
 	case 'financials': return (
   <div>

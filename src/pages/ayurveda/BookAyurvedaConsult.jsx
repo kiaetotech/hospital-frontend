@@ -43,7 +43,7 @@ const BookAyurvedaConsult = () => {
   });
 
   // Form Data
-  const [formData, setFormData] = useState({
+   const [formData, setFormData] = useState({
     patientName: '',
     patientPhone: '',
     patientEmail: '',
@@ -53,7 +53,12 @@ const BookAyurvedaConsult = () => {
     medicalHistory: '',
     prakritiType: '',
     allergies: '',
-    currentMedications: ''
+    currentMedications: '',
+    duration: '',
+    previousTreatment: '',
+    diet: '',
+    sleep: '',
+    stress: ''
   });
 
   // Generated Slots
@@ -224,7 +229,7 @@ const BookAyurvedaConsult = () => {
     setBookingLoading(true);
 
     try {
-      const response = await createBooking({
+        const response = await createBooking({
         type: 'doctor_consultation',
         doctorId: doctor._id,
         consultationType,
@@ -238,6 +243,12 @@ const BookAyurvedaConsult = () => {
         patientEmail: formData.patientEmail,
         patientAge: formData.patientAge,
         patientGender: formData.patientGender,
+        duration: formData.duration,
+        previousTreatment: formData.previousTreatment,
+        diet: formData.diet,
+        sleep: formData.sleep,
+        stress: formData.stress,
+        allergies: formData.allergies,
         discountCode: couponApplied?.code,
         cancellationProtection,
         referralCode: referralCode || undefined
@@ -593,7 +604,7 @@ const BookAyurvedaConsult = () => {
               </div>
             </div>
 
-            {/* Medical Details */}
+                        {/* Medical Details */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-lg font-semibold mb-4">Medical Details</h2>
               <div className="space-y-4">
@@ -608,6 +619,98 @@ const BookAyurvedaConsult = () => {
                     className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
                   />
                 </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Duration of Symptoms</label>
+                    <select
+                      value={formData.duration}
+                      onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Select duration</option>
+                      <option value="less_than_week">Less than a week</option>
+                      <option value="1_4_weeks">1-4 weeks</option>
+                      <option value="1_6_months">1-6 months</option>
+                      <option value="6_12_months">6-12 months</option>
+                      <option value="over_1_year">Over 1 year</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Previous Treatment</label>
+                    <select
+                      value={formData.previousTreatment}
+                      onChange={(e) => setFormData({ ...formData, previousTreatment: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Select</option>
+                      <option value="none">None</option>
+                      <option value="allopathy">Allopathy</option>
+                      <option value="ayurveda">Ayurveda</option>
+                      <option value="homeopathy">Homeopathy</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Diet Preference</label>
+                    <select
+                      value={formData.diet}
+                      onChange={(e) => setFormData({ ...formData, diet: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Select</option>
+                      <option value="vegetarian">Vegetarian</option>
+                      <option value="non_vegetarian">Non-Vegetarian</option>
+                      <option value="vegan">Vegan</option>
+                      <option value="mixed">Mixed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Sleep Pattern</label>
+                    <select
+                      value={formData.sleep}
+                      onChange={(e) => setFormData({ ...formData, sleep: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Select</option>
+                      <option value="good">Good (7-8 hrs)</option>
+                      <option value="fair">Fair (5-6 hrs)</option>
+                      <option value="poor">Poor (less than 5 hrs)</option>
+                      <option value="irregular">Irregular</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Stress Level</label>
+                    <select
+                      value={formData.stress}
+                      onChange={(e) => setFormData({ ...formData, stress: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Select</option>
+                      <option value="low">Low</option>
+                      <option value="moderate">Moderate</option>
+                      <option value="high">High</option>
+                      <option value="severe">Severe</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Allergies</label>
+                    <input
+                      type="text"
+                      value={formData.allergies}
+                      onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+                      placeholder="Any known allergies"
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Prakriti Type</label>
                   <select
@@ -619,6 +722,9 @@ const BookAyurvedaConsult = () => {
                     <option value="Vata">Vata</option>
                     <option value="Pitta">Pitta</option>
                     <option value="Kapha">Kapha</option>
+                    <option value="Vata-Pitta">Vata-Pitta</option>
+                    <option value="Pitta-Kapha">Pitta-Kapha</option>
+                    <option value="Vata-Kapha">Vata-Kapha</option>
                   </select>
                 </div>
               </div>

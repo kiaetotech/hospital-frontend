@@ -32,7 +32,8 @@ const DoctorDashboard = () => {
     medicines: [{ name: '', dosage: '', duration: '', instructions: '' }],
     dietAdvice: '',
     lifestyleAdvice: '',
-    followUpDate: ''
+    followUpDate: '',
+    followUpRequired: false
   });
   const [availability, setAvailability] = useState([]);
   const [savingAvailability, setSavingAvailability] = useState(false);
@@ -632,6 +633,29 @@ const DoctorDashboard = () => {
                     className="w-full p-2 border rounded"
                     rows="2"
                   />
+                </div>
+
+	         <div>
+                  <label className="block text-sm font-medium mb-1">Follow-up Date</label>
+                  <input
+                    type="date"
+                    value={prescriptionData.followUpDate}
+                    onChange={(e) => setPrescriptionData({ ...prescriptionData, followUpDate: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Follow-up Required</label>
+                  <select
+                    value={prescriptionData.followUpRequired}
+                    onChange={(e) => setPrescriptionData({ ...prescriptionData, followUpRequired: e.target.value === 'true' })}
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value="false">No follow-up needed</option>
+                    <option value="true">Follow-up required</option>
+                  </select>
                 </div>
 
                 <div className="flex gap-3">

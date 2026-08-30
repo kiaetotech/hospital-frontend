@@ -1,175 +1,320 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-
-const dummyPackages = {
-  'PKG001': { name: '7-Day Panchakarma Detox', price: 25000, duration: 7, centerName: 'AyurVeda Retreat Rishikesh' },
-  'PKG002': { name: '14-Day Rejuvenation', price: 45000, duration: 14, centerName: 'AyurVeda Retreat Rishikesh' },
-  'PKG003': { name: '21-Day Complete Transformation', price: 65000, duration: 21, centerName: 'AyurVeda Retreat Rishikesh' },
-  'PKG004': { name: '5-Day Kerala Detox', price: 18000, duration: 5, centerName: 'Kerala Ayurveda Kendra' },
-  'PKG005': { name: '10-Day Panchakarma', price: 35000, duration: 10, centerName: 'Kerala Ayurveda Kendra' },
-  'PKG006': { name: '3-Day Wellness Weekend', price: 12000, duration: 3, centerName: 'Dhanvantari Wellness Center' },
-  'PKG007': { name: '7-Day Stress Relief', price: 28000, duration: 7, centerName: 'Dhanvantari Wellness Center' },
-  'PKG008': { name: '14-Day Complete Detox', price: 50000, duration: 14, centerName: 'Dhanvantari Wellness Center' },
-};
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { createBooking } from '../../services/ayurvedaApi';
+import { 
+  FaBuilding, FaStar, FaCalendarAlt, FaUsers, FaRupeeSign,
+  FaCheckCircle, FaArrowLeft, FaShieldAlt, FaClock, FaBed
+} from 'react-icons/fa';
 
 const BookPanchakarmaPackage = () => {
-  const { centerId, packageId } = useParams();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const location = useLocation();
+  const center = location.state?.center;
+  const selectedPackage = location.state?.package;
+
   const [formData, setFormData] = useState({
     patientName: '',
-    phone: '',
-    email: '',
-    startDate: '',
-    persons: 1,
+    patientPhone: '',
+    patientEmail: '',
+    patientAge: '',
+    patientGender: '',
+    admissionDate: '',
+    symptoms: '',
     medicalHistory: '',
-    accommodation: 'shared'
+    prakritiType: '',
+    accommodation: 'included',
+    dietPreference: 'vegetarian'
   });
 
-  const pkg = dummyPackages[packageId] || { name: 'Custom Package', price: 20000, duration: 7, centerName: 'Center' };
-  const commission = pkg.price * 0.20;
-  const totalAmount = pkg.price;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (!center || !selectedPackage) {
+      navigate('/ayurveda/panchakarma-centers');
+      return;
+    }
+    
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    if (userData) {
+      setFormData(prev => ({
+        ...prev,
+        patientName: userData.name || '',
+        patientPhone: userData.phone || '',
+        patientEmail: userData.email || ''
+      }));
+    }
+  }, [center, selectedPackage, navigate]);
+
+  const packageDetails = useMemo(() => {
+    if (!selectedPackage) return null;
+    const price = selectedPackage.discountPrice || selectedPackage.price;
+    const gst = Math.round(price * 0.18);
+    const total = price + gst;
+    return { price, gst, total };
+  }, [selectedPackage]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (step === 1) {
-      setStep(2);
-    } else {
-      // Generate booking ID
-      const bookingId = 'AYB' + Date.now();
-      navigate(`/ayurveda/payment/panchakarma/${bookingId}`, {
-        state: {
-          bookingId,
-          ...formData,
-          packageName: pkg.name,
-          packageId,
-          centerId,
-          centerName: pkg.centerName,
-          amount: totalAmount,
-          commission: commission,
-          duration: pkg.duration
-        }
+    setError('');
+
+    if (!formData.admissionDate) {
+      setError('Please select admission date');
+      return;
+    }
+    if (!acceptedTerms) {
+      setError('Please accept terms and conditions');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await createBooking({
+        type: 'panchakarma_package',
+        centerId: center._id,
+        packageId: selectedPackage._id || selectedPackage.id,
+        bookingDate: formData.admissionDate,
+        patientName: formData.patientName,
+        patientPhone: formData.patientPhone,
+        patientEmail: formData.patientEmail,
+        patientAge: formData.patientAge,
+        patientGender: formData.patientGender,
+        symptoms: formData.symptoms,
+        medicalHistory: formData.medicalHistory,
+        prakritiType: formData.prakritiType
       });
+
+      if (response.data.success) {
+        navigate('/ayurveda/payment', {
+          state: {
+            bookingData: response.data.data,
+            center: center,
+            package: selectedPackage
+          }
+        });
+      } else {
+        setError(response.data.message || 'Failed to create booking');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create booking');
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (!center || !selectedPackage) {
+    return null;
+  }
+
   return (
-    <div style={{ maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
-      {/* Progress Steps */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-        {[1, 2].map(s => (
-          <div key={s} style={{
-            width: '40px', height: '40px', borderRadius: '50%',
-            backgroundColor: step >= s ? '#FF9800' : '#e2e8f0',
-            color: step >= s ? 'white' : '#64748b',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 'bold', margin: '0 0.5rem'
-          }}>
-            {step > s ? '✅' : s}
-          </div>
-        ))}
-      </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6"
+        >
+          <FaArrowLeft /> Back
+        </button>
 
-      {/* Package Summary */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '1rem',
-        padding: '1.5rem',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        marginBottom: '1.5rem',
-        borderLeft: '4px solid #FF9800'
-      }}>
-        <h2 style={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem' }}>{pkg.name}</h2>
-        <p style={{ color: '#64748b' }}>🏨 {pkg.centerName}</p>
-        <p style={{ color: '#64748b' }}>📅 {pkg.duration} Days</p>
-        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: '#FF9800' }}>₹{totalAmount.toLocaleString()}</span>
-          <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Incl. 20% platform fee</span>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        {step === 1 ? (
-          /* Step 1: Patient Details */
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '1rem',
-            padding: '1.5rem',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-          }}>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem', color: '#1e293b' }}>Patient Details</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <input required placeholder="Full Name" value={formData.patientName} 
-                onChange={(e) => setFormData({...formData, patientName: e.target.value})} style={inputStyle} />
-              <input required placeholder="Phone Number" value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})} style={inputStyle} />
-              <input required type="email" placeholder="Email" value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})} style={inputStyle} />
-              <input required type="date" placeholder="Preferred Start Date" value={formData.startDate}
-                onChange={(e) => setFormData({...formData, startDate: e.target.value})} style={inputStyle} />
-              <select value={formData.persons}
-                onChange={(e) => setFormData({...formData, persons: e.target.value})} style={inputStyle}>
-                <option value="1">1 Person</option>
-                <option value="2">2 Persons</option>
-              </select>
-              <textarea placeholder="Medical History / Special Requirements" value={formData.medicalHistory}
-                onChange={(e) => setFormData({...formData, medicalHistory: e.target.value})} 
-                style={{...inputStyle, height: '80px'}} />
-            </div>
-          </div>
-        ) : (
-          /* Step 2: Review */
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '1rem',
-            padding: '1.5rem',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-          }}>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem', color: '#1e293b' }}>Review Booking</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {[
-                ['Package', pkg.name],
-                ['Center', pkg.centerName],
-                ['Duration', `${pkg.duration} Days`],
-                ['Patient', formData.patientName],
-                ['Phone', formData.phone],
-                ['Start Date', formData.startDate],
-                ['Persons', formData.persons],
-                ['Total Amount', `₹${totalAmount.toLocaleString()}`],
-              ].map(([label, value], i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #e2e8f0' }}>
-                  <span style={{ color: '#64748b' }}>{label}</span>
-                  <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{value}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* LEFT: Booking Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Package Summary */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-green-700 to-green-600 p-6 text-white">
+                <h1 className="text-2xl font-bold">{selectedPackage.name}</h1>
+                <p className="text-green-100">{center.name}</p>
+                <div className="flex items-center gap-4 mt-2 text-sm">
+                  <span className="flex items-center gap-1">
+                    <FaStar className="text-yellow-400" /> {center.rating || 'New'}
+                  </span>
+                  <span>{selectedPackage.duration} Days</span>
+                  <span>{center.address?.city}</span>
                 </div>
-              ))}
+              </div>
+              <div className="p-4 bg-green-50">
+                <div className="flex flex-wrap gap-2">
+                  {selectedPackage.therapies?.map((therapy, i) => (
+                    <span key={i} className="px-2 py-1 bg-white rounded-full text-xs">
+                      {therapy}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            {/* Booking Form */}
+            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-6 space-y-5">
+              <h2 className="text-lg font-semibold">Patient Details</h2>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={formData.patientName}
+                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                    required
+                    className="w-full p-2.5 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone *</label>
+                  <input
+                    type="tel"
+                    value={formData.patientPhone}
+                    onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    required
+                    className="w-full p-2.5 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.patientEmail}
+                    onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
+                    className="w-full p-2.5 border rounded-lg"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Age</label>
+                    <input
+                      type="number"
+                      value={formData.patientAge}
+                      onChange={(e) => setFormData({ ...formData, patientAge: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Gender</label>
+                    <select
+                      value={formData.patientGender}
+                      onChange={(e) => setFormData({ ...formData, patientGender: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg"
+                    >
+                      <option value="">Select</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-5">
+                <h2 className="text-lg font-semibold mb-3">Booking Details</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Admission Date *</label>
+                    <input
+                      type="date"
+                      value={formData.admissionDate}
+                      onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full p-2.5 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Prakriti Type</label>
+                    <select
+                      value={formData.prakritiType}
+                      onChange={(e) => setFormData({ ...formData, prakritiType: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg"
+                    >
+                      <option value="">Not sure</option>
+                      <option value="Vata">Vata</option>
+                      <option value="Pitta">Pitta</option>
+                      <option value="Kapha">Kapha</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-5">
+                <h2 className="text-lg font-semibold mb-3">Medical Information</h2>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Symptoms / Concern *</label>
+                  <textarea
+                    value={formData.symptoms}
+                    onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
+                    required
+                    rows="3"
+                    placeholder="Describe your health concern..."
+                    className="w-full p-2.5 border rounded-lg"
+                  />
+                </div>
+              </div>
+
+              {/* Terms */}
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1"
+                />
+                <span className="text-sm text-gray-600">
+                  I agree to the terms and conditions and understand this is a booking request.
+                  Final confirmation will be provided by the center.
+                </span>
+              </div>
+            </form>
+          </div>
+
+          {/* RIGHT: Price Summary */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-md p-6 sticky top-4">
+              <h2 className="text-lg font-semibold mb-4">Price Summary</h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Package Price</span>
+                  <span>₹{packageDetails?.price}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">GST (18%)</span>
+                  <span>₹{packageDetails?.gst}</span>
+                </div>
+                <div className="border-t pt-3 flex justify-between items-center">
+                  <span className="font-bold">Total</span>
+                  <span className="font-bold text-2xl text-green-600">₹{packageDetails?.total}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full mt-4 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400"
+              >
+                {loading ? 'Processing...' : 'Proceed to Payment →'}
+              </button>
+
+              <div className="mt-4 space-y-2 text-xs text-gray-500">
+                <p className="flex items-center gap-1">
+                  <FaShieldAlt className="text-green-600" /> Secure Booking
+                </p>
+                <p className="flex items-center gap-1">
+                  <FaClock className="text-green-600" /> Free Cancellation up to 72 hours
+                </p>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Buttons */}
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-          {step === 2 && (
-            <button type="button" onClick={() => setStep(1)}
-              style={{ flex: 1, padding: '1rem', backgroundColor: '#e2e8f0', color: '#1e293b', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', cursor: 'pointer' }}>
-              ← Back
-            </button>
-          )}
-          <button type="submit"
-            style={{ flex: 1, padding: '1rem', backgroundColor: '#FF9800', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
-            {step === 1 ? 'Continue to Review →' : `Proceed to Pay ₹${totalAmount.toLocaleString()}`}
-          </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
 
-const inputStyle = {
-  padding: '0.75rem',
-  borderRadius: '0.5rem',
-  border: '1px solid #e2e8f0',
-  fontSize: '1rem'
-};
-
 export default BookPanchakarmaPackage;
-

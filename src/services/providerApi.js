@@ -106,6 +106,7 @@ export const ambulanceApi = {
   getFinancialSummary: (params) => providerApi.get('/ambulance/financial-summary', { params }),
   requestSettlement: () => providerApi.post('/ambulance/settlements/request'),
   getActiveTrips: () => providerApi.get('/ambulance/active-trips'),
+  getComplaints: () => providerApi.get('/ambulance/complaints'),
 };
 
 export const caregiverApi = {
