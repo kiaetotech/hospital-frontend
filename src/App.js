@@ -66,6 +66,9 @@ import PrakritiCommerce from './pages/ayurveda/PrakritiCommerce';
 import PanchakarmaTracker from './pages/ayurveda/PanchakarmaTracker';
 import SeasonalWellness from './pages/ayurveda/SeasonalWellness';
 import WellnessPrograms from './pages/ayurveda/WellnessPrograms';
+import MyAyurvedaJourney from './pages/ayurveda/MyAyurvedaJourney';
+import CompareCenters from './pages/ayurveda/CompareCenters';
+import AyurvedaAIAdvisor from './pages/ayurveda/AyurvedaAIAdvisor';
 
 // ============================================
 // HOMEOPATHY & NATUROPATHY MODULE IMPORTS
@@ -285,6 +288,10 @@ function App() {
 	  <Route path="/ayurveda/panchakarma-tracker/:bookingId" element={<PanchakarmaTracker />} />
 	  <Route path="/ayurveda/seasonal-wellness" element={<SeasonalWellness />} />
 	  <Route path="/ayurveda/wellness-programs" element={<WellnessPrograms />} />
+	  <Route path="/ayurveda/my-journey" element={<MyAyurvedaJourney />} />
+          <Route path="/ayurveda/compare-centers" element={<CompareCenters />} />
+	  <Route path="/ayurveda/ai-advisor" element={<AyurvedaAIAdvisor />} />
+
 
           {/* HOMEOPATHY TAG */}
           <Route path="/homeopathy" element={<HomeopathyHub />} />
