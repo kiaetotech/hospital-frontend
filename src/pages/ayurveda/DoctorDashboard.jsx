@@ -1,3 +1,4 @@
+import api from '../../services/api';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -33,6 +34,8 @@ const DoctorDashboard = () => {
     lifestyleAdvice: '',
     followUpDate: ''
   });
+  const [availability, setAvailability] = useState([]);
+  const [savingAvailability, setSavingAvailability] = useState(false);
 
   useEffect(() => {
     const doctorData = JSON.parse(localStorage.getItem('doctor') || '{}');
@@ -66,6 +69,34 @@ const DoctorDashboard = () => {
       setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailability = async () => {
+    try {
+      const response = await api.get(`/ayurveda/doctor/${doctor.id}/availability`);
+      if (response.data.success) {
+        setAvailability(response.data.data.availability || []);
+      }
+    } catch (err) {
+      console.error('Failed to load availability');
+    }
+  };
+
+  const handleSaveAvailability = async () => {
+    setSavingAvailability(true);
+    try {
+      const response = await api.put('/ayurveda/doctor/availability', {
+        doctorId: doctor.id,
+        availability: availability.filter(a => a && a.day)
+      });
+      if (response.data.success) {
+        alert('Availability saved successfully!');
+      }
+    } catch (err) {
+      alert('Failed to save availability');
+    } finally {
+      setSavingAvailability(false);
     }
   };
 
@@ -205,6 +236,7 @@ const DoctorDashboard = () => {
           {[
             { id: 'overview', label: 'Overview', icon: FaChartBar },
             { id: 'bookings', label: 'Bookings', icon: FaCalendarAlt },
+            { id: 'availability', label: 'Availability', icon: FaClock },
             { id: 'earnings', label: 'Earnings', icon: FaWallet },
             { id: 'settlements', label: 'Settlements', icon: FaHistory }
           ].map(tab => (
@@ -379,6 +411,124 @@ const DoctorDashboard = () => {
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+	        {activeTab === 'availability' && (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-lg font-semibold mb-4">Manage Availability</h2>
+            
+            <div className="space-y-4">
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, dayIndex) => {
+                const dayData = availability[dayIndex];
+                const isActive = dayData && dayData.day === day;
+                
+                return (
+                  <div key={day} className={`border rounded-lg p-4 ${isActive ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <button
+                        onClick={() => {
+                          const updated = [...availability];
+                          if (updated[dayIndex]) {
+                            updated.splice(dayIndex, 1);
+                          } else {
+                            updated[dayIndex] = { day, slots: [] };
+                          }
+                          setAvailability(updated);
+                        }}
+                        className={`px-4 py-2 rounded-lg font-medium ${
+                          isActive ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                      {isActive && (
+                        <button
+                          onClick={() => {
+                            const updated = [...availability];
+                            updated[dayIndex].slots.push({
+                              startTime: '09:00 AM',
+                              endTime: '10:00 AM',
+                              maxBookings: 5,
+                              currentBookings: 0
+                            });
+                            setAvailability(updated);
+                          }}
+                          className="text-green-600 hover:text-green-700 text-sm"
+                        >
+                          + Add Slot
+                        </button>
+                      )}
+                    </div>
+
+                    {isActive && dayData.slots.length > 0 && (
+                      <div className="space-y-2">
+                        {dayData.slots.map((slot, slotIndex) => (
+                          <div key={slotIndex} className="flex items-center gap-2">
+                            <select
+                              value={slot.startTime}
+                              onChange={(e) => {
+                                const updated = [...availability];
+                                updated[dayIndex].slots[slotIndex].startTime = e.target.value;
+                                setAvailability(updated);
+                              }}
+                              className="p-2 border rounded text-sm"
+                            >
+                              {['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM'].map(t => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
+                            <span className="text-sm">to</span>
+                            <select
+                              value={slot.endTime}
+                              onChange={(e) => {
+                                const updated = [...availability];
+                                updated[dayIndex].slots[slotIndex].endTime = e.target.value;
+                                setAvailability(updated);
+                              }}
+                              className="p-2 border rounded text-sm"
+                            >
+                              {['10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM'].map(t => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="number"
+                              value={slot.maxBookings}
+                              onChange={(e) => {
+                                const updated = [...availability];
+                                updated[dayIndex].slots[slotIndex].maxBookings = parseInt(e.target.value);
+                                setAvailability(updated);
+                              }}
+                              min="1"
+                              max="20"
+                              className="p-2 border rounded w-20 text-sm"
+                            />
+                            <button
+                              onClick={() => {
+                                const updated = [...availability];
+                                updated[dayIndex].slots.splice(slotIndex, 1);
+                                setAvailability(updated);
+                              }}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={handleSaveAvailability}
+              disabled={savingAvailability}
+              className="mt-6 w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400"
+            >
+              {savingAvailability ? 'Saving...' : 'Save Availability'}
+            </button>
           </div>
         )}
       </div>
