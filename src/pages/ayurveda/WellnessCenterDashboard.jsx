@@ -78,10 +78,16 @@ const WellnessCenterDashboard = () => {
     }
   };
 
-  const handleStatusUpdate = async (bookingId, action) => {
+    const handleStatusUpdate = async (bookingId, action) => {
     try {
+      if (action === 'reject') {
+        if (!window.confirm('Are you sure you want to reject this booking? The patient will be refunded.')) {
+          return;
+        }
+      }
       const response = await updateBookingStatus(bookingId, action);
       if (response.data.success) {
+        alert(`Booking ${action}ed successfully!`);
         fetchDashboardData(center.id);
       }
     } catch (err) {
@@ -301,7 +307,7 @@ const WellnessCenterDashboard = () => {
           </div>
         )}
 
-        {/* Bookings Tab */}
+                {/* Bookings Tab */}
         {activeTab === 'bookings' && (
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
@@ -321,6 +327,35 @@ const WellnessCenterDashboard = () => {
               </div>
             </div>
 
+            {/* Stats Summary */}
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              <div className="bg-blue-50 p-3 rounded-lg text-center">
+                <p className="text-xs text-gray-600">Pending</p>
+                <p className="text-xl font-bold text-blue-600">
+                  {bookings.filter(b => b.status === 'pending').length}
+                </p>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg text-center">
+                <p className="text-xs text-gray-600">Active</p>
+                <p className="text-xl font-bold text-yellow-600">
+                  {bookings.filter(b => ['confirmed', 'in_progress'].includes(b.status)).length}
+                </p>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg text-center">
+                <p className="text-xs text-gray-600">Completed</p>
+                <p className="text-xl font-bold text-green-600">
+                  {bookings.filter(b => b.status === 'completed').length}
+                </p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-lg text-center">
+                <p className="text-xs text-gray-600">Cancelled</p>
+                <p className="text-xl font-bold text-red-600">
+                  {bookings.filter(b => b.status === 'cancelled').length}
+                </p>
+              </div>
+            </div>
+
+            {/* Booking Cards */}
             <div className="space-y-4">
               {filteredBookings.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">No bookings found</p>
@@ -328,56 +363,91 @@ const WellnessCenterDashboard = () => {
                 filteredBookings.map(booking => (
                   <div key={booking.bookingId} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold">{booking.patient?.name}</p>
-                        <p className="text-sm text-gray-600">{booking.patient?.phone}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold">{booking.patient?.name}</p>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            booking.status === 'completed' ? 'bg-green-100 text-green-700' :
+                            booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                            booking.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                            booking.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {booking.status.replace('_', ' ')}
+                          </span>
+                        </div>
                         <p className="text-sm text-gray-600">
-                          {new Date(booking.bookingDate).toLocaleDateString()}
+                          📞 {booking.patient?.phone}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          📅 {new Date(booking.bookingDate).toLocaleDateString()}
                         </p>
                         {booking.package && (
                           <p className="text-sm text-gray-600">
-                            Package: {booking.package.name} ({booking.package.duration} days)
+                            📦 {booking.package.name} ({booking.package.duration} days)
                           </p>
                         )}
                       </div>
                       <div className="text-right">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          booking.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                          booking.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {booking.status.replace('_', ' ')}
-                        </span>
-                        <p className="mt-2 font-bold text-green-600">₹{booking.finalAmount}</p>
+                        <p className="font-bold text-green-600">₹{booking.finalAmount}</p>
+                        <p className="text-xs text-gray-500">
+                          Commission: ₹{booking.platformCommission}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Your Earning: ₹{booking.providerEarning}
+                        </p>
                       </div>
                     </div>
 
+                    {/* Payment Status */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${
+                        booking.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
+                        booking.paymentStatus === 'refunded' ? 'bg-red-100 text-red-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        Payment: {booking.paymentStatus}
+                      </span>
+                    </div>
+
                     {/* Actions */}
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex gap-2 border-t pt-3">
                       {booking.status === 'pending' && (
-                        <button
-                          onClick={() => handleStatusUpdate(booking.bookingId, 'accept')}
-                          className="px-3 py-1 bg-green-600 text-white rounded text-sm"
-                        >
-                          Accept Booking
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleStatusUpdate(booking.bookingId, 'accept')}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium"
+                          >
+                            ✓ Accept Booking
+                          </button>
+                          <button
+                            onClick={() => handleStatusUpdate(booking.bookingId, 'reject')}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium"
+                          >
+                            ✕ Reject
+                          </button>
+                        </>
                       )}
                       {booking.status === 'confirmed' && (
                         <button
                           onClick={() => handleStatusUpdate(booking.bookingId, 'start')}
-                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
                         >
-                          Start Treatment
+                          ▶ Start Treatment
                         </button>
                       )}
                       {booking.status === 'in_progress' && (
                         <button
                           onClick={() => handleStatusUpdate(booking.bookingId, 'complete')}
-                          className="px-3 py-1 bg-purple-600 text-white rounded text-sm"
+                          className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium"
                         >
-                          Complete Treatment
+                          ✓ Complete Treatment
                         </button>
+                      )}
+                      {booking.status === 'completed' && (
+                        <span className="text-sm text-green-600 font-medium">
+                          ✓ Treatment completed successfully
+                        </span>
                       )}
                     </div>
                   </div>

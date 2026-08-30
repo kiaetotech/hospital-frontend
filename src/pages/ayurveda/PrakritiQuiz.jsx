@@ -1,215 +1,334 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const questions = [
-  { id: 1, q: 'What is your body frame?', options: ['Thin & lean', 'Medium built', 'Heavy & broad'] },
-  { id: 2, q: 'How is your skin typically?', options: ['Dry & rough', 'Soft & sensitive', 'Oily & thick'] },
-  { id: 3, q: 'How is your appetite?', options: ['Irregular & variable', 'Strong & sharp', 'Steady but slow'] },
-  { id: 4, q: 'Your preferred climate?', options: ['Warm weather', 'Cool weather', 'Any weather'] },
-  { id: 5, q: 'How is your sleep pattern?', options: ['Light & interrupted', 'Moderate (6-7 hrs)', 'Deep & heavy (8+ hrs)'] },
-  { id: 6, q: 'Your natural body temperature?', options: ['Cold hands/feet', 'Warm most of the time', 'Cool & clammy'] },
-  { id: 7, q: 'Speech pattern?', options: ['Fast & talkative', 'Sharp & precise', 'Slow & deliberate'] },
-  { id: 8, q: 'Memory style?', options: ['Quick to learn, quick to forget', 'Sharp & clear memory', 'Slow to learn, never forgets'] },
-  { id: 9, q: 'How do you handle stress?', options: ['Anxiety & worry', ['Anger & irritation', 'Frustration'], 'Calm & withdrawn'] },
-  { id: 10, q: 'Digestion pattern?', options: ['Bloating & gas', 'Acidity & heartburn', 'Slow & heavy digestion'] },
-  { id: 11, q: 'Hair type?', options: ['Dry & frizzy', 'Thin & greying early', 'Thick & oily'] },
-  { id: 12, q: 'Voice quality?', options: ['Hoarse & cracking', 'Loud & clear', 'Soft & mellow'] },
-  { id: 13, q: 'Perspiration?', options: ['Scanty sweating', 'Profuse sweating', 'Moderate sweating'] },
-  { id: 14, q: 'Food preference?', options: ['Warm, cooked meals', 'Cold drinks & salads', 'Rich, heavy foods'] },
-  { id: 15, q: 'Decision making?', options: ['Quick but often change', 'Decisive & firm', 'Slow & methodical'] }
-];
+import { getAyurvedaDoctors } from '../../services/ayurvedaApi';
+import { FaArrowLeft, FaArrowRight, FaCheckCircle, FaUserMd, FaDownload } from 'react-icons/fa';
 
 const PrakritiQuiz = () => {
   const navigate = useNavigate();
-  const [currentQ, setCurrentQ] = useState(0);
+  const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
+  const [recommendedDoctors, setRecommendedDoctors] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleAnswer = (optionIdx) => {
-    const newAnswers = { ...answers, [questions[currentQ].id]: optionIdx };
-    setAnswers(newAnswers);
+  const questions = [
+    {
+      id: 'bodyType',
+      question: 'What is your body frame?',
+      options: [
+        { text: 'Thin, light, slender', dosha: 'Vata', score: 2 },
+        { text: 'Medium, muscular', dosha: 'Pitta', score: 2 },
+        { text: 'Large, well-built', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'weight',
+      question: 'How is your weight tendency?',
+      options: [
+        { text: 'Hard to gain weight', dosha: 'Vata', score: 2 },
+        { text: 'Easy to gain/lose', dosha: 'Pitta', score: 2 },
+        { text: 'Easy to gain, hard to lose', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'skin',
+      question: 'How is your skin type?',
+      options: [
+        { text: 'Dry, rough, cool', dosha: 'Vata', score: 2 },
+        { text: 'Oily, warm, sensitive', dosha: 'Pitta', score: 2 },
+        { text: 'Smooth, moist, cool', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'hair',
+      question: 'How is your hair?',
+      options: [
+        { text: 'Dry, thin, frizzy', dosha: 'Vata', score: 2 },
+        { text: 'Oily, premature greying', dosha: 'Pitta', score: 2 },
+        { text: 'Thick, shiny, wavy', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'appetite',
+      question: 'How is your appetite?',
+      options: [
+        { text: 'Irregular, variable', dosha: 'Vata', score: 2 },
+        { text: 'Strong, can\'t skip meals', dosha: 'Pitta', score: 2 },
+        { text: 'Steady but can skip meals', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'digestion',
+      question: 'How is your digestion?',
+      options: [
+        { text: 'Gas, bloating, irregular', dosha: 'Vata', score: 2 },
+        { text: 'Acidity, heartburn', dosha: 'Pitta', score: 2 },
+        { text: 'Slow, heavy feeling', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'bowelMovement',
+      question: 'How is your bowel movement?',
+      options: [
+        { text: 'Dry, constipated', dosha: 'Vata', score: 2 },
+        { text: 'Loose, frequent', dosha: 'Pitta', score: 2 },
+        { text: 'Regular, well-formed', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'sleep',
+      question: 'How is your sleep pattern?',
+      options: [
+        { text: 'Light, easily disturbed', dosha: 'Vata', score: 2 },
+        { text: 'Moderate, can manage', dosha: 'Pitta', score: 2 },
+        { text: 'Deep, heavy sleeper', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'temperature',
+      question: 'How do you feel about temperature?',
+      options: [
+        { text: 'Prefer warm weather', dosha: 'Vata', score: 2 },
+        { text: 'Prefer cool weather', dosha: 'Pitta', score: 2 },
+        { text: 'Comfortable in most weather', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'mind',
+      question: 'How is your mental activity?',
+      options: [
+        { text: 'Quick, restless, creative', dosha: 'Vata', score: 2 },
+        { text: 'Sharp, focused, analytical', dosha: 'Pitta', score: 2 },
+        { text: 'Calm, steady, peaceful', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'stress',
+      question: 'How do you respond to stress?',
+      options: [
+        { text: 'Anxiety, worry, fear', dosha: 'Vata', score: 2 },
+        { text: 'Irritability, anger', dosha: 'Pitta', score: 2 },
+        { text: 'Withdrawal, lethargy', dosha: 'Kapha', score: 2 }
+      ]
+    },
+    {
+      id: 'activity',
+      question: 'What is your activity level?',
+      options: [
+        { text: 'Always moving, restless', dosha: 'Vata', score: 2 },
+        { text: 'Active with purpose', dosha: 'Pitta', score: 2 },
+        { text: 'Slow, relaxed', dosha: 'Kapha', score: 2 }
+      ]
+    }
+  ];
 
-    if (currentQ < questions.length - 1) {
-      setCurrentQ(currentQ + 1);
+  const handleAnswer = async (questionId, dosha, score) => {
+    const updatedAnswers = { ...answers, [questionId]: { dosha, score } };
+    setAnswers(updatedAnswers);
+
+    if (step < questions.length - 1) {
+      setStep(step + 1);
     } else {
-      calculateResult(newAnswers);
+      calculateResult(updatedAnswers);
     }
   };
 
-  const calculateResult = (finalAnswers) => {
-    let vata = 0, pitta = 0, kapha = 0;
+  const calculateResult = async (finalAnswers) => {
+    setLoading(true);
+    
+    const doshaScores = { Vata: 0, Pitta: 0, Kapha: 0 };
     
     Object.values(finalAnswers).forEach(answer => {
-      if (answer === 0) vata++;
-      else if (answer === 1) pitta++;
-      else kapha++;
+      doshaScores[answer.dosha] += answer.score;
     });
 
-    const total = vata + pitta + kapha;
-    const vataPer = Math.round((vata / total) * 100);
-    const pittaPer = Math.round((pitta / total) * 100);
-    const kaphaPer = Math.round((kapha / total) * 100);
+    const total = doshaScores.Vata + doshaScores.Pitta + doshaScores.Kapha;
+    
+    const resultData = {
+      vata: Math.round((doshaScores.Vata / total) * 100),
+      pitta: Math.round((doshaScores.Pitta / total) * 100),
+      kapha: Math.round((doshaScores.Kapha / total) * 100),
+      dominantDosha: Object.keys(doshaScores).reduce((a, b) => doshaScores[a] > doshaScores[b] ? a : b)
+    };
 
-    let dominant = 'Vata';
-    let dominantDesc = 'Creative, energetic, lean body type. Prone to anxiety, dry skin, and irregular digestion.';
-    let recommendations = [
-      'Follow a warm, grounding diet',
-      'Practice gentle yoga & meditation',
-      'Maintain regular sleep schedule',
-      'Oil massage (Abhyanga) recommended'
-    ];
+    setResult(resultData);
 
-    if (pitta > vata && pitta > kapha) {
-      dominant = 'Pitta';
-      dominantDesc = 'Intelligent, focused, medium build. Prone to inflammation, acidity, and anger.';
-      recommendations = [
-        'Avoid spicy & fried foods',
-        'Practice cooling pranayama',
-        'Include sweet, bitter & astringent tastes',
-        'Sheetali & Sheetkari breathing exercises'
-      ];
-    } else if (kapha > vata && kapha > pitta) {
-      dominant = 'Kapha';
-      dominantDesc = 'Calm, strong, heavy build. Prone to weight gain, lethargy, and congestion.';
-      recommendations = [
-        'Regular vigorous exercise',
-        'Light, warm & dry foods',
-        'Avoid heavy, oily foods',
-        'Wake up early, avoid day naps'
-      ];
+    // Save to backend
+    try {
+      const api = require('../../services/api').default;
+      await api.post('/ayurveda/prakriti', {
+        answers: Object.values(finalAnswers).map(a => a.dosha === 'Vata' ? 0 : a.dosha === 'Pitta' ? 1 : 2),
+        result: resultData
+      });
+    } catch (err) {
+      console.log('Failed to save result');
     }
 
-    setResult({ dominant, vata: vataPer, pitta: pittaPer, kapha: kaphaPer, dominantDesc, recommendations });
+    // Get recommended doctors
+    try {
+      const response = await getAyurvedaDoctors({ available: true });
+      if (response.data.success) {
+        setRecommendedDoctors(response.data.data.slice(0, 3));
+      }
+    } catch (err) {
+      console.log('Failed to load doctors');
+    }
+
+    setLoading(false);
   };
+
+  const handleDownloadReport = () => {
+    window.print();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
   if (result) {
     return (
-      <div style={{ maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#2E7D32' }}>🧬 Your Prakriti Result</h1>
-          <p style={{ color: '#64748b', fontSize: '1.1rem' }}>Based on your responses</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 py-8">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            {/* Result Header */}
+            <div className="bg-gradient-to-r from-green-600 to-green-500 p-6 text-white text-center">
+              <FaCheckCircle className="text-5xl mx-auto mb-3" />
+              <h1 className="text-2xl font-bold">Your Prakriti Assessment</h1>
+              <p className="text-green-100 mt-1">Your Ayurvedic Wellness Profile</p>
+            </div>
 
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '1rem',
-          padding: '2rem',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          marginBottom: '1.5rem'
-        }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#4CAF50', textAlign: 'center', marginBottom: '1.5rem' }}>
-            {result.dominant} Dominant
-          </h2>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-            {['Vata', 'Pitta', 'Kapha'].map((dosha, i) => (
-              <div key={dosha} style={{ textAlign: 'center', padding: '1rem', backgroundColor: i === 0 ? '#fff3e0' : i === 1 ? '#fce4ec' : '#e8f5e9', borderRadius: '0.5rem' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>{result[dosha.toLowerCase()]}%</div>
-                <div style={{ color: '#64748b', fontSize: '0.9rem' }}>{dosha}</div>
+            <div className="p-6">
+              {/* Dominant Dosha */}
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-semibold mb-2">
+                  Your Dominant Dosha: <span className="text-green-600">{result.dominantDosha}</span>
+                </h2>
+                <p className="text-gray-600">Based on your responses, here's your constitution analysis</p>
               </div>
-            ))}
+
+              {/* Dosha Scores */}
+              <div className="space-y-4 mb-8">
+                {[
+                  { name: 'Vata', value: result.vata, color: 'bg-blue-500', desc: 'Movement & Creativity' },
+                  { name: 'Pitta', value: result.pitta, color: 'bg-red-500', desc: 'Metabolism & Transformation' },
+                  { name: 'Kapha', value: result.kapha, color: 'bg-green-500', desc: 'Structure & Stability' }
+                ].map(dosha => (
+                  <div key={dosha.name}>
+                    <div className="flex justify-between mb-1">
+                      <span className="font-medium">{dosha.name} ({dosha.desc})</span>
+                      <span className="font-bold">{dosha.value}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-4">
+                      <div
+                        className={`${dosha.color} h-4 rounded-full transition-all duration-1000`}
+                        style={{ width: `${dosha.value}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Disclaimer */}
+              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-6">
+                <p className="text-sm text-yellow-800">
+                  <strong>Disclaimer:</strong> This is an educational wellness assessment tool and does not 
+                  replace professional medical evaluation. Consult an Ayurveda doctor for personalized advice.
+                </p>
+              </div>
+
+              {/* Recommended Doctors */}
+              {recommendedDoctors.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <FaUserMd className="text-green-600" /> Recommended Ayurveda Doctors
+                  </h3>
+                  <div className="space-y-3">
+                    {recommendedDoctors.map((doctor) => (
+                      <div key={doctor._id} className="flex items-center justify-between border rounded-lg p-3">
+                        <div>
+                          <p className="font-medium">{doctor.name}</p>
+                          <p className="text-sm text-gray-600">{doctor.specialization}</p>
+                          <p className="text-sm text-gray-500">₹{doctor.consultationFee}</p>
+                        </div>
+                        <button
+                          onClick={() => navigate('/ayurveda/book-consultation', { state: { doctor } })}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
+                        >
+                          Book Now
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate('/ayurveda/doctors')}
+                  className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold"
+                >
+                  Browse All Doctors
+                </button>
+                <button
+                  onClick={handleDownloadReport}
+                  className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+                >
+                  <FaDownload /> Download Report
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  setResult(null);
+                  setAnswers({});
+                  setStep(0);
+                }}
+                className="w-full mt-3 text-gray-500 py-2 text-sm"
+              >
+                Retake Assessment
+              </button>
+            </div>
           </div>
-
-          <p style={{ color: '#475569', marginBottom: '2rem', lineHeight: '1.8' }}>
-            {result.dominantDesc}
-          </p>
-
-          <h3 style={{ fontWeight: 'bold', marginBottom: '1rem', color: '#1e293b' }}>🌿 Personalized Recommendations:</h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {result.recommendations.map((rec, i) => (
-              <li key={i} style={{ padding: '0.75rem', backgroundColor: '#f0fdf4', marginBottom: '0.5rem', borderRadius: '0.5rem' }}>
-                ✅ {rec}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-          <button
-            onClick={() => navigate('/ayurveda/doctors')}
-            style={{
-              backgroundColor: '#FF9800',
-              color: 'white',
-              padding: '0.75rem 2rem',
-              borderRadius: '0.5rem',
-              border: 'none',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            📞 Consult Ayurvedic Doctor
-          </button>
-          <button
-            onClick={() => { setResult(null); setCurrentQ(0); setAnswers({}); }}
-            style={{
-              backgroundColor: 'white',
-              color: '#4CAF50',
-              padding: '0.75rem 2rem',
-              borderRadius: '0.5rem',
-              border: '2px solid #4CAF50',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            🔄 Retake Quiz
-          </button>
         </div>
       </div>
     );
   }
 
-  const progress = ((currentQ + 1) / questions.length) * 100;
-
   return (
-    <div style={{ maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem', color: '#1e293b', textAlign: 'center' }}>
-        🧬 AI Prakriti Analysis
-      </h1>
-      <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '2rem' }}>
-        Question {currentQ + 1} of {questions.length}
-      </p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-2xl mx-auto px-4">
+        {/* Progress Bar */}
+        <div className="mb-6">
+          <div className="flex justify-between text-sm text-gray-600 mb-2">
+            <span>Question {step + 1} of {questions.length}</span>
+            <span>{Math.round((step / questions.length) * 100)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-green-600 h-2 rounded-full transition-all"
+              style={{ width: `${(step / questions.length) * 100}%` }}
+            />
+          </div>
+        </div>
 
-      {/* Progress Bar */}
-      <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', marginBottom: '2rem' }}>
-        <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#4CAF50', borderRadius: '4px', transition: 'width 0.3s' }} />
-      </div>
-
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '1rem',
-        padding: '2rem',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-      }}>
-        <h2 style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '2rem', color: '#1e293b' }}>
-          {questions[currentQ].q}
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {questions[currentQ].options.map((option, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleAnswer(idx)}
-              style={{
-                padding: '1rem',
-                backgroundColor: '#f8fafc',
-                border: '2px solid #e2e8f0',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '1rem',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#4CAF50';
-                e.currentTarget.style.backgroundColor = '#f0fdf4';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                e.currentTarget.style.backgroundColor = '#f8fafc';
-              }}
-            >
-              {option}
-            </button>
-          ))}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h1 className="text-xl font-bold mb-4">{questions[step].question}</h1>
+          <div className="space-y-3">
+            {questions[step].options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleAnswer(questions[step].id, option.dosha, option.score)}
+                className="w-full p-4 border-2 border-gray-200 rounded-lg text-left hover:border-green-500 hover:bg-green-50 transition-all"
+              >
+                {option.text}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -217,4 +336,3 @@ const PrakritiQuiz = () => {
 };
 
 export default PrakritiQuiz;
-

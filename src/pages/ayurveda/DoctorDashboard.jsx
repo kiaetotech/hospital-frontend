@@ -37,6 +37,17 @@ const DoctorDashboard = () => {
   });
   const [availability, setAvailability] = useState([]);
   const [savingAvailability, setSavingAvailability] = useState(false);
+  const [wellnessPrograms, setWellnessPrograms] = useState([]);
+  const [showProgramModal, setShowProgramModal] = useState(false);
+  const [programForm, setProgramForm] = useState({
+    name: '',
+    description: '',
+    category: 'general_wellness',
+    price: '',
+    duration: '30 days',
+    includes: [],
+    isActive: true
+  });
 
   useEffect(() => {
     const doctorData = JSON.parse(localStorage.getItem('doctor') || '{}');
@@ -46,6 +57,8 @@ const DoctorDashboard = () => {
     }
     setDoctor(doctorData);
     fetchDashboardData(doctorData.id);
+    fetchAvailability();
+    fetchWellnessPrograms();
   }, [navigate]);
 
   const fetchDashboardData = async (doctorId) => {
@@ -98,6 +111,45 @@ const DoctorDashboard = () => {
       alert('Failed to save availability');
     } finally {
       setSavingAvailability(false);
+    }
+  };
+
+   const fetchWellnessPrograms = async () => {
+    try {
+      const response = await api.get(`/ayurveda/doctor/${doctor.id}/wellness-programs`);
+      if (response.data.success) {
+        setWellnessPrograms(response.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load programs');
+    }
+  };
+
+  const handleSaveProgram = async () => {
+    try {
+      const response = await api.post('/ayurveda/doctor/wellness-program', {
+        doctorId: doctor.id,
+        program: {
+          ...programForm,
+          price: parseInt(programForm.price)
+        }
+      });
+      if (response.data.success) {
+        alert('Program added successfully!');
+        setShowProgramModal(false);
+        setProgramForm({
+          name: '',
+          description: '',
+          category: 'general_wellness',
+          price: '',
+          duration: '30 days',
+          includes: [],
+          isActive: true
+        });
+        fetchWellnessPrograms();
+      }
+    } catch (err) {
+      alert('Failed to save program');
     }
   };
 
@@ -238,6 +290,7 @@ const DoctorDashboard = () => {
             { id: 'overview', label: 'Overview', icon: FaChartBar },
             { id: 'bookings', label: 'Bookings', icon: FaCalendarAlt },
             { id: 'availability', label: 'Availability', icon: FaClock },
+            { id: 'programs', label: 'Programs', icon: FaChartBar },
             { id: 'earnings', label: 'Earnings', icon: FaWallet },
             { id: 'settlements', label: 'Settlements', icon: FaHistory }
           ].map(tab => (
@@ -532,7 +585,162 @@ const DoctorDashboard = () => {
             </button>
           </div>
         )}
+	        {/* Wellness Programs Tab */}
+        {activeTab === 'programs' && (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Wellness Programs ({wellnessPrograms.length})</h2>
+              <button
+                onClick={() => setShowProgramModal(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg"
+              >
+                + Add Program
+              </button>
+            </div>
+
+            {wellnessPrograms.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">
+                No programs yet. Create your first wellness program to attract more patients.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {wellnessPrograms.map((program, index) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold">{program.name}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        program.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {program.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">{program.description}</p>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-gray-500">{program.category?.replace(/_/g, ' ')}</span>
+                      <span className="text-gray-500">{program.duration}</span>
+                    </div>
+                    <div className="mt-3 flex justify-between items-center border-t pt-3">
+                      <p className="font-bold text-green-600">₹{program.price}</p>
+                      <p className="text-xs text-gray-500">
+                        {program.totalBookings || 0} bookings
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+	{/* Program Modal */}
+      {showProgramModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold mb-4">Add Wellness Program</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Program Name *</label>
+                  <input
+                    type="text"
+                    value={programForm.name}
+                    onChange={(e) => setProgramForm({ ...programForm, name: e.target.value })}
+                    placeholder="e.g., 30-Day Digestive Wellness"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    value={programForm.description}
+                    onChange={(e) => setProgramForm({ ...programForm, description: e.target.value })}
+                    rows="3"
+                    placeholder="Describe your program..."
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Category</label>
+                    <select
+                      value={programForm.category}
+                      onChange={(e) => setProgramForm({ ...programForm, category: e.target.value })}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="digestive_wellness">Digestive Wellness</option>
+                      <option value="stress_sleep">Stress & Sleep</option>
+                      <option value="joint_mobility">Joint & Mobility</option>
+                      <option value="skin_hair">Skin & Hair</option>
+                      <option value="womens_wellness">Women's Wellness</option>
+                      <option value="weight_management">Weight Management</option>
+                      <option value="general_wellness">General Wellness</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Duration</label>
+                    <select
+                      value={programForm.duration}
+                      onChange={(e) => setProgramForm({ ...programForm, duration: e.target.value })}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="15 days">15 Days</option>
+                      <option value="30 days">30 Days</option>
+                      <option value="45 days">45 Days</option>
+                      <option value="60 days">60 Days</option>
+                      <option value="90 days">90 Days</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Price (₹) *</label>
+                  <input
+                    type="number"
+                    value={programForm.price}
+                    onChange={(e) => setProgramForm({ ...programForm, price: e.target.value })}
+                    placeholder="e.g., 5000"
+                    min="500"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">What's Included (comma separated)</label>
+                  <input
+                    type="text"
+                    value={programForm.includes?.join(', ')}
+                    onChange={(e) => setProgramForm({ 
+                      ...programForm, 
+                      includes: e.target.value.split(',').map(i => i.trim()) 
+                    })}
+                    placeholder="2 consultations, diet plan, follow-ups"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSaveProgram}
+                    className="flex-1 bg-green-600 text-white py-2 rounded-lg"
+                  >
+                    Save Program
+                  </button>
+                  <button
+                    onClick={() => setShowProgramModal(false)}
+                    className="flex-1 bg-gray-300 py-2 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Prescription Modal */}
       {showPrescriptionModal && (
