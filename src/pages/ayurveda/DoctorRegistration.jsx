@@ -55,39 +55,34 @@ const DoctorRegistration = () => {
     setError('');
   };
 
-  const handleFileChange = (field, file) => {
+    const handleFileChange = (field, file) => {
     if (file) {
       setDocuments({ ...documents, [field]: file });
-      // Upload file immediately
       uploadDocument(field, file);
     }
   };
 
-  const uploadDocument = async (field, file) => {
+    const uploadDocument = (field, file) => {
     setUploadProgress({ ...uploadProgress, [field]: 0 });
     
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', `ayurveda-doctors/${form.phone || 'pending'}`);
-      
-      const response = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(prev => ({ ...prev, [field]: percent }));
-        }
-      });
-      
-      if (response.data.success) {
-        setUploadedUrls({ ...uploadedUrls, [field]: response.data.url || response.data.fileUrl });
-        setUploadProgress(prev => ({ ...prev, [field]: 100 }));
-      }
-    } catch (err) {
-      console.error(`Failed to upload ${field}:`, err);
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError(`${field} file is too large. Maximum 2MB allowed.`);
       setUploadProgress(prev => ({ ...prev, [field]: -1 }));
-      setError(`Failed to upload ${field}. Please try again.`);
+      return;
     }
+    
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setUploadedUrls({ ...uploadedUrls, [field]: e.target.result });
+      setUploadProgress(prev => ({ ...prev, [field]: 100 }));
+    };
+    reader.onerror = () => {
+      setError(`Failed to read ${field} file.`);
+      setUploadProgress(prev => ({ ...prev, [field]: -1 }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const validateForm = () => {
@@ -171,10 +166,10 @@ const DoctorRegistration = () => {
         {label} {required && '*'}
       </label>
       <div className="relative">
-        <input
+         <input
           type="file"
           onChange={(e) => handleFileChange(field, e.target.files[0])}
-          accept={accept}
+          accept="image/*,.pdf"
           className="hidden"
           id={`file-${field}`}
         />
