@@ -73,10 +73,12 @@ const DoctorRegistration = () => {
     }
     
     // Convert to base64
-    const reader = new FileReader();
+        const reader = new FileReader();
     reader.onload = (e) => {
-      setUploadedUrls({ ...uploadedUrls, [field]: e.target.result });
+      const newUploadedUrls = { ...uploadedUrls, [field]: e.target.result };
+      setUploadedUrls(newUploadedUrls);
       setUploadProgress(prev => ({ ...prev, [field]: 100 }));
+      console.log(`✅ ${field} converted to base64, length:`, e.target.result.length);
     };
     reader.onerror = () => {
       setError(`Failed to read ${field} file.`);
@@ -110,16 +112,30 @@ const DoctorRegistration = () => {
     e.preventDefault();
     setError('');
     
-    const validationError = validateForm();
+        const validationError = validateForm();
     if (validationError) {
       setError(validationError);
       return;
     }
 
+    // Check if documents are actually uploaded
+    if (!uploadedUrls.ayushCertificate || uploadedUrls.ayushCertificate.length < 10) {
+      setError('AYUSH Certificate upload failed. Please try again.');
+      return;
+    }
+    if (!uploadedUrls.idProof || uploadedUrls.idProof.length < 10) {
+      setError('ID Proof upload failed. Please try again.');
+      return;
+    }
+
+    console.log('✅ Documents verified, proceeding with registration');
+    console.log('AYUSH Certificate length:', uploadedUrls.ayushCertificate.length);
+    console.log('ID Proof length:', uploadedUrls.idProof.length);
+
     setLoading(true);
     
     try {
-      const registrationData = {
+            const registrationData = {
         name: form.name,
         phone: form.phone,
         email: form.email,
@@ -135,13 +151,17 @@ const DoctorRegistration = () => {
         languages: form.languages,
         about: form.about,
         documents: {
-          ayushCertificate: uploadedUrls.ayushCertificate,
+          ayushCertificate: uploadedUrls.ayushCertificate || '',
           degreeCertificate: uploadedUrls.degreeCertificate || '',
-          idProof: uploadedUrls.idProof,
+          idProof: uploadedUrls.idProof || '',
           photo: uploadedUrls.photo || '',
-          clinicLicense: uploadedUrls.clinicLicense || ''
+          clinicLicense: uploadedUrls.clinicLicense || '',
+          panCard: ''
         }
       };
+
+      console.log('Registration data:', registrationData);
+      console.log('Uploaded URLs:', uploadedUrls);
 
       const response = await api.post('/ayurveda/doctor/register', registrationData);
 
