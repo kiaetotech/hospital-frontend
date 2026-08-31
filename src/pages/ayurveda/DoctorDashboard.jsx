@@ -48,6 +48,8 @@ const DoctorDashboard = () => {
     includes: [],
     isActive: true
   });
+  const [onlineStatus, setOnlineStatus] = useState('offline');
+  const [consultationMode, setConsultationMode] = useState('video');
 
   useEffect(() => {
     const doctorData = JSON.parse(localStorage.getItem('doctor') || '{}');
@@ -153,6 +155,23 @@ const DoctorDashboard = () => {
     }
   };
 
+  const handleToggleStatus = async (status, mode) => {
+    try {
+      const response = await api.post('/ayurveda/doctor/toggle-availability-status', {
+        doctorId: doctor.id,
+        status,
+        consultationMode: mode
+      });
+      if (response.data.success) {
+        setOnlineStatus(status);
+        setConsultationMode(mode);
+        alert(`Status updated: ${status.replace('_', ' ')}`);
+      }
+    } catch (err) {
+      alert('Failed to update status');
+    }
+  };
+
   const handleStatusUpdate = async (bookingId, action) => {
     try {
       const response = await updateBookingStatus(bookingId, action);
@@ -241,6 +260,33 @@ const DoctorDashboard = () => {
                 <p className="text-green-100">{doctor?.specialization || 'Ayurveda Doctor'}</p>
               </div>
             </div>
+            {/* Online/Offline Toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleToggleStatus('online', 'video')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                  onlineStatus === 'online' ? 'bg-white text-green-700' : 'bg-white/20'
+                }`}
+              >
+                🟢 Online (Video)
+              </button>
+              <button
+                onClick={() => handleToggleStatus('in_clinic', 'clinic')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                  onlineStatus === 'in_clinic' ? 'bg-white text-green-700' : 'bg-white/20'
+                }`}
+              >
+                🏥 In Clinic
+              </button>
+              <button
+                onClick={() => handleToggleStatus('offline', 'none')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                  onlineStatus === 'offline' ? 'bg-white text-green-700' : 'bg-white/20'
+                }`}
+              >
+                ⚫ Offline
+              </button>
+            </div>
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full">
                 <FaStar className="text-yellow-400" /> {doctor?.rating || 'New'}
@@ -305,6 +351,55 @@ const DoctorDashboard = () => {
             </button>
           ))}
         </div>
+
+	{/* Overview Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Analytics Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-xl shadow-md p-4">
+                <p className="text-sm text-gray-500">Total Patients</p>
+                <p className="text-2xl font-bold">{bookings.length}</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-md p-4">
+                <p className="text-sm text-gray-500">Unique Patients</p>
+                <p className="text-2xl font-bold">
+                  {new Set(bookings.map(b => b.patient?.phone)).size}
+                </p>
+              </div>
+              <div className="bg-white rounded-xl shadow-md p-4">
+                <p className="text-sm text-gray-500">Completion Rate</p>
+                <p className="text-2xl font-bold">
+                  {bookings.length > 0 
+                    ? Math.round((bookings.filter(b => b.status === 'completed').length / bookings.length) * 100) 
+                    : 0}%
+                </p>
+              </div>
+            </div>
+
+            {/* Recent Bookings Preview */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4">Recent Bookings</h2>
+              {bookings.slice(0, 5).map(booking => (
+                <div key={booking.bookingId} className="flex items-center justify-between py-3 border-b last:border-0">
+                  <div>
+                    <p className="font-medium">{booking.patient?.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {new Date(booking.bookingDate).toLocaleDateString()} at {booking.slotTime}
+                    </p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    booking.status === 'completed' ? 'bg-green-100 text-green-700' :
+                    booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {booking.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Bookings Tab */}
         {activeTab === 'bookings' && (
