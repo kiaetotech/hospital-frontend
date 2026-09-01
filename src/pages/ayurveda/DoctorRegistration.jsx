@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import { 
@@ -31,17 +31,10 @@ const DoctorRegistration = () => {
     about: ''
   });
 
-  // Document upload state
-  const [documents, setDocuments] = useState({
-    ayushCertificate: null,
-    degreeCertificate: null,
-    idProof: null,
-    photo: null,
-    clinicLicense: null
-  });
-  
-  const [uploadProgress, setUploadProgress] = useState({});
+  // Use ref for immediate access
+  const uploadedUrlsRef = useRef({});
   const [uploadedUrls, setUploadedUrls] = useState({});
+  const [uploadProgress, setUploadProgress] = useState({});
 
   const specializations = [
     'Panchakarma', 'General Ayurveda', 'Kerala Ayurveda',
@@ -55,33 +48,28 @@ const DoctorRegistration = () => {
     setError('');
   };
 
-    const handleFileChange = (field, file) => {
-    if (file) {
-      setDocuments({ ...documents, [field]: file });
-      uploadDocument(field, file);
-    }
-  };
-
-    const uploadDocument = (field, file) => {
-    setUploadProgress({ ...uploadProgress, [field]: 0 });
+  const handleFileChange = (field, file) => {
+    if (!file) return;
     
     // Check file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       setError(`${field} file is too large. Maximum 2MB allowed.`);
-      setUploadProgress(prev => ({ ...prev, [field]: -1 }));
       return;
     }
     
-    // Convert to base64
-        const reader = new FileReader();
+    setUploadProgress(prev => ({ ...prev, [field]: 0 }));
+    
+    const reader = new FileReader();
     reader.onload = (e) => {
-      const newUploadedUrls = { ...uploadedUrls, [field]: e.target.result };
-      setUploadedUrls(newUploadedUrls);
+      const base64String = e.target.result;
+      // Update both ref and state
+      uploadedUrlsRef.current = { ...uploadedUrlsRef.current, [field]: base64String };
+      setUploadedUrls(prev => ({ ...prev, [field]: base64String }));
       setUploadProgress(prev => ({ ...prev, [field]: 100 }));
-      console.log(`✅ ${field} converted to base64, length:`, e.target.result.length);
+      console.log(`✅ ${field} uploaded, length: ${base64String.length}`);
     };
     reader.onerror = () => {
-      setError(`Failed to read ${field} file.`);
+      setError(`Failed to read ${field} file`);
       setUploadProgress(prev => ({ ...prev, [field]: -1 }));
     };
     reader.readAsDataURL(file);
@@ -101,9 +89,14 @@ const DoctorRegistration = () => {
     if (!form.consultationFee || form.consultationFee < 100) return 'Consultation fee must be at least ₹100';
     if (!form.clinicName) return 'Clinic name is required';
     
-    // Document validation
-    if (!uploadedUrls.ayushCertificate) return 'AYUSH Certificate is required';
-    if (!uploadedUrls.idProof) return 'ID Proof is required';
+    // Check documents from ref (not state)
+    const docs = uploadedUrlsRef.current;
+    if (!docs.ayushCertificate || docs.ayushCertificate.length < 10) {
+      return 'AYUSH Certificate is required. Please upload again.';
+    }
+    if (!docs.idProof || docs.idProof.length < 10) {
+      return 'ID Proof is required. Please upload again.';
+    }
     
     return null;
   };
@@ -112,30 +105,19 @@ const DoctorRegistration = () => {
     e.preventDefault();
     setError('');
     
-        const validationError = validateForm();
+    const validationError = validateForm();
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    // Check if documents are actually uploaded
-    if (!uploadedUrls.ayushCertificate || uploadedUrls.ayushCertificate.length < 10) {
-      setError('AYUSH Certificate upload failed. Please try again.');
-      return;
-    }
-    if (!uploadedUrls.idProof || uploadedUrls.idProof.length < 10) {
-      setError('ID Proof upload failed. Please try again.');
-      return;
-    }
-
-    console.log('✅ Documents verified, proceeding with registration');
-    console.log('AYUSH Certificate length:', uploadedUrls.ayushCertificate.length);
-    console.log('ID Proof length:', uploadedUrls.idProof.length);
-
     setLoading(true);
     
     try {
-            const registrationData = {
+      // Get documents from ref (most current)
+      const docs = uploadedUrlsRef.current;
+      
+      const registrationData = {
         name: form.name,
         phone: form.phone,
         email: form.email,
@@ -151,17 +133,22 @@ const DoctorRegistration = () => {
         languages: form.languages,
         about: form.about,
         documents: {
-          ayushCertificate: uploadedUrls.ayushCertificate || '',
-          degreeCertificate: uploadedUrls.degreeCertificate || '',
-          idProof: uploadedUrls.idProof || '',
-          photo: uploadedUrls.photo || '',
-          clinicLicense: uploadedUrls.clinicLicense || '',
+          ayushCertificate: docs.ayushCertificate || '',
+          degreeCertificate: docs.degreeCertificate || '',
+          idProof: docs.idProof || '',
+          photo: docs.photo || '',
+          clinicLicense: docs.clinicLicense || '',
           panCard: ''
         }
       };
 
-      console.log('Registration data:', registrationData);
-      console.log('Uploaded URLs:', uploadedUrls);
+      console.log('📤 Sending registration data...');
+      console.log('Documents:', {
+        ayushCertificate: docs.ayushCertificate ? '✅ Present' : '❌ Missing',
+        idProof: docs.idProof ? '✅ Present' : '❌ Missing',
+        degreeCertificate: docs.degreeCertificate ? '✅ Present' : '❌ Missing',
+        photo: docs.photo ? '✅ Present' : '❌ Missing'
+      });
 
       const response = await api.post('/ayurveda/doctor/register', registrationData);
 
@@ -174,19 +161,20 @@ const DoctorRegistration = () => {
         setError(response.data.error || 'Registration failed');
       }
     } catch (err) {
+      console.error('Registration error:', err.response?.data);
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const DocumentUploadField = ({ field, label, required, icon: Icon, accept = 'image/*,.pdf' }) => (
+  const DocumentUploadField = ({ field, label, required, icon: Icon }) => (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {label} {required && '*'}
       </label>
       <div className="relative">
-         <input
+        <input
           type="file"
           onChange={(e) => handleFileChange(field, e.target.files[0])}
           accept="image/*,.pdf"
@@ -234,7 +222,6 @@ const DoctorRegistration = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
-        {/* Back Button */}
         <button
           onClick={() => navigate('/ayurveda')}
           className="flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6"
@@ -243,7 +230,6 @@ const DoctorRegistration = () => {
         </button>
 
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-r from-green-600 to-green-500 p-6 text-white">
             <div className="flex items-center gap-3">
               <FaUserMd className="text-4xl" />
@@ -254,7 +240,6 @@ const DoctorRegistration = () => {
             </div>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg">
               {error}
@@ -384,29 +369,10 @@ const DoctorRegistration = () => {
             <div className="border-t pt-5">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Required Documents</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <DocumentUploadField 
-                  field="ayushCertificate" 
-                  label="AYUSH Certificate" 
-                  required 
-                  icon={FaCertificate} 
-                />
-                <DocumentUploadField 
-                  field="idProof" 
-                  label="ID Proof (Aadhaar/PAN)" 
-                  required 
-                  icon={FaIdCard} 
-                />
-                <DocumentUploadField 
-                  field="degreeCertificate" 
-                  label="Degree Certificate" 
-                  icon={FaGraduationCap} 
-                />
-                <DocumentUploadField 
-                  field="photo" 
-                  label="Profile Photo" 
-                  icon={FaFileImage} 
-                  accept="image/*"
-                />
+                <DocumentUploadField field="ayushCertificate" label="AYUSH Certificate" required icon={FaCertificate} />
+                <DocumentUploadField field="idProof" label="ID Proof (Aadhaar/PAN)" required icon={FaIdCard} />
+                <DocumentUploadField field="degreeCertificate" label="Degree Certificate" icon={FaGraduationCap} />
+                <DocumentUploadField field="photo" label="Profile Photo" icon={FaFileImage} />
               </div>
             </div>
 
@@ -473,7 +439,6 @@ const DoctorRegistration = () => {
               </div>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
