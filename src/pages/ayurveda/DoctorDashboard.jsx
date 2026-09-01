@@ -53,14 +53,15 @@ const DoctorDashboard = () => {
 
   useEffect(() => {
     const doctorData = JSON.parse(localStorage.getItem('doctor') || '{}');
-    if (!doctorData.id) {
+    const doctorId = doctorData.id || doctorData._id;
+    if (!doctorId) {
       navigate('/ayurveda/doctor-login');
       return;
     }
-    setDoctor(doctorData);
-    fetchDashboardData(doctorData.id);
-    fetchAvailability();
-    fetchWellnessPrograms();
+    setDoctor({ ...doctorData, id: doctorId });
+    fetchDashboardData(doctorId);
+    fetchAvailability(doctorId);
+    fetchWellnessPrograms(doctorId);
   }, [navigate]);
 
   const fetchDashboardData = async (doctorId) => {
@@ -88,14 +89,14 @@ const DoctorDashboard = () => {
     }
   };
 
-  const fetchAvailability = async () => {
+  const fetchAvailability = async (doctorId) => {
     try {
-      const response = await api.get(`/ayurveda/doctor/${doctor.id}/availability`);
+      const response = await api.get(`/ayurveda/doctor/${doctorId || doctor.id}/availability`);
       if (response.data.success) {
         setAvailability(response.data.data.availability || []);
       }
     } catch (err) {
-      console.error('Failed to load availability');
+      console.error('Failed to load availability:', err.message);
     }
   };
 
@@ -116,14 +117,14 @@ const DoctorDashboard = () => {
     }
   };
 
-   const fetchWellnessPrograms = async () => {
+  const fetchWellnessPrograms = async (doctorId) => {
     try {
-      const response = await api.get(`/ayurveda/doctor/${doctor.id}/wellness-programs`);
+      const response = await api.get(`/ayurveda/doctor/${doctorId || doctor.id}/wellness-programs`);
       if (response.data.success) {
         setWellnessPrograms(response.data.data || []);
       }
     } catch (err) {
-      console.error('Failed to load programs');
+      console.error('Failed to load programs:', err.message);
     }
   };
 
@@ -148,7 +149,7 @@ const DoctorDashboard = () => {
           includes: [],
           isActive: true
         });
-        fetchWellnessPrograms();
+        fetchWellnessPrograms(doctor.id);
       }
     } catch (err) {
       alert('Failed to save program');
@@ -193,7 +194,8 @@ const DoctorDashboard = () => {
           medicines: [{ name: '', dosage: '', duration: '', instructions: '' }],
           dietAdvice: '',
           lifestyleAdvice: '',
-          followUpDate: ''
+          followUpDate: '',
+          followUpRequired: false
         });
         fetchDashboardData(doctor.id);
       }
@@ -250,7 +252,7 @@ const DoctorDashboard = () => {
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-green-500 text-white">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">
                 {doctor?.name?.charAt(0) || 'D'}
@@ -268,7 +270,7 @@ const DoctorDashboard = () => {
                   onlineStatus === 'online' ? 'bg-white text-green-700' : 'bg-white/20'
                 }`}
               >
-                🟢 Online (Video)
+                🟢 Online
               </button>
               <button
                 onClick={() => handleToggleStatus('in_clinic', 'clinic')}
@@ -331,7 +333,7 @@ const DoctorDashboard = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 bg-white rounded-lg p-2 shadow">
+        <div className="flex gap-2 mb-6 bg-white rounded-lg p-2 shadow overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: FaChartBar },
             { id: 'bookings', label: 'Bookings', icon: FaCalendarAlt },
@@ -343,7 +345,7 @@ const DoctorDashboard = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
                 activeTab === tab.id ? 'bg-green-600 text-white' : 'hover:bg-gray-100'
               }`}
             >
@@ -352,10 +354,9 @@ const DoctorDashboard = () => {
           ))}
         </div>
 
-	{/* Overview Tab Content */}
+        {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* Analytics Cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-xl shadow-md p-4">
                 <p className="text-sm text-gray-500">Total Patients</p>
@@ -376,27 +377,29 @@ const DoctorDashboard = () => {
                 </p>
               </div>
             </div>
-
-            {/* Recent Bookings Preview */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-lg font-semibold mb-4">Recent Bookings</h2>
-              {bookings.slice(0, 5).map(booking => (
-                <div key={booking.bookingId} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{booking.patient?.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(booking.bookingDate).toLocaleDateString()} at {booking.slotTime}
-                    </p>
+              {bookings.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">No bookings yet</p>
+              ) : (
+                bookings.slice(0, 5).map(booking => (
+                  <div key={booking.bookingId} className="flex items-center justify-between py-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium">{booking.patient?.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(booking.bookingDate).toLocaleDateString()} at {booking.slotTime}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      booking.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                      'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {booking.status}
+                    </span>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    booking.status === 'completed' ? 'bg-green-100 text-green-700' :
-                    booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                    'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {booking.status}
-                  </span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
@@ -449,7 +452,6 @@ const DoctorDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="mt-3 flex gap-2">
                       {booking.status === 'pending' && (
                         <button
@@ -494,75 +496,8 @@ const DoctorDashboard = () => {
           </div>
         )}
 
-        {/* Earnings Tab */}
-        {activeTab === 'earnings' && (
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Earnings Overview</h2>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Total Earnings</p>
-                <p className="text-2xl font-bold text-green-600">₹{earnings?.totalEarnings || 0}</p>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Total Commission</p>
-                <p className="text-2xl font-bold text-blue-600">₹{earnings?.totalCommission || 0}</p>
-              </div>
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Pending Payout</p>
-                <p className="text-2xl font-bold text-orange-600">₹{earnings?.pendingPayout || 0}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleRequestSettlement}
-              disabled={!earnings?.pendingPayout}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:bg-gray-400"
-            >
-              Request Settlement
-            </button>
-          </div>
-        )}
-
-        {/* Settlements Tab */}
-        {activeTab === 'settlements' && (
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Settlement History</h2>
-            {settlements.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">No settlements yet</p>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Payout ID</th>
-                    <th className="text-left py-2">Amount</th>
-                    <th className="text-left py-2">TDS</th>
-                    <th className="text-left py-2">Net Amount</th>
-                    <th className="text-left py-2">Status</th>
-                    <th className="text-left py-2">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {settlements.map(s => (
-                    <tr key={s.payoutId} className="border-b">
-                      <td className="py-2">{s.payoutId}</td>
-                      <td className="py-2">₹{s.amount}</td>
-                      <td className="py-2">₹{s.tdsDeducted || 0}</td>
-                      <td className="py-2 font-semibold">₹{s.netAmount}</td>
-                      <td className="py-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          s.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {s.status}
-                        </span>
-                      </td>
-                      <td className="py-2">{new Date(s.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-	        {activeTab === 'availability' && (
+        {/* Availability Tab */}
+        {activeTab === 'availability' && (
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-lg font-semibold mb-4">Manage Availability</h2>
             
@@ -680,7 +615,8 @@ const DoctorDashboard = () => {
             </button>
           </div>
         )}
-	        {/* Wellness Programs Tab */}
+
+        {/* Programs Tab */}
         {activeTab === 'programs' && (
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
@@ -726,9 +662,78 @@ const DoctorDashboard = () => {
             )}
           </div>
         )}
+
+        {/* Earnings Tab */}
+        {activeTab === 'earnings' && (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-lg font-semibold mb-4">Earnings Overview</h2>
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Total Earnings</p>
+                <p className="text-2xl font-bold text-green-600">₹{earnings?.totalEarnings || 0}</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Total Commission</p>
+                <p className="text-2xl font-bold text-blue-600">₹{earnings?.totalCommission || 0}</p>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Pending Payout</p>
+                <p className="text-2xl font-bold text-orange-600">₹{earnings?.pendingPayout || 0}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleRequestSettlement}
+              disabled={!earnings?.pendingPayout}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:bg-gray-400"
+            >
+              Request Settlement
+            </button>
+          </div>
+        )}
+
+        {/* Settlements Tab */}
+        {activeTab === 'settlements' && (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-lg font-semibold mb-4">Settlement History</h2>
+            {settlements.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No settlements yet</p>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2">Payout ID</th>
+                    <th className="text-left py-2">Amount</th>
+                    <th className="text-left py-2">TDS</th>
+                    <th className="text-left py-2">Net Amount</th>
+                    <th className="text-left py-2">Status</th>
+                    <th className="text-left py-2">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {settlements.map(s => (
+                    <tr key={s.payoutId} className="border-b">
+                      <td className="py-2">{s.payoutId}</td>
+                      <td className="py-2">₹{s.amount}</td>
+                      <td className="py-2">₹{s.tdsDeducted || 0}</td>
+                      <td className="py-2 font-semibold">₹{s.netAmount}</td>
+                      <td className="py-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          s.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="py-2">{new Date(s.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
 
-	{/* Program Modal */}
+      {/* Program Modal */}
       {showProgramModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -938,7 +943,7 @@ const DoctorDashboard = () => {
                   />
                 </div>
 
-	         <div>
+                <div>
                   <label className="block text-sm font-medium mb-1">Follow-up Date</label>
                   <input
                     type="date"
