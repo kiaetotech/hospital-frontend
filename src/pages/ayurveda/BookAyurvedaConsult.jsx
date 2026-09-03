@@ -133,30 +133,24 @@ const BookAyurvedaConsult = () => {
     }
   }, []);
 
-  // Calculate fees
+    // Calculate fees (production - matches backend)
   const fees = useMemo(() => {
     const consultationFee = doctor?.consultationFee || 0;
-    const platformFee = consultationType === 'home' ? 50 : 30;
-    const peakCharge = selectedSlot?.peak ? 50 : 0;
-    const cancellationProtectionFee = cancellationProtection ? 29 : 0;
+    const platformFee = 30; // Fixed platform fee
     const discountAmount = couponApplied?.discountAmount || 0;
     
-    const subtotal = consultationFee + platformFee + peakCharge + cancellationProtectionFee;
+    const subtotal = consultationFee + platformFee;
     const gst = Math.round(subtotal * 0.18);
     const total = subtotal + gst - discountAmount;
     
-    return { consultationFee, platformFee, peakCharge, cancellationProtectionFee, discountAmount, subtotal, gst, total };
-  }, [doctor, consultationType, selectedSlot, cancellationProtection, couponApplied]);
+    return { consultationFee, platformFee, discountAmount, subtotal, gst, total };
+  }, [doctor, couponApplied]);
 
-  // Estimate wait time
+  // No fake wait time - removed for production
   useEffect(() => {
     if (selectedDate && selectedSlot) {
-      const hour = parseInt(selectedSlot.time);
-      const isPeak = selectedSlot.peak;
-      const estimatedWait = isPeak ? 20 + Math.floor(Math.random() * 15) : 5 + Math.floor(Math.random() * 10);
-      const queuePos = isPeak ? 4 + Math.floor(Math.random() * 5) : 1 + Math.floor(Math.random() * 3);
-      setWaitTime(estimatedWait);
-      setQueuePosition(queuePos);
+      setWaitTime(null);
+      setQueuePosition(null);
     }
   }, [selectedDate, selectedSlot]);
 
@@ -422,18 +416,13 @@ const BookAyurvedaConsult = () => {
                       }`}
                     >
                       <p className="font-medium text-sm">{slot.time}</p>
-                      {slot.peak && (
-                        <p className="text-xs text-orange-500">Peak +₹50</p>
-                      )}
-                    </button>
+                     </button>
                   ))}
                 </div>
-                {selectedSlot && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center gap-2 text-sm">
-                    <FaInfoCircle className="text-blue-600" />
-                    <span>
-                      Est. wait: {waitTime} min • Queue: {queuePosition} patient(s) ahead
-                    </span>
+                 {selectedSlot && (
+                  <div className="mt-4 p-3 bg-green-50 rounded-lg flex items-center gap-2 text-sm">
+                    <FaInfoCircle className="text-green-600" />
+                    <span>Slot selected: {selectedSlot.time}</span>
                   </div>
                 )}
               </div>
@@ -822,12 +811,6 @@ const BookAyurvedaConsult = () => {
                   <span className="text-gray-600">Platform Fee</span>
                   <span>₹{fees.platformFee}</span>
                 </div>
-                {fees.peakCharge > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Peak Hour Charge</span>
-                    <span className="text-orange-500">₹{fees.peakCharge}</span>
-                  </div>
-                )}
                 {cancellationProtection && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Cancellation Protection</span>
