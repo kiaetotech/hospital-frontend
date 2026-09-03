@@ -49,7 +49,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     );
   };
 
-    const fetchBookings = async () => {
+      const fetchBookings = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Please login to view your bookings');
@@ -58,11 +58,39 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     }
     setLoading(true);
     try {
-      const response = await axios.get(
+      // Fetch ambulance bookings
+      const ambulanceResponse = await axios.get(
         'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/my-bookings?limit=100&page=1',
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setBookings(response.data?.data || response.data || []);
+      const ambulanceBookings = ambulanceResponse.data?.data || ambulanceResponse.data || [];
+      
+      // Fetch Ayurveda bookings
+      let ayurvedaBookings = [];
+      try {
+        const ayurvedaResponse = await axios.get(
+          'https://hospital-backend-production-7d0f.up.railway.app/api/ayurveda/bookings/my-bookings',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        ayurvedaBookings = ayurvedaResponse.data?.data || [];
+        
+        // Map Ayurveda bookings to common format
+        ayurvedaBookings = ayurvedaBookings.map(b => ({
+          ...b,
+          bookingType: 'ayurveda_consultation',
+          patientName: b.patient?.name || 'Patient',
+          patientPhone: b.patient?.phone || '',
+          appointmentDate: b.bookingDate,
+          doctorName: b.doctorName || 'Ayurveda Doctor',
+          finalAmount: b.finalAmount,
+          paymentStatus: b.paymentStatus,
+          status: b.status
+        }));
+      } catch (ayurError) {
+        console.log('No Ayurveda bookings found');
+      }
+      
+      setBookings([...ambulanceBookings, ...ayurvedaBookings]);
       setSearched(true);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -406,6 +434,11 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{totalInsurancePolicies}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Insurance</div>
             </div>
+	               <div style={{ backgroundColor: '#d1fae5', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '2px solid #10b981' }}>
+              <div style={{ fontSize: '24px' }}>🧘</div>
+              <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{bookings.filter(b => b.bookingType === 'ayurveda_consultation').length}</div>
+              <div style={{ fontSize: '12px', color: '#666' }}>Ayurveda</div>
+            </div>
           </div>
           
           {/* Filter Buttons */}
@@ -415,7 +448,8 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
             <button onClick={() => setSelectedType('labtest')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'labtest' ? '#10b981' : 'transparent', color: selectedType === 'labtest' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>🔬 Lab ({labBookings.length})</button>
             <button onClick={() => setSelectedType('ambulance')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'ambulance' ? '#f59e0b' : 'transparent', color: selectedType === 'ambulance' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>🚑 Ambulance ({ambulanceBookings.length})</button>
             <button onClick={() => setSelectedType('insurance')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'insurance' ? '#2563eb' : 'transparent', color: selectedType === 'insurance' ? 'white' : '#333', border: selectedType === 'insurance' ? 'none' : '1px solid #2563eb', borderRadius: '20px', cursor: 'pointer' }}>🛡️ Insurance ({totalInsurancePolicies})</button>
-          </div>
+            <button onClick={() => setSelectedType('ayurveda_consultation')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'ayurveda_consultation' ? '#10b981' : 'transparent', color: selectedType === 'ayurveda_consultation' ? 'white' : '#333', border: selectedType === 'ayurveda_consultation' ? 'none' : '1px solid #10b981', borderRadius: '20px', cursor: 'pointer' }}>🧘 Ayurveda ({bookings.filter(b => b.bookingType === 'ayurveda_consultation').length})</button>
+	   </div>
           
           {/* Insurance Section (PRESERVED) */}
           {(selectedType === 'all' || selectedType === 'insurance') && insurancePolicies.length > 0 && (
@@ -490,7 +524,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
                         <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                         {booking.homeCollectionRequested && <p><strong>🏠 Home Collection:</strong> Yes</p>}
                       </>
-                                                            ) : booking.bookingType === 'ambulance' ? (
+                         ) : booking.bookingType === 'ambulance' ? (
                       <>
                         <p><strong>🚑 Type:</strong> {booking.ambulanceType}</p>
                         <p><strong>📍 Pickup:</strong> {booking.pickupAddress}</p>
@@ -505,6 +539,14 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
                             <strong style={{ fontSize: '20px', letterSpacing: '5px', color: '#065f46' }}>{booking.tripOtp}</strong>
                           </div>
                         )}
+                      </>
+	                ) : booking.bookingType === 'ayurveda_consultation' ? (
+                      <>
+                        {booking.doctorName && <p><strong>👨‍⚕️ Doctor:</strong> {booking.doctorName}</p>}
+                        {booking.doctorSpecialization && <p><strong>🌿 Specialty:</strong> {booking.doctorSpecialization}</p>}
+                        {booking.consultationType && <p><strong>📹 Type:</strong> {booking.consultationType}</p>}
+                        {booking.slotTime && <p><strong>⏰ Time:</strong> {booking.slotTime}</p>}
+                        <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                       </>
                     ) : booking.bookingType === 'insurance' ? (
                       <>
