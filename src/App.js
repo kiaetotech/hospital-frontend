@@ -273,6 +273,7 @@ function App() {
           <Route path="/ayurveda/prakriti" element={<PrakritiQuiz />} />
           <Route path="/ayurveda/book/:doctorId" element={<BookAyurvedaConsult />} />
           <Route path="/ayurveda/payment/:bookingType/:bookingId" element={<AyurvedaPayment />} />
+	  <Route path="/ayurveda/payment" element={<AyurvedaPayment />} />
           <Route path="/ayurveda/confirmation/:bookingId" element={<AyurvedaBookingConfirmation />} />
           <Route path="/ayurveda/center/register" element={<WellnessCenterRegistration />} />
           <Route path="/ayurveda/center/login" element={<WellnessCenterLogin />} />
