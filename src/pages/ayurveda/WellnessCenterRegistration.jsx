@@ -1,107 +1,189 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
+import { FaBuilding, FaPhone, FaEnvelope, FaLock, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
 
 const WellnessCenterRegistration = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
   const [form, setForm] = useState({
-    name: '', phone: '', email: '', password: '', confirmPassword: '',
-    type: 'Wellness Center', description: '',
-    city: '', state: '', area: '', pincode: '',
-    bedCount: '', panchakarmaRooms: '', established: '',
-    facilities: []
+    name: '',
+    phone: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    type: 'Wellness Center',
+    description: '',
+    city: '',
+    state: '',
+    bedCount: '',
+    panchakarmaRooms: '',
+    doctorCount: '',
+    facilities: [],
+    nearestAirport: ''
   });
 
-  const facilityOptions = ['AC Rooms', 'Organic Food', 'Yoga Hall', 'Herbal Garden', 'WiFi', 'Swimming Pool', 'Library', 'Meditation Hall', 'Pickup/Drop', 'Beach Access', 'Mountain View', 'Luxury Rooms'];
-  const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Chennai', 'Kolkata', 'Pune', 'Jaipur', 'Kochi', 'Rishikesh', 'Dehradun', 'Haridwar', 'Goa', 'Mysore', 'Coimbatore', 'Trivandrum', 'Udaipur', 'Varanasi'];
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError('');
+  };
+
+  const validateForm = () => {
+    if (!form.name || form.name.length < 3) return 'Center name must be at least 3 characters';
+    if (!form.phone || form.phone.length !== 10) return 'Enter valid 10-digit phone number';
+    if (!form.email || !form.email.includes('@')) return 'Enter valid email';
+    if (!form.password || form.password.length < 6) return 'Password must be at least 6 characters';
+    if (form.password !== form.confirmPassword) return 'Passwords do not match';
+    if (!form.city) return 'City is required';
+    return null;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) {
-      alert('Passwords do not match!');
+    setError('');
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
+
     setLoading(true);
+
     try {
-      const response = await api.post('/ayurveda-centers/register', form);
+      const response = await api.post('/ayurveda-centers/register', {
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        password: form.password,
+        type: form.type,
+        description: form.description,
+        address: {
+          city: form.city,
+          state: form.state || form.city
+        },
+        bedCount: parseInt(form.bedCount) || 0,
+        panchakarmaRooms: parseInt(form.panchakarmaRooms) || 0,
+        doctorCount: parseInt(form.doctorCount) || 0,
+        facilities: form.facilities,
+        nearestAirport: form.nearestAirport
+      });
+
       if (response.data.success) {
-        alert('✅ Registration submitted! Admin will verify within 24-48 hours.');
-        navigate('/ayurveda/center/login');
+        setSuccess(true);
+        setTimeout(() => navigate('/ayurveda/center/login'), 3000);
       }
-    } catch (error) {
-      alert('Registration failed: ' + (error.response?.data?.error || error.message));
+    } catch (err) {
+      setError(err.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
     }
   };
 
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
+          <FaCheckCircle className="text-6xl text-green-600 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Registration Submitted!</h1>
+          <p className="text-gray-600 mb-4">Your center will be verified within 24-48 hours.</p>
+          <p className="text-sm text-gray-500">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#FF9800', textAlign: 'center', marginBottom: '2rem' }}>
-        🏨 Register Your Wellness Center
-      </h1>
-
-      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Center Information</h3>
-        
-        <input required placeholder="Center Name *" value={form.name} onChange={e => setForm({...form, name: e.target.value})} style={inputStyle} />
-        <input required placeholder="Phone Number *" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} style={inputStyle} />
-        <input required type="email" placeholder="Email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} style={inputStyle} />
-        <input required type="password" placeholder="Password *" value={form.password} onChange={e => setForm({...form, password: e.target.value})} style={inputStyle} />
-        <input required type="password" placeholder="Confirm Password *" value={form.confirmPassword} onChange={e => setForm({...form, confirmPassword: e.target.value})} style={inputStyle} />
-
-        <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} style={inputStyle}>
-          <option value="Wellness Center">Wellness Center</option>
-          <option value="Hospital">Hospital</option>
-          <option value="Retreat">Retreat</option>
-          <option value="Clinic">Clinic</option>
-          <option value="Panchakarma Center">Panchakarma Center</option>
-        </select>
-
-        <textarea placeholder="Describe your center..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} style={{...inputStyle, height: '80px'}} />
-
-        <h3 style={{ fontWeight: 'bold', margin: '1.5rem 0 1rem' }}>Location</h3>
-        <select required value={form.city} onChange={e => setForm({...form, city: e.target.value})} style={inputStyle}>
-          <option value="">Select City *</option>
-          {cities.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <input placeholder="Area/Locality" value={form.area} onChange={e => setForm({...form, area: e.target.value})} style={inputStyle} />
-        <input placeholder="State" value={form.state} onChange={e => setForm({...form, state: e.target.value})} style={inputStyle} />
-        <input placeholder="Pincode" value={form.pincode} onChange={e => setForm({...form, pincode: e.target.value})} style={inputStyle} />
-
-        <h3 style={{ fontWeight: 'bold', margin: '1.5rem 0 1rem' }}>Facilities</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
-          <input type="number" placeholder="Total Beds" value={form.bedCount} onChange={e => setForm({...form, bedCount: e.target.value})} style={inputStyle} />
-          <input type="number" placeholder="Panchakarma Rooms" value={form.panchakarmaRooms} onChange={e => setForm({...form, panchakarmaRooms: e.target.value})} style={inputStyle} />
-          <input type="number" placeholder="Established Year" value={form.established} onChange={e => setForm({...form, established: e.target.value})} style={inputStyle} />
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-          {facilityOptions.map(f => (
-            <label key={f} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-              <input type="checkbox" checked={form.facilities.includes(f)}
-                onChange={e => {
-                  if (e.target.checked) setForm({...form, facilities: [...form.facilities, f]});
-                  else setForm({...form, facilities: form.facilities.filter(x => x !== f)});
-                }} />
-              {f}
-            </label>
-          ))}
-        </div>
-
-        <button type="submit" disabled={loading} style={{
-          width: '100%', padding: '1rem', backgroundColor: loading ? '#ffe0b2' : '#FF9800', color: 'white',
-          border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', marginTop: '1.5rem'
-        }}>
-          {loading ? 'Submitting...' : '✅ Submit for Verification'}
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 py-8">
+      <div className="max-w-2xl mx-auto px-4">
+        <button onClick={() => navigate('/ayurveda')} className="flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6">
+          <FaArrowLeft /> Back
         </button>
-      </form>
+
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-green-700 to-green-600 p-6 text-white">
+            <div className="flex items-center gap-3">
+              <FaBuilding className="text-4xl" />
+              <div>
+                <h1 className="text-2xl font-bold">Wellness Center Registration</h1>
+                <p className="text-green-100 text-sm">Join HospitalHub Ayurveda Network</p>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg">{error}</div>
+          )}
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Center Name *</label>
+                <input type="text" name="name" value={form.name} onChange={handleChange} className="w-full p-2.5 border rounded-lg" placeholder="e.g., AyurVeda Retreat" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Phone *</label>
+                <input type="tel" name="phone" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value.replace(/\D/g,'').slice(0,10)})} className="w-full p-2.5 border rounded-lg" placeholder="10-digit mobile" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email *</label>
+                <input type="email" name="email" value={form.email} onChange={handleChange} className="w-full p-2.5 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Type</label>
+                <select name="type" value={form.type} onChange={handleChange} className="w-full p-2.5 border rounded-lg">
+                  <option value="Wellness Center">Wellness Center</option>
+                  <option value="Retreat">Retreat</option>
+                  <option value="Clinic">Clinic</option>
+                  <option value="Panchakarma Center">Panchakarma Center</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Password *</label>
+                <input type="password" name="password" value={form.password} onChange={handleChange} className="w-full p-2.5 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Confirm Password *</label>
+                <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} className="w-full p-2.5 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">City *</label>
+                <input type="text" name="city" value={form.city} onChange={handleChange} className="w-full p-2.5 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">State</label>
+                <input type="text" name="state" value={form.state} onChange={handleChange} className="w-full p-2.5 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Beds</label>
+                <input type="number" name="bedCount" value={form.bedCount} onChange={handleChange} className="w-full p-2.5 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Panchakarma Rooms</label>
+                <input type="number" name="panchakarmaRooms" value={form.panchakarmaRooms} onChange={handleChange} className="w-full p-2.5 border rounded-lg" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <textarea name="description" value={form.description} onChange={handleChange} rows="3" className="w-full p-2.5 border rounded-lg" placeholder="Describe your center..." />
+            </div>
+
+            <button type="submit" disabled={loading} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400">
+              {loading ? 'Submitting...' : 'Register Center'}
+            </button>
+
+            <p className="text-center text-sm text-gray-500">
+              Already registered? <Link to="/ayurveda/center/login" className="text-green-600 font-semibold">Login</Link>
+            </p>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };
 
-const inputStyle = { width: '100%', padding: '0.75rem', marginBottom: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '1rem', boxSizing: 'border-box' };
-
 export default WellnessCenterRegistration;
-
