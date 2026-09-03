@@ -50,12 +50,12 @@ const AyurvedaPayment = () => {
             if (verifyResponse.data.success) {
               setPaymentSuccess(true);
               setTimeout(() => {
-                navigate('/ayurveda/booking-confirmation', {
-                  state: {
-                    booking: verifyResponse.data.data,
-                    doctor: doctor
-                  }
-                });
+                navigate(`/ayurveda/confirmation/${bookingData.bookingId}`, {
+  state: {
+    booking: verifyResponse.data.data,
+    doctor: doctor
+  }
+});
               }, 1500);
             }
           } catch (err) {
