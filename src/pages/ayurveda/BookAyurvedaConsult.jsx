@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { createBooking, getAyurvedaDoctorById } from '../../services/ayurvedaApi';
 import { 
   FaVideo, FaBuilding, FaHome, FaStar, FaClock, 
@@ -11,7 +11,8 @@ import {
 const BookAyurvedaConsult = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const doctorId = location.state?.doctorId || location.state?.doctor?._id;
+    const { doctorId: paramDoctorId } = useParams();
+  const doctorId = location.state?.doctorId || location.state?.doctor?._id || paramDoctorId;
 
   const [doctor, setDoctor] = useState(location.state?.doctor || null);
   const [loading, setLoading] = useState(!doctor);
@@ -26,7 +27,6 @@ const BookAyurvedaConsult = () => {
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(null);
   const [couponError, setCouponError] = useState('');
-  const [cancellationProtection, setCancellationProtection] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState('self');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -154,23 +154,19 @@ const BookAyurvedaConsult = () => {
     }
   }, [selectedDate, selectedSlot]);
 
-  const handleApplyCoupon = () => {
+    const handleApplyCoupon = async () => {
     setCouponError('');
-    // Mock coupon validation - in production, call API
-    const validCoupons = {
-      'AYUR10': { discountPercentage: 10, maxDiscount: 200 },
-      'WELLNESS20': { discountPercentage: 20, maxDiscount: 500 },
-      'FIRST50': { discountPercentage: 50, maxDiscount: 300 }
-    };
+    setCouponApplied(null);
     
-    const coupon = validCoupons[couponCode.toUpperCase()];
-    if (coupon) {
-      const discountAmount = Math.min(
-        Math.round(fees.subtotal * coupon.discountPercentage / 100),
-        coupon.maxDiscount
-      );
-      setCouponApplied({ code: couponCode.toUpperCase(), discountAmount });
-    } else {
+    try {
+      const api = require('../../services/api').default;
+      const response = await api.post('/discounts/validate', { code: couponCode, bookingType: 'ayurveda_consultation', amount: doctor?.consultationFee || 0 });
+      if (response.data.success) {
+        setCouponApplied({ code: couponCode.toUpperCase(), discountAmount: response.data.data.discountAmount });
+      } else {
+        setCouponError(response.data.message || 'Invalid coupon code');
+      }
+    } catch (err) {
       setCouponError('Invalid coupon code');
     }
   };
@@ -244,7 +240,6 @@ const BookAyurvedaConsult = () => {
         stress: formData.stress,
         allergies: formData.allergies,
         discountCode: couponApplied?.code,
-        cancellationProtection,
         referralCode: referralCode || undefined
       });
 
@@ -760,21 +755,7 @@ const BookAyurvedaConsult = () => {
                     )}
                   </div>
 
-                  {/* Cancellation Protection */}
-                  <div className="flex items-center gap-3 p-3 border rounded-lg">
-                    <input
-                      type="checkbox"
-                      checked={cancellationProtection}
-                      onChange={(e) => setCancellationProtection(e.target.checked)}
-                      className="w-5 h-5"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">Cancellation Protection</p>
-                      <p className="text-sm text-gray-500">Get full refund anytime for ₹29</p>
-                    </div>
-                  </div>
-
-                  {/* Referral */}
+                 {/* Referral */}
                   <div>
                     <button
                       type="button"
@@ -811,12 +792,6 @@ const BookAyurvedaConsult = () => {
                   <span className="text-gray-600">Platform Fee</span>
                   <span>₹{fees.platformFee}</span>
                 </div>
-                {cancellationProtection && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Cancellation Protection</span>
-                    <span>₹{fees.cancellationProtectionFee}</span>
-                  </div>
-                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">GST (18%)</span>
                   <span>₹{fees.gst}</span>
