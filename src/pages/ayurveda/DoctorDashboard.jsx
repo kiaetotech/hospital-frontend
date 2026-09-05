@@ -477,6 +477,11 @@ const DoctorDashboard = () => {
                           </button>
                         </>
                       )}
+                      {booking.status === 'completed' && booking.prescription?.followUpDate && (
+                        <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
+                          📅 Follow-up: {new Date(booking.prescription.followUpDate).toLocaleDateString()}
+                        </div>
+                      )}
                       {booking.status === 'in_progress' && (
                         <button
                           onClick={() => {

@@ -111,6 +111,17 @@ const AyurvedaBookingConfirmation = () => {
                   <p className="text-green-700 font-semibold">Booking ID: {booking.bookingId}</p>
                 </div>
                 <p className="text-gray-600 mb-4">Redirecting to your bookings...</p>
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg text-left">
+                  <p className="font-semibold text-blue-800 mb-2">📹 Video Consultation</p>
+                  <a
+                    href={`https://meet.google.com/${booking.bookingId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+                  >
+                    Join Video Call
+                  </a>
+                </div>
               <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                 <p className="font-semibold text-blue-800 mb-2">📹 Video Consultation</p>
                 <p className="text-sm text-gray-600 mb-2">
