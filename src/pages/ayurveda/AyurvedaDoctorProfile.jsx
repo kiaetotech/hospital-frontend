@@ -1,34 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAyurvedaDoctorById } from '../../services/ayurvedaApi';
+import { FaStar, FaUserMd, FaArrowLeft, FaVideo, FaBuilding, FaHome, FaCheckCircle, FaShieldAlt } from 'react-icons/fa';
 
 const AyurvedaDoctorProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchDoctor = async () => {
+      setLoading(true);
+      setError('');
       try {
         const response = await getAyurvedaDoctorById(id);
-        setDoctor(response.data);
-      } catch (error) {
-        // Dummy data fallback
-        setDoctor({
-          _id: id,
-          name: 'Dr. Rajesh Sharma',
-          specialization: 'Panchakarma Specialist',
-          experience: 15,
-          rating: 4.8,
-          consultationFee: 500,
-          languages: ['Hindi', 'English'],
-          city: 'Mumbai',
-          ayushRegNo: 'AYUSH-MH-2018-00123',
-          education: 'BAMS, MD (Panchakarma)',
-          about: 'Experienced Ayurvedic practitioner with expertise in Panchakarma therapies.',
-          availableSlots: ['10:00 AM', '2:00 PM', '5:00 PM']
-        });
+        if (response.data?.success && response.data.data) {
+          setDoctor(response.data.data);
+        } else {
+          setDoctor(response.data);
+        }
+      } catch (err) {
+        setError('Failed to load doctor details');
       } finally {
         setLoading(false);
       }
@@ -36,60 +30,156 @@ const AyurvedaDoctorProfile = () => {
     fetchDoctor();
   }, [id]);
 
-  if (loading) return <div style={{textAlign: 'center', padding: '3rem'}}>Loading...</div>;
-  if (!doctor) return <div style={{textAlign: 'center', padding: '3rem'}}>Doctor not found</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (error || !doctor) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-gray-600">{error || 'Doctor not found'}</p>
+          <button onClick={() => navigate('/ayurveda/doctors')} className="mt-4 text-green-600">
+            Browse Doctors
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-      <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
-          <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>
-            👨‍⚕️
-          </div>
-          <div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{doctor.name}</h1>
-            <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>{doctor.specialization}</p>
-            <p>⭐ {doctor.rating} | 📅 {doctor.experience} years</p>
-            <p>📍 {doctor.city} | 🗣️ {doctor.languages.join(', ')}</p>
-          </div>
-        </div>
-        
-        <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>About</h3>
-          <p style={{ color: '#475569' }}>{doctor.about}</p>
-        </div>
-        
-        <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Education & Registration</h3>
-          <p>{doctor.education}</p>
-          <p style={{ color: '#64748b' }}>AYUSH Reg: {doctor.ayushRegNo}</p>
-        </div>
-        
-        <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Consultation Fee</h3>
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4CAF50' }}>₹{doctor.consultationFee}</p>
-        </div>
-        
-        <button 
-          onClick={() => navigate(`/ayurveda/book/${doctor._id}`)}
-          style={{
-            width: '100%',
-            padding: '1rem',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.5rem',
-            fontWeight: 'bold',
-            fontSize: '1.1rem',
-            cursor: 'pointer'
-          }}
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-3xl mx-auto px-4">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/ayurveda/doctors')}
+          className="flex items-center gap-2 text-gray-600 hover:text-green-600 mb-6"
         >
-          Book Consultation Now
+          <FaArrowLeft /> Back to Doctors
         </button>
+
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-green-600 to-green-500 p-6 text-white">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-3xl font-bold">
+                {doctor.name?.charAt(0) || <FaUserMd />}
+              </div>
+              <div>
+                    <h1 className="text-2xl font-bold">{doctor.name}</h1>
+                    <p className="text-green-100">{doctor.specialization}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span className="flex items-center gap-1">
+                        <FaStar className="text-yellow-400" /> {doctor.rating || 'New'} ({doctor.totalReviews || 0})
+                      </span>
+                      <span>{doctor.experience} years exp.</span>
+                  {doctor.verificationStatus === 'approved' && (
+                    <span className="flex items-center gap-1">
+                      <FaShieldAlt /> Verified
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Consultation Types */}
+          <div className="p-4 bg-green-50 flex items-center gap-4 text-sm">
+            {doctor.consultationTypes?.online && (
+              <span className="flex items-center gap-1">
+                <FaVideo className="text-green-600" /> Online
+              </span>
+            )}
+            {doctor.consultationTypes?.clinic && (
+              <span className="flex items-center gap-1">
+                <FaBuilding className="text-green-600" /> Clinic
+              </span>
+            )}
+            {doctor.consultationTypes?.homeVisit && (
+              <span className="flex items-center gap-1">
+                <FaHome className="text-green-600" /> Home Visit
+              </span>
+            )}
+          </div>
+
+          {/* Details */}
+          <div className="p-6 space-y-6">
+            {/* About */}
+            {doctor.about && (
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">About</h3>
+                <p className="text-gray-600">{doctor.about}</p>
+              </div>
+            )}
+
+            {/* Education & Registration */}
+            <div className="border-t pt-4">
+              <h3 className="font-semibold text-gray-800 mb-2">Education & Registration</h3>
+              <p className="text-gray-600">{doctor.education}</p>
+              <p className="text-sm text-gray-500">AYUSH Reg: {doctor.ayushRegNo}</p>
+              <p className="text-sm text-gray-500">
+                {doctor.address?.city}, {doctor.address?.state}
+              </p>
+            </div>
+
+            {/* Languages */}
+             {doctor.languages && doctor.languages.length > 0 && (
+              <div className="border-t pt-4">
+                <h3 className="font-semibold text-gray-800 mb-2">Languages</h3>
+                <div className="flex flex-wrap gap-2">
+                  {doctor.languages.map((lang, i) => (
+                    <span key={i} className="px-3 py-1 bg-gray-100 rounded-full text-sm">
+                      {lang}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Wellness Center */}
+            {doctor.wellnessCenter?.name && (
+              <div className="border-t pt-4">
+                <h3 className="font-semibold text-gray-800 mb-2">Clinic / Center</h3>
+                <p className="text-gray-600">{doctor.wellnessCenter.name}</p>
+                <p className="text-sm text-gray-500">{doctor.wellnessCenter.type}</p>
+              </div>
+            )}
+
+            {/* Fee & Booking */}
+            <div className="border-t pt-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Consultation Fee</h3>
+              <p className="text-3xl font-bold text-green-600">₹{doctor.consultationFee}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Platform fee ₹30 + GST 18% applies
+              </p>
+            </div>
+
+            {/* Book Button */}
+            <button
+              onClick={() => navigate(`/ayurveda/book/${doctor._id || doctor.id}`, { state: { doctor } })}
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            >
+              Book Consultation Now →
+            </button>
+
+            {/* Trust Badges */}
+            <div className="flex justify-center gap-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <FaCheckCircle className="text-green-600" /> Verified Doctor
+              </span>
+              <span className="flex items-center gap-1">
+                <FaShieldAlt className="text-green-600" /> Secure Booking
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default AyurvedaDoctorProfile;
-
