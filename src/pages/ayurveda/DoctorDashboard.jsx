@@ -221,20 +221,27 @@ const DoctorDashboard = () => {
     return bookings.filter(b => b.status === filter);
   }, [bookings, filter]);
 
-  const stats = useMemo(() => {
+    const stats = useMemo(() => {
     const today = new Date().toDateString();
     const todayBookings = bookings.filter(b => 
       new Date(b.bookingDate).toDateString() === today
     );
     const completedBookings = bookings.filter(b => b.status === 'completed');
-    const pendingBookings = bookings.filter(b => b.status === 'pending' || b.status === 'confirmed');
+    const pendingBookings = bookings.filter(b => 
+      b.status === 'pending' && b.paymentStatus === 'paid'
+    );
+    const paidBookings = bookings.filter(b => b.paymentStatus === 'paid');
+    const totalPaidAmount = paidBookings.reduce((sum, b) => sum + (b.finalAmount || 0), 0);
+    const pendingPayoutAmount = paidBookings
+      .filter(b => b.commissionPayoutStatus === 'pending')
+      .reduce((sum, b) => sum + (b.providerEarning || 0), 0);
 
     return {
       todayCount: todayBookings.length,
       completedCount: completedBookings.length,
       pendingCount: pendingBookings.length,
-      totalEarnings: earnings?.totalEarnings || 0,
-      pendingPayout: earnings?.pendingPayout || 0,
+      totalEarnings: totalPaidAmount,
+      pendingPayout: pendingPayoutAmount,
       averageRating: doctor?.rating || 0
     };
   }, [bookings, earnings, doctor]);
@@ -358,21 +365,21 @@ const DoctorDashboard = () => {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl shadow-md p-4">
-                <p className="text-sm text-gray-500">Total Patients</p>
+                            <div className="bg-white rounded-xl shadow-md p-4">
+                <p className="text-sm text-gray-500">Total Bookings</p>
                 <p className="text-2xl font-bold">{bookings.length}</p>
               </div>
               <div className="bg-white rounded-xl shadow-md p-4">
-                <p className="text-sm text-gray-500">Unique Patients</p>
+                <p className="text-sm text-gray-500">Paid Bookings</p>
                 <p className="text-2xl font-bold">
-                  {new Set(bookings.map(b => b.patient?.phone)).size}
+                  {bookings.filter(b => b.paymentStatus === 'paid').length}
                 </p>
               </div>
               <div className="bg-white rounded-xl shadow-md p-4">
                 <p className="text-sm text-gray-500">Completion Rate</p>
                 <p className="text-2xl font-bold">
-                  {bookings.length > 0 
-                    ? Math.round((bookings.filter(b => b.status === 'completed').length / bookings.length) * 100) 
+                  {bookings.filter(b => b.paymentStatus === 'paid').length > 0 
+                    ? Math.round((bookings.filter(b => b.status === 'completed').length / bookings.filter(b => b.paymentStatus === 'paid').length) * 100) 
                     : 0}%
                 </p>
               </div>
@@ -438,6 +445,13 @@ const DoctorDashboard = () => {
                           {new Date(booking.bookingDate).toLocaleDateString()} at {booking.slotTime}
                         </p>
                         <p className="text-sm text-gray-600 capitalize">{booking.consultationType}</p>
+                        <p className="text-sm">
+                          {booking.otpVerified ? (
+                            <span className="text-green-600">✅ OTP Verified</span>
+                          ) : (
+                            <span className="text-orange-500">⏳ OTP Pending</span>
+                          )}
+                        </p>
                       </div>
                       <div className="text-right">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -453,13 +467,18 @@ const DoctorDashboard = () => {
                     </div>
 
                     <div className="mt-3 flex gap-2">
-                      {booking.status === 'pending' && (
+                        {booking.status === 'pending' && booking.otpVerified && (
                         <button
                           onClick={() => handleStatusUpdate(booking.bookingId, 'accept')}
                           className="px-3 py-1 bg-green-600 text-white rounded text-sm"
                         >
                           Accept
                         </button>
+                      )}
+                      {booking.status === 'pending' && !booking.otpVerified && (
+                        <span className="text-xs text-orange-500">
+                          Waiting for patient OTP verification
+                        </span>
                       )}
                       {booking.status === 'confirmed' && (
                         <>
