@@ -223,6 +223,7 @@ const BookAyurvedaConsult = () => {
         const response = await createBooking({
         type: 'doctor_consultation',
         doctorId: doctor._id,
+        amount: wellnessProgram ? wellnessProgram.price : undefined,
         consultationType,
         bookingDate: selectedDate,
         slotTime: wellnessProgram ? '09:00 AM' : selectedSlot.time,
