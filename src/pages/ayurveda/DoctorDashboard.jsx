@@ -714,12 +714,12 @@ const DoctorDashboard = () => {
                 <p className="text-2xl font-bold text-orange-600">₹{earnings?.pendingPayout || 0}</p>
               </div>
             </div>
-            <button
+              <button
               onClick={handleRequestSettlement}
-              disabled={!earnings?.pendingPayout}
+              disabled={!earnings || earnings.pendingPayout <= 0}
               className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:bg-gray-400"
             >
-              Request Settlement
+              {earnings?.pendingPayout > 0 ? 'Request Settlement' : 'No Pending Payout'}
             </button>
           </div>
         )}
@@ -815,17 +815,15 @@ const DoctorDashboard = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Duration</label>
-                    <select
-                      value={programForm.duration}
-                      onChange={(e) => setProgramForm({ ...programForm, duration: e.target.value })}
+                      <input
+                      type="number"
+                      value={programForm.durationDays || ''}
+                      onChange={(e) => setProgramForm({ ...programForm, durationDays: e.target.value, duration: `${e.target.value} days` })}
+                      placeholder="Enter number of days"
+                      min="1"
+                      max="365"
                       className="w-full p-2 border rounded"
-                    >
-                      <option value="15 days">15 Days</option>
-                      <option value="30 days">30 Days</option>
-                      <option value="45 days">45 Days</option>
-                      <option value="60 days">60 Days</option>
-                      <option value="90 days">90 Days</option>
-                    </select>
+                    />
                   </div>
                 </div>
 
