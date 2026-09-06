@@ -7,12 +7,13 @@ import {
   FaChevronRight, FaCheckCircle, FaTimesCircle,
   FaInfoCircle, FaPhone, FaEnvelope, FaUserPlus
 } from 'react-icons/fa';
-const wellnessProgram = location.state?.wellnessProgram || null;
+
 const BookAyurvedaConsult = () => {
   const navigate = useNavigate();
   const location = useLocation();
-    const { doctorId: paramDoctorId } = useParams();
+  const { doctorId: paramDoctorId } = useParams();
   const doctorId = location.state?.doctorId || location.state?.doctor?._id || paramDoctorId;
+  const wellnessProgram = location.state?.wellnessProgram || null;
 
   const [doctor, setDoctor] = useState(location.state?.doctor || null);
   const [loading, setLoading] = useState(!doctor);
@@ -224,7 +225,7 @@ const BookAyurvedaConsult = () => {
         doctorId: doctor._id,
         consultationType,
         bookingDate: selectedDate,
-        slotTime: selectedSlot.time,
+        slotTime: wellnessProgram ? '09:00 AM' : selectedSlot.time,
         symptoms: formData.symptoms,
         medicalHistory: formData.medicalHistory,
         prakritiType: formData.prakritiType,
