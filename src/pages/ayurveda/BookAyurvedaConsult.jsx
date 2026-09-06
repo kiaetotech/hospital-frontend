@@ -7,7 +7,7 @@ import {
   FaChevronRight, FaCheckCircle, FaTimesCircle,
   FaInfoCircle, FaPhone, FaEnvelope, FaUserPlus
 } from 'react-icons/fa';
-
+const wellnessProgram = location.state?.wellnessProgram || null;
 const BookAyurvedaConsult = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -134,9 +134,9 @@ const BookAyurvedaConsult = () => {
   }, []);
 
     // Calculate fees (production - matches backend)
-  const fees = useMemo(() => {
-    const consultationFee = doctor?.consultationFee || 0;
-    const platformFee = 30; // Fixed platform fee
+    const fees = useMemo(() => {
+    const consultationFee = wellnessProgram ? wellnessProgram.price : (doctor?.consultationFee || 0);
+    const platformFee = wellnessProgram ? 100 : 30;
     const discountAmount = couponApplied?.discountAmount || 0;
     
     const subtotal = consultationFee + platformFee;
@@ -203,7 +203,7 @@ const BookAyurvedaConsult = () => {
       setError('Please select a date');
       return;
     }
-    if (!selectedSlot) {
+        if (!wellnessProgram && !selectedSlot) {
       setError('Please select a time slot');
       return;
     }
@@ -335,8 +335,26 @@ const BookAyurvedaConsult = () => {
                 </span>
               </div>
             </div>
+            {/* Wellness Program Info */}
+            {wellnessProgram && (
+              <div className="bg-white rounded-xl shadow-md p-6 border-2 border-green-200">
+                <h2 className="text-lg font-semibold text-green-700 mb-2">💪 {wellnessProgram.name}</h2>
+                <p className="text-gray-600 mb-3">{wellnessProgram.description}</p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-gray-500">Duration</p>
+                    <p className="font-semibold">{wellnessProgram.duration}</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-gray-500">Price</p>
+                    <p className="font-semibold text-green-600">₹{wellnessProgram.price}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {/* Consultation Type */}
+            {/* Consultation Type (Only for regular consultation) */}
+            {!wellnessProgram && (
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-lg font-semibold mb-4">Select Consultation Type</h2>
               <div className="grid grid-cols-3 gap-3">
@@ -362,6 +380,7 @@ const BookAyurvedaConsult = () => {
                 ))}
               </div>
             </div>
+            )}
 
             {/* Date Selection */}
             <div className="bg-white rounded-xl shadow-md p-6">
@@ -389,8 +408,8 @@ const BookAyurvedaConsult = () => {
               </div>
             </div>
 
-            {/* Time Slots */}
-            {selectedDate && (
+            {/* Time Slots (Only for regular consultation) */}
+            {!wellnessProgram && selectedDate && (
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <FaClock className="text-green-600" /> Select Time Slot
