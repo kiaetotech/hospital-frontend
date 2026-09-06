@@ -178,12 +178,12 @@ const WellnessPrograms = () => {
                       <p className="font-bold text-green-600 text-xl">₹{program.price}</p>
                     </div>
                     <button
-                      onClick={() => navigate('/ayurveda/book-consultation', { 
-                        state: { 
-                          doctor: { _id: program.doctorId, name: program.doctorName },
-                          wellnessProgram: program 
-                        } 
-                      })}
+                      onClick={() => navigate(`/ayurveda/book/${program.doctorId}`, { 
+  			  state: { 
+    			   doctor: { _id: program.doctorId, name: program.doctorName },
+    			  wellnessProgram: program 
+  			 } 
+		       })
                       className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700"
                     >
                       Book Program
