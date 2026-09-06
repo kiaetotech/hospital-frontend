@@ -480,6 +480,14 @@ const DoctorDashboard = () => {
                           Waiting for patient OTP verification
                         </span>
                       )}
+                          <a
+                            href={`https://meet.google.com/${booking.bookingId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+                          >
+                            📹 Join Video
+                          </a>
                       {booking.status === 'confirmed' && (
                         <>
                           <button
@@ -549,7 +557,7 @@ const DoctorDashboard = () => {
                       >
                         {day}
                       </button>
-                      {isActive && (
+                                          {isActive && (
                         <button
                           onClick={() => {
                             const updated = [...availability];
@@ -573,7 +581,7 @@ const DoctorDashboard = () => {
                         {dayData.slots.map((slot, slotIndex) => (
                           <div key={slotIndex} className="flex items-center gap-2">
                             <select
-                              value={slot.startTime}
+                              value={slot.startTime || '09:00 AM'}
                               onChange={(e) => {
                                 const updated = [...availability];
                                 updated[dayIndex].slots[slotIndex].startTime = e.target.value;
@@ -587,7 +595,7 @@ const DoctorDashboard = () => {
                             </select>
                             <span className="text-sm">to</span>
                             <select
-                              value={slot.endTime}
+                              value={slot.endTime || '10:00 AM'}
                               onChange={(e) => {
                                 const updated = [...availability];
                                 updated[dayIndex].slots[slotIndex].endTime = e.target.value;
@@ -601,10 +609,11 @@ const DoctorDashboard = () => {
                             </select>
                             <input
                               type="number"
-                              value={slot.maxBookings}
+                              value={slot.maxBookings || 1}
                               onChange={(e) => {
+                                const val = parseInt(e.target.value) || 1;
                                 const updated = [...availability];
-                                updated[dayIndex].slots[slotIndex].maxBookings = parseInt(e.target.value);
+                                updated[dayIndex].slots[slotIndex].maxBookings = val;
                                 setAvailability(updated);
                               }}
                               min="1"
