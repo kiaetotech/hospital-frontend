@@ -71,13 +71,9 @@ const AdminInsuranceClaims = () => {
   const handleExportReport = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      window.open(
-        `${process.env.REACT_APP_API_URL}/api/insurance-admin/claims/export?${new URLSearchParams(filters).toString()}`,
-        '_blank'
-      );
-    } catch (error) {
-      alert('Failed to export report');
-    }
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/insurance-admin/claims/export`, { params: filters, responseType: 'blob', headers: { Authorization: `Bearer ${token}` } });
+      const url = URL.createObjectURL(response.data); const a = document.createElement('a'); a.href = url; a.download = 'insurance-claims.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    } catch (error) { alert(error.response?.data?.message || 'Failed to export report'); }
   };
 
   const handleUpdateStatus = async (claimId, status) => {

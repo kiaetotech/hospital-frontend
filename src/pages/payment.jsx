@@ -14,12 +14,18 @@ const Payment = () => {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('direct'); // 'direct' or 'loan'
   const [loanData, setLoanData] = useState(null);
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [medicineCart, setMedicineCart] = useState([]);
   
     const { lender } = useLender();
 
   // Check for loan data from session storage
   useEffect(() => {
     const storedLoan = sessionStorage.getItem('healthEmiLoan');
+    const storedMedicines = sessionStorage.getItem('homeopathyMedicineCart');
+    if (storedMedicines && bookingType === 'homeopathy_medicine') {
+      try { setMedicineCart(JSON.parse(storedMedicines)); } catch { sessionStorage.removeItem('homeopathyMedicineCart'); }
+    }
     if (storedLoan) {
       const loan = JSON.parse(storedLoan);
       setLoanData(loan);
@@ -38,6 +44,10 @@ const Payment = () => {
   };
 
     const handleDirectPayment = async () => {
+    if (bookingType === 'homeopathy_medicine' && !deliveryAddress.trim()) {
+      alert('Please enter a delivery address.');
+      return;
+    }
     setLoading(true);
 
     const isScriptLoaded = await loadRazorpayScript();
@@ -52,22 +62,35 @@ const Payment = () => {
       const token = localStorage.getItem('token');
       const userData = JSON.parse(localStorage.getItem('user') || '{}');
 
-      const orderRes = await api.post('/payment/create-order', {
-        amount: parseInt(amountParam),
-        currency: 'INR',
-        bookingId,
-        bookingType,
-        patientName: userData.name || 'Patient',
-        patientPhone: userData.phone || '',
-        patientEmail: userData.email || '',
-        userId: userData.id || 'guest'
-      });
-
-      if (!orderRes.data?.success) {
-        throw new Error(orderRes.data?.message || 'Failed to create order');
+      let order;
+      let key_id;
+      let insurancePayment = false;
+      const existingOrderId = queryParams.get('orderId');
+      if (bookingType === 'insurance') {
+        if (!bookingId || !existingOrderId) throw new Error('Insurance payment order is missing. Please restart the application.');
+        const keyResponse = await api.get('/insurance/health');
+        key_id = keyResponse.data?.data?.razorpayKey || undefined;
+        // The secure public key is returned by the insurance application response; use the stored value when available.
+        key_id = key_id || localStorage.getItem('razorpayKey');
+        if (!key_id) throw new Error('Payment gateway configuration is unavailable');
+        order = { id: existingOrderId, amount: Math.round(Number(amountParam) * 100), currency: 'INR' };
+        insurancePayment = true;
+      } else {
+        const orderRes = await api.post('/payment/create-order', {
+          amount: parseInt(amountParam),
+          currency: 'INR',
+          bookingId,
+          bookingType,
+          patientName: userData.name || 'Patient',
+          patientPhone: userData.phone || '',
+          patientEmail: userData.email || '',
+          userId: userData.id || '',
+          medicines: medicineCart.map(item => ({ medicineId: item._id || item.id, name: item.name, potency: item.potency, quantity: 1, price: Number(item.price || 0), pharmacyId: item.pharmacyId })),
+          deliveryAddress: bookingType === 'homeopathy_medicine' ? deliveryAddress.trim() : ''
+        });
+        if (!orderRes.data?.success) throw new Error(orderRes.data?.message || 'Failed to create order');
+        ({ order, key_id } = orderRes.data);
       }
-
-      const { order, key_id } = orderRes.data;
 
       const options = {
         key: key_id,
@@ -79,22 +102,22 @@ const Payment = () => {
         handler: async function(response) {
           setLoading(true);
           try {
-            const verifyRes = await api.post('/payment/verify', {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              bookingId: queryParams.get('bookingId') || '',
-              bookingType,
-              patientName: userData.name || 'Patient',
-              patientPhone: userData.phone || '',
-              patientEmail: userData.email || '',
-              userId: userData.id || 'guest',
-              totalAmount: parseInt(amountParam),
-              finalAmount: parseInt(amountParam)
-            });
+            const verifyRes = insurancePayment
+              ? await api.post('/insurance/verify-payment', { bookingId, orderId: response.razorpay_order_id, paymentId: response.razorpay_payment_id, signature: response.razorpay_signature })
+              : await api.post('/payment/verify', {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  bookingId: queryParams.get('bookingId') || '', bookingType,
+                  patientName: userData.name || 'Patient', patientPhone: userData.phone || '', patientEmail: userData.email || '', userId: userData.id || 'guest',
+                  totalAmount: parseInt(amountParam), finalAmount: parseInt(amountParam),
+                  medicines: medicineCart.map(item => ({ medicineId: item._id || item.id, name: item.name, potency: item.potency, quantity: 1, price: Number(item.price || 0), pharmacyId: item.pharmacyId })),
+                  deliveryAddress: bookingType === 'homeopathy_medicine' ? deliveryAddress.trim() : ''
+                });
 
             if (verifyRes.data?.success) {
               alert('✅ Payment successful! Booking confirmed.');
+              sessionStorage.removeItem('homeopathyMedicineCart');
               navigate('/my-bookings');
             } else {
               throw new Error(verifyRes.data?.message || 'Verification failed');
@@ -131,38 +154,12 @@ const Payment = () => {
   };
 
   const handleLoanPayment = () => {
-    if (!loanData) {
-      alert('Loan application not found. Please apply for loan again.');
+    if (!loanData?.applicationId) {
+      alert('A valid loan application is required. No payment or approval was created.');
       return;
     }
-    
-    // Mock loan disbursal
-    setLoading(true);
-    
-    // Simulate API call for loan confirmation
-    setTimeout(() => {
-      // Store booking with loan info
-      const bookingRecord = {
-        id: `BOOK_${Date.now()}`,
-        type: bookingType,
-        hospital: hospitalName,
-        amount: amountParam,
-        paymentMethod: 'loan',
-        loanDetails: loanData,
-        date: new Date().toISOString()
-      };
-      
-      const existingBookings = JSON.parse(localStorage.getItem('kiaeto_bookings') || '[]');
-      existingBookings.push(bookingRecord);
-      localStorage.setItem('kiaeto_bookings', JSON.stringify(existingBookings));
-      
-      // Clear loan data from session
-      sessionStorage.removeItem('healthEmiLoan');
-      
-      alert(`✅ Loan Approved!\n\nLender: ${loanData.lender}\nLoan Amount: ₹${loanData.amount}\nEMI: ₹${loanData.emi}/month for ${loanData.tenure} months\n\nHospital will confirm your booking.`);
-      navigate('/my-bookings');
-      setLoading(false);
-    }, 1500);
+    sessionStorage.removeItem('healthEmiLoan');
+    navigate('/financing');
   };
 
   const handlePayment = () => {
@@ -243,6 +240,13 @@ const Payment = () => {
           </p>
         </div>
         
+        {bookingType === 'homeopathy_medicine' && paymentMethod === 'direct' && (
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem' }}>Delivery Address</label>
+            <textarea value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} rows={3} required placeholder="Enter complete delivery address" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', resize: 'vertical', boxSizing: 'border-box' }} />
+          </div>
+        )}
+
         {paymentMethod === 'loan' && !loanData && (
           <div style={{ backgroundColor: '#fee2e2', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
             ⚠️ No loan application found. Please go back and apply for Health EMI.

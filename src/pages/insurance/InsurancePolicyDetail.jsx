@@ -7,6 +7,10 @@ const InsurancePolicyDetail = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [policy, setPolicy] = useState(null);
+  const [showClaimForm, setShowClaimForm] = useState(false);
+  const [claim, setClaim] = useState({ amount: '', description: '', hospitalName: '', hospitalAddress: '', admissionDate: '' });
+  const [claimSubmitting, setClaimSubmitting] = useState(false);
+  const [claimMessage, setClaimMessage] = useState('');
 
   useEffect(() => {
     const fetchPolicy = async () => {
@@ -23,6 +27,28 @@ const InsurancePolicyDetail = () => {
     };
     fetchPolicy();
   }, [id]);
+
+  const submitClaim = async (e) => {
+    e.preventDefault();
+    setClaimSubmitting(true); setClaimMessage('');
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) { navigate('/login'); return; }
+      const response = await axios.post('/api/insurance-claims/file', { policyId: policy._id, ...claim, amount: Number(claim.amount) }, { headers: { Authorization: `Bearer ${token}` } });
+      if (response.data?.success) { setClaimMessage('Claim submitted successfully.'); setShowClaimForm(false);
+        const refreshed = await axios.get(`/api/insurance/my-policies/${policy._id}`); if (refreshed.data?.success) setPolicy(refreshed.data.data); setClaim({ amount: '', description: '', hospitalName: '', hospitalAddress: '', admissionDate: '' }); }
+    } catch (error) { setClaimMessage(error.response?.data?.message || 'Unable to submit claim'); }
+    finally { setClaimSubmitting(false); }
+  };
+
+  const downloadPolicy = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/insurance/download-policy/${policy._id}`, { responseType: 'blob', headers: { Authorization: `Bearer ${token}` } });
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const a = document.createElement('a'); a.href = url; a.download = `${policy.policyNumber}.pdf`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    } catch (error) { setClaimMessage(error.response?.data?.message || 'Unable to download policy document'); }
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -166,18 +192,33 @@ const InsurancePolicyDetail = () => {
           </div>
         )}
 
+        {showClaimForm && (
+          <form onSubmit={submitClaim} style={{ borderTop: '1px solid #e5e7eb', marginTop: '1.5rem', paddingTop: '1.5rem' }}>
+            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>File a Claim</h3>
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              <input required type="number" min="1" max={policy.sumInsured} placeholder="Claim amount (₹)" value={claim.amount} onChange={e => setClaim({ ...claim, amount: e.target.value })} />
+              <input required placeholder="Hospital name" value={claim.hospitalName} onChange={e => setClaim({ ...claim, hospitalName: e.target.value })} />
+              <input placeholder="Hospital address" value={claim.hospitalAddress} onChange={e => setClaim({ ...claim, hospitalAddress: e.target.value })} />
+              <input required type="date" value={claim.admissionDate} onChange={e => setClaim({ ...claim, admissionDate: e.target.value })} />
+              <textarea required placeholder="Describe the claim" value={claim.description} onChange={e => setClaim({ ...claim, description: e.target.value })} />
+              <div style={{ display: 'flex', gap: '0.5rem' }}><button type="submit" disabled={claimSubmitting} style={{ padding: '0.5rem 1rem', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px' }}>{claimSubmitting ? 'Submitting...' : 'Submit Claim'}</button><button type="button" onClick={() => setShowClaimForm(false)} style={{ padding: '0.5rem 1rem' }}>Cancel</button></div>
+              {claimMessage && <div style={{ color: '#92400e' }}>{claimMessage}</div>}
+            </div>
+          </form>
+        )}
+
         {/* Actions */}
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
           {policy.status === 'active' && (
             <button
-              onClick={() => navigate(`/insurance/claims/submit/${policy._id}`)}
+              onClick={() => setShowClaimForm(true)}
               style={{ padding: '0.5rem 1.5rem', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
             >
               📋 File a Claim
             </button>
           )}
           <button
-            onClick={() => window.open(policy.policyDocumentUrl, '_blank')}
+            onClick={downloadPolicy}
             style={{ padding: '0.5rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
           >
             📄 Download Policy

@@ -15,11 +15,14 @@ const InsuranceCompanyDashboard = () => {
   const [policies, setPolicies] = useState([]);
   const [claims, setClaims] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [settlements, setSettlements] = useState([]);
+  const [claimStatus, setClaimStatus] = useState('all');
   const [showAddPlan, setShowAddPlan] = useState(false);
+  const [editingPlanId, setEditingPlanId] = useState(null);
   const [newPlan, setNewPlan] = useState({
     planName: '',
     planType: 'individual',
-    sumInsured: 500000,
+    sumInsured: { min: 100000, max: 10000000, default: 500000, options: [300000,500000,1000000,2500000,5000000,10000000] },
     basePremium: 10000,
     features: [],
     inclusions: [],
@@ -40,7 +43,7 @@ const InsuranceCompanyDashboard = () => {
 
   useEffect(() => {
     loadData();
-  }, [activeTab]);
+  }, [activeTab, claimStatus]);
 
   const loadData = async () => {
     setLoading(true);
@@ -53,37 +56,28 @@ const InsuranceCompanyDashboard = () => {
 
       if (activeTab === 'dashboard') {
         const statsRes = await insuranceApi.getStats();
-        setStats(statsRes.data.data || {
-          totalPlans: 5,
-          totalPolicies: 120,
-          totalClaims: 15,
-          pendingClaims: 5,
-          totalRevenue: 450000,
-          totalCommission: 67500
-        });
-        
-        // Demo policies
-        setPolicies([
-          { policyNumber: 'POL-2024-001', customerName: 'Rajesh Kumar', planName: 'Family Health Plus', premium: 15000, status: 'active' },
-          { policyNumber: 'POL-2024-002', customerName: 'Priya Sharma', planName: 'Senior Citizen Care', premium: 25000, status: 'active' },
-          { policyNumber: 'POL-2024-003', customerName: 'Amit Singh', planName: 'Critical Illness Shield', premium: 8000, status: 'pending' }
-        ]);
-        
-        // Demo claims
-        setClaims([
-          { claimId: 'CLM-001', policyNumber: 'POL-2024-001', amount: 50000, status: 'under_review', date: '2024-01-15' },
-          { claimId: 'CLM-002', policyNumber: 'POL-2024-002', amount: 75000, status: 'settled', date: '2024-01-14' }
-        ]);
+        setStats(statsRes.data?.data?.stats || {});
+        const policiesRes = await insuranceApi.getPolicies();
+        setPolicies(policiesRes.data?.data || []);
+        const claimsRes = await insuranceApi.getClaims();
+        setClaims(claimsRes.data?.data || []);
       } else if (activeTab === 'plans') {
         const plansRes = await insuranceApi.getPlans();
-        setPlans(plansRes.data.data || [
-          { _id: '1', planName: 'Family Health Plus', planType: 'family_floater', sumInsured: 500000, basePremium: 15000, isActive: true },
-          { _id: '2', planName: 'Senior Citizen Care', planType: 'senior_citizen', sumInsured: 1000000, basePremium: 25000, isActive: true },
-          { _id: '3', planName: 'Critical Illness Shield', planType: 'critical_illness', sumInsured: 200000, basePremium: 8000, isActive: true }
-        ]);
+        setPlans(plansRes.data?.data || []);
+      } else if (activeTab === 'policies') {
+        const policiesRes = await insuranceApi.getPolicies();
+        setPolicies(policiesRes.data?.data || []);
+      } else if (activeTab === 'claims') {
+        const claimsRes = await insuranceApi.getClaims();
+        const allClaims = claimsRes.data?.data || [];
+        setClaims(claimStatus === 'pending' ? allClaims.filter(c => ['submitted', 'under_review'].includes(c.status)) : claimStatus === 'all' ? allClaims : allClaims.filter(c => c.status === claimStatus));
+      } else if (activeTab === 'settlements') {
+        const settlementsRes = await insuranceApi.getSettlements();
+        setSettlements(settlementsRes.data?.data || []);
+      } else if (activeTab === 'reports') {
       } else if (activeTab === 'profile') {
         const profileRes = await insuranceApi.getProfile();
-        setProfile(profileRes.data.data || { companyName: 'Star Health Insurance', email: 'info@starhealth.in' });
+        setProfile(profileRes.data?.data || null);
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -95,6 +89,30 @@ const InsuranceCompanyDashboard = () => {
     }
   };
 
+
+  const generateReport = async (period) => {
+    try {
+      const now = new Date();
+      const start = new Date(now);
+      if (period === 'daily') start.setDate(now.getDate() - 1);
+      else start.setMonth(now.getMonth() - 1);
+      const response = await insuranceApi.getReports({ startDate: start.toISOString(), endDate: now.toISOString() });
+      const report = response.data?.data;
+      if (!report) throw new Error('No report data returned');
+      const csv = [
+        ['Metric', 'Value'],
+        ['Total Policies', report.summary?.totalPolicies || 0],
+        ['Total Premium', report.summary?.totalPremium || 0],
+        ['Total Commission', report.summary?.totalCommission || 0],
+        ['Total Payout', report.summary?.totalPayout || 0],
+        ['Average Premium', report.summary?.averagePremium || 0]
+      ].map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `insurance-${period}-report.csv`; a.click(); URL.revokeObjectURL(url);
+    } catch (error) { alert(error.response?.data?.message || error.message || 'Failed to generate report'); }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('providerToken');
     localStorage.removeItem('providerType');
@@ -104,13 +122,15 @@ const InsuranceCompanyDashboard = () => {
 
   const handleAddPlan = async () => {
     try {
-      await insuranceApi.addPlan(newPlan);
-      alert('Plan added successfully!');
+      if (editingPlanId) await insuranceApi.updatePlan(editingPlanId, newPlan);
+      else await insuranceApi.addPlan(newPlan);
+      alert(editingPlanId ? 'Plan updated successfully!' : 'Plan added successfully!');
       setShowAddPlan(false);
+      setEditingPlanId(null);
       setNewPlan({
         planName: '',
         planType: 'individual',
-        sumInsured: 500000,
+        sumInsured: { min: 100000, max: 10000000, default: 500000, options: [300000,500000,1000000,2500000,5000000,10000000] },
         basePremium: 10000,
         features: [],
         inclusions: [],
@@ -227,7 +247,7 @@ const InsuranceCompanyDashboard = () => {
               columns={[
                 { key: 'planName', label: 'Plan Name' },
                 { key: 'planType', label: 'Type', render: (val) => val?.replace('_', ' ').toUpperCase() || '-' },
-                { key: 'sumInsured', label: 'Sum Insured (₹)', render: (val) => val?.toLocaleString() || '-' },
+                { key: 'sumInsured', label: 'Sum Insured (₹)', render: (val) => val?.default?.toLocaleString() || val?.toLocaleString() || '-' },
                 { key: 'basePremium', label: 'Premium (₹)', render: (val) => val?.toLocaleString() || '-' },
                 { key: 'isActive', label: 'Status', render: (val) => (
                   <span style={{ 
@@ -243,9 +263,9 @@ const InsuranceCompanyDashboard = () => {
               ]}
               data={plans}
               loading={loading}
-              onEdit={(row) => alert(`Edit: ${row.planName}`)}
+              onEdit={(row) => { setNewPlan({ ...row, sumInsured: row.sumInsured || { min: 100000, max: 10000000, default: 500000 } }); setEditingPlanId(row._id); setShowAddPlan(true); }}
               onDelete={(row) => handleDeletePlan(row._id)}
-              onView={(row) => alert(`View: ${row.planName}`)}
+              onView={(row) => navigate(`/insurance/plan/${row._id}`)}
             />
           </div>
         );
@@ -274,7 +294,7 @@ const InsuranceCompanyDashboard = () => {
               ]}
               data={policies}
               loading={loading}
-              onView={(row) => alert(`View policy: ${row.policyNumber}`)}
+              onView={(row) => navigate(`/insurance/my-policies/${row._id}`)}
             />
           </div>
         );
@@ -285,8 +305,9 @@ const InsuranceCompanyDashboard = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>📋 Claims Management</h2>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button style={{ padding: '0.25rem 1rem', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '1rem', cursor: 'pointer' }}>Pending</button>
-                <button style={{ padding: '0.25rem 1rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '1rem', cursor: 'pointer' }}>Settled</button>
+                <button onClick={() => setClaimStatus('pending')} style={{ padding: '0.25rem 1rem', backgroundColor: claimStatus === 'pending' ? '#d97706' : '#f59e0b', color: 'white', border: 'none', borderRadius: '1rem', cursor: 'pointer' }}>Pending</button>
+                <button onClick={() => setClaimStatus('settled')} style={{ padding: '0.25rem 1rem', backgroundColor: claimStatus === 'settled' ? '#059669' : '#10b981', color: 'white', border: 'none', borderRadius: '1rem', cursor: 'pointer' }}>Settled</button>
+                <button onClick={() => setClaimStatus('all')} style={{ padding: '0.25rem 1rem', backgroundColor: claimStatus === 'all' ? '#475569' : '#94a3b8', color: 'white', border: 'none', borderRadius: '1rem', cursor: 'pointer' }}>All</button>
               </div>
             </div>
             <ProviderTable
@@ -309,7 +330,7 @@ const InsuranceCompanyDashboard = () => {
               ]}
               data={claims}
               loading={loading}
-              onView={(row) => alert(`View claim: ${row.claimId}`)}
+              onView={(row) => { setActiveTab('claims'); setClaimStatus('all'); }}
             />
           </div>
         );
@@ -321,19 +342,19 @@ const InsuranceCompanyDashboard = () => {
             <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', textAlign: 'center' }}>
-                  <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Total Pending</p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>₹45,000</p>
+                  <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Pending Transactions</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>{settlements.filter(s => s.commissionStatus !== 'paid').length}</p>
                 </div>
                 <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', textAlign: 'center' }}>
-                  <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Total Settled</p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>₹1,25,000</p>
+                  <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Settled Transactions</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>{settlements.filter(s => s.commissionStatus === 'paid').length}</p>
                 </div>
                 <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', textAlign: 'center' }}>
-                  <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Commission Earned</p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>₹18,750</p>
+                  <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Total Provider Payout</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>₹{settlements.reduce((sum, s) => sum + Number(s.insurancePayoutToCompany || s.providerAmount || 0), 0).toLocaleString()}</p>
                 </div>
               </div>
-              <button style={{ marginTop: '1rem', padding: '0.5rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}>Process Pending Settlements</button>
+              <button onClick={() => loadData()} style={{ marginTop: '1rem', padding: '0.5rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}>Refresh Settlements</button>
             </div>
           </div>
         );
@@ -375,18 +396,18 @@ const InsuranceCompanyDashboard = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📅 Daily Report</h3>
-                <button style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}>Generate Report</button>
+                <button onClick={() => generateReport('daily')} style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}>Generate Report</button>
               </div>
               <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📆 Monthly Report</h3>
-                <button style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}>Generate Report</button>
+                <button onClick={() => generateReport('monthly')} style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}>Generate Report</button>
               </div>
             </div>
           </div>
         );
 
       default:
-        return <div>Coming soon...</div>;
+        return <div style={{ padding: '1rem' }}>This section is not configured for this account.</div>;
     }
   };
 
