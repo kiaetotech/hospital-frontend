@@ -40,8 +40,18 @@ const DoctorLogin = () => {
       });
 
       if (response.data.success) {
-        // Store doctor data
-        localStorage.setItem('token', response.data.token);
+        // Clear any existing patient session
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('patientToken');
+        localStorage.removeItem('center');
+        localStorage.removeItem('centerToken');
+        localStorage.removeItem('providerToken');
+        localStorage.removeItem('providerId');
+        localStorage.removeItem('providerType');
+        
+        // Save doctor session with SEPARATE keys
+        localStorage.setItem('doctorToken', response.data.token);
         localStorage.setItem('doctor', JSON.stringify({
           id: response.data.doctor.id,
           name: response.data.doctor.name,
