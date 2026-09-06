@@ -39,12 +39,13 @@ const DoctorDashboard = () => {
   const [savingAvailability, setSavingAvailability] = useState(false);
   const [wellnessPrograms, setWellnessPrograms] = useState([]);
   const [showProgramModal, setShowProgramModal] = useState(false);
-  const [programForm, setProgramForm] = useState({
+    const [programForm, setProgramForm] = useState({
     name: '',
     description: '',
     category: 'general_wellness',
     price: '',
-    duration: '30 days',
+    duration: '',
+    durationDays: '',
     includes: [],
     isActive: true
   });
@@ -128,13 +129,18 @@ const DoctorDashboard = () => {
     }
   };
 
-  const handleSaveProgram = async () => {
+    const handleSaveProgram = async () => {
     try {
       const response = await api.post('/ayurveda/doctor/wellness-program', {
         doctorId: doctor.id,
         program: {
-          ...programForm,
-          price: parseInt(programForm.price)
+          name: programForm.name,
+          description: programForm.description,
+          category: programForm.category,
+          price: parseInt(programForm.price) || 0,
+          duration: programForm.duration || `${programForm.durationDays || 15} days`,
+          includes: programForm.includes || [],
+          isActive: true
         }
       });
       if (response.data.success) {
@@ -145,14 +151,16 @@ const DoctorDashboard = () => {
           description: '',
           category: 'general_wellness',
           price: '',
-          duration: '30 days',
+          duration: '',
+          durationDays: '',
           includes: [],
           isActive: true
         });
-        fetchWellnessPrograms(doctor.id);
+        // Refresh programs list
+        await fetchWellnessPrograms(doctor.id);
       }
     } catch (err) {
-      alert('Failed to save program');
+      alert('Failed to save program: ' + (err.response?.data?.error || err.message));
     }
   };
 
