@@ -14,6 +14,10 @@ api.interceptors.request.use((config) => {
   
   if (userType === 'ambulance_driver') {
     token = sessionStorage.getItem('token') || sessionStorage.getItem('driverToken');
+  } else if (localStorage.getItem('doctor')) {
+    token = localStorage.getItem('doctorToken') || localStorage.getItem('token');
+  } else if (localStorage.getItem('center')) {
+    token = localStorage.getItem('centerToken') || localStorage.getItem('token');
   } else {
     token = localStorage.getItem('token') || localStorage.getItem('providerToken') || localStorage.getItem('doctorToken');
   }
