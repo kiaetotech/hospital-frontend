@@ -35,6 +35,7 @@ const AyurvedaHub = () => {
   const services = [
     { icon: '📞', title: 'Online Consultation', desc: 'Video consult with AYUSH-registered doctors', route: '/ayurveda/doctors', color: '#FF9800', bg: '#fff7ed' },
     { icon: '🏨', title: 'Panchakarma Centers', desc: 'Book authentic detox & rejuvenation programs', route: '/ayurveda/centers', color: '#2196F3', bg: '#eff6ff' },
+    { icon: '💪', title: 'Wellness Programs', desc: '30-90 day guided programs for chronic wellness', route: '/ayurveda/wellness-programs', color: '#DC2626', bg: '#fef2f2', badge: 'NEW' },
     { icon: '🧬', title: 'Prakriti Analysis', desc: 'AI quiz to discover your Dosha body type', route: '/ayurveda/prakriti', color: '#9C27B0', bg: '#faf5ff' },
     { icon: '🌿', title: 'Wellness Store', desc: 'Personalized products based on your Prakriti', route: '/ayurveda/commerce', color: '#059669', bg: '#ecfdf5', badge: 'NEW' },
     { icon: '🔄', title: 'Treatment Tracker', desc: 'Track your Panchakarma journey day-by-day', route: '/ayurveda/panchakarma-tracker', color: '#0D9488', bg: '#f0fdfa', badge: 'NEW' },
@@ -80,6 +81,10 @@ const AyurvedaHub = () => {
             <button onClick={() => navigate('/ayurveda/commerce')}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 22px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
               🌿 Wellness Store
+            </button>
+            <button onClick={() => navigate('/ayurveda/wellness-programs')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 22px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+              💪 Wellness Programs
             </button>
           </motion.div>
         </div>
