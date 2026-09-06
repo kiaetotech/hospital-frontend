@@ -488,14 +488,16 @@ const DoctorDashboard = () => {
                           Waiting for patient OTP verification
                         </span>
                       )}
-                          <a
-                            href={`https://meet.google.com/${booking.bookingId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-1 bg-green-600 text-white rounded text-sm"
-                          >
-                            📹 Join Video
-                          </a>
+                            {booking.amount < 1000 && (
+                            <a
+                              href={`https://meet.google.com/${booking.bookingId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+                            >
+                              📹 Join Video
+                            </a>
+                          )}
                       {booking.status === 'confirmed' && (
                         <>
                           <button
