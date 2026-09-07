@@ -277,6 +277,7 @@ function App() {
           <Route path="/ayurveda/confirmation/:bookingId" element={<AyurvedaBookingConfirmation />} />
           <Route path="/ayurveda/center/register" element={<WellnessCenterRegistration />} />
           <Route path="/ayurveda/center/login" element={<WellnessCenterLogin />} />
+          <Route path="/ayurveda/wellness-center-login" element={<WellnessCenterLogin />} />
           <Route path="/ayurveda/center/dashboard" element={<WellnessCenterDashboard />} />
           <Route path="/ayurveda/review/:bookingId" element={<PatientReview />} />
           <Route path="/ayurveda/doctor/register" element={<DoctorRegistration />} />
