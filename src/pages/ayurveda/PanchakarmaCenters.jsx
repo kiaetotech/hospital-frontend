@@ -111,7 +111,7 @@ const PanchakarmaCenters = () => {
             Currently there are no verified Panchakarma centers listed.
           </p>
           <button
-            onClick={() => navigate('/ayurveda/wellness-center-register')}
+            onClick={() => navigate('/ayurveda/center/register')}
             style={{
               padding: '0.75rem 1.5rem',
               backgroundColor: '#FF9800',
