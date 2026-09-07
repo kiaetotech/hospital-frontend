@@ -50,6 +50,7 @@ const DoctorDashboard = () => {
     isActive: true
   });
   const [onlineStatus, setOnlineStatus] = useState('offline');
+  const [otpInput, setOtpInput] = useState('');
   const [consultationMode, setConsultationMode] = useState('video');
 
   useEffect(() => {
@@ -178,6 +179,26 @@ const DoctorDashboard = () => {
       }
     } catch (err) {
       alert('Failed to update status');
+    }
+  };
+
+  const handleStartWithOtp = async (bookingId) => {
+    if (!otpInput || otpInput.length !== 4) {
+      alert('Please enter the 4-digit OTP from patient');
+      return;
+    }
+    
+    try {
+      const response = await api.put(`/ayurveda/bookings/${bookingId}/status`, {
+        action: 'start'
+      });
+      
+      if (response.data.success) {
+        setOtpInput('');
+        fetchDashboardData(doctor.id);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Invalid OTP');
     }
   };
 
@@ -474,37 +495,33 @@ const DoctorDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex gap-2">
-                        {booking.status === 'pending' && booking.otpVerified && (
+                                        <div className="mt-3 flex gap-2 flex-wrap items-center">
+                      {/* PENDING - Shows Accept button (no OTP needed) */}
+                      {booking.status === 'pending' && (
                         <button
                           onClick={() => handleStatusUpdate(booking.bookingId, 'accept')}
                           className="px-3 py-1 bg-green-600 text-white rounded text-sm"
                         >
-                          Accept
+                          Accept Booking
                         </button>
                       )}
-                      {booking.status === 'pending' && !booking.otpVerified && (
-                        <span className="text-xs text-orange-500">
-                          Waiting for patient OTP verification
-                        </span>
-                      )}
-                            {booking.amount < 1000 && (
-                            <a
-                              href={`https://meet.google.com/${booking.bookingId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1 bg-green-600 text-white rounded text-sm"
-                            >
-                              📹 Join Video
-                            </a>
-                          )}
+
+                      {/* CONFIRMED - Shows OTP input + Start + No Show */}
                       {booking.status === 'confirmed' && (
                         <>
+                          <input
+                            type="text"
+                            placeholder="Enter patient OTP"
+                            maxLength="4"
+                            value={otpInput}
+                            onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                            className="px-2 py-1 border rounded text-sm w-36"
+                          />
                           <button
-                            onClick={() => handleStatusUpdate(booking.bookingId, 'start')}
+                            onClick={() => handleStartWithOtp(booking.bookingId)}
                             className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
                           >
-                            Start Consultation
+                            Verify OTP & Start
                           </button>
                           <button
                             onClick={() => handleStatusUpdate(booking.bookingId, 'no_show')}
@@ -514,6 +531,39 @@ const DoctorDashboard = () => {
                           </button>
                         </>
                       )}
+
+                      {/* IN PROGRESS - Shows Complete button */}
+                      {booking.status === 'in_progress' && (
+                        <button
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setShowPrescriptionModal(true);
+                          }}
+                          className="px-3 py-1 bg-purple-600 text-white rounded text-sm"
+                        >
+                          Complete & Prescribe
+                        </button>
+                      )}
+
+                      {/* COMPLETED - Shows Video link for online consultations */}
+                      {booking.status === 'completed' && booking.amount < 1000 && booking.consultationType === 'online' && (
+                        <a
+                          href={`https://meet.google.com/${booking.bookingId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+                        >
+                          📹 Join Video
+                        </a>
+                      )}
+
+                      {/* COMPLETED - Shows follow-up if exists */}
+                      {booking.status === 'completed' && booking.prescription?.followUpDate && (
+                        <div className="mt-2 p-2 bg-blue-50 rounded text-sm w-full">
+                          📅 Follow-up: {new Date(booking.prescription.followUpDate).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
                       {booking.status === 'completed' && booking.prescription?.followUpDate && (
                         <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
                           📅 Follow-up: {new Date(booking.prescription.followUpDate).toLocaleDateString()}
