@@ -532,20 +532,7 @@ const DoctorDashboard = () => {
                         </>
                       )}
 
-                      {/* IN PROGRESS - Shows Complete button */}
-                      {booking.status === 'in_progress' && (
-                        <button
-                          onClick={() => {
-                            setSelectedBooking(booking);
-                            setShowPrescriptionModal(true);
-                          }}
-                          className="px-3 py-1 bg-purple-600 text-white rounded text-sm"
-                        >
-                          Complete & Prescribe
-                        </button>
-                      )}
-
-                      {/* COMPLETED - Shows Video link for online consultations */}
+                                            {/* COMPLETED - Shows Video link for online consultations */}
                       {booking.status === 'completed' && booking.amount < 1000 && booking.consultationType === 'online' && (
                         <a
                           href={`https://meet.google.com/${booking.bookingId}`}
@@ -563,12 +550,8 @@ const DoctorDashboard = () => {
                           📅 Follow-up: {new Date(booking.prescription.followUpDate).toLocaleDateString()}
                         </div>
                       )}
-                    </div>
-                      {booking.status === 'completed' && booking.prescription?.followUpDate && (
-                        <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
-                          📅 Follow-up: {new Date(booking.prescription.followUpDate).toLocaleDateString()}
-                        </div>
-                      )}
+
+                      {/* IN PROGRESS - Shows Complete button */}
                       {booking.status === 'in_progress' && (
                         <button
                           onClick={() => {
