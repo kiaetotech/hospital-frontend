@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import axios from 'axios';
 import {
-  FaSearch, FaFilter, FaDownload, FaRefresh, FaArrowLeft,
+  FaSearch, FaFilter, FaDownload, FaSync, FaArrowLeft,
   FaUserMd, FaBuilding, FaCalendarAlt, FaTag, FaRupeeSign,
   FaEye, FaCheck, FaTimes, FaBan, FaChartBar, FaBell,
   FaChevronLeft, FaChevronRight, FaExclamationTriangle
@@ -385,10 +385,10 @@ const AyurvedaAdminPanel = () => {
             <FaDownload /> Export
           </button>
           <button onClick={() => setAutoRefresh(!autoRefresh)} style={headerBtn(autoRefresh ? '#10b981' : '#ef4444')}>
-            <FaRefresh /> {autoRefresh ? 'Auto ON' : 'Auto OFF'}
+            <FaSync /> {autoRefresh ? 'Auto ON' : 'Auto OFF'}
           </button>
           <button onClick={fetchAllData} style={headerBtn('#3b82f6')}>
-            <FaRefresh /> Refresh
+            <FaSync /> Refresh
           </button>
           <button onClick={() => navigate('/admin')} style={headerBtn('#64748b')}>
             <FaArrowLeft /> Back
