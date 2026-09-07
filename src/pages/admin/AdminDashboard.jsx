@@ -76,8 +76,9 @@ const AdminDashboard = () => {
         axios.get(`${API_BASE}/api/mentalhealth/admin/therapists`, { ...cfg, params: { limit: 5 } }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/online-doctor/admin/doctors`, cfg).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/admin/users`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: { pagination: { totalUsers: 0 } } })),
-        axios.get(`${API_BASE}/api/ayurveda/admin/pending-doctors`, cfg).catch(() => ({ data: { data: [] } })),
-        axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, cfg).catch(() => ({ data: { data: [] } }))
+        axios.get(`${API_BASE}/api/ayurveda/doctors`, cfg).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, cfg).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/ayurveda/centers`, cfg).catch(() => ({ data: { data: [] } }))
       ]);
 
       setStats(lenderStats.data.stats || { lenders: { total: 0, pending: 0, active: 0 }, commission: { total: 0, paid: 0, pending: 0 } });
