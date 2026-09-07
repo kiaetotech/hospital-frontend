@@ -18,6 +18,7 @@ const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
 
 const AyurvedaAdminPanel = () => {
   const navigate = useNavigate();
+  const adminToken = localStorage.getItem('adminToken');
   const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -61,6 +62,12 @@ const AyurvedaAdminPanel = () => {
 
   const [revenueData, setRevenueData] = useState([]);
   const [bookingTypeData, setBookingTypeData] = useState([]);
+
+  useEffect(() => {
+    if (!adminToken) {
+      navigate('/admin/login');
+    }
+  }, [adminToken, navigate]);
 
   const fetchAllData = useCallback(async () => {
     setLoading(true);
