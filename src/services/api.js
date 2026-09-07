@@ -52,6 +52,11 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
       
+      // Admin routes - DO NOT redirect to patient login
+      if (currentPath.includes('/admin')) {
+        return Promise.reject(error);
+      }
+
       // Default - patient login
       localStorage.removeItem('token');
       localStorage.removeItem('providerToken');
