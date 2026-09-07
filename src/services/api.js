@@ -39,9 +39,8 @@ api.interceptors.response.use(
       const currentPath = window.location.pathname;
       const userType = localStorage.getItem('userType');
       
-      // Admin routes - redirect to admin login
-      if (currentPath.includes('/admin')) {
-        localStorage.removeItem('adminToken');
+            // Admin routes - redirect to admin login ONLY if no token
+      if (currentPath.includes('/admin') && !localStorage.getItem('adminToken')) {
         window.location.href = '/admin/login';
         return Promise.reject(error);
       }
