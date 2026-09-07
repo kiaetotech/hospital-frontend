@@ -39,13 +39,21 @@ api.interceptors.response.use(
       const currentPath = window.location.pathname;
       const userType = localStorage.getItem('userType');
       
-      // Don't redirect ambulance drivers to patient login
+      // Admin routes - redirect to admin login
+      if (currentPath.includes('/admin')) {
+        localStorage.removeItem('adminToken');
+        window.location.href = '/admin/login';
+        return Promise.reject(error);
+      }
+      
+      // Ambulance driver
       if (userType === 'ambulance_driver') {
         localStorage.clear();
         window.location.href = '/ambulance/driver/login';
         return Promise.reject(error);
       }
       
+      // Default - patient login
       localStorage.removeItem('token');
       localStorage.removeItem('providerToken');
       localStorage.removeItem('doctorToken');
