@@ -51,6 +51,7 @@ const AyurvedaAdminPanel = () => {
   const [refundReason, setRefundReason] = useState('');
   const [bulkSelected, setBulkSelected] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingCentersList, setPendingCentersList] = useState([]);
 
   const [stats, setStats] = useState({
     totalDoctors: 0, totalCenters: 0, totalBookings: 0,
@@ -71,7 +72,7 @@ const AyurvedaAdminPanel = () => {
         productsRes, reviewsRes, complaintsRes
         ] = await Promise.all([
         api.get('/ayurveda/doctors'),
-        api.get('/ayurveda/centers'),
+        api.get('/ayurveda-centers/admin/all'),
         api.get('/ayurveda/admin/pending-doctors'),
         api.get('/ayurveda-centers/admin/pending'),
         api.get('/ayurveda/bookings/admin/all').catch(() => ({ data: { data: [] } })),
@@ -97,6 +98,7 @@ const AyurvedaAdminPanel = () => {
 
       setAllDoctors([...doctors, ...pendingDocs]);
       setAllCenters([...centers, ...pendingCents]);
+      setPendingCentersList(pendingCents);
       setAllBookings(bookings);
       setDiscounts(disc);
       setSettlements(settles);
