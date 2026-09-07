@@ -69,14 +69,13 @@ const AyurvedaAdminPanel = () => {
         doctorsRes, centersRes, pendingDocRes, pendingCenterRes,
         bookingsRes, discountsRes, settlementsRes, programsRes,
         productsRes, reviewsRes, complaintsRes
-      ] = await Promise.all([
+        ] = await Promise.all([
         api.get('/ayurveda/doctors'),
         api.get('/ayurveda/centers'),
         api.get('/ayurveda/admin/pending-doctors'),
         api.get('/ayurveda-centers/admin/pending'),
         api.get('/ayurveda/bookings/admin/all').catch(() => ({ data: { data: [] } })),
         api.get('/ayurveda/discounts').catch(() => ({ data: { data: [] } })),
-        api.get('/ayurveda/settlements/admin/pending').catch(() => ({ data: { data: [] } }))
         api.get('/ayurveda/settlements/admin/pending').catch(() => ({ data: { data: [] } })),
         api.get('/ayurveda/wellness-programs').catch(() => ({ data: { data: [] } })),
         api.get('/ayurveda/products').catch(() => ({ data: { data: [] } })),
