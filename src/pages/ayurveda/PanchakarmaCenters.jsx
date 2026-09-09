@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { getPanchakarmaCenters } from '../../services/ayurvedaApi';
 import {
   FaStar, FaMapMarkerAlt, FaBed, FaBuilding, FaSearch,
-  FaFilter, FaSortAmountDown, FaCheckCircle, FaHeart,
-  FaUserMd, FaClock, FaRupeeSign, FaArrowLeft,
-  FaShieldAlt, FaPlus, FaTimes, FaChevronRight
+  FaFilter, FaArrowLeft, FaShieldAlt, FaUserMd,
+  FaClock, FaCheckCircle, FaTimes, FaPhone, FaEnvelope
 } from 'react-icons/fa';
 
 const PanchakarmaCenters = () => {
@@ -14,7 +13,6 @@ const PanchakarmaCenters = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -24,12 +22,11 @@ const PanchakarmaCenters = () => {
   const [sortBy, setSortBy] = useState('rating');
   const [showFilters, setShowFilters] = useState(false);
   
-  // Compare
   const [compareList, setCompareList] = useState([]);
   const [showCompareBar, setShowCompareBar] = useState(false);
 
   const cities = ['Mumbai', 'Delhi', 'Pune', 'Nagpur', 'Kochi', 'Rishikesh', 'Bengaluru', 'Hyderabad', 'Chennai', 'Jaipur'];
-  const facilitiesList = ['AC Rooms', 'Organic Food', 'Yoga Hall', 'WiFi', 'Swimming Pool', 'Garden', 'Pickup/Drop', 'Beach Access', 'Meditation Hall', 'Herbal Garden'];
+  const facilitiesList = ['AC Rooms', 'Organic Food', 'Yoga Hall', 'WiFi', 'Pickup/Drop', 'Garden', 'Meditation Hall'];
   const durations = [3, 5, 7, 10, 14, 21];
 
   useEffect(() => {
@@ -57,52 +54,33 @@ const PanchakarmaCenters = () => {
     return Math.min(...prices);
   };
 
+  const getTotalPackages = (center) => {
+    return center.packages?.filter(p => p.isActive !== false).length || 0;
+  };
+
   const filteredCenters = useMemo(() => {
     let result = [...centers];
 
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(c => 
         c.name?.toLowerCase().includes(q) ||
         c.address?.city?.toLowerCase().includes(q) ||
-        c.type?.toLowerCase().includes(q) ||
         c.packages?.some(p => p.name?.toLowerCase().includes(q))
       );
     }
 
-    // City filter
     if (selectedCity) {
       result = result.filter(c => c.address?.city === selectedCity);
     }
 
-    // Price filter
     if (minPrice) {
-      result = result.filter(c => 
-        c.packages?.some(p => (p.discountPrice || p.price) >= parseInt(minPrice))
-      );
+      result = result.filter(c => getMinPrice(c) >= parseInt(minPrice));
     }
     if (maxPrice) {
-      result = result.filter(c => 
-        c.packages?.some(p => (p.discountPrice || p.price) <= parseInt(maxPrice))
-      );
+      result = result.filter(c => getMinPrice(c) <= parseInt(maxPrice));
     }
 
-    // Duration filter
-    if (minDuration) {
-      result = result.filter(c => 
-        c.packages?.some(p => p.duration >= parseInt(minDuration))
-      );
-    }
-
-    // Facilities filter
-    if (selectedFacilities.length > 0) {
-      result = result.filter(c => 
-        selectedFacilities.every(f => c.facilities?.includes(f))
-      );
-    }
-
-    // Sort
     switch (sortBy) {
       case 'rating':
         result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -113,23 +91,15 @@ const PanchakarmaCenters = () => {
       case 'price_high':
         result.sort((a, b) => getMinPrice(b) - getMinPrice(a));
         break;
-      case 'reviews':
-        result.sort((a, b) => (b.totalReviews || 0) - (a.totalReviews || 0));
+      case 'packages':
+        result.sort((a, b) => getTotalPackages(b) - getTotalPackages(a));
         break;
       default:
         break;
     }
 
     return result;
-  }, [centers, searchQuery, selectedCity, minPrice, maxPrice, minDuration, selectedFacilities, sortBy]);
-
-  const toggleFacility = (facility) => {
-    if (selectedFacilities.includes(facility)) {
-      setSelectedFacilities(selectedFacilities.filter(f => f !== facility));
-    } else {
-      setSelectedFacilities([...selectedFacilities, facility]);
-    }
-  };
+  }, [centers, searchQuery, selectedCity, minPrice, maxPrice, sortBy]);
 
   const toggleCompare = (center) => {
     if (compareList.find(c => c._id === center._id)) {
@@ -137,8 +107,7 @@ const PanchakarmaCenters = () => {
       setCompareList(updated);
       if (updated.length === 0) setShowCompareBar(false);
     } else if (compareList.length < 3) {
-      const updated = [...compareList, center];
-      setCompareList(updated);
+      setCompareList([...compareList, center]);
       setShowCompareBar(true);
     } else {
       alert('Maximum 3 centers for comparison');
@@ -167,17 +136,10 @@ const PanchakarmaCenters = () => {
 
   const renderStars = (rating) => {
     const stars = [];
-    const fullStars = Math.floor(rating || 0);
-    const hasHalf = (rating || 0) - fullStars >= 0.5;
-    
     for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<FaStar key={i} className="text-yellow-400" />);
-      } else if (i === fullStars && hasHalf) {
-        stars.push(<FaStar key={i} className="text-yellow-400 opacity-50" />);
-      } else {
-        stars.push(<FaStar key={i} className="text-gray-300" />);
-      }
+      stars.push(
+        <FaStar key={i} className={i < Math.floor(rating || 0) ? 'text-yellow-400' : 'text-gray-300'} />
+      );
     }
     return stars;
   };
@@ -196,34 +158,34 @@ const PanchakarmaCenters = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-green-700 to-green-600 text-white">
+      <div className="bg-gradient-to-r from-green-700 to-green-600 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <button 
             onClick={() => navigate('/ayurveda')} 
-            className="flex items-center gap-2 text-green-100 hover:text-white mb-4 transition-colors"
+            className="flex items-center gap-2 text-green-100 hover:text-white mb-4 transition-colors text-sm"
           >
             <FaArrowLeft /> Back to Ayurveda
           </button>
           
-          <h1 className="text-3xl font-bold mb-2">Panchakarma & Wellness Centers</h1>
-          <p className="text-green-100">Book authentic Ayurvedic detox programs at verified centers</p>
+          <h1 className="text-3xl font-bold mb-1">Panchakarma & Wellness Centers</h1>
+          <p className="text-green-100 mb-6">Book authentic Ayurvedic detox programs at verified centers</p>
           
           {/* SEARCH BAR */}
-          <div className="flex gap-3 mt-6 flex-wrap">
-            <div className="flex-1 min-w-[250px] relative">
+          <div className="flex gap-3 flex-wrap">
+            <div className="flex-1 min-w-[280px] relative">
               <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 placeholder="Search by center name, city, or therapy..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 rounded-lg border-none focus:ring-2 focus:ring-white text-gray-800"
+                className="w-full pl-11 pr-4 py-3 rounded-lg border-none focus:ring-2 focus:ring-green-300 text-gray-800 bg-white"
               />
             </div>
             
             <select 
               value={selectedCity} 
               onChange={e => setSelectedCity(e.target.value)}
-              className="px-4 py-3 rounded-lg border-none text-gray-700"
+              className="px-4 py-3 rounded-lg border-none text-gray-700 bg-white"
             >
               <option value="">All Cities</option>
               {cities.map(city => (
@@ -238,22 +200,17 @@ const PanchakarmaCenters = () => {
               }`}
             >
               <FaFilter /> Filters
-              {selectedFacilities.length > 0 && (
-                <span className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">
-                  {selectedFacilities.length}
-                </span>
-              )}
             </button>
             
             <select 
               value={sortBy} 
               onChange={e => setSortBy(e.target.value)}
-              className="px-4 py-3 rounded-lg border-none text-gray-700"
+              className="px-4 py-3 rounded-lg border-none text-gray-700 bg-white"
             >
               <option value="rating">⭐ Highest Rated</option>
               <option value="price_low">💰 Price: Low to High</option>
               <option value="price_high">💰 Price: High to Low</option>
-              <option value="reviews">📝 Most Reviewed</option>
+              <option value="packages">📦 Most Packages</option>
             </select>
           </div>
         </div>
@@ -262,19 +219,18 @@ const PanchakarmaCenters = () => {
       {/* FILTERS PANEL */}
       {showFilters && (
         <div className="bg-white shadow-md border-b">
-          <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="max-w-7xl mx-auto px-4 py-5">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-gray-800">Filters</h3>
               <button 
                 onClick={clearFilters}
                 className="text-red-500 hover:text-red-700 text-sm font-medium"
               >
-                Clear All
+                Clear All Filters
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Price Range */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price Range (₹)</label>
                 <div className="flex gap-3">
@@ -295,7 +251,6 @@ const PanchakarmaCenters = () => {
                 </div>
               </div>
               
-              {/* Duration */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Min Duration (Days)</label>
                 <select 
@@ -309,26 +264,6 @@ const PanchakarmaCenters = () => {
                   ))}
                 </select>
               </div>
-              
-              {/* Facilities */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Facilities</label>
-                <div className="flex flex-wrap gap-2">
-                  {facilitiesList.map(f => (
-                    <button 
-                      key={f} 
-                      onClick={() => toggleFacility(f)}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                        selectedFacilities.includes(f) 
-                          ? 'bg-green-600 text-white' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -337,8 +272,8 @@ const PanchakarmaCenters = () => {
       {/* CENTERS LIST */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg mb-6 flex items-center gap-2">
-            <FaTimes /> {error}
+          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg mb-6">
+            {error}
           </div>
         )}
 
@@ -358,16 +293,16 @@ const PanchakarmaCenters = () => {
           <div className="space-y-6">
             {filteredCenters.map(center => {
               const minPackagePrice = getMinPrice(center);
-              const totalPackages = center.packages?.length || 0;
+              const totalPackages = getTotalPackages(center);
               const isCompared = compareList.find(c => c._id === center._id);
               
               return (
-                <div key={center._id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div key={center._id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow border border-gray-100">
                   {/* CENTER HEADER */}
                   <div className="p-6">
                     <div className="flex gap-5 flex-wrap">
                       {/* Center Icon */}
-                      <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-500 rounded-xl flex items-center justify-center text-white text-3xl flex-shrink-0">
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-500 rounded-xl flex items-center justify-center text-white text-3xl flex-shrink-0 shadow-lg">
                         <FaBuilding />
                       </div>
                       
@@ -375,11 +310,11 @@ const PanchakarmaCenters = () => {
                       <div className="flex-1 min-w-[250px]">
                         <div className="flex items-start justify-between flex-wrap gap-3">
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <h2 className="text-xl font-bold text-gray-800">{center.name}</h2>
                               {center.verificationStatus === 'approved' && (
                                 <span className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                                  <FaShieldAlt /> AYUSH Verified
+                                  <FaShieldAlt /> Verified
                                 </span>
                               )}
                             </div>
@@ -390,44 +325,46 @@ const PanchakarmaCenters = () => {
                           
                           <button
                             onClick={() => toggleCompare(center)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
                               isCompared 
-                                ? 'bg-green-600 text-white' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-green-600 text-white border-green-600' 
+                                : 'bg-white text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600'
                             }`}
                           >
-                            {isCompared ? '✓ Added to Compare' : '+ Compare'}
+                            {isCompared ? '✓ Added' : '+ Compare'}
                           </button>
                         </div>
                         
                         {/* Rating & Stats */}
-                        <div className="flex items-center gap-5 mt-3 flex-wrap">
-                          <span className="flex items-center gap-1">
+                        <div className="flex items-center gap-5 mt-3 flex-wrap text-sm">
+                          <span className="flex items-center gap-1.5">
                             <div className="flex">{renderStars(center.rating)}</div>
-                            <span className="font-medium">{center.rating || 'New'}</span>
-                            <span className="text-gray-400 text-sm">({center.totalReviews || 0})</span>
+                            <span className="font-semibold text-gray-700">{center.rating || 'New'}</span>
+                            <span className="text-gray-400">({center.totalReviews || 0})</span>
                           </span>
-                          <span className="flex items-center gap-1 text-gray-600">
+                          <span className="flex items-center gap-1.5 text-gray-600">
                             <FaBed /> {center.bedCount || 'N/A'} Beds
                           </span>
-                          <span className="flex items-center gap-1 text-gray-600">
+                          <span className="flex items-center gap-1.5 text-gray-600">
                             <FaUserMd /> {center.doctorCount || 0} Doctors
                           </span>
-                          {totalPackages > 0 && (
-                            <span className="flex items-center gap-1 text-gray-600">
-                              <FaClock /> {totalPackages} Packages
-                            </span>
-                          )}
                         </div>
                       </div>
                       
                       {/* Price & CTA */}
-                      <div className="text-right flex flex-col items-end justify-center">
-                        <p className="text-sm text-gray-500">Starting from</p>
-                        <p className="text-2xl font-bold text-green-600">{minPackagePrice > 0 ? `₹${minPackagePrice.toLocaleString()}` : 'No packages yet'}</p>
+                      <div className="text-right flex flex-col items-end justify-center min-w-[140px]">
+                        {totalPackages > 0 ? (
+                          <>
+                            <p className="text-xs text-gray-500">Starting from</p>
+                            <p className="text-2xl font-bold text-green-600">₹{minPackagePrice.toLocaleString()}</p>
+                            <p className="text-xs text-gray-400 mb-2">{totalPackages} package{totalPackages > 1 ? 's' : ''}</p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-400 mb-2">No packages yet</p>
+                        )}
                         <button
                           onClick={() => handleViewCenter(center)}
-                          className="mt-2 px-4 py-2 border-2 border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors"
+                          className="px-5 py-2 border-2 border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors"
                         >
                           View Details
                         </button>
@@ -439,28 +376,22 @@ const PanchakarmaCenters = () => {
                   {center.facilities && center.facilities.length > 0 && (
                     <div className="px-6 py-3 border-t border-gray-100 flex flex-wrap gap-2">
                       {center.facilities.slice(0, 6).map((facility, i) => (
-                        <span key={i} className="flex items-center gap-1 text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                        <span key={i} className="flex items-center gap-1 text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
                           <FaCheckCircle /> {facility}
                         </span>
                       ))}
-                      {center.facilities.length > 6 && (
-                        <span className="text-xs text-gray-500 px-2 py-1">
-                          +{center.facilities.length - 6} more
-                        </span>
-                      )}
                     </div>
                   )}
                   
                   {/* PACKAGES */}
-                  {center.packages && center.packages.length > 0 && (
+                  {totalPackages > 0 && (
                     <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
                       <h4 className="font-semibold text-gray-800 mb-3">Available Packages</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {center.packages.map(pkg => (
+                        {center.packages.filter(p => p.isActive !== false).map(pkg => (
                           <div 
                             key={pkg._id} 
-                            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-green-400 hover:shadow-md transition-all cursor-pointer"
-                            onClick={() => handleBookPackage(center, pkg)}
+                            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-green-400 hover:shadow-lg transition-all"
                           >
                             <div className="flex justify-between items-start mb-2">
                               <h5 className="font-semibold text-gray-800">{pkg.name}</h5>
@@ -470,7 +401,8 @@ const PanchakarmaCenters = () => {
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-gray-500 mb-2">📅 {pkg.duration} Days</p>
+                            
+                            <p className="text-sm text-gray-500 mb-3">📅 {pkg.duration} Days</p>
                             
                             {pkg.therapies && pkg.therapies.length > 0 && (
                               <div className="flex flex-wrap gap-1 mb-3">
@@ -482,7 +414,7 @@ const PanchakarmaCenters = () => {
                               </div>
                             )}
                             
-                            <div className="flex justify-between items-center mt-3">
+                            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
                               <div>
                                 {pkg.discountPrice ? (
                                   <>
@@ -493,7 +425,10 @@ const PanchakarmaCenters = () => {
                                   <p className="text-lg font-bold text-green-600">₹{pkg.price.toLocaleString()}</p>
                                 )}
                               </div>
-                              <button className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                              <button 
+                                onClick={() => handleBookPackage(center, pkg)}
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                              >
                                 Book Now
                               </button>
                             </div>
