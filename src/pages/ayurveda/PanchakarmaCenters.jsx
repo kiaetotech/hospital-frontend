@@ -51,6 +51,12 @@ const PanchakarmaCenters = () => {
     }
   };
 
+  const getMinPrice = (center) => {
+    const prices = center.packages?.map(p => p.discountPrice || p.price) || [];
+    if (prices.length === 0) return 0;
+    return Math.min(...prices);
+  };
+
   const filteredCenters = useMemo(() => {
     let result = [...centers];
 
@@ -116,10 +122,6 @@ const PanchakarmaCenters = () => {
 
     return result;
   }, [centers, searchQuery, selectedCity, minPrice, maxPrice, minDuration, selectedFacilities, sortBy]);
-
-  const getMinPrice = (center) => {
-    return Math.min(...(center.packages?.map(p => p.discountPrice || p.price) || [0]));
-  };
 
   const toggleFacility = (facility) => {
     if (selectedFacilities.includes(facility)) {
@@ -422,7 +424,7 @@ const PanchakarmaCenters = () => {
                       {/* Price & CTA */}
                       <div className="text-right flex flex-col items-end justify-center">
                         <p className="text-sm text-gray-500">Starting from</p>
-                        <p className="text-2xl font-bold text-green-600">₹{minPackagePrice.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-green-600">{minPackagePrice > 0 ? `₹${minPackagePrice.toLocaleString()}` : 'No packages yet'}</p>
                         <button
                           onClick={() => handleViewCenter(center)}
                           className="mt-2 px-4 py-2 border-2 border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors"
