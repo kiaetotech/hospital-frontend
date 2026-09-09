@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { 
   getCenterBookings, 
@@ -75,6 +76,31 @@ const WellnessCenterDashboard = () => {
       setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSavePackage = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.post(`/ayurveda-centers/packages/${center.id}`, {
+        name: packageForm.name,
+        duration: parseInt(packageForm.duration),
+        price: parseInt(packageForm.price),
+        discountPrice: packageForm.discountPrice ? parseInt(packageForm.discountPrice) : undefined,
+        therapies: packageForm.therapies.split(',').map(t => t.trim()),
+        inclusions: packageForm.inclusions.split(',').map(i => i.trim()),
+        description: packageForm.description,
+        maxCapacity: packageForm.maxCapacity ? parseInt(packageForm.maxCapacity) : 10
+      });
+      
+      if (response.data.success) {
+        setShowPackageModal(false);
+        setPackageForm({ name: '', duration: '', price: '', discountPrice: '', therapies: '', inclusions: '', description: '', maxCapacity: '' });
+        fetchDashboardData(center.id);
+        alert('Package added successfully!');
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to add package');
     }
   };
 
@@ -458,66 +484,52 @@ const WellnessCenterDashboard = () => {
         )}
 
         {/* Packages Tab */}
-        {activeTab === 'packages' && (
+                {activeTab === 'packages' && (
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Packages ({packages.length})</h2>
-              <button
-                onClick={() => {
-                  setEditingPackage(null);
-                  setShowPackageModal(true);
-                }}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-              >
-                <FaPlus /> Add Package
-              </button>
+              <button onClick={() => setShowPackageModal(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg">+ Add Package</button>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {packages.map((pkg, index) => (
-                <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold">{pkg.name}</h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingPackage(pkg);
-                          setPackageForm(pkg);
-                          setShowPackageModal(true);
-                        }}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button className="text-red-600 hover:text-red-700">
-                        <FaTrash />
-                      </button>
+            
+            {showPackageModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+                  <h3 className="text-xl font-bold mb-4">Add Panchakarma Package</h3>
+                  <form onSubmit={handleSavePackage} className="space-y-3">
+                    <input type="text" placeholder="Package Name (e.g., 7-Day Detox)" value={packageForm.name} onChange={e => setPackageForm({...packageForm, name: e.target.value})} className="w-full p-2 border rounded" required />
+                    <input type="number" placeholder="Duration (Days)" value={packageForm.duration} onChange={e => setPackageForm({...packageForm, duration: e.target.value})} className="w-full p-2 border rounded" required />
+                    <input type="number" placeholder="Price (₹)" value={packageForm.price} onChange={e => setPackageForm({...packageForm, price: e.target.value})} className="w-full p-2 border rounded" required />
+                    <input type="number" placeholder="Discount Price (optional)" value={packageForm.discountPrice} onChange={e => setPackageForm({...packageForm, discountPrice: e.target.value})} className="w-full p-2 border rounded" />
+                    <input type="text" placeholder="Therapies (comma separated e.g., Abhyanga, Shirodhara)" value={packageForm.therapies} onChange={e => setPackageForm({...packageForm, therapies: e.target.value})} className="w-full p-2 border rounded" />
+                    <input type="text" placeholder="Inclusions (comma separated e.g., AC Room, Meals)" value={packageForm.inclusions} onChange={e => setPackageForm({...packageForm, inclusions: e.target.value})} className="w-full p-2 border rounded" />
+                    <textarea placeholder="Description" value={packageForm.description} onChange={e => setPackageForm({...packageForm, description: e.target.value})} className="w-full p-2 border rounded" rows="3" />
+                    <input type="number" placeholder="Max Capacity (e.g., 10)" value={packageForm.maxCapacity} onChange={e => setPackageForm({...packageForm, maxCapacity: e.target.value})} className="w-full p-2 border rounded" />
+                    <div className="flex gap-3">
+                      <button type="submit" className="flex-1 bg-green-600 text-white py-2 rounded-lg">Save Package</button>
+                      <button type="button" onClick={() => setShowPackageModal(false)} className="flex-1 bg-gray-300 py-2 rounded-lg">Cancel</button>
                     </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{pkg.description}</p>
-                  <div className="space-y-1 text-sm">
-                    <p>Duration: {pkg.duration} days</p>
-                    <p>Price: ₹{pkg.price}</p>
-                    {pkg.discountPrice && (
-                      <p className="text-green-600">Discount: ₹{pkg.discountPrice}</p>
-                    )}
-                    <p>Capacity: {pkg.currentBookings}/{pkg.maxCapacity}</p>
-                  </div>
-                  {pkg.therapies && pkg.therapies.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-500 mb-1">Therapies:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {pkg.therapies.map((therapy, i) => (
-                          <span key={i} className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">
-                            {therapy}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  </form>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+            
+            {packages.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No packages added yet. Click "Add Package" to create your first package.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {packages.map(pkg => (
+                  <div key={pkg._id} className="border rounded-lg p-4">
+                    <h4 className="font-semibold">{pkg.name}</h4>
+                    <p className="text-sm text-gray-600">📅 {pkg.duration} days</p>
+                    <p className="font-bold text-green-600">₹{pkg.discountPrice || pkg.price}</p>
+                    {pkg.therapies && pkg.therapies.length > 0 && (
+                      <p className="text-sm text-gray-600 mt-2">🧘 {pkg.therapies.join(', ')}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">Booked: {pkg.currentBookings || 0}/{pkg.maxCapacity || 10}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

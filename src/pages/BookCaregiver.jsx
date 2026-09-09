@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { getCaregiverById, bookCaregiver } from '../services/api';
+import { getCaregiverById, bookCaregiver, createPaymentOrder, verifyPayment } from '../services/api';
 
 const BookCaregiver = () => {
   const { id } = useParams();
@@ -125,44 +125,87 @@ const BookCaregiver = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep(2)) {
-      alert('Please fill all required fields');
-      return;
-    }
+  const loadRazorpay = () => new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 
+  const handleSubmit = async () => {
+    if (!validateStep(2)) { alert('Please fill all required fields'); return; }
     setSubmitting(true);
-    
     try {
       const bookingData = {
         caregiverId: caregiver._id,
         serviceType: caregiver.serviceType === 'both' ? 'personal' : caregiver.serviceType,
-        careType: caregiver.specializations?.[0] || 'General Care',
-        startDate: formData.startDate,
-        endDate: formData.endDate || undefined,
+        durationType,
         duration: durationValue,
-        durationType: durationType,
-        totalAmount: finalAmount,
-        commissionAmount: platformFee + gst,
+        startDate: formData.startDate,
+        startTime: formData.startTime || '09:00',
         patientName: formData.patientName,
         patientPhone: formData.patientPhone,
+        patientAge: formData.patientAge ? Number(formData.patientAge) : undefined,
+        patientGender: formData.patientGender || undefined,
         serviceAddress: formData.serviceAddress,
         requirements: formData.requirements || undefined,
         recurringWeekly: formData.recurringWeekly,
-        recurringDays: formData.recurringDays.length > 0 ? formData.recurringDays : undefined
+        recurringDays: formData.recurringDays.length ? formData.recurringDays : undefined
       };
 
-      const response = await bookCaregiver(bookingData);
-      
-      if (response.data.success) {
-        setBookingSuccess(response.data.data);
-        setCurrentStep(4);
-      }
+      // The server is authoritative for availability and price.
+      const bookingResponse = await bookCaregiver(bookingData);
+      if (!bookingResponse.data?.success) throw new Error(bookingResponse.data?.message || 'Booking failed');
+      const booking = bookingResponse.data.data;
+
+      const paymentResponse = await createPaymentOrder({
+        bookingId: booking._id,
+        bookingType: 'caregiver',
+        amount: booking.totalAmount,
+        patientName: booking.patientName,
+        patientPhone: booking.patientPhone
+      });
+      if (!paymentResponse.data?.success) throw new Error(paymentResponse.data?.message || 'Unable to create payment order');
+      const order = paymentResponse.data.order;
+      const key = paymentResponse.data.key_id || process.env.REACT_APP_RAZORPAY_KEY_ID;
+      if (!key) throw new Error('Razorpay key is not configured');
+      if (!(await loadRazorpay())) throw new Error('Unable to load Razorpay checkout');
+
+      await new Promise((resolve, reject) => {
+        const razorpay = new window.Razorpay({
+          key,
+          amount: order.amount,
+          currency: order.currency || 'INR',
+          name: 'KiaetoCare',
+          description: `Caregiver booking ${booking._id}`,
+          order_id: order.id,
+          prefill: { name: booking.patientName || '', contact: booking.patientPhone || '' },
+          handler: async (payment) => {
+            try {
+              const verification = await verifyPayment({
+                razorpay_order_id: payment.razorpay_order_id,
+                razorpay_payment_id: payment.razorpay_payment_id,
+                razorpay_signature: payment.razorpay_signature,
+                bookingId: booking._id,
+                bookingType: 'caregiver',
+                serviceType: booking.serviceType
+              });
+              if (!verification.data?.success) throw new Error(verification.data?.message || 'Payment verification failed');
+              setBookingSuccess(verification.data.data || { ...booking, status: 'confirmed' });
+              setCurrentStep(4);
+              resolve();
+            } catch (err) { reject(err); }
+          },
+          modal: { ondismiss: () => reject(new Error('Payment cancelled by user')) }
+        });
+        razorpay.on('payment.failed', (response) => reject(new Error(response.error?.description || 'Payment failed')));
+        razorpay.open();
+      });
     } catch (err) {
-      alert(err.response?.data?.message || 'Booking failed. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
+      alert(err.response?.data?.message || err.message || 'Booking/payment failed. Please try again.');
+    } finally { setSubmitting(false); }
   };
 
   const weekDays = [

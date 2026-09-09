@@ -4,7 +4,8 @@ import { getPanchakarmaCenters } from '../../services/ayurvedaApi';
 import {
   FaStar, FaMapMarkerAlt, FaBed, FaBuilding, FaSearch,
   FaFilter, FaSortAmountDown, FaCheckCircle, FaHeart,
-  FaUserMd, FaClock, FaRupeeSign, FaArrowLeft
+  FaUserMd, FaClock, FaRupeeSign, FaArrowLeft,
+  FaShieldAlt, FaPlus, FaTimes, FaChevronRight
 } from 'react-icons/fa';
 
 const PanchakarmaCenters = () => {
@@ -25,10 +26,10 @@ const PanchakarmaCenters = () => {
   
   // Compare
   const [compareList, setCompareList] = useState([]);
-  const [showCompare, setShowCompare] = useState(false);
+  const [showCompareBar, setShowCompareBar] = useState(false);
 
-  const cities = ['Mumbai', 'Delhi', 'Pune', 'Nagpur', 'Kochi', 'Rishikesh', 'Bengaluru', 'Hyderabad'];
-  const facilitiesList = ['AC Rooms', 'Organic Food', 'Yoga Hall', 'WiFi', 'Swimming Pool', 'Garden', 'Pickup/Drop', 'Beach Access'];
+  const cities = ['Mumbai', 'Delhi', 'Pune', 'Nagpur', 'Kochi', 'Rishikesh', 'Bengaluru', 'Hyderabad', 'Chennai', 'Jaipur'];
+  const facilitiesList = ['AC Rooms', 'Organic Food', 'Yoga Hall', 'WiFi', 'Swimming Pool', 'Garden', 'Pickup/Drop', 'Beach Access', 'Meditation Hall', 'Herbal Garden'];
   const durations = [3, 5, 7, 10, 14, 21];
 
   useEffect(() => {
@@ -40,10 +41,10 @@ const PanchakarmaCenters = () => {
     setError('');
     try {
       const response = await getPanchakarmaCenters();
-      const centersData = response.data?.data || [];
+      const centersData = response.data?.data || response.data || [];
       setCenters(Array.isArray(centersData) ? centersData : []);
     } catch (err) {
-      setError('Failed to load centers');
+      setError('Failed to load centers. Please try again.');
       setCenters([]);
     } finally {
       setLoading(false);
@@ -54,8 +55,8 @@ const PanchakarmaCenters = () => {
     let result = [...centers];
 
     // Search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
       result = result.filter(c => 
         c.name?.toLowerCase().includes(q) ||
         c.address?.city?.toLowerCase().includes(q) ||
@@ -101,16 +102,13 @@ const PanchakarmaCenters = () => {
         result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       case 'price_low':
-        result.sort((a, b) => 
-          Math.min(...(a.packages?.map(p => p.discountPrice || p.price) || [0])) - 
-          Math.min(...(b.packages?.map(p => p.discountPrice || p.price) || [0]))
-        );
+        result.sort((a, b) => getMinPrice(a) - getMinPrice(b));
         break;
       case 'price_high':
-        result.sort((a, b) => 
-          Math.max(...(b.packages?.map(p => p.discountPrice || p.price) || [0])) - 
-          Math.max(...(a.packages?.map(p => p.discountPrice || p.price) || [0]))
-        );
+        result.sort((a, b) => getMinPrice(b) - getMinPrice(a));
+        break;
+      case 'reviews':
+        result.sort((a, b) => (b.totalReviews || 0) - (a.totalReviews || 0));
         break;
       default:
         break;
@@ -118,6 +116,10 @@ const PanchakarmaCenters = () => {
 
     return result;
   }, [centers, searchQuery, selectedCity, minPrice, maxPrice, minDuration, selectedFacilities, sortBy]);
+
+  const getMinPrice = (center) => {
+    return Math.min(...(center.packages?.map(p => p.discountPrice || p.price) || [0]));
+  };
 
   const toggleFacility = (facility) => {
     if (selectedFacilities.includes(facility)) {
@@ -129,9 +131,13 @@ const PanchakarmaCenters = () => {
 
   const toggleCompare = (center) => {
     if (compareList.find(c => c._id === center._id)) {
-      setCompareList(compareList.filter(c => c._id !== center._id));
+      const updated = compareList.filter(c => c._id !== center._id);
+      setCompareList(updated);
+      if (updated.length === 0) setShowCompareBar(false);
     } else if (compareList.length < 3) {
-      setCompareList([...compareList, center]);
+      const updated = [...compareList, center];
+      setCompareList(updated);
+      setShowCompareBar(true);
     } else {
       alert('Maximum 3 centers for comparison');
     }
@@ -147,42 +153,105 @@ const PanchakarmaCenters = () => {
     setSortBy('rating');
   };
 
+  const handleBookPackage = (center, pkg) => {
+    navigate(`/ayurveda/center/${center._id}/book/${pkg._id}`, { 
+      state: { center, package: pkg } 
+    });
+  };
+
+  const handleViewCenter = (center) => {
+    navigate(`/ayurveda/center/${center._id}`, { state: { center } });
+  };
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating || 0);
+    const hasHalf = (rating || 0) - fullStars >= 0.5;
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<FaStar key={i} className="text-yellow-400" />);
+      } else if (i === fullStars && hasHalf) {
+        stars.push(<FaStar key={i} className="text-yellow-400 opacity-50" />);
+      } else {
+        stars.push(<FaStar key={i} className="text-gray-300" />);
+      }
+    }
+    return stars;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading centers...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="min-h-screen bg-gray-50">
       {/* HEADER */}
-      <div style={{ background: 'linear-gradient(135deg, #EA580C, #C2410C)', padding: '2rem', color: 'white' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <button onClick={() => navigate('/ayurveda')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div className="bg-gradient-to-r from-green-700 to-green-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button 
+            onClick={() => navigate('/ayurveda')} 
+            className="flex items-center gap-2 text-green-100 hover:text-white mb-4 transition-colors"
+          >
             <FaArrowLeft /> Back to Ayurveda
           </button>
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>🏨 Panchakarma & Wellness Centers</h1>
-          <p style={{ opacity: 0.9 }}>Book authentic Ayurvedic detox programs at verified centers</p>
+          
+          <h1 className="text-3xl font-bold mb-2">Panchakarma & Wellness Centers</h1>
+          <p className="text-green-100">Book authentic Ayurvedic detox programs at verified centers</p>
           
           {/* SEARCH BAR */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 250, position: 'relative' }}>
-              <FaSearch style={{ position: 'absolute', left: 12, top: 14, color: '#94a3b8' }} />
+          <div className="flex gap-3 mt-6 flex-wrap">
+            <div className="flex-1 min-w-[250px] relative">
+              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 placeholder="Search by center name, city, or therapy..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: 8, border: 'none', fontSize: '0.95rem' }}
+                className="w-full pl-11 pr-4 py-3 rounded-lg border-none focus:ring-2 focus:ring-white text-gray-800"
               />
             </div>
-            <select value={selectedCity} onChange={e => setSelectedCity(e.target.value)}
-              style={{ padding: '0.75rem', borderRadius: 8, border: 'none', fontSize: '0.9rem' }}>
+            
+            <select 
+              value={selectedCity} 
+              onChange={e => setSelectedCity(e.target.value)}
+              className="px-4 py-3 rounded-lg border-none text-gray-700"
+            >
               <option value="">All Cities</option>
-              {cities.map(city => <option key={city} value={city}>{city}</option>)}
+              {cities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
             </select>
-            <button onClick={() => setShowFilters(!showFilters)}
-              style={{ padding: '0.75rem 1.25rem', borderRadius: 8, border: 'none', background: showFilters ? '#fff' : 'rgba(255,255,255,0.2)', color: showFilters ? '#C2410C' : 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-4 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${
+                showFilters ? 'bg-white text-green-700' : 'bg-green-800/40 text-white hover:bg-green-800/60'
+              }`}
+            >
               <FaFilter /> Filters
+              {selectedFacilities.length > 0 && (
+                <span className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {selectedFacilities.length}
+                </span>
+              )}
             </button>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-              style={{ padding: '0.75rem', borderRadius: 8, border: 'none', fontSize: '0.9rem' }}>
+            
+            <select 
+              value={sortBy} 
+              onChange={e => setSortBy(e.target.value)}
+              className="px-4 py-3 rounded-lg border-none text-gray-700"
+            >
               <option value="rating">⭐ Highest Rated</option>
               <option value="price_low">💰 Price: Low to High</option>
               <option value="price_high">💰 Price: High to Low</option>
+              <option value="reviews">📝 Most Reviewed</option>
             </select>
           </div>
         </div>
@@ -190,163 +259,239 @@ const PanchakarmaCenters = () => {
 
       {/* FILTERS PANEL */}
       {showFilters && (
-        <div style={{ background: 'white', padding: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+        <div className="bg-white shadow-md border-b">
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-gray-800">Filters</h3>
+              <button 
+                onClick={clearFilters}
+                className="text-red-500 hover:text-red-700 text-sm font-medium"
+              >
+                Clear All
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Price Range */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>Price Range (₹)</label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="number" placeholder="Min" value={minPrice} onChange={e => setMinPrice(e.target.value)}
-                    style={{ width: '50%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }} />
-                  <input type="number" placeholder="Max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
-                    style={{ width: '50%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range (₹)</label>
+                <div className="flex gap-3">
+                  <input 
+                    type="number" 
+                    placeholder="Min" 
+                    value={minPrice} 
+                    onChange={e => setMinPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                  <input 
+                    type="number" 
+                    placeholder="Max" 
+                    value={maxPrice} 
+                    onChange={e => setMaxPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
               </div>
+              
+              {/* Duration */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>Min Duration (Days)</label>
-                <select value={minDuration} onChange={e => setMinDuration(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Min Duration (Days)</label>
+                <select 
+                  value={minDuration} 
+                  onChange={e => setMinDuration(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                >
                   <option value="">Any Duration</option>
-                  {durations.map(d => <option key={d} value={d}>{d}+ Days</option>)}
+                  {durations.map(d => (
+                    <option key={d} value={d}>{d}+ Days</option>
+                  ))}
                 </select>
               </div>
+              
+              {/* Facilities */}
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>Facilities</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Facilities</label>
+                <div className="flex flex-wrap gap-2">
                   {facilitiesList.map(f => (
-                    <button key={f} onClick={() => toggleFacility(f)}
-                      style={{
-                        padding: '0.3rem 0.7rem', borderRadius: 20, fontSize: '0.75rem', cursor: 'pointer',
-                        background: selectedFacilities.includes(f) ? '#EA580C' : '#f1f5f9',
-                        color: selectedFacilities.includes(f) ? 'white' : '#475569',
-                        border: 'none'
-                      }}>
+                    <button 
+                      key={f} 
+                      onClick={() => toggleFacility(f)}
+                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                        selectedFacilities.includes(f) 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
                       {f}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
-            <button onClick={clearFilters} style={{ padding: '0.5rem 1.5rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-              Clear All Filters
-            </button>
           </div>
-        </div>
-      )}
-
-      {/* COMPARE BAR */}
-      {compareList.length > 0 && (
-        <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1e293b', color: 'white', padding: '1rem 1.5rem', borderRadius: 12, zIndex: 100, display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <span>{compareList.length} center(s) selected</span>
-          <button onClick={() => navigate('/ayurveda/compare-centers', { state: { centers: compareList } })}
-            style={{ padding: '0.5rem 1rem', background: '#EA580C', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-            Compare Now
-          </button>
-          <button onClick={() => setCompareList([])} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>✕</button>
         </div>
       )}
 
       {/* CENTERS LIST */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ fontSize: '2rem' }}>🔄</div>
-            <p>Loading centers...</p>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg mb-6 flex items-center gap-2">
+            <FaTimes /> {error}
           </div>
-        ) : filteredCenters.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', background: 'white', borderRadius: 16 }}>
-            <div style={{ fontSize: '3rem' }}>🏨</div>
-            <h3 style={{ color: '#1e293b' }}>No Centers Found</h3>
-            <p style={{ color: '#64748b' }}>Try adjusting your filters</p>
-            <button onClick={() => navigate('/ayurveda/center/register')}
-              style={{ padding: '0.75rem 1.5rem', background: '#EA580C', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, marginTop: '1rem' }}>
+        )}
+
+        {filteredCenters.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
+            <div className="text-6xl mb-4">🏨</div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">No Centers Found</h3>
+            <p className="text-gray-500 mb-6">Try adjusting your filters or search query</p>
+            <button 
+              onClick={() => navigate('/ayurveda/center/register')}
+              className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
               Register Your Center
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: '1.5rem' }}>
+          <div className="space-y-6">
             {filteredCenters.map(center => {
-              const minPackagePrice = Math.min(...(center.packages?.map(p => p.discountPrice || p.price) || [0]));
+              const minPackagePrice = getMinPrice(center);
               const totalPackages = center.packages?.length || 0;
+              const isCompared = compareList.find(c => c._id === center._id);
               
               return (
-                <div key={center._id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                <div key={center._id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   {/* CENTER HEADER */}
-                  <div style={{ display: 'flex', gap: '1rem', padding: '1.5rem', flexWrap: 'wrap' }}>
-                    <div style={{ width: 100, height: 100, background: 'linear-gradient(135deg, #EA580C, #C2410C)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '2.5rem', flexShrink: 0 }}>
-                      🏨
-                    </div>
-                    <div style={{ flex: 1, minWidth: 250 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        <div>
-                          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0, color: '#1e293b' }}>{center.name}</h2>
-                          <p style={{ color: '#64748b', margin: '4px 0', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <FaMapMarkerAlt /> {center.address?.city}, {center.address?.state}
-                          </p>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          <button onClick={() => toggleCompare(center)}
-                            style={{
-                              padding: '0.4rem 0.8rem', borderRadius: 8, fontSize: '0.8rem', cursor: 'pointer',
-                              background: compareList.find(c => c._id === center._id) ? '#EA580C' : '#f1f5f9',
-                              color: compareList.find(c => c._id === center._id) ? 'white' : '#475569',
-                              border: 'none', fontWeight: 600
-                            }}>
-                            {compareList.find(c => c._id === center._id) ? '✓ Added' : '+ Compare'}
+                  <div className="p-6">
+                    <div className="flex gap-5 flex-wrap">
+                      {/* Center Icon */}
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-500 rounded-xl flex items-center justify-center text-white text-3xl flex-shrink-0">
+                        <FaBuilding />
+                      </div>
+                      
+                      {/* Center Info */}
+                      <div className="flex-1 min-w-[250px]">
+                        <div className="flex items-start justify-between flex-wrap gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h2 className="text-xl font-bold text-gray-800">{center.name}</h2>
+                              {center.verificationStatus === 'approved' && (
+                                <span className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                                  <FaShieldAlt /> AYUSH Verified
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-gray-500 flex items-center gap-1 mt-1">
+                              <FaMapMarkerAlt /> {center.address?.city}, {center.address?.state}
+                            </p>
+                          </div>
+                          
+                          <button
+                            onClick={() => toggleCompare(center)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              isCompared 
+                                ? 'bg-green-600 text-white' 
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {isCompared ? '✓ Added to Compare' : '+ Compare'}
                           </button>
+                        </div>
+                        
+                        {/* Rating & Stats */}
+                        <div className="flex items-center gap-5 mt-3 flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <div className="flex">{renderStars(center.rating)}</div>
+                            <span className="font-medium">{center.rating || 'New'}</span>
+                            <span className="text-gray-400 text-sm">({center.totalReviews || 0})</span>
+                          </span>
+                          <span className="flex items-center gap-1 text-gray-600">
+                            <FaBed /> {center.bedCount || 'N/A'} Beds
+                          </span>
+                          <span className="flex items-center gap-1 text-gray-600">
+                            <FaUserMd /> {center.doctorCount || 0} Doctors
+                          </span>
+                          {totalPackages > 0 && (
+                            <span className="flex items-center gap-1 text-gray-600">
+                              <FaClock /> {totalPackages} Packages
+                            </span>
+                          )}
                         </div>
                       </div>
                       
-                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                          <FaStar style={{ color: '#f59e0b' }} /> {center.rating || 'New'} ({center.totalReviews || 0} reviews)
-                        </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                          <FaBed /> {center.bedCount || 'N/A'} Beds
-                        </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                          <FaBuilding /> {center.type || 'Wellness Center'}
-                        </span>
-                        {totalPackages > 0 && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <FaClock /> {totalPackages} Packages from ₹{minPackagePrice.toLocaleString()}
-                          </span>
-                        )}
+                      {/* Price & CTA */}
+                      <div className="text-right flex flex-col items-end justify-center">
+                        <p className="text-sm text-gray-500">Starting from</p>
+                        <p className="text-2xl font-bold text-green-600">₹{minPackagePrice.toLocaleString()}</p>
+                        <button
+                          onClick={() => handleViewCenter(center)}
+                          className="mt-2 px-4 py-2 border-2 border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors"
+                        >
+                          View Details
+                        </button>
                       </div>
                     </div>
                   </div>
-
+                  
                   {/* FACILITIES */}
                   {center.facilities && center.facilities.length > 0 && (
-                    <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                      {center.facilities.map((facility, i) => (
-                        <span key={i} style={{ padding: '4px 12px', background: '#fef3c7', color: '#92400e', borderRadius: 20, fontSize: '0.75rem' }}>
-                          ✓ {facility}
+                    <div className="px-6 py-3 border-t border-gray-100 flex flex-wrap gap-2">
+                      {center.facilities.slice(0, 6).map((facility, i) => (
+                        <span key={i} className="flex items-center gap-1 text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                          <FaCheckCircle /> {facility}
                         </span>
                       ))}
+                      {center.facilities.length > 6 && (
+                        <span className="text-xs text-gray-500 px-2 py-1">
+                          +{center.facilities.length - 6} more
+                        </span>
+                      )}
                     </div>
                   )}
-
+                  
                   {/* PACKAGES */}
                   {center.packages && center.packages.length > 0 && (
-                    <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9' }}>
-                      <h4 style={{ fontWeight: 700, marginBottom: '0.75rem', color: '#1e293b' }}>Available Packages</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                    <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                      <h4 className="font-semibold text-gray-800 mb-3">Available Packages</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {center.packages.map(pkg => (
-                          <div key={pkg._id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#EA580C'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
-                            onClick={() => navigate(`/ayurveda/center/${center._id}/book/${pkg._id}`, { state: { center, package: pkg } })}>
-                            <h5 style={{ fontWeight: 700, margin: 0, color: '#1e293b' }}>{pkg.name}</h5>
-                            <p style={{ color: '#64748b', fontSize: '0.8rem', margin: '4px 0' }}>📅 {pkg.duration} Days</p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.5rem' }}>
-                              {pkg.therapies?.slice(0, 3).map((therapy, i) => (
-                                <span key={i} style={{ fontSize: '0.7rem', padding: '2px 8px', background: '#f1f5f9', borderRadius: 10 }}>{therapy}</span>
-                              ))}
+                          <div 
+                            key={pkg._id} 
+                            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-green-400 hover:shadow-md transition-all cursor-pointer"
+                            onClick={() => handleBookPackage(center, pkg)}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <h5 className="font-semibold text-gray-800">{pkg.name}</h5>
+                              {pkg.discountPrice && pkg.discountPrice < pkg.price && (
+                                <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-medium">
+                                  {Math.round((1 - pkg.discountPrice / pkg.price) * 100)}% OFF
+                                </span>
+                              )}
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontWeight: 700, color: '#EA580C', fontSize: '1.1rem' }}>₹{(pkg.discountPrice || pkg.price).toLocaleString()}</span>
-                              <button style={{ padding: '0.4rem 1rem', background: '#EA580C', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+                            <p className="text-sm text-gray-500 mb-2">📅 {pkg.duration} Days</p>
+                            
+                            {pkg.therapies && pkg.therapies.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {pkg.therapies.slice(0, 3).map((therapy, i) => (
+                                  <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                    {therapy}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            
+                            <div className="flex justify-between items-center mt-3">
+                              <div>
+                                {pkg.discountPrice ? (
+                                  <>
+                                    <p className="text-lg font-bold text-green-600">₹{pkg.discountPrice.toLocaleString()}</p>
+                                    <p className="text-xs text-gray-400 line-through">₹{pkg.price.toLocaleString()}</p>
+                                  </>
+                                ) : (
+                                  <p className="text-lg font-bold text-green-600">₹{pkg.price.toLocaleString()}</p>
+                                )}
+                              </div>
+                              <button className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
                                 Book Now
                               </button>
                             </div>
@@ -355,20 +500,36 @@ const PanchakarmaCenters = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* VIEW DETAILS */}
-                  <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'center' }}>
-                    <button onClick={() => navigate(`/ayurveda/center/${center._id}`, { state: { center } })}
-                      style={{ padding: '0.5rem 2rem', background: 'none', border: '1.5px solid #EA580C', color: '#EA580C', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                      View Center Details
-                    </button>
-                  </div>
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* COMPARE BAR */}
+      {showCompareBar && compareList.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white rounded-xl shadow-2xl z-50 px-6 py-4 flex items-center gap-6">
+          <span className="font-medium">
+            {compareList.length} center{compareList.length > 1 ? 's' : ''} selected
+          </span>
+          <button 
+            onClick={() => navigate('/ayurveda/compare-centers', { state: { centers: compareList } })}
+            className="bg-green-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
+          >
+            Compare Now
+          </button>
+          <button 
+            onClick={() => {
+              setCompareList([]);
+              setShowCompareBar(false);
+            }}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <FaTimes />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
