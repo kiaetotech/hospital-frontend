@@ -4,7 +4,8 @@ import { getPanchakarmaCenters } from '../../services/ayurvedaApi';
 import {
   FaStar, FaMapMarkerAlt, FaBed, FaBuilding, FaSearch,
   FaFilter, FaArrowLeft, FaShieldAlt, FaUserMd,
-  FaClock, FaCheckCircle, FaTimes, FaPhone, FaEnvelope
+  FaClock, FaCheckCircle, FaTimes, FaChevronRight,
+  FaRupeeSign, FaBox
 } from 'react-icons/fa';
 
 const PanchakarmaCenters = () => {
@@ -18,15 +19,12 @@ const PanchakarmaCenters = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minDuration, setMinDuration] = useState('');
-  const [selectedFacilities, setSelectedFacilities] = useState([]);
   const [sortBy, setSortBy] = useState('rating');
   const [showFilters, setShowFilters] = useState(false);
-  
   const [compareList, setCompareList] = useState([]);
   const [showCompareBar, setShowCompareBar] = useState(false);
 
   const cities = ['Mumbai', 'Delhi', 'Pune', 'Nagpur', 'Kochi', 'Rishikesh', 'Bengaluru', 'Hyderabad', 'Chennai', 'Jaipur'];
-  const facilitiesList = ['AC Rooms', 'Organic Food', 'Yoga Hall', 'WiFi', 'Pickup/Drop', 'Garden', 'Meditation Hall'];
   const durations = [3, 5, 7, 10, 14, 21];
 
   useEffect(() => {
@@ -41,7 +39,7 @@ const PanchakarmaCenters = () => {
       const centersData = response.data?.data || response.data || [];
       setCenters(Array.isArray(centersData) ? centersData : []);
     } catch (err) {
-      setError('Failed to load centers. Please try again.');
+      setError('Failed to load centers');
       setCenters([]);
     } finally {
       setLoading(false);
@@ -66,7 +64,8 @@ const PanchakarmaCenters = () => {
       result = result.filter(c => 
         c.name?.toLowerCase().includes(q) ||
         c.address?.city?.toLowerCase().includes(q) ||
-        c.packages?.some(p => p.name?.toLowerCase().includes(q))
+        c.type?.toLowerCase().includes(q) ||
+        c.packages?.some(p => p.name?.toLowerCase().includes(q) || p.therapies?.some(t => t.toLowerCase().includes(q)))
       );
     }
 
@@ -79,6 +78,12 @@ const PanchakarmaCenters = () => {
     }
     if (maxPrice) {
       result = result.filter(c => getMinPrice(c) <= parseInt(maxPrice));
+    }
+
+    if (minDuration) {
+      result = result.filter(c => 
+        c.packages?.some(p => p.duration >= parseInt(minDuration))
+      );
     }
 
     switch (sortBy) {
@@ -99,7 +104,7 @@ const PanchakarmaCenters = () => {
     }
 
     return result;
-  }, [centers, searchQuery, selectedCity, minPrice, maxPrice, sortBy]);
+  }, [centers, searchQuery, selectedCity, minPrice, maxPrice, minDuration, sortBy]);
 
   const toggleCompare = (center) => {
     if (compareList.find(c => c._id === center._id)) {
@@ -120,7 +125,6 @@ const PanchakarmaCenters = () => {
     setMinPrice('');
     setMaxPrice('');
     setMinDuration('');
-    setSelectedFacilities([]);
     setSortBy('rating');
   };
 
@@ -136,9 +140,10 @@ const PanchakarmaCenters = () => {
 
   const renderStars = (rating) => {
     const stars = [];
+    const fullStars = Math.floor(rating || 0);
     for (let i = 0; i < 5; i++) {
       stars.push(
-        <FaStar key={i} className={i < Math.floor(rating || 0) ? 'text-yellow-400' : 'text-gray-300'} />
+        <FaStar key={i} className={i < fullStars ? 'text-yellow-400' : 'text-gray-300'} />
       );
     }
     return stars;
@@ -193,15 +198,6 @@ const PanchakarmaCenters = () => {
               ))}
             </select>
             
-            <button 
-              onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${
-                showFilters ? 'bg-white text-green-700' : 'bg-green-800/40 text-white hover:bg-green-800/60'
-              }`}
-            >
-              <FaFilter /> Filters
-            </button>
-            
             <select 
               value={sortBy} 
               onChange={e => setSortBy(e.target.value)}
@@ -212,6 +208,15 @@ const PanchakarmaCenters = () => {
               <option value="price_high">💰 Price: High to Low</option>
               <option value="packages">📦 Most Packages</option>
             </select>
+            
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-4 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${
+                showFilters ? 'bg-white text-green-700' : 'bg-green-800/40 text-white hover:bg-green-800/60'
+              }`}
+            >
+              <FaFilter /> Filters
+            </button>
           </div>
         </div>
       </div>
@@ -230,27 +235,27 @@ const PanchakarmaCenters = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range (₹)</label>
-                <div className="flex gap-3">
-                  <input 
-                    type="number" 
-                    placeholder="Min" 
-                    value={minPrice} 
-                    onChange={e => setMinPrice(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  />
-                  <input 
-                    type="number" 
-                    placeholder="Max" 
-                    value={maxPrice} 
-                    onChange={e => setMaxPrice(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Min Price (₹)</label>
+                <input 
+                  type="number" 
+                  placeholder="0" 
+                  value={minPrice} 
+                  onChange={e => setMinPrice(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                />
               </div>
-              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Price (₹)</label>
+                <input 
+                  type="number" 
+                  placeholder="Any" 
+                  value={maxPrice} 
+                  onChange={e => setMaxPrice(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Min Duration (Days)</label>
                 <select 
@@ -272,14 +277,16 @@ const PanchakarmaCenters = () => {
       {/* CENTERS LIST */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg mb-6">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg mb-6 flex items-center gap-2">
+            <FaTimes /> {error}
           </div>
         )}
 
         {filteredCenters.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-            <div className="text-6xl mb-4">🏨</div>
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaBuilding className="text-3xl text-green-600" />
+            </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">No Centers Found</h3>
             <p className="text-gray-500 mb-6">Try adjusting your filters or search query</p>
             <button 
@@ -297,12 +304,12 @@ const PanchakarmaCenters = () => {
               const isCompared = compareList.find(c => c._id === center._id);
               
               return (
-                <div key={center._id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow border border-gray-100">
+                <div key={center._id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden">
                   {/* CENTER HEADER */}
                   <div className="p-6">
                     <div className="flex gap-5 flex-wrap">
                       {/* Center Icon */}
-                      <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-500 rounded-xl flex items-center justify-center text-white text-3xl flex-shrink-0 shadow-lg">
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-500 rounded-xl flex items-center justify-center text-white text-3xl flex-shrink-0 shadow-md">
                         <FaBuilding />
                       </div>
                       
@@ -364,34 +371,29 @@ const PanchakarmaCenters = () => {
                         )}
                         <button
                           onClick={() => handleViewCenter(center)}
-                          className="px-5 py-2 border-2 border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors"
+                          className="px-5 py-2 border-2 border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors text-sm"
                         >
-                          View Details
+                          View Details <FaChevronRight className="inline ml-1 text-xs" />
                         </button>
                       </div>
                     </div>
                   </div>
                   
-                  {/* FACILITIES */}
-                  {center.facilities && center.facilities.length > 0 && (
-                    <div className="px-6 py-3 border-t border-gray-100 flex flex-wrap gap-2">
-                      {center.facilities.slice(0, 6).map((facility, i) => (
-                        <span key={i} className="flex items-center gap-1 text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                          <FaCheckCircle /> {facility}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  
                   {/* PACKAGES */}
                   {totalPackages > 0 && (
                     <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
-                      <h4 className="font-semibold text-gray-800 mb-3">Available Packages</h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-800">Available Packages</h4>
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <FaBox /> {totalPackages} package{totalPackages > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {center.packages.filter(p => p.isActive !== false).map(pkg => (
                           <div 
                             key={pkg._id} 
-                            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-green-400 hover:shadow-lg transition-all"
+                            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-green-400 hover:shadow-md transition-all"
                           >
                             <div className="flex justify-between items-start mb-2">
                               <h5 className="font-semibold text-gray-800">{pkg.name}</h5>
@@ -402,15 +404,20 @@ const PanchakarmaCenters = () => {
                               )}
                             </div>
                             
-                            <p className="text-sm text-gray-500 mb-3">📅 {pkg.duration} Days</p>
+                            <p className="text-sm text-gray-500 mb-2 flex items-center gap-1">
+                              <FaClock /> {pkg.duration} Days
+                            </p>
                             
                             {pkg.therapies && pkg.therapies.length > 0 && (
                               <div className="flex flex-wrap gap-1 mb-3">
-                                {pkg.therapies.slice(0, 3).map((therapy, i) => (
-                                  <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                {pkg.therapies.slice(0, 2).map((therapy, i) => (
+                                  <span key={i} className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded">
                                     {therapy}
                                   </span>
                                 ))}
+                                {pkg.therapies.length > 2 && (
+                                  <span className="text-xs text-gray-400">+{pkg.therapies.length - 2}</span>
+                                )}
                               </div>
                             )}
                             
