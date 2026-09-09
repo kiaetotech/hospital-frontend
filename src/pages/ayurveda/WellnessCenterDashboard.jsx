@@ -82,20 +82,36 @@ const WellnessCenterDashboard = () => {
   const handleSavePackage = async (e) => {
     e.preventDefault();
     try {
+      // Handle both string and array for therapies
+      let therapiesArray = [];
+      if (typeof packageForm.therapies === 'string') {
+        therapiesArray = packageForm.therapies.split(',').map(t => t.trim()).filter(t => t);
+      } else if (Array.isArray(packageForm.therapies)) {
+        therapiesArray = packageForm.therapies;
+      }
+
+      // Handle both string and array for inclusions
+      let inclusionsArray = [];
+      if (typeof packageForm.inclusions === 'string') {
+        inclusionsArray = packageForm.inclusions.split(',').map(i => i.trim()).filter(i => i);
+      } else if (Array.isArray(packageForm.inclusions)) {
+        inclusionsArray = packageForm.inclusions;
+      }
+
       const response = await api.post(`/ayurveda-centers/packages/${center.id}`, {
         name: packageForm.name,
         duration: parseInt(packageForm.duration),
         price: parseInt(packageForm.price),
         discountPrice: packageForm.discountPrice ? parseInt(packageForm.discountPrice) : undefined,
-        therapies: packageForm.therapies.split(',').map(t => t.trim()),
-        inclusions: packageForm.inclusions.split(',').map(i => i.trim()),
+        therapies: therapiesArray,
+        inclusions: inclusionsArray,
         description: packageForm.description,
         maxCapacity: packageForm.maxCapacity ? parseInt(packageForm.maxCapacity) : 10
       });
       
       if (response.data.success) {
         setShowPackageModal(false);
-        setPackageForm({ name: '', duration: '', price: '', discountPrice: '', therapies: '', inclusions: '', description: '', maxCapacity: '' });
+        setPackageForm({ name: '', duration: '', price: '', discountPrice: '', therapies: [], inclusions: [], description: '', maxCapacity: '' });
         fetchDashboardData(center.id);
         alert('Package added successfully!');
       }
@@ -467,44 +483,38 @@ const WellnessCenterDashboard = () => {
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Packages ({packages.length})</h2>
-              <button onClick={() => setShowPackageModal(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg">+ Add Package</button>
+              <button
+                onClick={() => {
+                  setEditingPackage(null);
+                  setPackageForm({ name: '', duration: '', price: '', discountPrice: '', therapies: [], inclusions: [], description: '', maxCapacity: '' });
+                  setShowPackageModal(true);
+                }}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg"
+              >
+                + Add Package
+              </button>
             </div>
-            
-            {showPackageModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
-                  <h3 className="text-xl font-bold mb-4">Add Panchakarma Package</h3>
-                  <form onSubmit={handleSavePackage} className="space-y-3">
-                    <input type="text" placeholder="Package Name (e.g., 7-Day Detox)" value={packageForm.name} onChange={e => setPackageForm({...packageForm, name: e.target.value})} className="w-full p-2 border rounded" required />
-                    <input type="number" placeholder="Duration (Days)" value={packageForm.duration} onChange={e => setPackageForm({...packageForm, duration: e.target.value})} className="w-full p-2 border rounded" required />
-                    <input type="number" placeholder="Price (₹)" value={packageForm.price} onChange={e => setPackageForm({...packageForm, price: e.target.value})} className="w-full p-2 border rounded" required />
-                    <input type="number" placeholder="Discount Price (optional)" value={packageForm.discountPrice} onChange={e => setPackageForm({...packageForm, discountPrice: e.target.value})} className="w-full p-2 border rounded" />
-                    <input type="text" placeholder="Therapies (comma separated e.g., Abhyanga, Shirodhara)" value={packageForm.therapies} onChange={e => setPackageForm({...packageForm, therapies: e.target.value})} className="w-full p-2 border rounded" />
-                    <input type="text" placeholder="Inclusions (comma separated e.g., AC Room, Meals)" value={packageForm.inclusions} onChange={e => setPackageForm({...packageForm, inclusions: e.target.value})} className="w-full p-2 border rounded" />
-                    <textarea placeholder="Description" value={packageForm.description} onChange={e => setPackageForm({...packageForm, description: e.target.value})} className="w-full p-2 border rounded" rows="3" />
-                    <input type="number" placeholder="Max Capacity (e.g., 10)" value={packageForm.maxCapacity} onChange={e => setPackageForm({...packageForm, maxCapacity: e.target.value})} className="w-full p-2 border rounded" />
-                    <div className="flex gap-3">
-                      <button type="submit" className="flex-1 bg-green-600 text-white py-2 rounded-lg">Save Package</button>
-                      <button type="button" onClick={() => setShowPackageModal(false)} className="flex-1 bg-gray-300 py-2 rounded-lg">Cancel</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-            
             {packages.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">No packages added yet. Click "Add Package" to create your first package.</p>
+              <p className="text-center text-gray-500 py-8">No packages available</p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {packages.map(pkg => (
-                  <div key={pkg._id} className="border rounded-lg p-4">
-                    <h4 className="font-semibold">{pkg.name}</h4>
-                    <p className="text-sm text-gray-600">📅 {pkg.duration} days</p>
-                    <p className="font-bold text-green-600">₹{pkg.discountPrice || pkg.price}</p>
-                    {pkg.therapies && pkg.therapies.length > 0 && (
-                      <p className="text-sm text-gray-600 mt-2">🧘 {pkg.therapies.join(', ')}</p>
-                    )}
-                    <p className="text-xs text-gray-500 mt-2">Booked: {pkg.currentBookings || 0}/{pkg.maxCapacity || 10}</p>
+              <div className="space-y-3">
+                {packages.map((pkg, index) => (
+                  <div key={pkg._id || pkg.packageId || index} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start gap-4">
+                      <div>
+                        <h3 className="font-semibold">{pkg.name}</h3>
+                        <p className="text-sm text-gray-600">
+                          {pkg.duration} days • Max capacity: {pkg.maxCapacity || 10}
+                        </p>
+                        {pkg.description && <p className="text-sm text-gray-600 mt-1">{pkg.description}</p>}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">₹{pkg.discountPrice || pkg.price}</p>
+                        {pkg.discountPrice && pkg.price && Number(pkg.discountPrice) < Number(pkg.price) && (
+                          <p className="text-xs text-gray-500 line-through">₹{pkg.price}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -566,7 +576,7 @@ const WellnessCenterDashboard = () => {
                       <td className="py-2">₹{s.tdsDeducted || 0}</td>
                       <td className="py-2 font-semibold">₹{s.netAmount}</td>
                       <td className="py-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
+                                                <span className={`px-2 py-1 rounded-full text-xs ${
                           s.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                         }`}>
                           {s.status}
@@ -580,9 +590,9 @@ const WellnessCenterDashboard = () => {
             )}
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Package Modal */}
+        {/* Package Modal */}
       {showPackageModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -659,10 +669,10 @@ const WellnessCenterDashboard = () => {
                   <label className="block text-sm font-medium mb-1">Therapies (comma separated)</label>
                   <input
                     type="text"
-                    value={packageForm.therapies?.join(', ')}
+                    value={Array.isArray(packageForm.therapies) ? packageForm.therapies.join(', ') : packageForm.therapies}
                     onChange={(e) => setPackageForm({ 
                       ...packageForm, 
-                      therapies: e.target.value.split(',').map(t => t.trim()) 
+                      therapies: e.target.value.split(',').map(t => t.trim()).filter(t => t)
                     })}
                     className="w-full p-2 border rounded"
                     placeholder="Abhyanga, Shirodhara, Basti"
@@ -673,17 +683,17 @@ const WellnessCenterDashboard = () => {
                   <label className="block text-sm font-medium mb-1">Inclusions (comma separated)</label>
                   <input
                     type="text"
-                    value={packageForm.inclusions?.join(', ')}
+                    value={Array.isArray(packageForm.inclusions) ? packageForm.inclusions.join(', ') : packageForm.inclusions}
                     onChange={(e) => setPackageForm({ 
                       ...packageForm, 
-                      inclusions: e.target.value.split(',').map(i => i.trim()) 
+                      inclusions: e.target.value.split(',').map(i => i.trim()).filter(i => i)
                     })}
                     className="w-full p-2 border rounded"
                     placeholder="Accommodation, Meals, Yoga"
                   />
                 </div>
 
-                <div className="flex gap-3">
+                 <div className="flex gap-3">
                   <button
                     onClick={handleSavePackage}
                     className="flex-1 bg-green-600 text-white py-2 rounded-lg"
@@ -701,9 +711,9 @@ const WellnessCenterDashboard = () => {
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+       )}
+     </div>
+    );
 };
 
 export default WellnessCenterDashboard;
