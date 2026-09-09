@@ -133,27 +133,6 @@ const WellnessCenterDashboard = () => {
     }
   };
 
-  const handleSavePackage = async () => {
-    try {
-      // In production, call API to save package
-      setShowPackageModal(false);
-      setEditingPackage(null);
-      setPackageForm({
-        name: '',
-        duration: '',
-        price: '',
-        discountPrice: '',
-        description: '',
-        therapies: [],
-        inclusions: [],
-        maxCapacity: ''
-      });
-      fetchDashboardData(center.id);
-    } catch (err) {
-      alert('Failed to save package');
-    }
-  };
-
   const filteredBookings = useMemo(() => {
     if (filter === 'all') return bookings;
     return bookings.filter(b => b.status === filter);
