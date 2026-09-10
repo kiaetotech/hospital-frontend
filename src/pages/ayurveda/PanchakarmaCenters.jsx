@@ -18,7 +18,6 @@ const PanchakarmaCenters = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [maxPrice, setMaxPrice] = useState(null);
@@ -28,7 +27,6 @@ const PanchakarmaCenters = () => {
   const [sortBy, setSortBy] = useState('rating');
   const [showFilters, setShowFilters] = useState(false);
 
-  // UI
   const [compareList, setCompareList] = useState([]);
   const [savedCenters, setSavedCenters] = useState([]);
   const [expandedCenter, setExpandedCenter] = useState(null);
@@ -63,9 +61,6 @@ const PanchakarmaCenters = () => {
     }
   };
 
-  // ============================================
-  // DYNAMIC FILTER OPTIONS (from real data)
-  // ============================================
   const allCities = useMemo(() => {
     const cities = new Set();
     centers.forEach(c => {
@@ -103,16 +98,12 @@ const PanchakarmaCenters = () => {
     return { min: Math.min(...prices), max: Math.max(...prices) };
   }, [centers]);
 
-  // Set initial max price when centers load
   useEffect(() => {
     if (priceRange.max > 0 && maxPrice === null) {
       setMaxPrice(priceRange.max);
     }
   }, [priceRange.max, maxPrice]);
 
-  // ============================================
-  // HELPERS
-  // ============================================
   const getActivePackages = (center) =>
     (center.packages || []).filter(p => p.isActive !== false);
 
@@ -181,9 +172,6 @@ const PanchakarmaCenters = () => {
     navigate(`/ayurveda/center/${center._id}`, { state: { center } });
   };
 
-    // ============================================
-  // FILTERING & SORTING
-  // ============================================
   const filteredCenters = useMemo(() => {
     let result = [...centers];
 
@@ -204,10 +192,10 @@ const PanchakarmaCenters = () => {
     if (selectedCity) result = result.filter(c => c.address?.city === selectedCity);
     if (onlyVerified) result = result.filter(c => isVerified(c));
 
-        if (maxPrice !== null && maxPrice < priceRange.max) {
+    if (maxPrice !== null && maxPrice < priceRange.max) {
       result = result.filter(c => {
         const price = getMinPrice(c);
-        if (price === 0) return true; // show centers without packages
+        if (price === 0) return true;
         return price <= maxPrice;
       });
     }
@@ -307,7 +295,6 @@ const PanchakarmaCenters = () => {
             Verified Ayurvedic centers offering authentic detox & wellness programs
           </p>
 
-          {/* SEARCH BAR */}
           <div className="bg-white rounded-xl p-4 shadow-xl">
             <div className="flex gap-3 flex-wrap">
               <div className="flex-1 min-w-[250px] relative">
@@ -503,8 +490,7 @@ const PanchakarmaCenters = () => {
 
                 return (
                   <div key={center._id} className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-shadow border border-gray-100 overflow-hidden">
-
-                    {/* PHOTO / HERO */}
+                    {/* PHOTO */}
                     <div className="relative h-48 bg-gradient-to-br from-green-600 to-green-500 overflow-hidden">
                       {center.coverPhoto ? (
                         <img src={center.coverPhoto} alt={center.name} className="w-full h-full object-cover" />
@@ -617,49 +603,50 @@ const PanchakarmaCenters = () => {
                         </div>
 
                         {/* PRICE + CTA */}
-<div className="text-right flex flex-col items-end justify-between min-w-[190px]">
-  <div>
-    {activePackages.length > 0 ? (
-      <>
-        <p className="text-xs text-gray-500">Starting from</p>
-        <p className="text-2xl font-bold text-green-600">
-          ₹{minPackagePrice.toLocaleString()}
-        </p>
-        <p className="text-xs text-gray-400">
-          {startingDuration} day{startingDuration > 1 ? 's' : ''} · {activePackages.length} package{activePackages.length > 1 ? 's' : ''}
-        </p>
-      </>
-    ) : (
-      <p className="text-sm text-gray-400 mb-2">Packages coming soon</p>
-    )}
-  </div>
+                        <div className="text-right flex flex-col items-end justify-between min-w-[190px]">
+                          <div>
+                            {activePackages.length > 0 ? (
+                              <>
+                                <p className="text-xs text-gray-500">Starting from</p>
+                                <p className="text-2xl font-bold text-green-600">
+                                  ₹{minPackagePrice.toLocaleString()}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  {startingDuration} day{startingDuration > 1 ? 's' : ''} · {activePackages.length} package{activePackages.length > 1 ? 's' : ''}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-sm text-gray-400 mb-2">Packages coming soon</p>
+                            )}
+                          </div>
 
-  <div className="mt-4 flex flex-col gap-2 w-full">
-    {activePackages.length > 0 ? (
-      <>
-        <button
-          onClick={() => handleBookPackage(center, activePackages[0])}
-          className="bg-green-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-green-700 text-sm shadow-sm"
-        >
-          Book Now
-        </button>
-        <button
-          onClick={() => handleViewCenter(center)}
-          className="border-2 border-green-600 text-green-600 px-5 py-2.5 rounded-lg font-medium hover:bg-green-50 text-sm"
-        >
-          View Details
-        </button>
-      </>
-    ) : (
-      <button
-        onClick={() => handleViewCenter(center)}
-        className="bg-green-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-green-700 text-sm shadow-sm"
-      >
-        View Center
-      </button>
-    )}
-  </div>
-</div>
+                          <div className="mt-4 flex flex-col gap-2 w-full">
+                            {activePackages.length > 0 ? (
+                              <>
+                                <button
+                                  onClick={() => handleBookPackage(center, activePackages[0])}
+                                  className="bg-green-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-green-700 text-sm shadow-sm"
+                                >
+                                  Book Now
+                                </button>
+                                <button
+                                  onClick={() => handleViewCenter(center)}
+                                  className="border-2 border-green-600 text-green-600 px-5 py-2.5 rounded-lg font-medium hover:bg-green-50 text-sm"
+                                >
+                                  View Details
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => handleViewCenter(center)}
+                                className="bg-green-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-green-700 text-sm shadow-sm"
+                              >
+                                View Center
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
 
                       {/* Action row */}
                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
@@ -779,30 +766,30 @@ const PanchakarmaCenters = () => {
                 );
               })}
             </div>
-
-            {/* PAGINATION */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-4 py-2 border rounded-lg disabled:opacity-40 hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2 text-gray-600 text-sm">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-4 py-2 border rounded-lg disabled:opacity-40 hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </div>
-            )}
           </>
+        )}
+
+        {/* PAGINATION */}
+        {filteredCenters.length > 0 && totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-8">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 border rounded-lg disabled:opacity-40 hover:bg-gray-50"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2 text-gray-600 text-sm">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 border rounded-lg disabled:opacity-40 hover:bg-gray-50"
+            >
+              Next
+            </button>
+          </div>
         )}
       </div>
 
