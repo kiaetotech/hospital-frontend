@@ -7,8 +7,7 @@ import {
   FaClock, FaTimes, FaChevronRight,
   FaBookmark, FaRegBookmark, FaCalendarCheck,
   FaChevronDown, FaChevronUp, FaStarHalfAlt,
-  FaSpa, FaLeaf, FaUtensils, FaPlane, FaTrain,
-  FaPhone, FaWhatsapp
+  FaSpa, FaLeaf, FaUtensils, FaPlane, FaTrain
 } from 'react-icons/fa';
 
 const PER_PAGE = 6;
@@ -182,22 +181,7 @@ const PanchakarmaCenters = () => {
     navigate(`/ayurveda/center/${center._id}`, { state: { center } });
   };
 
-  const handleWhatsApp = (e, center) => {
-    e.stopPropagation();
-    const phone = center.contact?.whatsapp || center.phone;
-    if (!phone) return;
-    const clean = phone.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hi, I'm interested in Panchakarma programs at ${center.name}. Please share details.`);
-    window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
-  };
-
-  const handleCall = (e, center) => {
-    e.stopPropagation();
-    const phone = center.contact?.primaryPhone || center.phone;
-    if (phone) window.location.href = `tel:${phone}`;
-  };
-
-  // ============================================
+    // ============================================
   // FILTERING & SORTING
   // ============================================
   const filteredCenters = useMemo(() => {
@@ -633,60 +617,49 @@ const PanchakarmaCenters = () => {
                         </div>
 
                         {/* PRICE + CTA */}
-                        <div className="text-right flex flex-col items-end justify-between min-w-[170px]">
-                          <div>
-                            {activePackages.length > 0 ? (
-                              <>
-                                <p className="text-xs text-gray-500">Starting from</p>
-                                <p className="text-2xl font-bold text-green-600">
-                                  ₹{minPackagePrice.toLocaleString()}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                  {startingDuration} day{startingDuration > 1 ? 's' : ''} · {activePackages.length} package{activePackages.length > 1 ? 's' : ''}
-                                </p>
-                              </>
-                            ) : (
-                              <p className="text-sm text-gray-400 mb-2">No packages yet</p>
-                            )}
-                          </div>
+<div className="text-right flex flex-col items-end justify-between min-w-[190px]">
+  <div>
+    {activePackages.length > 0 ? (
+      <>
+        <p className="text-xs text-gray-500">Starting from</p>
+        <p className="text-2xl font-bold text-green-600">
+          ₹{minPackagePrice.toLocaleString()}
+        </p>
+        <p className="text-xs text-gray-400">
+          {startingDuration} day{startingDuration > 1 ? 's' : ''} · {activePackages.length} package{activePackages.length > 1 ? 's' : ''}
+        </p>
+      </>
+    ) : (
+      <p className="text-sm text-gray-400 mb-2">Packages coming soon</p>
+    )}
+  </div>
 
-                          <div className="mt-4 flex flex-col gap-2 w-full">
-                            {activePackages.length > 0 && (
-                              <button
-                                onClick={() => handleBookPackage(center, activePackages[0])}
-                                className="bg-green-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-green-700 text-sm"
-                              >
-                                Book Now
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleViewCenter(center)}
-                              className="border-2 border-green-600 text-green-600 px-5 py-2.5 rounded-lg font-medium hover:bg-green-50 text-sm"
-                            >
-                              View Details
-                            </button>
-
-                            <div className="flex gap-2">
-                              {center.phone && (
-                                <button
-                                  onClick={(e) => handleCall(e, center)}
-                                  className="flex-1 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm flex items-center justify-center gap-1"
-                                >
-                                  <FaPhone className="text-xs" /> Call
-                                </button>
-                              )}
-                              {(center.contact?.whatsapp || center.phone) && (
-                                <button
-                                  onClick={(e) => handleWhatsApp(e, center)}
-                                  className="flex-1 border border-green-200 text-green-700 px-3 py-2 rounded-lg hover:bg-green-50 text-sm flex items-center justify-center gap-1"
-                                >
-                                  <FaWhatsapp /> WhatsApp
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+  <div className="mt-4 flex flex-col gap-2 w-full">
+    {activePackages.length > 0 ? (
+      <>
+        <button
+          onClick={() => handleBookPackage(center, activePackages[0])}
+          className="bg-green-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-green-700 text-sm shadow-sm"
+        >
+          Book Now
+        </button>
+        <button
+          onClick={() => handleViewCenter(center)}
+          className="border-2 border-green-600 text-green-600 px-5 py-2.5 rounded-lg font-medium hover:bg-green-50 text-sm"
+        >
+          View Details
+        </button>
+      </>
+    ) : (
+      <button
+        onClick={() => handleViewCenter(center)}
+        className="bg-green-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-green-700 text-sm shadow-sm"
+      >
+        View Center
+      </button>
+    )}
+  </div>
+</div>
 
                       {/* Action row */}
                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">

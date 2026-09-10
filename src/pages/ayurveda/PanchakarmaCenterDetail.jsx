@@ -75,19 +75,6 @@ const PanchakarmaCenterDetail = () => {
     });
   };
 
-  const handleWhatsApp = () => {
-    const phone = center.contact?.whatsapp || center.phone;
-    if (!phone) return;
-    const clean = phone.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hi, I'm interested in Panchakarma programs at ${center.name}.`);
-    window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
-  };
-
-  const handleCall = () => {
-    const phone = center.contact?.primaryPhone || center.phone;
-    if (phone) window.location.href = `tel:${phone}`;
-  };
-
   const renderStars = (rating = 0, size = '') => {
     return [1, 2, 3, 4, 5].map(i => {
       if (i <= Math.floor(rating)) return <FaStar key={i} className={`text-yellow-400 ${size}`} />;
