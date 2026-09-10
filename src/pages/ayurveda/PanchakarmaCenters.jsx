@@ -220,10 +220,12 @@ const PanchakarmaCenters = () => {
     if (selectedCity) result = result.filter(c => c.address?.city === selectedCity);
     if (onlyVerified) result = result.filter(c => isVerified(c));
 
-    if (maxPrice !== null && maxPrice < priceRange.max) {
-      result = result.filter(c => getMinPrice(c) <= maxPrice && getMinPrice(c) > 0);
-    } else {
-      result = result.filter(c => getMinPrice(c) > 0);
+        if (maxPrice !== null && maxPrice < priceRange.max) {
+      result = result.filter(c => {
+        const price = getMinPrice(c);
+        if (price === 0) return true; // show centers without packages
+        return price <= maxPrice;
+      });
     }
 
     if (minDuration) {
