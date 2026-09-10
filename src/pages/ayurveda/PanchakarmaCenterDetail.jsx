@@ -5,8 +5,8 @@ import {
   FaStar, FaMapMarkerAlt, FaBed, FaBuilding, FaShieldAlt,
   FaUserMd, FaClock, FaCheckCircle, FaTimes, FaChevronRight,
   FaBookmark, FaRegBookmark, FaCalendarCheck, FaSpa,
-  FaLeaf, FaUtensils, FaPlane, FaTrain, FaPhone,
-  FaWhatsapp, FaArrowLeft, FaStarHalfAlt, FaQuoteLeft,
+  FaLeaf, FaUtensils, FaPlane, FaTrain,
+  FaArrowLeft, FaStarHalfAlt, FaQuoteLeft,
   FaChevronDown, FaChevronUp, FaMapPin, FaAward,
   FaCheck, FaBan
 } from 'react-icons/fa';
@@ -122,7 +122,7 @@ const PanchakarmaCenterDetail = () => {
     <div className="min-h-screen bg-gray-50">
       {/* HERO */}
       <div className="relative">
-        <div className="h-72 bg-gradient-to-br from-green-700 to-green-500 overflow-hidden">
+        <div className="h-80 bg-gradient-to-br from-green-700 to-green-500 overflow-hidden">
           {center.coverPhoto ? (
             <img src={center.coverPhoto} alt={center.name} className="w-full h-full object-cover" />
           ) : (
@@ -159,6 +159,14 @@ const PanchakarmaCenterDetail = () => {
                 <span className="text-xs font-semibold text-green-700">AYUSH Verified</span>
               </div>
             </div>
+          </div>
+        )}
+
+        {center.photos && center.photos.length > 0 && (
+          <div className="absolute bottom-4 right-4">
+            <span className="bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow flex items-center gap-2 text-sm font-medium text-gray-700">
+              📷 {center.photos.length} photos
+            </span>
           </div>
         )}
       </div>
@@ -232,24 +240,43 @@ const PanchakarmaCenterDetail = () => {
                   <p className="text-xs text-gray-400 mb-3">per program</p>
                 </>
               )}
-              <div className="flex gap-2">
+              {packages.length > 0 && (
                 <button
-                  onClick={handleCall}
-                  className="border-2 border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm font-medium"
+                  onClick={() => handleBookPackage(selectedPackage || packages[0])}
+                  className="bg-green-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-green-700 text-sm shadow-sm"
                 >
-                  <FaPhone /> Call
+                  Book Now
                 </button>
-                <button
-                  onClick={handleWhatsApp}
-                  className="border-2 border-green-200 text-green-700 px-4 py-2 rounded-lg hover:bg-green-50 flex items-center gap-2 text-sm font-medium"
-                >
-                  <FaWhatsapp /> WhatsApp
-                </button>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* PHOTO GALLERY */}
+      {center.photos && center.photos.length > 0 && (
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Photo Gallery</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {center.photos.slice(0, 8).map((photo, i) => (
+                <div
+                  key={i}
+                  className="aspect-square rounded-lg overflow-hidden bg-gray-100 hover:opacity-90 cursor-pointer transition"
+                  onClick={() => window.open(photo, '_blank')}
+                >
+                  <img
+                    src={photo}
+                    alt={`${center.name} - ${i + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TABS */}
       <div className="bg-white border-b sticky top-0 z-20 shadow-sm">
@@ -288,6 +315,53 @@ const PanchakarmaCenterDetail = () => {
                   </div>
                 )}
 
+                {/* Location & Directions */}
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Location & Directions</h2>
+                  <div className="flex items-start gap-3 mb-4">
+                    <FaMapMarkerAlt className="text-green-600 text-lg mt-1 flex-shrink-0" />
+                    <div className="text-gray-700">
+                      <p className="font-medium">{center.name}</p>
+                      {center.address?.street && <p>{center.address.street}</p>}
+                      {center.address?.area && <p>{center.address.area}</p>}
+                      <p>
+                        {center.address?.city}, {center.address?.state}
+                        {center.address?.pincode && ` - ${center.address.pincode}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {(center.nearestAirport || center.nearestRailway) && (
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4 flex-wrap">
+                      {center.nearestAirport && (
+                        <span className="flex items-center gap-1.5">
+                          <FaPlane className="text-green-600" />
+                          {center.nearestAirport}
+                          {center.distanceFromAirport && ` (${center.distanceFromAirport} km)`}
+                        </span>
+                      )}
+                      {center.nearestRailway && (
+                        <span className="flex items-center gap-1.5">
+                          <FaTrain className="text-green-600" />
+                          {center.nearestRailway}
+                          {center.distanceFromRailway && ` (${center.distanceFromRailway} km)`}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {center.googleMapsUrl && (
+                    <a
+                      href={center.googleMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 text-sm"
+                    >
+                      <FaMapPin /> Open in Google Maps
+                    </a>
+                  )}
+                </div>
+
                 {center.facilities?.length > 0 && (
                   <div className="bg-white rounded-xl shadow-sm p-6">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">Facilities</h2>
@@ -319,6 +393,13 @@ const PanchakarmaCenterDetail = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {!center.description && center.facilities?.length === 0 && !center.accreditations?.length && (
+                  <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                    <FaBuilding className="text-5xl text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">Center is updating their profile. Check back soon.</p>
                   </div>
                 )}
               </>
@@ -367,7 +448,6 @@ const PanchakarmaCenterDetail = () => {
                             )}
                           </div>
 
-                          {/* Inclusions */}
                           {pkg.inclusions?.length > 0 && (
                             <div className="mb-4">
                               <p className="text-xs font-semibold text-gray-500 mb-2">INCLUDED</p>
@@ -381,7 +461,6 @@ const PanchakarmaCenterDetail = () => {
                             </div>
                           )}
 
-                          {/* Exclusions */}
                           {pkg.exclusions?.length > 0 && (
                             <div className="mb-4">
                               <p className="text-xs font-semibold text-gray-500 mb-2">NOT INCLUDED</p>
@@ -395,7 +474,6 @@ const PanchakarmaCenterDetail = () => {
                             </div>
                           )}
 
-                          {/* Therapies */}
                           {pkg.therapies?.length > 0 && (
                             <div className="mb-4">
                               <p className="text-xs font-semibold text-gray-500 mb-2">THERAPIES</p>
@@ -409,7 +487,6 @@ const PanchakarmaCenterDetail = () => {
                             </div>
                           )}
 
-                          {/* Program Schedule */}
                           {pkg.programSchedule?.length > 0 && (
                             <div className="mb-4 border-t pt-4">
                               <button
@@ -448,7 +525,6 @@ const PanchakarmaCenterDetail = () => {
                             </div>
                           )}
 
-                          {/* Price + CTA */}
                           <div className="flex justify-between items-center border-t pt-4">
                             <div>
                               {hasDiscount ? (
@@ -538,7 +614,6 @@ const PanchakarmaCenterDetail = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Rating Summary */}
                     {hasRating && center.ratingBreakdown && (
                       <div className="bg-white rounded-xl shadow-sm p-6">
                         <div className="flex items-center gap-6 flex-wrap">
@@ -573,7 +648,6 @@ const PanchakarmaCenterDetail = () => {
                       </div>
                     )}
 
-                    {/* Individual Reviews */}
                     {center.reviews.map((review, i) => (
                       <div key={i} className="bg-white rounded-xl shadow-sm p-6">
                         <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
