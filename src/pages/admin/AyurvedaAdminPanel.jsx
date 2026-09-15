@@ -13,7 +13,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer
 } from 'recharts';
 
-const API_BASE = 'https://hospital-backend-production-7d0f.up.railway.app';
+const API_BASE = 'https://hospital-backend-production-e2cf.up.railway.app';
 const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
 
 const AyurvedaAdminPanel = () => {

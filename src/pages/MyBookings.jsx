@@ -60,7 +60,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     try {
       // Fetch ambulance bookings
       const ambulanceResponse = await axios.get(
-        'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/my-bookings?limit=100&page=1',
+        'https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/my-bookings?limit=100&page=1',
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const ambulanceBookings = ambulanceResponse.data?.data || ambulanceResponse.data || [];
@@ -69,7 +69,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
       let ayurvedaBookings = [];
       try {
         const ayurvedaResponse = await axios.get(
-          'https://hospital-backend-production-7d0f.up.railway.app/api/ayurveda/bookings/my-bookings',
+          'https://hospital-backend-production-e2cf.up.railway.app/api/ayurveda/bookings/my-bookings',
           { headers: { Authorization: `Bearer ${token}` } }
         );
         ayurvedaBookings = ayurvedaResponse.data?.data || [];
@@ -117,7 +117,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
       
       // First get cancellation quote
       const quoteRes = await axios.post(
-        `https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/cancellation-quote/${cancellingId}`,
+        `https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/cancellation-quote/${cancellingId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -133,7 +133,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
       }
       
       const res = await axios.put(
-        `https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/cancel-booking/${cancellingId}`,
+        `https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/cancel-booking/${cancellingId}`,
         { reason: cancelReason || 'Cancelled by patient' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -143,7 +143,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
         setActionMessage(`✅ Booking cancelled! Refund: ₹${refundInfo?.refundAmount || 0} (${refundInfo?.refundPercentage || 0}%)`);
         
         const response = await axios.get(
-          'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/my-bookings',
+          'https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/my-bookings',
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setBookings(response.data?.data || response.data || []);
@@ -177,7 +177,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       const res = await axios.post(
-        `https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/rate-trip/${selectedBooking.bookingId}`,
+        `https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/rate-trip/${selectedBooking.bookingId}`,
         {
           rating: reviewData.rating,
           review: reviewData.review,
@@ -345,7 +345,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
           if (confirm('Delete all cancelled bookings older than 30 days?')) {
             try {
               const token = localStorage.getItem('token');
-              const res = await axios.post('https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/cleanup-bookings', 
+              const res = await axios.post('https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/cleanup-bookings', 
                 { days: 30, status: 'cancelled' },
                 { headers: { Authorization: `Bearer ${token}` } }
               );
@@ -364,7 +364,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
             if (confirm(`Delete ${selectedBookings.length} selected bookings?`)) {
               try {
                 const token = localStorage.getItem('token');
-                await axios.post('https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/delete-bookings', 
+                await axios.post('https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/delete-bookings', 
                   { bookingIds: selectedBookings },
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -762,7 +762,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
             try {
               const token = localStorage.getItem('token');
               const res = await axios.post(
-                'https://hospital-backend-production-7d0f.up.railway.app/api/ambulance/complaints',
+                'https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/complaints',
                 { bookingId: selectedBooking.bookingId, ...complaintData },
                 { headers: { Authorization: `Bearer ${token}` } }
               );

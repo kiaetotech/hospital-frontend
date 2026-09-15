@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminLenders, adminReports } from '../../services/adminApi';
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-7d0f.up.railway.app';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
 // All API calls need /api prefix
 const apiCall = (path, config) => axios.get(`${API_BASE}/api${path}`, config);
 
