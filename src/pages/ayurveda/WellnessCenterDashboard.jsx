@@ -201,53 +201,65 @@ const WellnessCenterDashboard = () => {
   };
 
   const handleSavePackage = async () => {
-    if (!packageForm.name || !packageForm.duration || !packageForm.price) {
-      showToast('Name, duration, and price are required', 'error');
-      return;
+  if (!packageForm.name || !packageForm.duration || !packageForm.price) {
+    showToast('Name, duration, and price are required', 'error');
+    return;
+  }
+
+  setSaving(true);
+  try {
+    const payload = {
+      name: packageForm.name.trim(),
+      duration: parseInt(packageForm.duration),
+      price: parseInt(packageForm.price),
+      discountPrice: packageForm.discountPrice ? parseInt(packageForm.discountPrice) : undefined,
+      description: packageForm.description || '',
+      shortDescription: packageForm.shortDescription || '',
+      therapies: Array.isArray(packageForm.therapies) ? packageForm.therapies : [],
+      inclusions: Array.isArray(packageForm.inclusions) ? packageForm.inclusions : [],
+      exclusions: Array.isArray(packageForm.exclusions) ? packageForm.exclusions : [],
+      maxCapacity: parseInt(packageForm.maxCapacity) || 10,
+      isActive: packageForm.isActive !== false
+    };
+
+    let response;
+    if (editingPackage) {
+      response = await api.put(
+        `/ayurveda-centers/packages/${center.id}/${editingPackage._id}`,
+        payload,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+    } else {
+      response = await api.post(
+        `/ayurveda-centers/packages/${center.id}`,
+        payload,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
     }
 
-    setSaving(true);
-    try {
-      const payload = {
-        name: packageForm.name,
-        duration: parseInt(packageForm.duration),
-        price: parseInt(packageForm.price),
-        discountPrice: packageForm.discountPrice ? parseInt(packageForm.discountPrice) : undefined,
-        description: packageForm.description,
-        shortDescription: packageForm.shortDescription,
-        therapies: packageForm.therapies,
-        inclusions: packageForm.inclusions,
-        exclusions: packageForm.exclusions,
-        maxCapacity: parseInt(packageForm.maxCapacity) || 10,
-        isActive: packageForm.isActive
-      };
-
-      let response;
-      if (editingPackage) {
-        response = await api.put(
-          `/ayurveda-centers/packages/${center.id}/${editingPackage._id}`,
-          payload,
-          { headers: { Authorization: `Bearer ${getToken()}` } }
-        );
-      } else {
-        response = await api.post(
-          `/ayurveda-centers/packages/${center.id}`,
-          payload,
-          { headers: { Authorization: `Bearer ${getToken()}` } }
-        );
-      }
-
-      if (response.data.success) {
-        showToast(editingPackage ? 'Package updated' : 'Package added');
-        setShowPackageModal(false);
-        fetchDashboardData(center.id);
-      }
-    } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to save package', 'error');
-    } finally {
-      setSaving(false);
+    if (response.data.success) {
+      showToast(editingPackage ? 'Package updated and sent for re-approval' : 'Package submitted for admin approval');
+      setShowPackageModal(false);
+      setEditingPackage(null);
+      setPackageForm({
+        name: '', duration: '', price: '', discountPrice: '',
+        description: '', shortDescription: '',
+        therapies: [], inclusions: [], exclusions: [],
+        maxCapacity: '', isActive: true
+      });
+      fetchDashboardData(center.id);
     }
-  };
+  } catch (err) {
+    const errData = err.response?.data;
+    if (errData?.errors && Array.isArray(errData.errors)) {
+      showToast(errData.errors.join('. '), 'error');
+    } else {
+      showToast(errData?.error || 'Failed to save package', 'error');
+    }
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleDeletePackage = async (pkgId) => {
     if (!window.confirm('Delete this package?')) return;
