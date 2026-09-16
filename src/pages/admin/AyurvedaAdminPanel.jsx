@@ -52,7 +52,8 @@ const AyurvedaAdminPanel = () => {
   const [bulkSelected, setBulkSelected] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [pendingCentersList, setPendingCentersList] = useState([]);
-
+  const [pendingPackages, setPendingPackages] = useState([]);
+  const [pendingPrograms, setPendingPrograms] = useState([]);
   const [stats, setStats] = useState({
     totalDoctors: 0, totalCenters: 0, totalBookings: 0,
     totalRevenue: 0, pendingDoctors: 0, pendingCenters: 0,
@@ -66,10 +67,13 @@ const AyurvedaAdminPanel = () => {
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-            const [
+                  const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
+
+      const [
         doctorsRes, centersRes, pendingDocRes, pendingCenterRes,
         bookingsRes, discountsRes, settlementsRes, programsRes,
-        productsRes, reviewsRes, complaintsRes
+        productsRes, reviewsRes, complaintsRes,
+        pendingPackagesRes, pendingProgramsRes
         ] = await Promise.all([
         api.get('/ayurveda/doctors'),
         api.get('/ayurveda-centers/admin/all'),
@@ -81,7 +85,9 @@ const AyurvedaAdminPanel = () => {
         api.get('/ayurveda/wellness-programs').catch(() => ({ data: { data: [] } })),
         api.get('/ayurveda/products').catch(() => ({ data: { data: [] } })),
         api.get('/ayurveda/reviews/all').catch(() => ({ data: { data: [] } })),
-        api.get('/ayurveda/complaints/all').catch(() => ({ data: { data: [] } }))
+        api.get('/ayurveda/complaints/all').catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/ayurveda-centers/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/ayurveda/admin/programs/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
       ]);
 
       const doctors = doctorsRes.data?.data || [];
@@ -107,18 +113,26 @@ const AyurvedaAdminPanel = () => {
       setReviews(revs);
       setComplaints(comps);
 
+      // Pending packages + programs
+      const pendingPkgs = pendingPackagesRes.data?.data || [];
+      const pendingProgs = pendingProgramsRes.data?.data || [];
+      setPendingPackages(pendingPkgs);
+      setPendingPrograms(pendingProgs);
+
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
       const totalCommission = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.platformCommission || 0), 0);
 
-      setStats({
+            setStats({
         totalDoctors: doctors.length,
         totalCenters: centers.length,
         totalBookings: bookings.length,
         totalRevenue,
         pendingDoctors: pendingDocs.length,
         pendingCenters: pendingCents.length,
+        pendingPackages: pendingPkgs.length,
+        pendingPrograms: pendingProgs.length,
         activeDiscounts: disc.filter(d => d.isActive).length,
         completedBookings: bookings.filter(b => b.status === 'completed').length,
         cancelledBookings: bookings.filter(b => b.status === 'cancelled').length,
@@ -216,6 +230,77 @@ const AyurvedaAdminPanel = () => {
       addNotification('Refund failed: ' + error.message, 'error');
     }
   };
+
+  // ============================================
+  // PACKAGE APPROVAL
+  // ============================================
+  const approvePackage = async (centerId, packageId, notes = '') => {
+    try {
+      await axios.put(
+        `${API_BASE}/api/ayurveda-centers/admin/packages/${centerId}/${packageId}/approve`,
+        { notes },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      addNotification('Package approved', 'success');
+      fetchAllData();
+    } catch (error) {
+      addNotification('Failed: ' + (error.response?.data?.error || error.message), 'error');
+    }
+  };
+
+  const rejectPackage = async (centerId, packageId, reason) => {
+    if (!reason) {
+      addNotification('Rejection reason required', 'error');
+      return;
+    }
+    try {
+      await axios.put(
+        `${API_BASE}/api/ayurveda-centers/admin/packages/${centerId}/${packageId}/reject`,
+        { reason },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      addNotification('Package rejected', 'success');
+      fetchAllData();
+    } catch (error) {
+      addNotification('Failed: ' + (error.response?.data?.error || error.message), 'error');
+    }
+  };
+
+  // ============================================
+  // PROGRAM APPROVAL
+  // ============================================
+  const approveProgram = async (doctorId, programId, notes = '') => {
+    try {
+      await axios.put(
+        `${API_BASE}/api/ayurveda/admin/programs/${doctorId}/${programId}/approve`,
+        { notes },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      addNotification('Program approved', 'success');
+      fetchAllData();
+    } catch (error) {
+      addNotification('Failed: ' + (error.response?.data?.error || error.message), 'error');
+    }
+  };
+
+  const rejectProgram = async (doctorId, programId, reason) => {
+    if (!reason) {
+      addNotification('Rejection reason required', 'error');
+      return;
+    }
+    try {
+      await axios.put(
+        `${API_BASE}/api/ayurveda/admin/programs/${doctorId}/${programId}/reject`,
+        { reason },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      addNotification('Program rejected', 'success');
+      fetchAllData();
+    } catch (error) {
+      addNotification('Failed: ' + (error.response?.data?.error || error.message), 'error');
+    }
+  };
+
 
   const bulkApproveDoctors = async () => {
     if (bulkSelected.length === 0) return;
@@ -424,7 +509,7 @@ const AyurvedaAdminPanel = () => {
           { id: 'bookings', label: `📋 Bookings (${stats.totalBookings})`, icon: FaCalendarAlt },
           { id: 'discounts', label: `🏷️ Discounts (${stats.activeDiscounts})`, icon: FaTag },
           { id: 'settlements', label: `💰 Settlements (${stats.pendingPayouts})`, icon: FaRupeeSign },
-          { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters})`, icon: FaExclamationTriangle },
+          { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters + (stats.pendingPackages || 0) + (stats.pendingPrograms || 0)})`, icon: FaExclamationTriangle },
           { id: 'programs', label: '💪 Programs', icon: FaTag },
           { id: 'products', label: '🌿 Products', icon: FaTag },
           { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
@@ -950,6 +1035,86 @@ const AyurvedaAdminPanel = () => {
         {tab === 'pending' && (
           <div>
             <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>⏳ Pending Approvals</h2>
+            {/* PENDING PACKAGES */}
+            {pendingPackages.length > 0 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontWeight: 700, marginBottom: '0.75rem', color: '#059669' }}>
+                  📦 Pending Packages ({pendingPackages.length})
+                </h3>
+                {pendingPackages.map(pkg => (
+                  <div key={`${pkg.centerId}_${pkg.packageId}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #f59e0b' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                      <div style={{ flex: 1, minWidth: 250 }}>
+                        <strong style={{ fontSize: '1rem' }}>📦 {pkg.name}</strong>
+                        <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                          🏨 {pkg.centerName} • {pkg.centerCity} • {pkg.centerPhone}
+                        </p>
+                        <p style={{ margin: '4px 0', fontSize: '0.9rem', color: '#059669', fontWeight: 600 }}>
+                          ₹{pkg.discountPrice || pkg.price} • {pkg.duration} days
+                        </p>
+                        {pkg.shortDescription && (
+                          <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#475569' }}>{pkg.shortDescription}</p>
+                        )}
+                        {pkg.therapies?.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.5rem' }}>
+                            {pkg.therapies.map((t, i) => (
+                              <span key={i} style={{ fontSize: '0.7rem', background: '#ecfdf5', color: '#047857', padding: '2px 8px', borderRadius: 12 }}>{t}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexDirection: 'column' }}>
+                        <button onClick={() => approvePackage(pkg.centerId, pkg.packageId)} style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>✅ Approve</button>
+                        <button onClick={() => {
+                          const reason = window.prompt('Rejection reason:');
+                          if (reason) rejectPackage(pkg.centerId, pkg.packageId, reason);
+                        }} style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>❌ Reject</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* PENDING PROGRAMS */}
+            {pendingPrograms.length > 0 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontWeight: 700, marginBottom: '0.75rem', color: '#059669' }}>
+                  💪 Pending Wellness Programs ({pendingPrograms.length})
+                </h3>
+                {pendingPrograms.map(prog => (
+                  <div key={`${prog.doctorId}_${prog.programId}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #3b82f6' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                      <div style={{ flex: 1, minWidth: 250 }}>
+                        <strong style={{ fontSize: '1rem' }}>💪 {prog.name}</strong>
+                        <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                          👨‍⚕️ Dr. {prog.doctorName} • {prog.doctorSpecialization} • {prog.doctorCity}
+                        </p>
+                        <p style={{ margin: '4px 0', fontSize: '0.9rem', color: '#059669', fontWeight: 600 }}>
+                          ₹{prog.discountPrice || prog.price} • {prog.duration}
+                        </p>
+                        {prog.shortDescription && (
+                          <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#475569' }}>{prog.shortDescription}</p>
+                        )}
+                        {prog.programType && (
+                          <p style={{ margin: '4px 0', fontSize: '0.75rem', color: '#64748b' }}>
+                            Type: {prog.programType.replace('_', ' ')}
+                          </p>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexDirection: 'column' }}>
+                        <button onClick={() => approveProgram(prog.doctorId, prog.programId)} style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>✅ Approve</button>
+                        <button onClick={() => {
+                          const reason = window.prompt('Rejection reason:');
+                          if (reason) rejectProgram(prog.doctorId, prog.programId, reason);
+                        }} style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>❌ Reject</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {allDoctors.filter(d => d.verificationStatus === 'pending').map(d => (
               <div key={d._id} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
