@@ -110,8 +110,7 @@ const WellnessCenterDashboard = () => {
       api.get(`/ayurveda/settlements/history/wellness_center/${centerId}`, { headers }),
       api.get(`/ayurveda/centers/${centerId}`)
     ]);
-    ...
-
+   
       if (bookingsRes.data.success) setBookings(bookingsRes.data.data || []);
       if (earningsRes.data.success) setEarnings(earningsRes.data.data);
       if (settlementsRes.data.success) setSettlements(settlementsRes.data.data || []);
