@@ -43,10 +43,17 @@ const Login = () => {
     try {
       const res = await api.post('/otp/verify', { phone: `+91${mobile}`, otp });
       if (res.data?.success) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
-        navigate(redirectPath);
-      } else { setError(res.data?.message || 'Invalid OTP'); }
+  localStorage.removeItem('centerToken');
+  localStorage.removeItem('center');
+  localStorage.removeItem('doctorToken');
+  localStorage.removeItem('doctor');
+  localStorage.removeItem('adminToken');
+  localStorage.removeItem('adminData');
+
+  localStorage.setItem('token', res.data.token);
+  localStorage.setItem('user', JSON.stringify(res.data.user));
+  navigate(redirectPath);
+} else { setError(res.data?.message || 'Invalid OTP'); }
     } catch (err) { setError('Invalid OTP'); }
     setLoading(false);
   };
@@ -61,10 +68,17 @@ const Login = () => {
         : { email, password, role: 'patient' };
       const res = await api.post('/auth/login', loginData);
       if (res.data?.success) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
-        navigate(redirectPath);
-      } else { setError(res.data?.message || 'Login failed'); }
+  localStorage.removeItem('centerToken');
+  localStorage.removeItem('center');
+  localStorage.removeItem('doctorToken');
+  localStorage.removeItem('doctor');
+  localStorage.removeItem('adminToken');
+  localStorage.removeItem('adminData');
+
+  localStorage.setItem('token', res.data.token);
+  localStorage.setItem('user', JSON.stringify(res.data.user));
+  navigate(redirectPath);
+} else { setError(res.data?.message || 'Login failed'); }
     } catch (err) { setError('Login failed. Check credentials.'); }
     setLoading(false);
   };
