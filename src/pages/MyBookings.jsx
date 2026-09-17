@@ -76,16 +76,20 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
         
         // Map Ayurveda bookings to common format
         ayurvedaBookings = ayurvedaBookings.map(b => ({
-          ...b,
-          bookingType: 'ayurveda_consultation',
-          patientName: b.patient?.name || 'Patient',
-          patientPhone: b.patient?.phone || '',
-          appointmentDate: b.bookingDate,
-          doctorName: b.doctorName || 'Ayurveda Doctor',
-          finalAmount: b.finalAmount,
-          paymentStatus: b.paymentStatus,
-          status: b.status
-        }));
+  ...b,
+  bookingType: 'ayurveda_consultation',
+  patientName: b.patient?.name || 'Patient',
+  patientPhone: b.patient?.phone || '',
+  patientAge: b.patient?.age || null,
+  patientGender: b.patient?.gender || '',
+  appointmentDate: b.bookingDate,
+  doctorName: b.type === 'panchakarma_package'
+    ? b.centerName || 'Center'
+    : (b.doctorName || 'Ayurveda Doctor'),
+  finalAmount: b.finalAmount,
+  paymentStatus: b.paymentStatus,
+  status: b.status
+}));
       } catch (ayurError) {
         console.log('No Ayurveda bookings found');
       }
@@ -569,13 +573,24 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
                         )}
                       </>
 	                ) : booking.bookingType === 'ayurveda_consultation' ? (
-                      <>
-                        {booking.doctorName && <p><strong>👨‍⚕️ Doctor:</strong> {booking.doctorName}</p>}
-                        {booking.doctorSpecialization && <p><strong>🌿 Specialty:</strong> {booking.doctorSpecialization}</p>}
-                        {booking.consultationType && <p><strong>📹 Type:</strong> {booking.consultationType}</p>}
-                        {booking.slotTime && <p><strong>⏰ Time:</strong> {booking.slotTime}</p>}
-                        <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
-                      </>
+  <>
+    {booking.type === 'panchakarma_package' ? (
+      <>
+        {booking.centerName && <p><strong>🏨 Center:</strong> {booking.centerName}</p>}
+        {booking.package?.name && <p><strong>📦 Package:</strong> {booking.package.name}</p>}
+        {booking.package?.duration && <p><strong>⏱️ Duration:</strong> {booking.package.duration} days</p>}
+        <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
+      </>
+    ) : (
+      <>
+        {booking.doctorName && <p><strong>👨‍⚕️ Doctor:</strong> {booking.doctorName}</p>}
+        {booking.doctorSpecialization && <p><strong>🌿 Specialty:</strong> {booking.doctorSpecialization}</p>}
+        {booking.consultationType && <p><strong>📹 Type:</strong> {booking.consultationType}</p>}
+        {booking.slotTime && <p><strong>⏰ Time:</strong> {booking.slotTime}</p>}
+        <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
+      </>
+    )}
+  </>
                     ) : booking.bookingType === 'insurance' ? (
                       <>
                         <p><strong>🛡️ Insurance:</strong> {booking.insuranceCompanyName}</p>
@@ -593,7 +608,12 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
                       </>
                     )}
                     <p><strong>📅 Date:</strong> {new Date(booking.appointmentDate || booking.bookingDate).toLocaleDateString()}</p>
-                    <p><strong>👤 Patient:</strong> {booking.patientName} ({booking.patientAge} yrs, {booking.patientGender})</p>
+                    <p>
+  <strong>👤 Patient:</strong> {booking.patientName}
+  {(booking.patientAge || booking.patientGender) && (
+    <> ({booking.patientAge || '—'} yrs, {booking.patientGender || '—'})</>
+  )}
+</p>
                     <p><strong>📞 Patient Contact:</strong> {booking.patientPhone}</p>
                     {booking.paymentStatus && (
                       <p><strong>💳 Payment:</strong> <span style={{ color: booking.paymentStatus === 'paid' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{booking.paymentStatus.toUpperCase()}</span></p>
