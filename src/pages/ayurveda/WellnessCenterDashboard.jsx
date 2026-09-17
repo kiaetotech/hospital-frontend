@@ -15,7 +15,7 @@ import {
   FaWallet, FaHistory, FaChartBar, FaBed, FaBox,
   FaPlus, FaEdit, FaTrash, FaSave, FaTimes,
   FaPhone, FaEnvelope, FaMapMarkerAlt, FaShieldAlt,
-  FaSpa, FaUserMd, FaCheck, FaAward
+  FaSpa, FaUserMd, FaCheck, FaAward, FaExclamationTriangle
 } from 'react-icons/fa';
 
 const TABS = [
@@ -25,6 +25,8 @@ const TABS = [
   { id: 'rooms', label: 'Rooms', icon: FaBed },
   { id: 'policies', label: 'Policies', icon: FaShieldAlt },
   { id: 'profile', label: 'Profile', icon: FaBuilding },
+  { id: 'complaints', label: 'Complaints', icon: FaExclamationTriangle },
+  { id: 'reviews', label: 'Reviews', icon: FaStar },
   { id: 'earnings', label: 'Earnings', icon: FaWallet },
   { id: 'settlements', label: 'Settlements', icon: FaHistory }
 ];
@@ -38,6 +40,12 @@ const WellnessCenterDashboard = () => {
   const [settlements, setSettlements] = useState([]);
   const [packages, setPackages] = useState([]);
   const [roomTypes, setRoomTypes] = useState([]);
+  const [complaints, setComplaints] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [complaintsLoading, setComplaintsLoading] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [respondingTo, setRespondingTo] = useState(null);
+  const [responseText, setResponseText] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -90,6 +98,14 @@ const WellnessCenterDashboard = () => {
     setCenter(centerData);
     fetchDashboardData(centerData.id);
   }, [navigate]);
+
+useEffect(() => {
+  if (activeTab === 'complaints') {
+    fetchComplaints();
+  } else if (activeTab === 'reviews') {
+    fetchReviews();
+  }
+}, [activeTab]);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -166,12 +182,114 @@ const WellnessCenterDashboard = () => {
           });
         }
       }
-    } catch (err) {
+        } catch (err) {
       console.error('Dashboard load error:', err);
     } finally {
       setLoading(false);
     }
   };
+
+// 👇 ADD ALL OF THIS RIGHT HERE
+
+const fetchComplaints = async () => {
+  setComplaintsLoading(true);
+  try {
+    const token = localStorage.getItem('centerToken');
+    const response = await api.get('/ayurveda/bookings/center/complaints', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.data.success) {
+      setComplaints(response.data.data || []);
+    }
+  } catch (error) {
+    console.error('Fetch complaints error:', error);
+    showToast('Failed to load complaints', 'error');
+  } finally {
+    setComplaintsLoading(false);
+  }
+};
+
+const fetchReviews = async () => {
+  setReviewsLoading(true);
+  try {
+    const token = localStorage.getItem('centerToken');
+    const response = await api.get('/ayurveda/bookings/center/reviews', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.data.success) {
+      setReviews(response.data.data || []);
+    }
+  } catch (error) {
+    console.error('Fetch reviews error:', error);
+    showToast('Failed to load reviews', 'error');
+  } finally {
+    setReviewsLoading(false);
+  }
+};
+
+const handleRespondToComplaint = async (bookingId, complaintId) => {
+  if (!responseText.trim() || responseText.trim().length < 3) {
+    showToast('Response must be at least 3 characters', 'error');
+    return;
+  }
+  try {
+    const token = localStorage.getItem('centerToken');
+    const res = await api.put(
+      `/ayurveda/bookings/${bookingId}/complaint/${complaintId}/respond`,
+      { response: responseText },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (res.data.success) {
+      showToast('Response submitted');
+      setRespondingTo(null);
+      setResponseText('');
+      fetchComplaints();
+    }
+  } catch (error) {
+    showToast(error.response?.data?.message || 'Failed to respond', 'error');
+  }
+};
+
+const handleResolveComplaint = async (bookingId, complaintId) => {
+  if (!window.confirm('Mark this complaint as resolved?')) return;
+  try {
+    const token = localStorage.getItem('centerToken');
+    const res = await api.put(
+      `/ayurveda/bookings/${bookingId}/complaint/${complaintId}/resolve`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (res.data.success) {
+      showToast('Complaint resolved');
+      fetchComplaints();
+    }
+  } catch (error) {
+    showToast(error.response?.data?.message || 'Failed to resolve', 'error');
+  }
+};
+
+const handleRespondToReview = async (bookingId) => {
+  if (!responseText.trim() || responseText.trim().length < 3) {
+    showToast('Response must be at least 3 characters', 'error');
+    return;
+  }
+  try {
+    const token = localStorage.getItem('centerToken');
+    const res = await api.put(
+      `/ayurveda/bookings/${bookingId}/review/respond`,
+      { response: responseText },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (res.data.success) {
+      showToast('Response submitted');
+      setRespondingTo(null);
+      setResponseText('');
+      fetchReviews();
+    }
+  } catch (error) {
+    showToast(error.response?.data?.message || 'Failed to respond', 'error');
+  }
+};
 
   // ============================================
   // PACKAGE CRUD
@@ -494,16 +612,18 @@ const WellnessCenterDashboard = () => {
 
       {/* Stats */}
       <div className="max-w-7xl mx-auto px-4 -mt-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
           {[
-            { label: "Today", value: stats.todayCount, icon: FaCalendarAlt, color: 'bg-blue-500' },
-            { label: 'Active', value: stats.activeCount, icon: FaClock, color: 'bg-yellow-500' },
-            { label: 'Completed', value: stats.completedCount, icon: FaCheckCircle, color: 'bg-green-500' },
-            { label: 'Packages', value: stats.packageCount, icon: FaBox, color: 'bg-purple-500' },
-            { label: 'Rooms', value: stats.roomCount, icon: FaBed, color: 'bg-pink-500' },
-            { label: 'Earnings', value: `₹${stats.totalEarnings}`, icon: FaRupeeSign, color: 'bg-indigo-500' },
-            { label: 'Payout', value: `₹${stats.pendingPayout}`, icon: FaWallet, color: 'bg-orange-500' }
-          ].map((stat, i) => (
+  { label: "Today", value: stats.todayCount, icon: FaCalendarAlt, color: 'bg-blue-500' },
+  { label: 'Active', value: stats.activeCount, icon: FaClock, color: 'bg-yellow-500' },
+  { label: 'Completed', value: stats.completedCount, icon: FaCheckCircle, color: 'bg-green-500' },
+  { label: 'Packages', value: stats.packageCount, icon: FaBox, color: 'bg-purple-500' },
+  { label: 'Rooms', value: stats.roomCount, icon: FaBed, color: 'bg-pink-500' },
+  { label: 'Complaints', value: complaints.length, icon: FaExclamationTriangle, color: 'bg-red-500' },
+  { label: 'Reviews', value: reviews.length, icon: FaStar, color: 'bg-teal-500' },
+  { label: 'Earnings', value: `₹${stats.totalEarnings}`, icon: FaRupeeSign, color: 'bg-indigo-500' },
+  { label: 'Payout', value: `₹${stats.pendingPayout}`, icon: FaWallet, color: 'bg-orange-500' }
+].map((stat, i) => (
             <div key={i} className="bg-white rounded-xl shadow-md p-4">
               <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center text-white mb-2`}>
                 <stat.icon />
@@ -987,6 +1107,212 @@ const WellnessCenterDashboard = () => {
             </div>
           </div>
         )}
+
+	{/* ========== COMPLAINTS ========== */}
+{activeTab === 'complaints' && (
+  <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-lg font-semibold">Complaints ({complaints.length})</h2>
+      <button onClick={fetchComplaints} className="text-green-600 text-sm font-medium">
+        ↻ Refresh
+      </button>
+    </div>
+
+    {complaintsLoading ? (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto"></div>
+        <p className="text-gray-500 mt-3">Loading complaints...</p>
+      </div>
+    ) : complaints.length === 0 ? (
+      <div className="text-center py-12">
+        <FaExclamationTriangle className="text-5xl text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-500">No complaints found</p>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {complaints.map(c => (
+          <div key={c.complaintId} className={`border rounded-lg p-4 ${c.status === 'resolved' ? 'border-green-200 bg-green-50' : c.status === 'rejected' ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
+            <div className="flex justify-between items-start flex-wrap gap-2 mb-2">
+              <div>
+                <p className="font-semibold">{c.patientName}</p>
+                <p className="text-sm text-gray-600">Booking: {c.bookingId}</p>
+                <p className="text-sm text-gray-600">Package: {c.packageName}</p>
+              </div>
+              <div className="text-right">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  c.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                  c.status === 'in_review' ? 'bg-blue-100 text-blue-700' :
+                  c.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  {c.status.replace('_', ' ')}
+                </span>
+                <p className="text-xs text-gray-500 mt-1">{new Date(c.createdAt).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded p-3 mb-3">
+              <p className="text-xs text-gray-500 uppercase mb-1">{c.category?.replace(/_/g, ' ')}</p>
+              <p className="text-gray-800">{c.description}</p>
+              {c.priority && (
+                <p className="text-xs mt-2">
+                  Priority: <span className={`font-medium ${c.priority === 'critical' ? 'text-red-600' : c.priority === 'high' ? 'text-orange-600' : 'text-gray-600'}`}>{c.priority}</span>
+                </p>
+              )}
+            </div>
+
+            {c.centerResponse ? (
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-3">
+                <p className="text-xs font-semibold text-blue-700 mb-1">Your Response:</p>
+                <p className="text-sm text-gray-700">{c.centerResponse}</p>
+              </div>
+            ) : (
+              <>
+                {respondingTo === c.complaintId ? (
+                  <div className="mb-3">
+                    <textarea
+                      value={responseText}
+                      onChange={(e) => setResponseText(e.target.value)}
+                      placeholder="Write your response to the patient..."
+                      rows="3"
+                      className="w-full p-2 border rounded-lg text-sm"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => handleRespondToComplaint(c.bookingId, c.complaintId)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium"
+                      >
+                        Submit Response
+                      </button>
+                      <button
+                        onClick={() => { setRespondingTo(null); setResponseText(''); }}
+                        className="px-4 py-2 bg-gray-200 rounded-lg text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setRespondingTo(c.complaintId); setResponseText(''); }}
+                    className="text-green-600 text-sm font-medium"
+                  >
+                    + Respond
+                  </button>
+                )}
+              </>
+            )}
+
+            {c.status !== 'resolved' && c.status !== 'rejected' && (
+              <div className="mt-3 pt-3 border-t flex justify-end">
+                <button
+                  onClick={() => handleResolveComplaint(c.bookingId, c.complaintId)}
+                  className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-medium"
+                >
+                  ✓ Mark Resolved
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
+{/* ========== REVIEWS ========== */}
+{activeTab === 'reviews' && (
+  <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-lg font-semibold">Reviews ({reviews.length})</h2>
+      <button onClick={fetchReviews} className="text-green-600 text-sm font-medium">
+        ↻ Refresh
+      </button>
+    </div>
+
+    {reviewsLoading ? (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto"></div>
+        <p className="text-gray-500 mt-3">Loading reviews...</p>
+      </div>
+    ) : reviews.length === 0 ? (
+      <div className="text-center py-12">
+        <FaStar className="text-5xl text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-500">No reviews yet</p>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {reviews.map((r, idx) => (
+          <div key={`${r.bookingId}_${idx}`} className="border rounded-lg p-4">
+            <div className="flex justify-between items-start flex-wrap gap-2 mb-2">
+              <div>
+                <p className="font-semibold">{r.patientName}</p>
+                <p className="text-sm text-gray-600">Booking: {r.bookingId}</p>
+                {r.packageName && <p className="text-sm text-gray-600">Package: {r.packageName}</p>}
+              </div>
+              <div className="text-right">
+                <div className="flex items-center gap-1 justify-end">
+                  {[1,2,3,4,5].map(i => (
+                    <FaStar key={i} className={i <= r.rating ? 'text-yellow-400' : 'text-gray-300'} />
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{new Date(r.createdAt).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            {r.comment && (
+              <div className="bg-gray-50 rounded p-3 mb-3">
+                <p className="text-gray-700 italic">"{r.comment}"</p>
+              </div>
+            )}
+
+            {r.centerResponse ? (
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-3">
+                <p className="text-xs font-semibold text-blue-700 mb-1">Your Response:</p>
+                <p className="text-sm text-gray-700">{r.centerResponse}</p>
+              </div>
+            ) : (
+              <>
+                {respondingTo === `review_${r.bookingId}` ? (
+                  <div>
+                    <textarea
+                      value={responseText}
+                      onChange={(e) => setResponseText(e.target.value)}
+                      placeholder="Thank the patient or address their feedback..."
+                      rows="2"
+                      className="w-full p-2 border rounded-lg text-sm"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => handleRespondToReview(r.bookingId)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium"
+                      >
+                        Submit Response
+                      </button>
+                      <button
+                        onClick={() => { setRespondingTo(null); setResponseText(''); }}
+                        className="px-4 py-2 bg-gray-200 rounded-lg text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setRespondingTo(`review_${r.bookingId}`); setResponseText(''); }}
+                    className="text-green-600 text-sm font-medium"
+                  >
+                    + Respond
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
         {/* ========== EARNINGS ========== */}
         {activeTab === 'earnings' && (
