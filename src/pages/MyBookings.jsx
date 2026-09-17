@@ -111,51 +111,79 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
 
   // 🆕 Confirm cancel
     const confirmCancel = async () => {
-    setCancelLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      
-      // First get cancellation quote
-      const quoteRes = await axios.post(
-        `https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/cancellation-quote/${cancellingId}`,
+  setCancelLoading(true);
+  try {
+    const token = localStorage.getItem('token');
+    const booking = bookings.find(b => b.bookingId === cancellingId);
+    
+    // Determine if this is an Ayurveda booking
+    const isAyurveda = 
+      booking?.bookingType === 'ayurveda_consultation' ||
+      booking?.type === 'panchakarma_package' ||
+      booking?.type === 'doctor_consultation' ||
+      booking?.type === 'home_therapy' ||
+      booking?.type === 'medicine_order';
+
+    const API = 'https://hospital-backend-production-e2cf.up.railway.app/api';
+    let quoteRes, res;
+
+    if (isAyurveda) {
+      // Ayurveda cancellation quote
+      quoteRes = await axios.get(
+        `${API}/ayurveda/bookings/${cancellingId}/cancellation-quote`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } else {
+      // Ambulance cancellation quote (existing behavior)
+      quoteRes = await axios.post(
+        `${API}/ambulance/cancellation-quote/${cancellingId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      if (quoteRes.data?.success) {
-        const quote = quoteRes.data.data;
-        const confirmMsg = `Cancellation Fee: ₹${quote.cancellationFee}\nRefund: ₹${quote.refundAmount}\n\nConfirm cancellation?`;
-        if (!window.confirm(confirmMsg)) {
-          setCancelLoading(false);
-          setShowCancelModal(false);
-          return;
-        }
+    }
+    
+    if (quoteRes.data?.success) {
+      const quote = quoteRes.data.data;
+      const confirmMsg = `Cancellation Fee: ₹${quote.cancellationFee}\nRefund: ₹${quote.refundAmount}\n\nConfirm cancellation?`;
+      if (!window.confirm(confirmMsg)) {
+        setCancelLoading(false);
+        setShowCancelModal(false);
+        return;
       }
-      
-      const res = await axios.put(
-        `https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/cancel-booking/${cancellingId}`,
+    }
+
+    if (isAyurveda) {
+      // Ayurveda cancel
+      res = await axios.put(
+        `${API}/ayurveda/bookings/${cancellingId}/cancel`,
         { reason: cancelReason || 'Cancelled by patient' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (res.data.success) {
-        const refundInfo = res.data.data;
-        setActionMessage(`✅ Booking cancelled! Refund: ₹${refundInfo?.refundAmount || 0} (${refundInfo?.refundPercentage || 0}%)`);
-        
-        const response = await axios.get(
-          'https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/my-bookings',
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setBookings(response.data?.data || response.data || []);
-      }
-      
-      setShowCancelModal(false);
-      setTimeout(() => setActionMessage(''), 5000);
-    } catch (error) {
-      alert(error.response?.data?.message || 'Cancellation failed');
+    } else {
+      // Ambulance cancel (existing behavior)
+      res = await axios.put(
+        `${API}/ambulance/cancel-booking/${cancellingId}`,
+        { reason: cancelReason || 'Cancelled by patient' },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     }
-    setCancelLoading(false);
-  };
+
+    if (res.data.success) {
+      const refundInfo = res.data.data;
+      setActionMessage(`✅ Booking cancelled! Refund: ₹${refundInfo?.refundAmount || 0} (${refundInfo?.refundPercentage || 0}%)`);
+      
+      // Reload all bookings
+      fetchBookings();
+    }
+    
+    setShowCancelModal(false);
+    setTimeout(() => setActionMessage(''), 5000);
+  } catch (error) {
+    console.error('Cancel error:', error);
+    alert(error.response?.data?.message || 'Cancellation failed');
+  }
+  setCancelLoading(false);
+};
 
   // 🆕 Handle open review modal
   const handleOpenReview = (booking) => {
