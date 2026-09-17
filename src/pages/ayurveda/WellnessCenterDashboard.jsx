@@ -96,17 +96,21 @@ const WellnessCenterDashboard = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const getToken = () => localStorage.getItem('token') || '';
+  const getToken = () => localStorage.getItem('centerToken') || localStorage.getItem('token') || '';
 
   const fetchDashboardData = async (centerId) => {
-    setLoading(true);
-    try {
-      const [bookingsRes, earningsRes, settlementsRes, centerRes] = await Promise.all([
-        getCenterBookings(centerId).catch(() => ({ data: { success: false } })),
-        getProviderEarnings('wellness_center', centerId).catch(() => ({ data: { success: false } })),
-        getSettlementHistory('wellness_center', centerId).catch(() => ({ data: { success: false } })),
-        api.get(`/ayurveda/centers/${centerId}`).catch(() => ({ data: { success: false } }))
-      ]);
+  setLoading(true);
+  try {
+    const token = localStorage.getItem('centerToken') || localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const [bookingsRes, earningsRes, settlementsRes, centerRes] = await Promise.all([
+      api.get(`/ayurveda/bookings/center/${centerId}`, { headers }),
+      api.get(`/ayurveda/settlements/earnings/wellness_center/${centerId}`, { headers }),
+      api.get(`/ayurveda/settlements/history/wellness_center/${centerId}`, { headers }),
+      api.get(`/ayurveda/centers/${centerId}`)
+    ]);
+    ...
 
       if (bookingsRes.data.success) setBookings(bookingsRes.data.data || []);
       if (earningsRes.data.success) setEarnings(earningsRes.data.data);

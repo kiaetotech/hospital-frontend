@@ -37,14 +37,18 @@ const WellnessCenterLogin = () => {
       });
 
       if (res.data?.success) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('center', JSON.stringify({
-          id: res.data.center.id,
-          name: res.data.center.name,
-          type: res.data.center.type
-        }));
-        navigate('/ayurveda/center/dashboard');
-      } else {
+  // Clear patient token so it can't leak into center requests
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+
+  localStorage.setItem('centerToken', res.data.token);
+  localStorage.setItem('center', JSON.stringify({
+    id: res.data.center.id,
+    name: res.data.center.name,
+    type: res.data.center.type
+  }));
+  navigate('/ayurveda/center/dashboard');
+} else {
         setError(res.data?.error || 'Login failed');
       }
     } catch (err) {

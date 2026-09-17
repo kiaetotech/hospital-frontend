@@ -5,8 +5,8 @@ const safeApiCall = async (apiCall) => {
     const response = await apiCall;
     return response;
   } catch (error) {
-    console.log('API fallback:', error.message);
-    return { data: { success: false, data: [] } };
+    console.error('API call failed:', error.message, error.response?.data);
+    throw error; // Let callers handle the error properly
   }
 };
 
