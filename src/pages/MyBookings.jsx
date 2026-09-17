@@ -205,11 +205,31 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
 
   // 🆕 Submit review
   const submitReview = async () => {
-    setReviewLoading(true);
-    try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const res = await axios.post(
-        `https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/rate-trip/${selectedBooking.bookingId}`,
+  setReviewLoading(true);
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const isAyurveda = 
+      selectedBooking.bookingType === 'ayurveda_consultation' ||
+      selectedBooking.type === 'panchakarma_package' ||
+      selectedBooking.type === 'doctor_consultation' ||
+      selectedBooking.type === 'home_therapy' ||
+      selectedBooking.type === 'medicine_order';
+
+    const API = 'https://hospital-backend-production-e2cf.up.railway.app/api';
+    let res;
+
+    if (isAyurveda) {
+      res = await axios.post(
+        `${API}/ayurveda/bookings/${selectedBooking.bookingId}/review`,
+        {
+          rating: reviewData.rating,
+          comment: reviewData.review
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } else {
+      res = await axios.post(
+        `${API}/ambulance/rate-trip/${selectedBooking.bookingId}`,
         {
           rating: reviewData.rating,
           review: reviewData.review,
@@ -218,19 +238,21 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (res.data.success) {
-        setActionMessage(`✅ Rating submitted! Driver rating: ${res.data.data.driverAvgRating} ⭐`);
-        fetchBookings();
-      }
-
-      setShowReviewModal(false);
-      setTimeout(() => setActionMessage(''), 5000);
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to submit review');
     }
-    setReviewLoading(false);
-  };
+
+    if (res.data.success) {
+      setActionMessage(`✅ Rating submitted successfully`);
+      fetchBookings();
+    }
+
+    setShowReviewModal(false);
+    setTimeout(() => setActionMessage(''), 5000);
+  } catch (error) {
+    console.error('Review error:', error);
+    alert(error.response?.data?.message || 'Failed to submit review');
+  }
+  setReviewLoading(false);
+};
 
   // 🆕 Check if booking can be cancelled
   const canCancel = (booking) => {
@@ -668,7 +690,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
                         ❌ Cancel Booking
                       </button>
                     )}
-			{booking.status === 'completed' && (
+			{['confirmed', 'in_progress', 'completed'].includes(booking.status) && (
   <button
     onClick={() => {
       setSelectedBooking(booking);
@@ -679,14 +701,14 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     🚨 Report Issue
   </button>
 )}
-                    {isReviewable && (
-                      <button
-                        onClick={() => handleOpenReview(booking)}
-                        style={{ padding: '6px 14px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
-                      >
-                        ⭐ Write Review
-                      </button>
-                    )}
+                    {booking.status === 'completed' && !booking.reviewed && !booking.review?.submittedAt && (
+  <button
+    onClick={() => handleOpenReview(booking)}
+    style={{ padding: '6px 14px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+  >
+    ⭐ Write Review
+  </button>
+)}
                     {isCancellable && refundInfo && (
                       <span style={{ fontSize: '11px', color: refundInfo.color, alignSelf: 'center' }}>
                         {refundInfo.text} if cancelled now
@@ -807,21 +829,40 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
         </button>
         <button 
           onClick={async () => {
-            try {
-              const token = localStorage.getItem('token');
-              const res = await axios.post(
-                'https://hospital-backend-production-e2cf.up.railway.app/api/ambulance/complaints',
-                { bookingId: selectedBooking.bookingId, ...complaintData },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              if (res.data.success) {
-                setActionMessage('✅ Complaint submitted successfully');
-              }
-              setShowComplaintModal(false);
-            } catch (error) {
-              alert(error.response?.data?.message || 'Failed to submit complaint');
-            }
-          }} 
+  try {
+    const token = localStorage.getItem('token');
+    const isAyurveda = 
+      selectedBooking.bookingType === 'ayurveda_consultation' ||
+      selectedBooking.type === 'panchakarma_package' ||
+      selectedBooking.type === 'doctor_consultation' ||
+      selectedBooking.type === 'home_therapy' ||
+      selectedBooking.type === 'medicine_order';
+
+    const API = 'https://hospital-backend-production-e2cf.up.railway.app/api';
+    let res;
+
+    if (isAyurveda) {
+      res = await axios.post(
+        `${API}/ayurveda/bookings/${selectedBooking.bookingId}/complaint`,
+        complaintData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } else {
+      res = await axios.post(
+        `${API}/ambulance/complaints`,
+        { bookingId: selectedBooking.bookingId, ...complaintData },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+
+    if (res.data.success) {
+      setActionMessage('✅ Complaint submitted successfully');
+    }
+    setShowComplaintModal(false);
+  } catch (error) {
+    alert(error.response?.data?.message || 'Failed to submit complaint');
+  }
+}} 
           style={{ flex: 1, padding: '10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
         >
           Submit Complaint
