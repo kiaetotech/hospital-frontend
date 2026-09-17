@@ -267,7 +267,8 @@ function App() {
           <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
           <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
           <Route path="/ayurveda/doctor/:id" element={<AyurvedaDoctorProfile />} />
-          <Route path="/ayurveda/centers" element={<PanchakarmaCenters />} />
+          <Route path="/ayurveda/panchakarma-centers" element={<PanchakarmaCenters />} />
+	  <Route path="/ayurveda/centers" element={<PanchakarmaCenters />} />
           <Route path="/ayurveda/center/:id" element={<PanchakarmaCenterDetail />} />
           <Route path="/ayurveda/center/:centerId/book/:packageId" element={<BookPanchakarmaPackage />} />
           <Route path="/ayurveda/prakriti" element={<PrakritiQuiz />} />
