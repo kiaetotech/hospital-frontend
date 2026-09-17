@@ -789,20 +789,37 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%' }}>
       <h3 style={{ marginBottom: '10px' }}>🚨 Report Issue</h3>
       <select 
-        value={complaintData.category} 
-        onChange={e => setComplaintData({...complaintData, category: e.target.value})} 
-        style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-      >
-        <option value="driver_behaviour">Driver Behaviour</option>
-        <option value="vehicle_condition">Vehicle Condition</option>
-        <option value="late_arrival">Late Arrival</option>
-        <option value="wrong_fare">Wrong Fare</option>
-        <option value="overcharging">Overcharging</option>
-        <option value="medical_assistance">Medical Assistance Issue</option>
-        <option value="unsafe_driving">Unsafe Driving</option>
-        <option value="equipment_problem">Equipment Problem</option>
-        <option value="other">Other</option>
-      </select>
+  value={complaintData.category} 
+  onChange={e => setComplaintData({...complaintData, category: e.target.value})} 
+  style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+>
+  {(selectedBooking?.bookingType === 'ayurveda_consultation' ||
+    selectedBooking?.type === 'panchakarma_package' ||
+    selectedBooking?.type === 'doctor_consultation') ? (
+    <>
+      <option value="service_quality">Service Quality</option>
+      <option value="staff_behaviour">Staff Behaviour</option>
+      <option value="late_arrival">Late Arrival</option>
+      <option value="overcharging">Overcharging</option>
+      <option value="medical_assistance">Medical Assistance Issue</option>
+      <option value="facility_issue">Facility Issue</option>
+      <option value="cleanliness">Cleanliness</option>
+      <option value="other">Other</option>
+    </>
+  ) : (
+    <>
+      <option value="driver_behaviour">Driver Behaviour</option>
+      <option value="vehicle_condition">Vehicle Condition</option>
+      <option value="late_arrival">Late Arrival</option>
+      <option value="wrong_fare">Wrong Fare</option>
+      <option value="overcharging">Overcharging</option>
+      <option value="medical_assistance">Medical Assistance Issue</option>
+      <option value="unsafe_driving">Unsafe Driving</option>
+      <option value="equipment_problem">Equipment Problem</option>
+      <option value="other">Other</option>
+    </>
+  )}
+</select>
       <textarea 
         value={complaintData.description} 
         onChange={e => setComplaintData({...complaintData, description: e.target.value})} 
