@@ -37,35 +37,32 @@ const BookPanchakarmaPackage = () => {
   const [couponError, setCouponError] = useState('');
 
   useEffect(() => {
-  // Must be on this page with a center and package
   if (!center || !selectedPackage) {
     navigate('/ayurveda/panchakarma-centers');
     return;
   }
 
-  // Check if patient is logged in
   const token = localStorage.getItem('token');
-  const isCenterLoggedIn = !!localStorage.getItem('center');
-  const isDoctorLoggedIn = !!localStorage.getItem('doctor');
-  const isAdminLoggedIn = !!localStorage.getItem('adminToken');
+  const userStr = localStorage.getItem('user');
+  let user = null;
+  try {
+    user = JSON.parse(userStr || '{}');
+  } catch (e) {}
 
-  // If center/doctor/admin is logged in, or no patient token → redirect
-  if (isCenterLoggedIn || isDoctorLoggedIn || isAdminLoggedIn || !token) {
+  // Only allow users with role 'patient'
+  if (!token || !user || user.role !== 'patient') {
     alert('Please login as a patient to book this package.');
     navigate('/login?redirect=/ayurveda/panchakarma-centers');
     return;
   }
 
   // Prefill from patient profile
-  const userData = JSON.parse(localStorage.getItem('user') || '{}');
-  if (userData) {
-    setFormData(prev => ({
-      ...prev,
-      patientName: userData.name || '',
-      patientPhone: userData.phone || '',
-      patientEmail: userData.email || ''
-    }));
-  }
+  setFormData(prev => ({
+    ...prev,
+    patientName: user.name || '',
+    patientPhone: user.phone || '',
+    patientEmail: user.email || ''
+  }));
 }, [center, selectedPackage, navigate]);
 
   const packageDetails = useMemo(() => {
