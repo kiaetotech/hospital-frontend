@@ -655,31 +655,18 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
                       <p><strong>💳 Payment:</strong> <span style={{ color: booking.paymentStatus === 'paid' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{booking.paymentStatus.toUpperCase()}</span></p>
                     )}
                     
-                    {/* 🆕 Review display */}
-                    {booking.review?.submittedAt && (
-                      <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>
-                        <p style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>⭐ Your Review</p>
-                        <p style={{ margin: '0', fontSize: '14px' }}>"{booking.review.review}"</p>
-                        <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: '#6b7280', marginTop: '5px' }}>
-                          <span>⭐ {booking.review.rating}/5</span>
-                          {booking.review.doctorRating > 0 && <span>👨‍⚕️ {booking.review.doctorRating}/5</span>}
-                        </div>
-                      </div>
-                    )}
-                    
-                                        {/* 🆕 Cancellation info */}
-                    {booking.status === 'cancelled' && booking.cancellation && (
-                      <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#fee2e2', borderRadius: '8px' }}>
-                        <p style={{ fontWeight: 'bold', margin: '0 0 5px 0', color: '#dc2626' }}>❌ Cancelled</p>
-                        <p style={{ margin: '0', fontSize: '13px' }}>Reason: {booking.cancellation.reason || 'N/A'}</p>
-                        {booking.cancellation.refundAmount > 0 && (
-                          <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#10b981' }}>
-                            💰 Refund: ₹{booking.cancellation.refundAmount} ({booking.cancellation.refundPercentage}%)
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                   {/* 🆕 Review display */}
+{booking.review && (booking.review.rating || booking.review.comment) && (
+  <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>
+    <p style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>⭐ Your Review</p>
+    <p style={{ margin: '0', fontSize: '14px' }}>
+      "{booking.review.comment || booking.review.review || ''}"
+    </p>
+    <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: '#6b7280', marginTop: '5px' }}>
+      <span>⭐ {booking.review.rating}/5</span>
+    </div>
+  </div>
+)}
 
 		   
                     {/* 🆕 Patient's Complaints */}
