@@ -756,7 +756,8 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     🚨 Report Issue
   </button>
 )}
-                    {(booking.status === 'completed' || booking.status === 'confirmed') && !booking.reviewed && !booking.review?.submittedAt && (
+{(booking.status === 'completed' || booking.status === 'confirmed') && 
+ !(booking.review && (booking.review.rating || booking.review.comment)) && (
   <button
     onClick={() => handleOpenReview(booking)}
     style={{ padding: '6px 14px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
