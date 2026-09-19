@@ -756,7 +756,8 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
                       <span style={{ fontSize: '11px', color: refundInfo.color, alignSelf: 'center' }}>
                         {refundInfo.text} if cancelled now
                       </span>
-                    )}
+                      )}
+                  </div>
                   </div>
                 </div>
               )})}
