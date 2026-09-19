@@ -36,6 +36,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
   const [actionMessage, setActionMessage] = useState('');
 
   const [selectedBookings, setSelectedBookings] = useState([]);
+  const [myComplaints, setMyComplaints] = useState([]);
 
   useEffect(() => {
     fetchBookings();
@@ -76,26 +77,39 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
         
         // Map Ayurveda bookings to common format
         ayurvedaBookings = ayurvedaBookings.map(b => ({
-  ...b,
-  bookingType: 'ayurveda_consultation',
-  patientName: b.patient?.name || 'Patient',
-  patientPhone: b.patient?.phone || '',
-  patientAge: b.patient?.age || null,
-  patientGender: b.patient?.gender || '',
-  appointmentDate: b.bookingDate,
-  doctorName: b.type === 'panchakarma_package'
-    ? b.centerName || 'Center'
-    : (b.doctorName || 'Ayurveda Doctor'),
-  finalAmount: b.finalAmount,
-  paymentStatus: b.paymentStatus,
-  status: b.status
-}));
+          ...b,
+          bookingType: 'ayurveda_consultation',
+          patientName: b.patient?.name || 'Patient',
+          patientPhone: b.patient?.phone || '',
+          patientAge: b.patient?.age || null,
+          patientGender: b.patient?.gender || '',
+          appointmentDate: b.bookingDate,
+          doctorName: b.type === 'panchakarma_package'
+            ? b.centerName || 'Center'
+            : (b.doctorName || 'Ayurveda Doctor'),
+          finalAmount: b.finalAmount,
+          paymentStatus: b.paymentStatus,
+          status: b.status
+        }));
       } catch (ayurError) {
         console.log('No Ayurveda bookings found');
       }
       
       setBookings([...ambulanceBookings, ...ayurvedaBookings]);
       setSearched(true);
+
+      // Fetch patient's complaints
+      try {
+        const compRes = await axios.get(
+          'https://hospital-backend-production-e2cf.up.railway.app/api/ayurveda/bookings/complaints/my',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (compRes.data.success) {
+          setMyComplaints(compRes.data.data || []);
+        }
+      } catch (e) {
+        // Silent — no complaints
+      }
     } catch (error) {
       console.error('Error fetching bookings:', error);
       if (error.response?.status === 401) {
@@ -667,6 +681,47 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
                     )}
                   </div>
 
+		   
+                    {/* 🆕 Patient's Complaints */}
+                    {myComplaints.filter(c => c.bookingId === booking.bookingId).length > 0 && (
+                      <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {myComplaints.filter(c => c.bookingId === booking.bookingId).map(c => (
+                          <div key={c.complaintId} style={{ backgroundColor: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', padding: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                              <div>
+                                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase' }}>
+                                  🚨 Complaint: {c.category?.replace(/_/g, ' ')}
+                                </p>
+                                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>{c.description}</p>
+                              </div>
+                              <span style={{
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                backgroundColor: c.status === 'resolved' ? '#d1fae5' : c.status === 'in_review' ? '#dbeafe' : '#fef3c7',
+                                color: c.status === 'resolved' ? '#065f46' : c.status === 'in_review' ? '#1e40af' : '#92400e'
+                              }}>
+                                {c.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                            {c.centerResponse && (
+                              <div style={{ marginTop: '6px', backgroundColor: '#fff', borderRadius: '6px', padding: '8px', borderLeft: '3px solid #10b981' }}>
+                                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#065f46' }}>Response from center:</p>
+                                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#374151' }}>{c.centerResponse}</p>
+                              </div>
+                            )}
+                            {c.doctorResponse && (
+                              <div style={{ marginTop: '6px', backgroundColor: '#fff', borderRadius: '6px', padding: '8px', borderLeft: '3px solid #10b981' }}>
+                                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#065f46' }}>Response from doctor:</p>
+                                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#374151' }}>{c.doctorResponse}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                   {/* 🆕 Delete checkbox for cancelled bookings */}
                   {booking.status === 'cancelled' && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
@@ -701,7 +756,7 @@ const [complaintData, setComplaintData] = useState({ category: 'other', descript
     🚨 Report Issue
   </button>
 )}
-                    {booking.status === 'completed' && !booking.reviewed && !booking.review?.submittedAt && (
+                    {(booking.status === 'completed' || booking.status === 'confirmed') && !booking.reviewed && !booking.review?.submittedAt && (
   <button
     onClick={() => handleOpenReview(booking)}
     style={{ padding: '6px 14px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
