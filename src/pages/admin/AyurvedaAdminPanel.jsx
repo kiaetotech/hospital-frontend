@@ -43,7 +43,6 @@ const AyurvedaAdminPanel = () => {
   const [cityData, setCityData] = useState([]);
   const [dateData, setDateData] = useState([]);
   const [dateGroupBy, setDateGroupBy] = useState('day');
-  const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [settlementSummary, setSettlementSummary] = useState(null);
   const [programs, setPrograms] = useState([]);
   const [products, setProducts] = useState([]);
