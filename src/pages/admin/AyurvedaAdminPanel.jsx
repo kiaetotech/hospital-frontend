@@ -34,6 +34,17 @@ const AyurvedaAdminPanel = () => {
   const [allBookings, setAllBookings] = useState([]);
   const [discounts, setDiscounts] = useState([]);
   const [settlements, setSettlements] = useState([]);
+  const [settlementTab, setSettlementTab] = useState('pending');
+  const [settlementFilter, setSettlementFilter] = useState({ status: '', providerType: '', search: '' });
+  const [settlementPage, setSettlementPage] = useState(1);
+  const [settlementStats, setSettlementStats] = useState(null);
+  const [selectedPayouts, setSelectedPayouts] = useState([]);
+  const [providerGroups, setProviderGroups] = useState([]);
+  const [cityData, setCityData] = useState([]);
+  const [dateData, setDateData] = useState([]);
+  const [dateGroupBy, setDateGroupBy] = useState('day');
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [settlementSummary, setSettlementSummary] = useState(null);
   const [programs, setPrograms] = useState([]);
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -172,9 +183,112 @@ const AyurvedaAdminPanel = () => {
     }
   }, []);
 
+	const fetchAllSettlements = async () => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    const params = new URLSearchParams({ page: settlementPage, limit: 50 });
+    if (settlementFilter.status) params.append('status', settlementFilter.status);
+    if (settlementFilter.providerType) params.append('providerType', settlementFilter.providerType);
+    if (settlementFilter.search) params.append('search', settlementFilter.search);
+
+    const res = await axios.get(
+      `${API_BASE}/api/ayurveda/settlements/admin/all?${params}`,
+      { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+    );
+    if (res.data.success) {
+      setSettlements(res.data.data || []);
+      setSettlementStats(res.data.stats || null);
+    }
+  } catch (error) {
+    console.error('Fetch all settlements error:', error);
+  }
+};
+
+const fetchProviderGroups = async () => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    const res = await axios.get(
+      `${API_BASE}/api/ayurveda/settlements/admin/providers`,
+      { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+    );
+    if (res.data.success) setProviderGroups(res.data.data || []);
+  } catch (error) {
+    console.error('Fetch providers error:', error);
+  }
+};
+
+const fetchCityBreakdown = async () => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    const res = await axios.get(
+      `${API_BASE}/api/ayurveda/settlements/admin/by-city`,
+      { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+    );
+    if (res.data.success) setCityData(res.data.data || []);
+  } catch (error) {
+    console.error('Fetch cities error:', error);
+  }
+};
+
+const fetchDateBreakdown = async () => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    const params = new URLSearchParams({ groupBy: dateGroupBy });
+    if (dateRange.from) params.append('from', dateRange.from);
+    if (dateRange.to) params.append('to', dateRange.to);
+
+    const res = await axios.get(
+      `${API_BASE}/api/ayurveda/settlements/admin/by-date?${params}`,
+      { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+    );
+    if (res.data.success) {
+      setDateData(res.data.data || []);
+      setSettlementSummary(res.data.totals);
+    }
+  } catch (error) {
+    console.error('Fetch dates error:', error);
+  }
+};
+
+const handleBulkApprove = async () => {
+  if (selectedPayouts.length === 0) return;
+  if (!window.confirm(`Approve ${selectedPayouts.length} payouts?`)) return;
+
+  try {
+    const token = localStorage.getItem('adminToken');
+    const res = await axios.put(
+      `${API_BASE}/api/ayurveda/settlements/admin/bulk-approve`,
+      { payoutIds: selectedPayouts, note: 'Bulk approved by admin' },
+      { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+    );
+    if (res.data.success) {
+      addNotification(`Approved ${selectedPayouts.length} payouts`, 'success');
+      setSelectedPayouts([]);
+      if (settlementTab === 'all') fetchAllSettlements();
+      else fetchAllData();
+    }
+  } catch (error) {
+    addNotification('Bulk approve failed', 'error');
+  }
+};
+
+const handleExportSettlements = () => {
+  const params = new URLSearchParams(settlementFilter);
+  window.open(`${API_BASE}/api/ayurveda/settlements/admin/export?${params}&x-admin-key=${ADMIN_KEY}`, '_blank');
+};
+
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
+
+  useEffect(() => {
+  if (tab === 'settlements') {
+    if (settlementTab === 'all') fetchAllSettlements();
+    else if (settlementTab === 'providers') fetchProviderGroups();
+    else if (settlementTab === 'cities') fetchCityBreakdown();
+    else if (settlementTab === 'dates') fetchDateBreakdown();
+  }
+}, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange]);
 
   useEffect(() => {
     if (autoRefresh) {
@@ -859,39 +973,341 @@ const AyurvedaAdminPanel = () => {
         )}
 
         {/* SETTLEMENTS TAB */}
-        {tab === 'settlements' && (
-          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
-            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>💰 Pending Settlements ({settlements.length})</h2>
-            {settlements.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No pending settlements</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={th}>Payout ID</th>
-                    <th style={th}>Provider</th>
-                    <th style={th}>Amount</th>
-                    <th style={th}>Status</th>
-                    <th style={th}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {settlements.map(s => (
-                    <tr key={s.payoutId} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={td}>{s.payoutId}</td>
-                      <td style={td}>{s.providerName}</td>
-                      <td style={td}>₹{s.amount}</td>
-                      <td style={td}>{s.status}</td>
-                      <td style={td}>
-                        <button onClick={() => approveSettlement(s.payoutId)} style={actionBtn('#10b981')}>Approve</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+{tab === 'settlements' && (
+  <div>
+    {settlementStats && (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        {[
+          { label: 'Requested', value: settlementStats.requested, color: '#f59e0b' },
+          { label: 'Approved', value: settlementStats.approved, color: '#3b82f6' },
+          { label: 'Paid', value: settlementStats.paid, color: '#10b981' },
+          { label: 'Rejected', value: settlementStats.rejected, color: '#ef4444' }
+        ].map((s, i) => (
+          <div key={i} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1rem', borderLeft: `4px solid ${s.color}` }}>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>{s.label}</p>
+            <p style={{ fontSize: '1.3rem', fontWeight: 800, margin: '4px 0', color: s.color }}>{s.value?.count || 0}</p>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>₹{(s.value?.amount || 0).toLocaleString()}</p>
           </div>
-        )}
+        ))}
+      </div>
+    )}
+
+    <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        {[
+          { id: 'pending', label: '⏳ Pending' },
+          { id: 'all', label: '📋 All Settlements' },
+          { id: 'providers', label: '👥 By Provider' },
+          { id: 'cities', label: '📍 By City' },
+          { id: 'dates', label: '📅 By Date' }
+        ].map(t => (
+          <button key={t.id} onClick={() => setSettlementTab(t.id)} style={{
+            padding: '0.5rem 1rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+            background: settlementTab === t.id ? '#8b5cf6' : '#f1f5f9',
+            color: settlementTab === t.id ? 'white' : '#475569',
+            fontWeight: settlementTab === t.id ? 700 : 400
+          }}>
+            {t.label}
+          </button>
+        ))}
+        <div style={{ marginLeft: 'auto' }}>
+          <button onClick={handleExportSettlements} style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+            📥 Export CSV
+          </button>
+        </div>
+      </div>
+
+      {settlementTab === 'all' && (
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Search provider or payout ID..."
+            value={settlementFilter.search}
+            onChange={e => setSettlementFilter({ ...settlementFilter, search: e.target.value })}
+            style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 8, flex: 1, minWidth: 200 }}
+          />
+          <select value={settlementFilter.status} onChange={e => setSettlementFilter({ ...settlementFilter, status: e.target.value })} style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 8 }}>
+            <option value="">All Status</option>
+            <option value="requested">Requested</option>
+            <option value="approved">Approved</option>
+            <option value="paid">Paid</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select value={settlementFilter.providerType} onChange={e => setSettlementFilter({ ...settlementFilter, providerType: e.target.value })} style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 8 }}>
+            <option value="">All Provider Types</option>
+            <option value="ayurveda_doctor">Ayurveda Doctor</option>
+            <option value="wellness_center">Wellness Center</option>
+            <option value="ambulance_provider">Ambulance Provider</option>
+            <option value="hospital">Hospital</option>
+            <option value="diagnostics_provider">Diagnostics</option>
+            <option value="caregiver">Caregiver</option>
+            <option value="mental_health_therapist">Mental Health Therapist</option>
+            <option value="online_doctor">Online Doctor</option>
+          </select>
+        </div>
+      )}
+
+      {settlementTab === 'all' && selectedPayouts.length > 0 && (
+        <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: 8, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ fontWeight: 600 }}>{selectedPayouts.length} selected</span>
+          <button onClick={handleBulkApprove} style={{ padding: '0.4rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>✅ Bulk Approve</button>
+          <button onClick={() => setSelectedPayouts([])} style={{ padding: '0.4rem 1rem', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Clear</button>
+        </div>
+      )}
+    </div>
+
+    <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+      {settlementTab === 'pending' && (
+        <>
+          <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>Pending Settlements ({settlements.filter(s => s.status === 'requested').length})</h2>
+          {settlements.filter(s => s.status === 'requested').length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No pending settlements</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}>Payout ID</th>
+                  <th style={th}>Provider</th>
+                  <th style={th}>Type</th>
+                  <th style={th}>Amount</th>
+                  <th style={th}>Net</th>
+                  <th style={th}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {settlements.filter(s => s.status === 'requested').map(s => (
+                  <tr key={s.payoutId} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}>{s.payoutId}</td>
+                    <td style={td}><strong>{s.providerName}</strong></td>
+                    <td style={td}>{s.providerType?.replace(/_/g, ' ')}</td>
+                    <td style={td}>₹{s.amount?.toLocaleString()}</td>
+                    <td style={td}><strong>₹{s.netAmount?.toLocaleString()}</strong></td>
+                    <td style={td}><button onClick={() => approveSettlement(s.payoutId)} style={actionBtn('#10b981')}>Approve</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
+      )}
+
+      {settlementTab === 'all' && (
+        <>
+          <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>All Settlements</h2>
+          {settlements.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No settlements found</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}><input type="checkbox" onChange={e => {
+                    if (e.target.checked) setSelectedPayouts(settlements.filter(s => s.status === 'requested').map(s => s.payoutId));
+                    else setSelectedPayouts([]);
+                  }} /></th>
+                  <th style={th}>Payout ID</th>
+                  <th style={th}>Provider</th>
+                  <th style={th}>Type</th>
+                  <th style={th}>Amount</th>
+                  <th style={th}>Net</th>
+                  <th style={th}>Status</th>
+                  <th style={th}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {settlements.map(s => (
+                  <tr key={s.payoutId} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}>
+                      {s.status === 'requested' && (
+                        <input type="checkbox" checked={selectedPayouts.includes(s.payoutId)} onChange={e => {
+                          if (e.target.checked) setSelectedPayouts([...selectedPayouts, s.payoutId]);
+                          else setSelectedPayouts(selectedPayouts.filter(p => p !== s.payoutId));
+                        }} />
+                      )}
+                    </td>
+                    <td style={td}>{s.payoutId}</td>
+                    <td style={td}><strong>{s.providerName}</strong></td>
+                    <td style={td}>{s.providerType?.replace(/_/g, ' ')}</td>
+                    <td style={td}>₹{s.amount?.toLocaleString()}</td>
+                    <td style={td}><strong>₹{s.netAmount?.toLocaleString()}</strong></td>
+                    <td style={td}>
+                      <span style={{
+                        padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700,
+                        background: s.status === 'paid' ? '#e8f5e9' : s.status === 'approved' ? '#dbeafe' : s.status === 'rejected' ? '#fee2e2' : '#fff3e0',
+                        color: s.status === 'paid' ? '#2E7D32' : s.status === 'approved' ? '#1e40af' : s.status === 'rejected' ? '#dc2626' : '#e65100'
+                      }}>
+                        {s.status}
+                      </span>
+                    </td>
+                    <td style={td}>{new Date(s.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
+      )}
+
+      {settlementTab === 'providers' && (
+        <>
+          <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>Providers Awaiting Payout ({providerGroups.length})</h2>
+          {providerGroups.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No providers awaiting payout</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+              {providerGroups.map((p, i) => (
+                <div key={i} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', backgroundColor: '#fafafa' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                    <div>
+                      <p style={{ fontWeight: 700, margin: 0 }}>{p.providerName}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '2px 0' }}>{p.providerType?.replace(/_/g, ' ')}</p>
+                    </div>
+                    <span style={{ padding: '3px 10px', borderRadius: 20, background: '#fff3e0', color: '#e65100', fontSize: '0.75rem', fontWeight: 700 }}>
+                      {p.totalPayouts} payouts
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <div>
+                      <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Total Amount</p>
+                      <p style={{ fontWeight: 700, margin: 0, color: '#10b981' }}>₹{p.totalAmount?.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Net Payout</p>
+                      <p style={{ fontWeight: 700, margin: 0 }}>₹{p.totalNetAmount?.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '0 0 0.5rem' }}>Oldest: {new Date(p.oldestRequest).toLocaleDateString()}</p>
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(`Approve all ${p.totalPayouts} payouts for ${p.providerName}?`)) return;
+                      try {
+                        const token = localStorage.getItem('adminToken');
+                        const res = await axios.put(
+                          `${API_BASE}/api/ayurveda/settlements/admin/bulk-approve`,
+                          { payoutIds: p.payoutIds, note: 'Bulk approved by provider group' },
+                          { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+                        );
+                        if (res.data.success) {
+                          addNotification(`Approved all payouts for ${p.providerName}`, 'success');
+                          fetchProviderGroups();
+                        }
+                      } catch (e) {
+                        addNotification('Failed to approve', 'error');
+                      }
+                    }}
+                    style={{ width: '100%', padding: '0.5rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+                  >
+                    ✅ Approve All Payouts
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {settlementTab === 'cities' && (
+        <>
+          <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>Settlements by City ({cityData.length})</h2>
+          {cityData.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No data available</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}>City</th>
+                  <th style={th}>Providers</th>
+                  <th style={th}>Payouts</th>
+                  <th style={th}>Total Amount</th>
+                  <th style={th}>Net Payout</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cityData.map((c, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}><strong>{c.city}</strong></td>
+                    <td style={td}>{c.providerCount}</td>
+                    <td style={td}>{c.count}</td>
+                    <td style={td}>₹{c.totalAmount?.toLocaleString()}</td>
+                    <td style={td}><strong>₹{c.totalNetAmount?.toLocaleString()}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
+      )}
+
+      {settlementTab === 'dates' && (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h2 style={{ fontWeight: 700, margin: 0 }}>Settlements by Date ({dateData.length})</h2>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <select value={dateGroupBy} onChange={e => setDateGroupBy(e.target.value)} style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                <option value="day">Daily</option>
+                <option value="week">Weekly</option>
+                <option value="month">Monthly</option>
+                <option value="year">Yearly</option>
+              </select>
+              <input type="date" value={dateRange.from} onChange={e => setDateRange({ ...dateRange, from: e.target.value })} style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }} />
+              <span style={{ alignSelf: 'center' }}>to</span>
+              <input type="date" value={dateRange.to} onChange={e => setDateRange({ ...dateRange, to: e.target.value })} style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }} />
+            </div>
+          </div>
+
+          {settlementSummary && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ padding: '0.75rem', background: '#eff6ff', borderRadius: 8 }}>
+                <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Total Payouts</p>
+                <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>{settlementSummary.count}</p>
+              </div>
+              <div style={{ padding: '0.75rem', background: '#dcfce7', borderRadius: 8 }}>
+                <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Total Amount</p>
+                <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#10b981' }}>₹{settlementSummary.totalAmount?.toLocaleString()}</p>
+              </div>
+              <div style={{ padding: '0.75rem', background: '#fef3c7', borderRadius: 8 }}>
+                <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Total TDS</p>
+                <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#f59e0b' }}>₹{settlementSummary.totalTds?.toLocaleString()}</p>
+              </div>
+              <div style={{ padding: '0.75rem', background: '#fce7f3', borderRadius: 8 }}>
+                <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Net Paid</p>
+                <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>₹{settlementSummary.totalNetAmount?.toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+
+          {dateData.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No data available</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}>Period</th>
+                  <th style={th}>Providers</th>
+                  <th style={th}>Payouts</th>
+                  <th style={th}>Amount</th>
+                  <th style={th}>TDS</th>
+                  <th style={th}>Net</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dateData.map((d, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}><strong>{d.period}</strong></td>
+                    <td style={td}>{d.providerCount}</td>
+                    <td style={td}>{d.count}</td>
+                    <td style={td}>₹{d.totalAmount?.toLocaleString()}</td>
+                    <td style={td}>₹{d.totalTds?.toLocaleString() || 0}</td>
+                    <td style={td}><strong>₹{d.totalNetAmount?.toLocaleString()}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
+      )}
+    </div>
+  </div>
+)}
 
         {/* PROGRAMS TAB */}
         {tab === 'programs' && (
