@@ -8,20 +8,64 @@ const api = axios.create({
   baseURL: 'https://hospital-backend-production-e2cf.up.railway.app/api'
 });
 
-api.interceptors.request.use((config) => {
-  const userType = sessionStorage.getItem('userType') || localStorage.getItem('userType');
-  let token;
-  
-  if (userType === 'ambulance_driver') {
-    token = sessionStorage.getItem('token') || sessionStorage.getItem('driverToken');
-  } else if (localStorage.getItem('doctor')) {
-    token = localStorage.getItem('doctorToken') || localStorage.getItem('token');
-  } else if (localStorage.getItem('center')) {
-    token = localStorage.getItem('centerToken') || localStorage.getItem('token');
-  } else {
-    token = localStorage.getItem('token') || localStorage.getItem('providerToken') || localStorage.getItem('doctorToken');
+// ============================================
+// ROLE-AWARE TOKEN SELECTION (Multi-role support)
+// ============================================
+const getTokenForCurrentContext = () => {
+  const path = window.location.pathname;
+
+  if (path.startsWith('/ambulance/driver')) {
+    return sessionStorage.getItem('token') || sessionStorage.getItem('driverToken');
   }
-  
+  if (path.startsWith('/admin')) {
+    return localStorage.getItem('adminToken');
+  }
+  if (path.startsWith('/ayurveda/doctor/')) {
+    return localStorage.getItem('doctorToken');
+  }
+  if (path.startsWith('/ayurveda/center/') || path.startsWith('/ayurveda/wellness-center')) {
+    return localStorage.getItem('centerToken');
+  }
+  if (path.startsWith('/ambulance/dashboard') || path.startsWith('/ambulance/login')) {
+    return localStorage.getItem('providerToken');
+  }
+  if (path.startsWith('/hospital/dashboard') || path.startsWith('/hospital/provider')) {
+    return localStorage.getItem('providerToken');
+  }
+  if (path.startsWith('/diagnostics/dashboard')) {
+    return localStorage.getItem('providerToken');
+  }
+  if (path.startsWith('/caregiver/dashboard')) {
+    return localStorage.getItem('providerToken');
+  }
+  if (path.startsWith('/mentalhealth/therapist')) {
+    return localStorage.getItem('therapistToken');
+  }
+  if (path.startsWith('/online-doctor/dashboard')) {
+    return localStorage.getItem('onlineDoctorToken');
+  }
+  if (path.startsWith('/lender')) {
+    return localStorage.getItem('lenderToken');
+  }
+  if (path.startsWith('/insurance/company')) {
+    return localStorage.getItem('insuranceToken');
+  }
+  if (path.startsWith('/corporate/hr')) {
+    return localStorage.getItem('corporateToken');
+  }
+  if (path.startsWith('/employee/')) {
+    return localStorage.getItem('employeeToken');
+  }
+
+  // Patient default
+  return localStorage.getItem('token');
+};
+
+api.interceptors.request.use((config) => {
+  // Respect explicit Authorization header (for special cases)
+  if (config.headers.Authorization) return config;
+
+  const token = getTokenForCurrentContext();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -35,35 +79,66 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      const currentPath = window.location.pathname;
-      const userType = localStorage.getItem('userType');
-      
-            // Admin routes - redirect to admin login ONLY if no token
-      if (currentPath.includes('/admin') && !localStorage.getItem('adminToken')) {
-        window.location.href = '/admin/login';
-        return Promise.reject(error);
-      }
-      
-      // Ambulance driver
-      if (userType === 'ambulance_driver') {
-        localStorage.clear();
-        window.location.href = '/ambulance/driver/login';
-        return Promise.reject(error);
-      }
-      
-      // Admin routes - DO NOT redirect to patient login
-      if (currentPath.includes('/admin')) {
-        return Promise.reject(error);
-      }
+    if (error.response?.status !== 401) return Promise.reject(error);
 
-      // Default - patient login
-      localStorage.removeItem('token');
-      localStorage.removeItem('providerToken');
+    const path = window.location.pathname;
+
+    // Skip redirects when already on auth pages
+    if (path.includes('/login') || path.includes('/register')) {
+      return Promise.reject(error);
+    }
+
+    // Clear only the CURRENT role's tokens, then redirect to its login
+    if (path.startsWith('/ayurveda/doctor/')) {
       localStorage.removeItem('doctorToken');
-      if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
-        window.location.href = '/login';
-      }
+      localStorage.removeItem('doctor');
+      window.location.href = '/ayurveda/doctor/login';
+    } else if (path.startsWith('/ayurveda/center/') || path.startsWith('/ayurveda/wellness-center')) {
+      localStorage.removeItem('centerToken');
+      localStorage.removeItem('center');
+      window.location.href = '/ayurveda/center/login';
+    } else if (path.startsWith('/admin')) {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login';
+    } else if (path.startsWith('/ambulance/driver')) {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('driverToken');
+      window.location.href = '/ambulance/driver/login';
+    } else if (path.startsWith('/ambulance/dashboard')) {
+      localStorage.removeItem('providerToken');
+      window.location.href = '/ambulance/login';
+    } else if (path.startsWith('/hospital/dashboard')) {
+      localStorage.removeItem('providerToken');
+      window.location.href = '/hospital/login';
+    } else if (path.startsWith('/diagnostics/dashboard')) {
+      localStorage.removeItem('providerToken');
+      window.location.href = '/diagnostics/login';
+    } else if (path.startsWith('/caregiver/dashboard')) {
+      localStorage.removeItem('providerToken');
+      window.location.href = '/caregiver/login';
+    } else if (path.startsWith('/mentalhealth/therapist')) {
+      localStorage.removeItem('therapistToken');
+      window.location.href = '/mentalhealth/therapist/login';
+    } else if (path.startsWith('/online-doctor/dashboard')) {
+      localStorage.removeItem('onlineDoctorToken');
+      window.location.href = '/online-doctor/login';
+    } else if (path.startsWith('/lender')) {
+      localStorage.removeItem('lenderToken');
+      window.location.href = '/lender/login';
+    } else if (path.startsWith('/insurance/company')) {
+      localStorage.removeItem('insuranceToken');
+      window.location.href = '/insurance/company/login';
+    } else if (path.startsWith('/corporate/hr')) {
+      localStorage.removeItem('corporateToken');
+      window.location.href = '/corporate/hr/login';
+    } else if (path.startsWith('/employee/')) {
+      localStorage.removeItem('employeeToken');
+      window.location.href = '/employee/login';
+    } else {
+      // Patient default
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
