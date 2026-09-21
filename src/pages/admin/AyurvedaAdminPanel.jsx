@@ -48,6 +48,9 @@ const AyurvedaAdminPanel = () => {
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [complaints, setComplaints] = useState([]);
+  const [complaintFilter, setComplaintFilter] = useState('all');
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [complaintActionLoading, setComplaintActionLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
   
   const [selectedDoctor, setSelectedDoctor] = useState(null);
@@ -467,6 +470,48 @@ const handleExportSettlements = () => {
       addNotification('Failed: ' + error.message, 'error');
     }
   };
+
+  // ============================================
+  // COMPLAINT ACTIONS (ADMIN)
+  // ============================================
+  const escalateComplaint = async (bookingId, complaintId) => {
+    if (!window.confirm('Escalate this complaint for priority review?')) return;
+
+    setComplaintActionLoading(true);
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/ayurveda/bookings/admin/complaints/${bookingId}/${complaintId}`,
+        { status: 'escalated' },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('Complaint escalated — flagged for priority review', 'success');
+        setSelectedComplaint(null);
+        fetchAllData();
+      } else {
+        addNotification(res.data.message || 'Escalation failed', 'error');
+      }
+    } catch (error) {
+      addNotification('Failed: ' + (error.response?.data?.message || error.message), 'error');
+    } finally {
+      setComplaintActionLoading(false);
+    }
+  };
+
+  const filteredComplaints = useMemo(() => {
+    if (complaintFilter === 'all') return complaints;
+    return complaints.filter(c => (c.status || 'pending') === complaintFilter);
+  }, [complaints, complaintFilter]);
+
+  const complaintCounts = useMemo(() => {
+    const counts = { all: complaints.length, pending: 0, in_review: 0, resolved: 0, escalated: 0 };
+    complaints.forEach(c => {
+      const s = c.status || 'pending';
+      if (counts[s] !== undefined) counts[s]++;
+    });
+    return counts;
+  }, [complaints]);
+
 
   const handleExport = (type) => {
     let data = [];
@@ -1414,12 +1459,42 @@ const handleExportSettlements = () => {
           </div>
         )}
 
-        {/* COMPLAINTS TAB */}
+                {/* COMPLAINTS TAB */}
         {tab === 'complaints' && (
           <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
-            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>🚨 Complaints ({complaints.length})</h2>
-            {complaints.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No complaints found</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>🚨 Complaints ({complaints.length})</h2>
+              <button onClick={fetchAllData} style={actionBtn('#3b82f6')}>↻ Refresh</button>
+            </div>
+
+            {/* Filter buttons */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              {[
+                { id: 'all', label: `All (${complaintCounts.all})`, color: '#64748b' },
+                { id: 'pending', label: `⏳ Pending (${complaintCounts.pending})`, color: '#f59e0b' },
+                { id: 'in_review', label: `🔍 In Review (${complaintCounts.in_review})`, color: '#3b82f6' },
+                { id: 'escalated', label: `⚠️ Escalated (${complaintCounts.escalated})`, color: '#dc2626' },
+                { id: 'resolved', label: `✅ Resolved (${complaintCounts.resolved})`, color: '#10b981' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setComplaintFilter(f.id)}
+                  style={{
+                    padding: '0.5rem 1rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+                    fontSize: '0.8rem', fontWeight: complaintFilter === f.id ? 700 : 500,
+                    background: complaintFilter === f.id ? f.color : '#f1f5f9',
+                    color: complaintFilter === f.id ? 'white' : '#475569'
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {filteredComplaints.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>
+                No complaints {complaintFilter !== 'all' ? `with status "${complaintFilter}"` : ''}
+              </p>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
@@ -1430,22 +1505,123 @@ const handleExportSettlements = () => {
                     <th style={th}>Description</th>
                     <th style={th}>Priority</th>
                     <th style={th}>Status</th>
+                    <th style={th}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {complaints.map(c => (
-                    <tr key={c._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={td}>{c.bookingId || 'N/A'}</td>
-                      <td style={td}>{c.patientName || 'N/A'}</td>
-                      <td style={td}>{c.category || 'N/A'}</td>
-                      <td style={td}>{c.description || 'N/A'}</td>
-                      <td style={td}>{c.priority || 'medium'}</td>
-                      <td style={td}>{c.status || 'pending'}</td>
-                    </tr>
-                  ))}
+                  {filteredComplaints.map(c => {
+                    const cid = c.complaintId || c._id;
+                    const isResolved = c.status === 'resolved';
+                    const isEscalated = c.status === 'escalated';
+                    const rowBg = isEscalated ? '#fef2f2' : isResolved ? '#f0fdf4' : 'transparent';
+
+                    return (
+                      <tr key={cid} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: rowBg }}>
+                        <td style={td}>{c.bookingId || 'N/A'}</td>
+                        <td style={td}>{c.patientName || 'N/A'}</td>
+                        <td style={td}>{c.category || 'N/A'}</td>
+                        <td style={{ ...td, maxWidth: 260 }}>{(c.description || 'N/A').slice(0, 80)}{(c.description || '').length > 80 ? '…' : ''}</td>
+                        <td style={td}>
+                          <span style={{
+                            padding: '3px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700,
+                            background: c.priority === 'critical' ? '#fee2e2' : c.priority === 'high' ? '#ffedd5' : '#f1f5f9',
+                            color: c.priority === 'critical' ? '#dc2626' : c.priority === 'high' ? '#ea580c' : '#64748b'
+                          }}>
+                            {c.priority || 'medium'}
+                          </span>
+                        </td>
+                        <td style={td}>
+                          <span style={{
+                            padding: '3px 10px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 700,
+                            background: c.status === 'resolved' ? '#e8f5e9' : c.status === 'escalated' ? '#fee2e2' : c.status === 'in_review' ? '#dbeafe' : '#fff3e0',
+                            color: c.status === 'resolved' ? '#2E7D32' : c.status === 'escalated' ? '#dc2626' : c.status === 'in_review' ? '#1e40af' : '#e65100'
+                          }}>
+                            {(c.status || 'pending').replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td style={td}>
+                          <button onClick={() => setSelectedComplaint(c)} style={actionBtn('#3b82f6')}>View</button>
+                          {!isResolved && !isEscalated && (
+                            <button
+                              onClick={() => escalateComplaint(c.bookingId, cid)}
+                              disabled={complaintActionLoading}
+                              style={actionBtn('#dc2626')}
+                            >
+                              ⚠️ Escalate
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+
+        {/* COMPLAINT DETAILS MODAL */}
+        {selectedComplaint && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+            <div style={{ background: 'white', borderRadius: 16, maxWidth: 600, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>🚨 Complaint Details</h3>
+                <button onClick={() => setSelectedComplaint(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                <div><strong>Booking:</strong> {selectedComplaint.bookingId}</div>
+                <div><strong>Patient:</strong> {selectedComplaint.patientName}</div>
+                <div><strong>Category:</strong> {selectedComplaint.category}</div>
+                <div><strong>Priority:</strong> {selectedComplaint.priority || 'medium'}</div>
+                <div><strong>Status:</strong> {selectedComplaint.status}</div>
+                <div><strong>Filed:</strong> {selectedComplaint.createdAt ? new Date(selectedComplaint.createdAt).toLocaleDateString() : 'N/A'}</div>
+              </div>
+
+              <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: 8, marginBottom: '1rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.4rem' }}>PATIENT COMPLAINT</p>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e293b' }}>{selectedComplaint.description}</p>
+              </div>
+
+              {selectedComplaint.doctorResponse && (
+                <div style={{ backgroundColor: '#eff6ff', borderLeft: '4px solid #3b82f6', padding: '0.75rem', borderRadius: 6, marginBottom: '0.5rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e40af', margin: 0 }}>DOCTOR RESPONSE</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>{selectedComplaint.doctorResponse}</p>
+                </div>
+              )}
+
+              {selectedComplaint.centerResponse && (
+                <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #10b981', padding: '0.75rem', borderRadius: 6, marginBottom: '0.5rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#047857', margin: 0 }}>CENTER RESPONSE</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>{selectedComplaint.centerResponse}</p>
+                </div>
+              )}
+
+              {selectedComplaint.adminResponse && (
+                <div style={{ backgroundColor: '#fef3c7', borderLeft: '4px solid #f59e0b', padding: '0.75rem', borderRadius: 6, marginBottom: '0.5rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#b45309', margin: 0 }}>ADMIN NOTE</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>{selectedComplaint.adminResponse}</p>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+                {selectedComplaint.status !== 'resolved' && selectedComplaint.status !== 'escalated' && (
+                  <button
+                    onClick={() => escalateComplaint(selectedComplaint.bookingId, selectedComplaint.complaintId || selectedComplaint._id)}
+                    disabled={complaintActionLoading}
+                    style={{ flex: 1, padding: '0.7rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    ⚠️ Escalate Complaint
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedComplaint(null)}
+                  style={{ flex: 1, padding: '0.7rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
