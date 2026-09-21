@@ -1069,9 +1069,7 @@ const handleExportSettlements = () => {
                   <th style={th}>Provider</th>
                   <th style={th}>Type</th>
                   <th style={th}>Amount</th>
-                  <th style={th}>Amount</th>
-		  <th style={th}>Bookings</th>
-		  <th style={th}>Net</th>
+                  <th style={th}>Net</th>
                   <th style={th}>Status</th>
                   <th style={th}>Date</th>
                 </tr>
@@ -1083,8 +1081,7 @@ const handleExportSettlements = () => {
                     <td style={td}><strong>{s.providerName}</strong></td>
                     <td style={td}>{s.providerType?.replace(/_/g, ' ')}</td>
                     <td style={td}>₹{s.amount?.toLocaleString()}</td>
-		    <td style={td}>{s.bookingCount || 0}</td>
-		    <td style={td}><strong>₹{s.netAmount?.toLocaleString()}</strong></td>
+                    <td style={td}><strong>₹{s.netAmount?.toLocaleString()}</strong></td>
                     <td style={td}><button onClick={() => approveSettlement(s.payoutId)} style={actionBtn('#10b981')}>Approve</button></td>
                   </tr>
                 ))}
@@ -1111,6 +1108,7 @@ const handleExportSettlements = () => {
                   <th style={th}>Provider</th>
                   <th style={th}>Type</th>
                   <th style={th}>Amount</th>
+                  <th style={th}>Bookings</th>
                   <th style={th}>Net</th>
                   <th style={th}>Status</th>
                   <th style={th}>Date</th>
@@ -1131,6 +1129,7 @@ const handleExportSettlements = () => {
                     <td style={td}><strong>{s.providerName}</strong></td>
                     <td style={td}>{s.providerType?.replace(/_/g, ' ')}</td>
                     <td style={td}>₹{s.amount?.toLocaleString()}</td>
+                    <td style={td}>{s.bookingCount || 0}</td>
                     <td style={td}><strong>₹{s.netAmount?.toLocaleString()}</strong></td>
                     <td style={td}>
                       <span style={{
