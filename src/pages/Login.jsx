@@ -56,17 +56,22 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    try {
+        try {
       const loginData = activeTab === 'mobile'
         ? { phone: `+91${mobile}`, password, role: 'patient' }
         : { email, password, role: 'patient' };
       const res = await api.post('/auth/login', loginData);
-            if (res.data?.success) {
+      if (res.data?.success) {
         // Multi-role: only set patient keys, keep other roles intact
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
         navigate(redirectPath);
-      } else { setError(res.data?.message || 'Login failed'); }
+      } else {
+        setError(res.data?.message || 'Login failed');
+      }
+    } catch (err) {
+      setError('Login failed. Check credentials.');
+    }
     setLoading(false);
   };
 
