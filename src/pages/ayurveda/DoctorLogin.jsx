@@ -39,18 +39,8 @@ const DoctorLogin = () => {
         password: form.password
       });
 
-      if (response.data.success) {
-        // Clear any existing patient session
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('patientToken');
-        localStorage.removeItem('center');
-        localStorage.removeItem('centerToken');
-        localStorage.removeItem('providerToken');
-        localStorage.removeItem('providerId');
-        localStorage.removeItem('providerType');
-        
-        // Save doctor session with SEPARATE keys
+            if (response.data.success) {
+        // Multi-role: only set doctor keys, keep other roles intact
         localStorage.setItem('doctorToken', response.data.token);
         localStorage.setItem('doctor', JSON.stringify({
           id: response.data.doctor.id,

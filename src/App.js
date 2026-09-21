@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import GlobalSearch from './components/GlobalSearch';
 import AIControlCenter from './ai-control-center/App';
@@ -264,6 +264,10 @@ function App() {
 
           {/* AYURVEDA TAG */}
           <Route path="/ayurveda" element={<AyurvedaHub />} />
+          {/* Legacy URL redirects */}
+          <Route path="/ayurveda/doctor-login" element={<Navigate to="/ayurveda/doctor/login" replace />} />
+          <Route path="/ayurveda/center-login" element={<Navigate to="/ayurveda/center/login" replace />} />
+          <Route path="/doctor-login" element={<Navigate to="/ayurveda/doctor/login" replace />} />
           <Route path="/ayurveda/search" element={<AyurvedaAdvancedSearch />} />
           <Route path="/ayurveda/doctors" element={<AyurvedaDoctors />} />
           <Route path="/ayurveda/doctor/:id" element={<AyurvedaDoctorProfile />} />

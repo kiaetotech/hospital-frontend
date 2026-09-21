@@ -60,13 +60,16 @@ const DoctorDashboard = () => {
   const [respondingTo, setRespondingTo] = useState(null);
   const [responseText, setResponseText] = useState('');
 
-  useEffect(() => {
+    useEffect(() => {
+    const token = localStorage.getItem('doctorToken');
     const doctorData = JSON.parse(localStorage.getItem('doctor') || '{}');
     const doctorId = doctorData.id || doctorData._id;
-    if (!doctorId) {
-      navigate('/ayurveda/doctor-login');
+
+    if (!token || !doctorId) {
+      navigate('/ayurveda/doctor/login', { replace: true });
       return;
     }
+
     setDoctor({ ...doctorData, id: doctorId });
     fetchDashboardData(doctorId);
     fetchAvailability(doctorId);
@@ -440,10 +443,10 @@ const handleRespondToReview = async (bookingId) => {
                 <FaStar className="text-yellow-400" /> {doctor?.rating || 'New'}
               </span>
               <button
-                onClick={() => {
+                  onClick={() => {
                   localStorage.removeItem('doctor');
-                  localStorage.removeItem('token');
-                  navigate('/ayurveda/doctor-login');
+                  localStorage.removeItem('doctorToken');
+                  navigate('/ayurveda/doctor/login', { replace: true });
                 }}
                 className="bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30"
               >

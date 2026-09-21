@@ -42,18 +42,12 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await api.post('/otp/verify', { phone: `+91${mobile}`, otp });
-      if (res.data?.success) {
-  localStorage.removeItem('centerToken');
-  localStorage.removeItem('center');
-  localStorage.removeItem('doctorToken');
-  localStorage.removeItem('doctor');
-  localStorage.removeItem('adminToken');
-  localStorage.removeItem('adminData');
-
-  localStorage.setItem('token', res.data.token);
-  localStorage.setItem('user', JSON.stringify(res.data.user));
-  navigate(redirectPath);
-} else { setError(res.data?.message || 'Invalid OTP'); }
+       if (res.data?.success) {
+        // Multi-role: only set patient keys, keep other roles intact
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        navigate(redirectPath);
+      } else { setError(res.data?.message || 'Invalid OTP'); }
     } catch (err) { setError('Invalid OTP'); }
     setLoading(false);
   };
@@ -67,19 +61,12 @@ const Login = () => {
         ? { phone: `+91${mobile}`, password, role: 'patient' }
         : { email, password, role: 'patient' };
       const res = await api.post('/auth/login', loginData);
-      if (res.data?.success) {
-  localStorage.removeItem('centerToken');
-  localStorage.removeItem('center');
-  localStorage.removeItem('doctorToken');
-  localStorage.removeItem('doctor');
-  localStorage.removeItem('adminToken');
-  localStorage.removeItem('adminData');
-
-  localStorage.setItem('token', res.data.token);
-  localStorage.setItem('user', JSON.stringify(res.data.user));
-  navigate(redirectPath);
-} else { setError(res.data?.message || 'Login failed'); }
-    } catch (err) { setError('Login failed. Check credentials.'); }
+            if (res.data?.success) {
+        // Multi-role: only set patient keys, keep other roles intact
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        navigate(redirectPath);
+      } else { setError(res.data?.message || 'Login failed'); }
     setLoading(false);
   };
 
