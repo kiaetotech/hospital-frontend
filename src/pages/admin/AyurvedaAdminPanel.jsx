@@ -961,10 +961,40 @@ const handleExportSettlements = () => {
                     <td style={td}>₹{b.finalAmount}</td>
                     <td style={td}>{b.paymentStatus}</td>
                     <td style={td}>{b.status}</td>
-                    <td style={td}>
+                                        <td style={td}>
                       <button onClick={() => setSelectedBooking(b)} style={actionBtn('#3b82f6')}><FaEye /></button>
                       {b.paymentStatus === 'paid' && b.status !== 'completed' && b.status !== 'cancelled' && (
-                        <button onClick={() => setShowRefundModal(b.bookingId)} style={actionBtn('#ef4444')}>Refund</button>
+                        <>
+                          <button onClick={() => setShowRefundModal(b.bookingId)} style={actionBtn('#ef4444')}>Refund</button>
+                          <button 
+                            onClick={() => {
+                              const reason = window.prompt('Reason for force-cancel (visible in logs):');
+                              if (!reason || !reason.trim()) return;
+                              if (!window.confirm(`Force cancel booking ${b.bookingId}?\n\nThis will:\n• Set status to cancelled\n• Trigger full refund\n• Decrement package counter (if Panchakarma)`)) return;
+                              
+                              (async () => {
+                                try {
+                                  const res = await axios.put(
+                                    `${API_BASE}/api/ayurveda/bookings/admin/force-cancel/${b.bookingId}`,
+                                    { reason },
+                                    { headers: { 'x-admin-key': ADMIN_KEY } }
+                                  );
+                                  if (res.data.success) {
+                                    addNotification('Booking force-cancelled', 'success');
+                                    fetchAllData();
+                                  } else {
+                                    addNotification(res.data.message || 'Cancel failed', 'error');
+                                  }
+                                } catch (err) {
+                                  addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
+                                }
+                              })();
+                            }}
+                            style={actionBtn('#991b1b')}
+                          >
+                            Force Cancel
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
