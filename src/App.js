@@ -19,6 +19,9 @@ import Caregivers from './pages/Caregivers';
 import CaregiverProfile from './pages/CaregiverProfile';
 import BookCaregiver from './pages/BookCaregiver';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import PatientResetPassword from './pages/ResetPassword';
 import AdminUpload from './pages/AdminUpload';
 import TestAPI from './pages/TestAPI';
 import DiagnosticsList from './pages/DiagnosticsList';
@@ -38,6 +41,7 @@ import CancellationPolicy from './pages/CancellationPolicy';
 import ProviderTerms from './pages/ProviderTerms';
 import DataRetention from './pages/DataRetention';
 import PaymentTerms from './pages/PaymentTerms';
+
 
 // ============================================
 // AYURVEDA MODULE IMPORTS
@@ -204,7 +208,7 @@ import OnlineDoctorRegister from './pages/online-doctor/DoctorRegister';
 import OnlineDoctorLogin from './pages/online-doctor/DoctorLogin';
 import OnlineDoctorDashboard from './pages/online-doctor/DoctorDashboard';
 import ConsultHistory from './pages/online-doctor/ConsultHistory';
-import ResetPassword from './pages/online-doctor/ResetPassword';
+import OnlineDoctorResetPassword from './pages/online-doctor/ResetPassword';
 import SymptomTriage from './pages/online-doctor/SymptomTriage';
 
 // ============================================
@@ -323,6 +327,36 @@ function App() {
           <Route path="/caregiver-profile/:id" element={<CaregiverProfile />} />
           <Route path="/book-caregiver/:id" element={<BookCaregiver />} />
           <Route path="/login" element={<Login />} />
+	  {/* Multi-role password reset */}
+<Route path="/forgot-password" element={<ForgotPassword userType="patient" loginPath="/login" />} />
+<Route path="/reset-password" element={<ResetPassword userType="patient" loginPath="/login" />} />
+
+<Route path="/ayurveda/doctor/forgot-password" element={<ForgotPassword userType="doctor" loginPath="/ayurveda/doctor/login" />} />
+<Route path="/ayurveda/doctor/reset-password" element={<ResetPassword userType="doctor" loginPath="/ayurveda/doctor/login" />} />
+
+<Route path="/ayurveda/center/forgot-password" element={<ForgotPassword userType="center" loginPath="/ayurveda/center/login" />} />
+<Route path="/ayurveda/center/reset-password" element={<ResetPassword userType="center" loginPath="/ayurveda/center/login" />} />
+
+<Route path="/hospital/forgot-password" element={<ForgotPassword userType="hospital" loginPath="/hospital/login" />} />
+<Route path="/hospital/reset-password" element={<ResetPassword userType="hospital" loginPath="/hospital/login" />} />
+
+<Route path="/online-doctor/forgot-password" element={<ForgotPassword userType="online_doctor" loginPath="/online-doctor/login" />} />
+<Route path="/online-doctor/reset-password" element={<ResetPassword userType="online_doctor" loginPath="/online-doctor/login" />} />
+
+<Route path="/mentalhealth/therapist/forgot-password" element={<ForgotPassword userType="therapist" loginPath="/mentalhealth/therapist/login" />} />
+<Route path="/mentalhealth/therapist/reset-password" element={<ResetPassword userType="therapist" loginPath="/mentalhealth/therapist/login" />} />
+
+<Route path="/caregiver/forgot-password" element={<ForgotPassword userType="caregiver" loginPath="/caregiver/login" />} />
+<Route path="/caregiver/reset-password" element={<ResetPassword userType="caregiver" loginPath="/caregiver/login" />} />
+
+<Route path="/diagnostics/forgot-password" element={<ForgotPassword userType="diagnostics" loginPath="/diagnostics/login" />} />
+<Route path="/diagnostics/reset-password" element={<ResetPassword userType="diagnostics" loginPath="/diagnostics/login" />} />
+
+<Route path="/lender/forgot-password" element={<ForgotPassword userType="lender" loginPath="/lender/login" />} />
+<Route path="/lender/reset-password" element={<ResetPassword userType="lender" loginPath="/lender/login" />} />
+
+<Route path="/insurance/company/forgot-password" element={<ForgotPassword userType="insurance" loginPath="/insurance/company/login" />} />
+<Route path="/insurance/company/reset-password" element={<ResetPassword userType="insurance" loginPath="/insurance/company/login" />} />
 
           {/* DIAGNOSTICS TAG */}
           <Route path="/diagnostics-list" element={<DiagnosticsList />} />
@@ -433,7 +467,7 @@ function App() {
           <Route path="/online-doctor/login" element={<OnlineDoctorLogin />} />
           <Route path="/online-doctor/dashboard" element={<OnlineDoctorDashboard />} />
           <Route path="/online-doctor/history" element={<ConsultHistory />} />
-          <Route path="/online-doctor/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/online-doctor/reset-password/:token" element={<OnlineDoctorResetPassword />} />
 	  <Route path="/online-doctor/triage" element={<SymptomTriage />} />
 
           {/* OLD ROUTES - Redirected */}
