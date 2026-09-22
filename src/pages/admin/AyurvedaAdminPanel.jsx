@@ -961,42 +961,77 @@ const handleExportSettlements = () => {
                     <td style={td}>₹{b.finalAmount}</td>
                     <td style={td}>{b.paymentStatus}</td>
                     <td style={td}>{b.status}</td>
-                                        <td style={td}>
-                      <button onClick={() => setSelectedBooking(b)} style={actionBtn('#3b82f6')}><FaEye /></button>
-                      {b.paymentStatus === 'paid' && b.status !== 'completed' && b.status !== 'cancelled' && (
-                        <>
-                          <button onClick={() => setShowRefundModal(b.bookingId)} style={actionBtn('#ef4444')}>Refund</button>
-                          <button 
-                            onClick={() => {
-                              const reason = window.prompt('Reason for force-cancel (visible in logs):');
-                              if (!reason || !reason.trim()) return;
-                              if (!window.confirm(`Force cancel booking ${b.bookingId}?\n\nThis will:\n• Set status to cancelled\n• Trigger full refund\n• Decrement package counter (if Panchakarma)`)) return;
-                              
-                              (async () => {
-                                try {
-                                  const res = await axios.put(
-                                    `${API_BASE}/api/ayurveda/bookings/admin/force-cancel/${b.bookingId}`,
-                                    { reason },
-                                    { headers: { 'x-admin-key': ADMIN_KEY } }
-                                  );
-                                  if (res.data.success) {
-                                    addNotification('Booking force-cancelled', 'success');
-                                    fetchAllData();
-                                  } else {
-                                    addNotification(res.data.message || 'Cancel failed', 'error');
-                                  }
-                                } catch (err) {
-                                  addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
-                                }
-                              })();
-                            }}
-                            style={actionBtn('#991b1b')}
-                          >
-                            Force Cancel
-                          </button>
-                        </>
-                      )}
-                    </td>
+                       <td style={td}>
+  <button onClick={() => setSelectedBooking(b)} style={actionBtn('#3b82f6')}><FaEye /></button>
+  {b.paymentStatus === 'paid' && !['completed', 'cancelled', 'no_show'].includes(b.status) && (
+    <>
+      <button onClick={() => setShowRefundModal(b.bookingId)} style={actionBtn('#ef4444')}>Refund</button>
+      
+      {/* Past date → Mark No-Show (no refund, provider keeps earning) */}
+      {new Date(b.bookingDate) < new Date() && (
+        <button
+          onClick={() => {
+            const reason = window.prompt('No-show reason:') || 'Patient did not attend';
+            if (!window.confirm(`Mark booking ${b.bookingId} as NO-SHOW?\n\nThis will:\n• Status → no_show\n• NO refund to patient\n• Provider keeps earning\n• Decrement package counter`)) return;
+            
+            (async () => {
+              try {
+                const res = await axios.put(
+                  `${API_BASE}/api/ayurveda/bookings/admin/mark-no-show/${b.bookingId}`,
+                  { reason },
+                  { headers: { 'x-admin-key': ADMIN_KEY } }
+                );
+                if (res.data.success) {
+                  addNotification('Marked as no-show — provider earning protected', 'success');
+                  fetchAllData();
+                } else {
+                  addNotification(res.data.message || 'Failed', 'error');
+                }
+              } catch (err) {
+                addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
+              }
+            })();
+          }}
+          style={actionBtn('#991b1b')}
+        >
+          Mark No-Show
+        </button>
+      )}
+      
+      {/* Future date → Force Cancel (refund per policy) */}
+      {new Date(b.bookingDate) >= new Date() && (
+        <button
+          onClick={() => {
+            const reason = window.prompt('Reason for force-cancel:');
+            if (!reason || !reason.trim()) return;
+            if (!window.confirm(`Force cancel booking ${b.bookingId}?`)) return;
+            
+            (async () => {
+              try {
+                const res = await axios.put(
+                  `${BASE}/api/ayurveda/bookings/admin/force-cancel/${b.bookingId}`,
+                  { reason },
+                  { headers: { 'x-admin-key': ADMIN_KEY } }
+                );
+                if (res.data.success) {
+                  addNotification('Booking force-cancelled', 'success');
+                  fetchAllData();
+                } else {
+                  addNotification(res.data.message || 'Cancel failed', 'error');
+                }
+              } catch (err) {
+                addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
+              }
+            })();
+          }}
+          style={actionBtn('#b91c1c')}
+        >
+          Force Cancel
+        </button>
+      )}
+    </>
+  )}
+</td>
                   </tr>
                 ))}
               </tbody>
