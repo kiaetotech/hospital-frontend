@@ -308,7 +308,7 @@ const lenderAdminApi = axios.create({
 });
 
 lenderAdminApi.interceptors.request.use((config) => {
-  const token = getToken();
+    const token = localStorage.getItem('adminToken') || getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
