@@ -47,6 +47,9 @@ const AyurvedaAdminPanel = () => {
   const [programs, setPrograms] = useState([]);
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [reviewFilter, setReviewFilter] = useState('all');
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [reviewActionLoading, setReviewActionLoading] = useState(false);
   const [complaints, setComplaints] = useState([]);
   const [complaintFilter, setComplaintFilter] = useState('all');
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -511,6 +514,70 @@ const handleExportSettlements = () => {
     });
     return counts;
   }, [complaints]);
+
+  // ============================================
+  // REVIEW MODERATION HANDLERS
+  // ============================================
+  const updateReviewAction = async (bookingId, action, payload = {}, successMsg = 'Updated') => {
+    setReviewActionLoading(true);
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/ayurveda/bookings/admin/reviews/${bookingId}/${action}`,
+        payload,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification(successMsg, 'success');
+        setSelectedReview(null);
+        fetchAllData();
+      } else {
+        addNotification(res.data.message || 'Failed', 'error');
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
+    } finally {
+      setReviewActionLoading(false);
+    }
+  };
+
+  const flagReview = (r) => {
+    const reason = window.prompt('Reason for flagging this review:') || 'Flagged by admin';
+    updateReviewAction(r.bookingId, 'flag', { reason }, 'Review flagged');
+  };
+
+  const unflagReview = (r) => {
+    updateReviewAction(r.bookingId, 'unflag', {}, 'Review unflagged');
+  };
+
+  const hideReview = (r) => {
+    const reason = window.prompt('Reason for hiding this review:') || 'Hidden by admin';
+    updateReviewAction(r.bookingId, 'hide', { reason }, 'Review hidden');
+  };
+
+  const unhideReview = (r) => {
+    updateReviewAction(r.bookingId, 'hide', { unhide: true }, 'Review restored');
+  };
+
+  const filteredReviews = useMemo(() => {
+    if (reviewFilter === 'all') return reviews;
+    if (reviewFilter === 'flagged') return reviews.filter(r => r.isFlagged);
+    if (reviewFilter === 'hidden') return reviews.filter(r => r.isHidden);
+    const ratingNum = parseInt(reviewFilter);
+    if (ratingNum) return reviews.filter(r => r.rating === ratingNum);
+    return reviews;
+  }, [reviews, reviewFilter]);
+
+  const reviewCounts = useMemo(() => ({
+    all: reviews.length,
+    flagged: reviews.filter(r => r.isFlagged).length,
+    hidden: reviews.filter(r => r.isHidden).length,
+    5: reviews.filter(r => r.rating === 5).length,
+    4: reviews.filter(r => r.rating === 4).length,
+    3: reviews.filter(r => r.rating === 3).length,
+    2: reviews.filter(r => r.rating === 2).length,
+    1: reviews.filter(r => r.rating === 1).length
+  }), [reviews]);
+
 
 
   const handleExport = (type) => {
@@ -1491,36 +1558,154 @@ const handleExportSettlements = () => {
           </div>
         )}
 
-        {/* REVIEWS TAB */}
+                {/* REVIEWS TAB */}
         {tab === 'reviews' && (
           <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
-            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>⭐ Reviews ({reviews.length})</h2>
-            {reviews.length === 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>⭐ Reviews ({reviews.length})</h2>
+              <button onClick={fetchAllData} style={actionBtn('#3b82f6')}>↻ Refresh</button>
+            </div>
+
+            {/* Filter buttons */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              {[
+                { id: 'all', label: `All (${reviewCounts.all})`, color: '#64748b' },
+                { id: '5', label: `5★ (${reviewCounts[5]})`, color: '#10b981' },
+                { id: '4', label: `4★ (${reviewCounts[4]})`, color: '#3b82f6' },
+                { id: '3', label: `3★ (${reviewCounts[3]})`, color: '#f59e0b' },
+                { id: '2', label: `2★ (${reviewCounts[2]})`, color: '#ef4444' },
+                { id: '1', label: `1★ (${reviewCounts[1]})`, color: '#991b1b' },
+                { id: 'flagged', label: `🚩 Flagged (${reviewCounts.flagged})`, color: '#dc2626' },
+                { id: 'hidden', label: `🙈 Hidden (${reviewCounts.hidden})`, color: '#64748b' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setReviewFilter(f.id)}
+                  style={{
+                    padding: '0.5rem 1rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+                    fontSize: '0.8rem', fontWeight: reviewFilter === f.id ? 700 : 500,
+                    background: reviewFilter === f.id ? f.color : '#f1f5f9',
+                    color: reviewFilter === f.id ? 'white' : '#475569'
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {filteredReviews.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No reviews found</p>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                     <th style={th}>Patient</th>
-                    <th style={th}>Doctor</th>
+                    <th style={th}>Provider</th>
                     <th style={th}>Rating</th>
                     <th style={th}>Review</th>
                     <th style={th}>Date</th>
+                    <th style={th}>Status</th>
+                    <th style={th}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reviews.map(r => (
-                    <tr key={r._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={td}>{r.patientName || 'N/A'}</td>
-                      <td style={td}>{r.doctorName || 'N/A'}</td>
-                      <td style={td}>⭐ {r.rating}/5</td>
-                      <td style={td}>{r.comment || r.review || 'N/A'}</td>
-                      <td style={td}>{new Date(r.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
+                  {filteredReviews.map((r, i) => {
+                    const rid = r.bookingId || r._id || i;
+                    return (
+                      <tr key={rid} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: r.isHidden ? '#f1f5f9' : r.isFlagged ? '#fef2f2' : 'transparent' }}>
+                        <td style={td}>{r.patientName || 'N/A'}</td>
+                        <td style={td}>{r.doctorName || r.centerName || 'N/A'}</td>
+                        <td style={td}>⭐ {r.rating}/5</td>
+                        <td style={{ ...td, maxWidth: 220 }}>{(r.comment || '').slice(0, 80)}{(r.comment || '').length > 80 ? '…' : ''}</td>
+                        <td style={td}>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'N/A'}</td>
+                        <td style={td}>
+                          {r.isHidden && <span style={{ ...statusBadge('suspended'), marginRight: 4 }}>Hidden</span>}
+                          {!r.isHidden && r.isFlagged && <span style={{ ...statusBadge('pending'), marginRight: 4 }}>Flagged</span>}
+                          {!r.isHidden && !r.isFlagged && <span style={statusBadge('approved')}>Visible</span>}
+                        </td>
+                        <td style={td}>
+                          <button onClick={() => setSelectedReview(r)} style={actionBtn('#3b82f6')}>View</button>
+                          {!r.isFlagged && !r.isHidden && (
+                            <button onClick={() => flagReview(r)} disabled={reviewActionLoading} style={actionBtn('#f59e0b')}>🚩 Flag</button>
+                          )}
+                          {r.isFlagged && (
+                            <button onClick={() => unflagReview(r)} disabled={reviewActionLoading} style={actionBtn('#10b981')}>Unflag</button>
+                          )}
+                          {!r.isHidden && (
+                            <button onClick={() => hideReview(r)} disabled={reviewActionLoading} style={actionBtn('#dc2626')}>🙈 Hide</button>
+                          )}
+                          {r.isHidden && (
+                            <button onClick={() => unhideReview(r)} disabled={reviewActionLoading} style={actionBtn('#10b981')}>👁 Restore</button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+
+        {/* REVIEW DETAILS MODAL */}
+        {selectedReview && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+            <div style={{ background: 'white', borderRadius: 16, maxWidth: 600, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>⭐ Review Details</h3>
+                <button onClick={() => setSelectedReview(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                <div><strong>Booking:</strong> {selectedReview.bookingId}</div>
+                <div><strong>Patient:</strong> {selectedReview.patientName}</div>
+                <div><strong>Provider:</strong> {selectedReview.doctorName || selectedReview.centerName || 'N/A'}</div>
+                <div><strong>Rating:</strong> ⭐ {selectedReview.rating}/5</div>
+                <div><strong>Date:</strong> {selectedReview.createdAt ? new Date(selectedReview.createdAt).toLocaleDateString() : 'N/A'}</div>
+                <div><strong>Status:</strong> {selectedReview.isHidden ? 'Hidden' : selectedReview.isFlagged ? 'Flagged' : 'Visible'}</div>
+              </div>
+
+              <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: 8, marginBottom: '1rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.4rem' }}>REVIEW</p>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e293b' }}>{selectedReview.comment || '(No comment)'}</p>
+              </div>
+
+              {(selectedReview.doctorResponse || selectedReview.centerResponse) && (
+                <div style={{ backgroundColor: '#eff6ff', borderLeft: '4px solid #3b82f6', padding: '0.75rem', borderRadius: 6, marginBottom: '0.5rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e40af', margin: 0 }}>PROVIDER RESPONSE</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>{selectedReview.doctorResponse || selectedReview.centerResponse}</p>
+                </div>
+              )}
+
+              {selectedReview.flaggedReason && (
+                <div style={{ backgroundColor: '#fef3c7', borderLeft: '4px solid #f59e0b', padding: '0.75rem', borderRadius: 6, marginBottom: '0.5rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#b45309', margin: 0 }}>FLAG REASON</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>{selectedReview.flaggedReason}</p>
+                </div>
+              )}
+
+              {selectedReview.hiddenReason && (
+                <div style={{ backgroundColor: '#fee2e2', borderLeft: '4px solid #dc2626', padding: '0.75rem', borderRadius: 6, marginBottom: '0.5rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: '700', color: '#991b1b', margin: 0 }}>HIDE REASON</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>{selectedReview.hiddenReason}</p>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+                {!selectedReview.isFlagged && !selectedReview.isHidden && (
+                  <button onClick={() => flagReview(selectedReview)} style={{ flex: 1, padding: '0.7rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>🚩 Flag</button>
+                )}
+                {selectedReview.isFlagged && !selectedReview.isHidden && (
+                  <button onClick={() => unflagReview(selectedReview)} style={{ flex: 1, padding: '0.7rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>Unflag</button>
+                )}
+                {!selectedReview.isHidden ? (
+                  <button onClick={() => hideReview(selectedReview)} style={{ flex: 1, padding: '0.7rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>🙈 Hide</button>
+                ) : (
+                  <button onClick={() => unhideReview(selectedReview)} style={{ flex: 1, padding: '0.7rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>👁 Restore</button>
+                )}
+                <button onClick={() => setSelectedReview(null)} style={{ flex: 1, padding: '0.7rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>Close</button>
+              </div>
+            </div>
           </div>
         )}
 
