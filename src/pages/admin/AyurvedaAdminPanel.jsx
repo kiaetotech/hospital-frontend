@@ -2200,7 +2200,7 @@ const handleExportSettlements = () => {
         </div>
       )}
 
-      {/* DISCOUNT MODAL */}
+            {/* DISCOUNT MODAL */}
       {showDiscountModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
           <div style={{ background: 'white', borderRadius: 12, maxWidth: 500, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' }}>
@@ -2215,7 +2215,8 @@ const handleExportSettlements = () => {
               <input name="maxDiscount" type="number" placeholder="Max Discount (optional)" style={inputStyle} />
               <input name="validFrom" type="date" required style={inputStyle} />
               <input name="validTill" type="date" required style={inputStyle} />
-		              <div>
+
+              <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                   Applies To (select at least one) *
                 </label>
@@ -2225,8 +2226,12 @@ const handleExportSettlements = () => {
                     👨‍⚕️ Doctor Consultation
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <input type="checkbox" name="applicableTags" value="ayurveda_wellness_program" />
+                    💪 Wellness Program (Doctor)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
                     <input type="checkbox" name="applicableTags" value="ayurveda_panchakarma" />
-                    🧘 Panchakarma Package
+                    🧘 Panchakarma Package (includes Wellness Centers)
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
                     <input type="checkbox" name="applicableTags" value="ayurveda_home_therapy" />
@@ -2238,6 +2243,7 @@ const handleExportSettlements = () => {
                   </label>
                 </div>
               </div>
+
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button type="submit" style={{ flex: 1, padding: '0.6rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>Create</button>
                 <button type="button" onClick={() => setShowDiscountModal(false)} style={{ flex: 1, padding: '0.6rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
@@ -2291,9 +2297,10 @@ const handleExportSettlements = () => {
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Applies To *</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {[
+                                                      {[
                     { id: 'ayurveda_consultation', label: '👨‍⚕️ Doctor Consultation' },
-                    { id: 'ayurveda_panchakarma', label: '🧘 Panchakarma Package' },
+                    { id: 'ayurveda_wellness_program', label: '💪 Wellness Program (Doctor)' },
+                    { id: 'ayurveda_panchakarma', label: '🧘 Panchakarma Package (includes Wellness Centers)' },
                     { id: 'ayurveda_home_therapy', label: '🏠 Home Therapy' },
                     { id: 'ayurveda_all', label: '⭐ All Ayurveda Services' }
                   ].map(opt => (
