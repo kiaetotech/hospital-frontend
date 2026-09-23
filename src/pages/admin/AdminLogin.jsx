@@ -18,7 +18,8 @@ const AdminLogin = () => {
 
     try {
       const response = await axios.post(`${API_URL}/api/admin/login`, {
-  adminKey: password
+  email: email,
+  password: password
 });
 
       if (response.data.success) {
@@ -94,6 +95,12 @@ const AdminLogin = () => {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+	
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <a href="/admin/reset-password" style={{ color: '#8b5cf6', fontSize: '0.9rem', textDecoration: 'none' }}>
+              Forgot password?
+            </a>
+          </div>
       </div>
     </div>
   );

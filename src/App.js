@@ -109,6 +109,7 @@ import LenderRegister from './pages/lender/LenderRegister';
 // ADMIN PANEL IMPORTS
 // ============================================
 import AdminLogin from './pages/admin/AdminLogin';
+import AdminPasswordReset from './pages/admin/AdminPasswordReset';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminVerifyLenders from './pages/admin/AdminVerifyLenders';
 import AdminCommission from './pages/admin/AdminCommission';
@@ -381,6 +382,7 @@ function App() {
 
           {/* ADMIN PANEL */}
           <Route path="/admin/login" element={<AdminLogin />} />
+	  <Route path="/admin/reset-password" element={<AdminPasswordReset />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
           <Route path="/admin/commission" element={<AdminCommission />} />
