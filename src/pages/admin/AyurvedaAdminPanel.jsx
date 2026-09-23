@@ -62,6 +62,7 @@ const AyurvedaAdminPanel = () => {
   const [showRejectModal, setShowRejectModal] = useState(null);
   const [showRefundModal, setShowRefundModal] = useState(null);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [editingDiscount, setEditingDiscount] = useState(null);
   const [showExport, setShowExport] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [refundReason, setRefundReason] = useState('');
@@ -454,17 +455,26 @@ const handleExportSettlements = () => {
     }
   };
 
-  const createDiscount = async (e) => {
+    const createDiscount = async (e) => {
     e.preventDefault();
     const form = e.target;
     try {
+      const applicableTags = Array.from(form.querySelectorAll('input[name="applicableTags"]:checked'))
+        .map(cb => cb.value);
+
+      if (applicableTags.length === 0) {
+        addNotification('Select at least one service type', 'error');
+        return;
+      }
+
       await api.post('/ayurveda/discounts', {
         code: form.code.value,
         discountType: form.discountType.value,
         value: Number(form.value.value),
         maxDiscount: form.maxDiscount.value ? Number(form.maxDiscount.value) : undefined,
         validFrom: form.validFrom.value,
-        validTill: form.validTill.value
+        validTill: form.validTill.value,
+        applicableTags
       });
       setShowDiscountModal(false);
       fetchAllData();
@@ -1136,10 +1146,28 @@ const handleExportSettlements = () => {
                       <td style={td}>{d.validTill ? new Date(d.validTill).toLocaleDateString() : 'N/A'}</td>
                       <td style={td}>{d.isActive ? '🟢 Active' : '🔴 Inactive'}</td>
                       <td style={td}>
-                        <button onClick={() => toggleDiscount(d._id, d.isActive)} style={actionBtn(d.isActive ? '#ef4444' : '#10b981')}>
-                          {d.isActive ? 'Deactivate' : 'Activate'}
-                        </button>
-                      </td>
+  <button onClick={() => toggleDiscount(d._id, d.isActive)} style={actionBtn(d.isActive ? '#ef4444' : '#10b981')}>
+    {d.isActive ? 'Deactivate' : 'Activate'}
+  </button>  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  <button onClick={() => setEditingDiscount(d)} style={actionBtn('#3b82f6')}>Edit</button>
+  <button
+    onClick={async () => {
+      if (!window.confirm(`Delete discount "${d.code}"? This cannot be undone.`)) return;
+      try {
+        await axios.delete(`${API_BASE}/api/ayurveda/discounts/${d._id}`, {
+          headers: { 'x-admin-key': ADMIN_KEY }
+        });
+        addNotification('Discount deleted', 'success');
+        fetchAllData();
+      } catch (err) {
+        addNotification('Delete failed: ' + err.message, 'error');
+      }
+    }}
+    style={actionBtn('#dc2626')}
+  >
+    Delete
+  </button>
+</td>
                     </tr>
                   ))}
                 </tbody>
@@ -2187,9 +2215,109 @@ const handleExportSettlements = () => {
               <input name="maxDiscount" type="number" placeholder="Max Discount (optional)" style={inputStyle} />
               <input name="validFrom" type="date" required style={inputStyle} />
               <input name="validTill" type="date" required style={inputStyle} />
+		              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  Applies To (select at least one) *
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <input type="checkbox" name="applicableTags" value="ayurveda_consultation" defaultChecked />
+                    👨‍⚕️ Doctor Consultation
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <input type="checkbox" name="applicableTags" value="ayurveda_panchakarma" />
+                    🧘 Panchakarma Package
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <input type="checkbox" name="applicableTags" value="ayurveda_home_therapy" />
+                    🏠 Home Therapy
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
+                    <input type="checkbox" name="applicableTags" value="ayurveda_all" />
+                    ⭐ All Ayurveda Services
+                  </label>
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button type="submit" style={{ flex: 1, padding: '0.6rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>Create</button>
                 <button type="button" onClick={() => setShowDiscountModal(false)} style={{ flex: 1, padding: '0.6rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+	
+      {/* EDIT DISCOUNT MODAL */}
+      {editingDiscount && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: 12, maxWidth: 500, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem' }}>✏️ Edit Discount — {editingDiscount.code}</h3>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target;
+              const applicableTags = Array.from(form.querySelectorAll('input[name="applicableTags"]:checked')).map(cb => cb.value);
+              if (applicableTags.length === 0) {
+                addNotification('Select at least one service', 'error');
+                return;
+              }
+              try {
+                const res = await axios.put(
+                  `${API_BASE}/api/ayurveda/discounts/${editingDiscount._id}/full`,
+                  {
+                    value: Number(form.value.value),
+                    maxDiscount: form.maxDiscount.value ? Number(form.maxDiscount.value) : null,
+                    validFrom: form.validFrom.value,
+                    validTill: form.validTill.value,
+                    applicableTags,
+                    isActive: form.isActive.checked
+                  },
+                  { headers: { 'x-admin-key': ADMIN_KEY } }
+                );
+                if (res.data.success) {
+                  addNotification('Discount updated', 'success');
+                  setEditingDiscount(null);
+                  fetchAllData();
+                }
+              } catch (err) {
+                addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
+              }
+            }} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
+              <input name="value" type="number" defaultValue={editingDiscount.value} required style={inputStyle} />
+              <input name="maxDiscount" type="number" defaultValue={editingDiscount.maxDiscount || ''} placeholder="Max Discount (optional)" style={inputStyle} />
+              <input name="validFrom" type="date" defaultValue={editingDiscount.validFrom ? new Date(editingDiscount.validFrom).toISOString().split('T')[0] : ''} required style={inputStyle} />
+              <input name="validTill" type="date" defaultValue={editingDiscount.validUntil ? new Date(editingDiscount.validUntil).toISOString().split('T')[0] : ''} required style={inputStyle} />
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Applies To *</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {[
+                    { id: 'ayurveda_consultation', label: '👨‍⚕️ Doctor Consultation' },
+                    { id: 'ayurveda_panchakarma', label: '🧘 Panchakarma Package' },
+                    { id: 'ayurveda_home_therapy', label: '🏠 Home Therapy' },
+                    { id: 'ayurveda_all', label: '⭐ All Ayurveda Services' }
+                  ].map(opt => (
+                    <label key={opt.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                      <input
+                        type="checkbox"
+                        name="applicableTags"
+                        value={opt.id}
+                        defaultChecked={(editingDiscount.applicableTags || []).includes(opt.id)}
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                <input type="checkbox" name="isActive" defaultChecked={editingDiscount.isActive} />
+                Active
+              </label>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button type="submit" style={{ flex: 1, padding: '0.6rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>Save Changes</button>
+                <button type="button" onClick={() => setEditingDiscount(null)} style={{ flex: 1, padding: '0.6rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
               </div>
             </form>
           </div>
