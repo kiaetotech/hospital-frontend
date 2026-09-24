@@ -1204,14 +1204,25 @@ const handleExportSettlements = () => {
                       <td style={td}>{d.usedCount || 0}</td>
                       <td style={td}>{d.validFrom ? new Date(d.validFrom).toLocaleDateString() : 'N/A'}</td>
                       <td style={td}>{d.validUntil ? new Date(d.validUntil).toLocaleDateString() : 'N/A'}</td>
-                      <td style={td}>
-                        {d.isActive ? (
-                          d.validUntil && new Date(d.validUntil) < new Date()
-                            ? <span style={{ color: '#dc2626', fontWeight: 600 }}>⏰ Expired</span>
-                            : d.validFrom && new Date(d.validFrom) > new Date()
-                              ? <span style={{ color: '#f59e0b', fontWeight: 600 }}>⏳ Scheduled</span>
-                              : <span style={{ color: '#059669', fontWeight: 600 }}>🟢 Active</span>
-                        ) : (
+                                            <td style={td}>
+                        {d.isActive ? (() => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+
+                          const startDate = d.validFrom ? new Date(d.validFrom) : null;
+                          if (startDate) startDate.setHours(0, 0, 0, 0);
+
+                          const endDate = d.validUntil ? new Date(d.validUntil) : null;
+                          if (endDate) endDate.setHours(23, 59, 59, 999);
+
+                          if (endDate && endDate < today) {
+                            return <span style={{ color: '#dc2626', fontWeight: 600 }}>⏰ Expired</span>;
+                          }
+                          if (startDate && startDate > today) {
+                            return <span style={{ color: '#f59e0b', fontWeight: 600 }}>⏳ Scheduled</span>;
+                          }
+                          return <span style={{ color: '#059669', fontWeight: 600 }}>🟢 Active</span>;
+                        })() : (
                           <span style={{ color: '#dc2626' }}>🔴 Inactive</span>
                         )}
                       </td>
