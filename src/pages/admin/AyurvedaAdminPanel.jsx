@@ -461,7 +461,10 @@ const handleExportSettlements = () => {
 
   const toggleDiscount = async (id, isActive) => {
     try {
-      await api.put(`/ayurveda/discounts/${id}`, { isActive: !isActive });
+      await axios.put(`${API_BASE}/api/ayurveda/discounts/${id}`, 
+        { isActive: !isActive },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
       fetchAllData();
       addNotification('Discount updated', 'success');
     } catch (error) {
@@ -500,7 +503,7 @@ const handleExportSettlements = () => {
         return;
       }
 
-      await api.post('/ayurveda/discounts', {
+            await axios.post(`${API_BASE}/api/ayurveda/discounts`, {
         code: form.code.value,
         discountType: form.discountType.value,
         value: Number(form.value.value),
@@ -508,6 +511,8 @@ const handleExportSettlements = () => {
         validFrom: form.validFrom.value,
         validTill: form.validTill.value,
         applicableTags
+      }, {
+        headers: { 'x-admin-key': ADMIN_KEY }
       });
       setShowDiscountModal(false);
       fetchAllData();
