@@ -490,10 +490,8 @@ const handleExportSettlements = () => {
   const form = e.target;
   console.log('form:', form);
   console.log('form.code:', form.code);
-  console.log('form.discountType:', form.discountType);
   console.log('form.value:', form.value);
   console.log('form.validFrom:', form.validFrom);
-  console.log('form.validTill:', form.validTill);
   try {
       const applicableTags = Array.from(form.querySelectorAll('input[name="applicableTags"]:checked'))
         .map(cb => cb.value);
@@ -1203,7 +1201,7 @@ const handleExportSettlements = () => {
                       <td style={td}><strong>{d.code}</strong></td>
                       <td style={td}>{d.value}{d.type === 'percentage' ? '%' : '₹'}</td>
                       <td style={td}>{d.usedCount || 0}</td>
-                      <td style={td}>{d.validTill ? new Date(d.validTill).toLocaleDateString() : 'N/A'}</td>
+                      <td style={td}>{d.validUntil ? new Date(d.validUntil).toLocaleDateString() : 'N/A'}</td>
                       <td style={td}>{d.isActive ? '🟢 Active' : '🔴 Inactive'}</td>
                       <td style={td}>
   <button onClick={() => toggleDiscount(d._id, d.isActive)} style={actionBtn(d.isActive ? '#ef4444' : '#10b981')}>
