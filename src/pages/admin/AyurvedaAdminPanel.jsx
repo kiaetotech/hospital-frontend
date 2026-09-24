@@ -62,6 +62,7 @@ const AyurvedaAdminPanel = () => {
   const [showRejectModal, setShowRejectModal] = useState(null);
   const [showRefundModal, setShowRefundModal] = useState(null);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(300000); // 5 minutes default
   const [editingDiscount, setEditingDiscount] = useState(null);
   const [showExport, setShowExport] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -296,12 +297,37 @@ const handleExportSettlements = () => {
   }
 }, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange]);
 
-  useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(fetchAllData, 30000);
+    useEffect(() => {
+    // Pause auto-refresh while any modal is open (so form inputs don't lose focus)
+    const anyModalOpen = 
+      showDiscountModal || 
+      editingDiscount || 
+      selectedDoctor || 
+      selectedCenter || 
+      selectedBooking || 
+      showRejectModal || 
+      showRefundModal || 
+      showExport ||
+      showNotifications;
+
+        if (autoRefresh && !anyModalOpen) {
+      const interval = setInterval(fetchAllData, refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, fetchAllData]);
+  }, [
+    autoRefresh, 
+    refreshInterval,
+    fetchAllData, 
+    showDiscountModal, 
+    editingDiscount, 
+    selectedDoctor, 
+    selectedCenter, 
+    selectedBooking, 
+    showRejectModal, 
+    showRefundModal, 
+    showExport,
+    showNotifications
+  ]);
 
   const addNotification = (message, type = 'info') => {
     const notif = { id: Date.now(), message, type, time: new Date().toLocaleTimeString() };
@@ -714,8 +740,30 @@ const handleExportSettlements = () => {
             <FaDownload /> Export
           </button>
           <button onClick={() => setAutoRefresh(!autoRefresh)} style={headerBtn(autoRefresh ? '#10b981' : '#ef4444')}>
-            <FaSync /> {autoRefresh ? 'Auto ON' : 'Auto OFF'}
-          </button>
+  <FaSync /> {autoRefresh ? `Auto ${refreshInterval / 60000}m` : 'Auto OFF'}
+</button>
+{autoRefresh && (
+  <select
+    value={refreshInterval}
+    onChange={(e) => setRefreshInterval(Number(e.target.value))}
+    style={{
+      padding: '0.5rem',
+      background: '#10b981',
+      color: 'white',
+      border: 'none',
+      borderRadius: 8,
+      cursor: 'pointer',
+      fontWeight: 600,
+      fontSize: '0.85rem'
+    }}
+  >
+    <option value={60000}>1m</option>
+    <option value={120000}>2m</option>
+    <option value={300000}>5m</option>
+    <option value={600000}>10m</option>
+    <option value={1800000}>30m</option>
+  </select>
+)}
           <button onClick={fetchAllData} style={headerBtn('#3b82f6')}>
             <FaSync /> Refresh
           </button>
