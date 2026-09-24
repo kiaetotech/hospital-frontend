@@ -1201,7 +1201,7 @@ const handleExportSettlements = () => {
                   {discounts.map(d => (
                     <tr key={d._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={td}><strong>{d.code}</strong></td>
-                      <td style={td}>{d.value}{d.discountType === 'percentage' ? '%' : '₹'}</td>
+                      <td style={td}>{d.value}{d.type === 'percentage' ? '%' : '₹'}</td>
                       <td style={td}>{d.usedCount || 0}</td>
                       <td style={td}>{d.validTill ? new Date(d.validTill).toLocaleDateString() : 'N/A'}</td>
                       <td style={td}>{d.isActive ? '🟢 Active' : '🔴 Inactive'}</td>
