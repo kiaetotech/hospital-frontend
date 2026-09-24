@@ -161,7 +161,8 @@ const BookAyurvedaConsult = () => {
     
     try {
       const api = require('../../services/api').default;
-      const response = await api.post('/discounts/validate', { code: couponCode, bookingType: 'ayurveda_consultation', amount: doctor?.consultationFee || 0 });
+      const tagForType = wellnessProgram ? 'ayurveda_wellness_program' : 'ayurveda_consultation';
+const response = await api.post('/discounts/validate', { code: couponCode, bookingType: tagForType, amount: wellnessProgram ? wellnessProgram.price : (doctor?.consultationFee || 0) });
       if (response.data.success) {
         setCouponApplied({ code: couponCode.toUpperCase(), discountAmount: response.data.data.discountAmount });
       } else {
@@ -224,6 +225,7 @@ const BookAyurvedaConsult = () => {
         type: 'doctor_consultation',
         doctorId: doctor._id,
         amount: wellnessProgram ? wellnessProgram.price : undefined,
+	slotTime: wellnessProgram ? '09:00 AM' : selectedSlot.time,
         consultationType,
         bookingDate: selectedDate,
         slotTime: wellnessProgram ? '09:00 AM' : selectedSlot.time,
