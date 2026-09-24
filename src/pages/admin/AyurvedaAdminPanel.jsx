@@ -1190,6 +1190,7 @@ const handleExportSettlements = () => {
                     <th style={th}>Code</th>
                     <th style={th}>Value</th>
                     <th style={th}>Used</th>
+                    <th style={th}>Valid From</th>
                     <th style={th}>Valid Till</th>
                     <th style={th}>Status</th>
                     <th style={th}>Action</th>
@@ -1201,12 +1202,23 @@ const handleExportSettlements = () => {
                       <td style={td}><strong>{d.code}</strong></td>
                       <td style={td}>{d.value}{d.type === 'percentage' ? '%' : '₹'}</td>
                       <td style={td}>{d.usedCount || 0}</td>
+                      <td style={td}>{d.validFrom ? new Date(d.validFrom).toLocaleDateString() : 'N/A'}</td>
                       <td style={td}>{d.validUntil ? new Date(d.validUntil).toLocaleDateString() : 'N/A'}</td>
-                      <td style={td}>{d.isActive ? '🟢 Active' : '🔴 Inactive'}</td>
+                      <td style={td}>
+                        {d.isActive ? (
+                          d.validUntil && new Date(d.validUntil) < new Date()
+                            ? <span style={{ color: '#dc2626', fontWeight: 600 }}>⏰ Expired</span>
+                            : d.validFrom && new Date(d.validFrom) > new Date()
+                              ? <span style={{ color: '#f59e0b', fontWeight: 600 }}>⏳ Scheduled</span>
+                              : <span style={{ color: '#059669', fontWeight: 600 }}>🟢 Active</span>
+                        ) : (
+                          <span style={{ color: '#dc2626' }}>🔴 Inactive</span>
+                        )}
+                      </td>
                       <td style={td}>
   <button onClick={() => toggleDiscount(d._id, d.isActive)} style={actionBtn(d.isActive ? '#ef4444' : '#10b981')}>
     {d.isActive ? 'Deactivate' : 'Activate'}
-  </button>  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  </button>
   <button onClick={() => setEditingDiscount(d)} style={actionBtn('#3b82f6')}>Edit</button>
   <button
     onClick={async () => {
