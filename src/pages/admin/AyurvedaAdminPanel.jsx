@@ -456,9 +456,16 @@ const handleExportSettlements = () => {
   };
 
     const createDiscount = async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    try {
+  e.preventDefault();
+  console.log('=== createDiscount called ===');
+  const form = e.target;
+  console.log('form:', form);
+  console.log('form.code:', form.code);
+  console.log('form.discountType:', form.discountType);
+  console.log('form.value:', form.value);
+  console.log('form.validFrom:', form.validFrom);
+  console.log('form.validTill:', form.validTill);
+  try {
       const applicableTags = Array.from(form.querySelectorAll('input[name="applicableTags"]:checked'))
         .map(cb => cb.value);
 
