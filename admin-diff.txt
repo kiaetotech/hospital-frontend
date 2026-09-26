@@ -1,0 +1,189 @@
+diff --git a/src/pages/admin/AyurvedaAdminPanel.jsx b/src/pages/admin/AyurvedaAdminPanel.jsx
+index bc0b4b5e..11b2a06d 100644
+--- a/src/pages/admin/AyurvedaAdminPanel.jsx
++++ b/src/pages/admin/AyurvedaAdminPanel.jsx
+@@ -68,10 +68,18 @@ const AyurvedaAdminPanel = () => {
+   const [rejectionReason, setRejectionReason] = useState('');
+   const [refundReason, setRefundReason] = useState('');
+   const [bulkSelected, setBulkSelected] = useState([]);
+-  const [showNotifications, setShowNotifications] = useState(false);
++    const [showNotifications, setShowNotifications] = useState(false);
+   const [pendingCentersList, setPendingCentersList] = useState([]);
+   const [pendingPackages, setPendingPackages] = useState([]);
+   const [pendingPrograms, setPendingPrograms] = useState([]);
++  // ─── PROGRAMS MODERATION (NEW) ───
++  const [showProgramRejectModal, setShowProgramRejectModal] = useState(null); // { doctorId, programId }
++  const [programRejectionReason, setProgramRejectionReason] = useState('');
++  const [programActionLoading, setProgramActionLoading] = useState(null); // "doctorId_programId"
++  const [programFilter, setProgramFilter] = useState('pending'); // 'pending' | 'approved' | 'rejected' | 'all'
++  const [programSearchQuery, setProgramSearchQuery] = useState('');
++  const [selectedProgram, setSelectedProgram] = useState(null); // for detail modal
++  const [allPrograms, setAllPrograms] = useState([]); // full list with approvalStatus
+   const [stats, setStats] = useState({
+     totalDoctors: 0, totalCenters: 0, totalBookings: 0,
+     totalRevenue: 0, pendingDoctors: 0, pendingCenters: 0,
+@@ -288,14 +296,18 @@ const handleExportSettlements = () => {
+     fetchAllData();
+   }, [fetchAllData]);
+ 
+-  useEffect(() => {
++    useEffect(() => {
+   if (tab === 'settlements') {
+     if (settlementTab === 'all') fetchAllSettlements();
+     else if (settlementTab === 'providers') fetchProviderGroups();
+     else if (settlementTab === 'cities') fetchCityBreakdown();
+     else if (settlementTab === 'dates') fetchDateBreakdown();
+   }
+-}, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange]);
++  // ─── PROGRAMS: fetch all when tab opens ───
++  if (tab === 'programs') {
++    fetchAllPrograms();
++  }
++}, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange, fetchAllPrograms]);
+ 
+     useEffect(() => {
+     // Pause auto-refresh while any modal is open (so form inputs don't lose focus)
+@@ -412,41 +424,103 @@ const handleExportSettlements = () => {
+     }
+   };
+ 
+-  // ============================================
+-  // PROGRAM APPROVAL
++    // ============================================
++  // PROGRAM APPROVAL (UPGRADED — loading state + full refresh)
+   // ============================================
+   const approveProgram = async (doctorId, programId, notes = '') => {
++    const key = `${doctorId}_${programId}`;
++    if (programActionLoading === key) return;
++    setProgramActionLoading(key);
+     try {
+-      await axios.put(
++      const res = await axios.put(
+         `${API_BASE}/api/ayurveda/admin/programs/${doctorId}/${programId}/approve`,
+         { notes },
+         { headers: { 'x-admin-key': ADMIN_KEY } }
+       );
+-      addNotification('Program approved', 'success');
+-      fetchAllData();
++      if (res.data.success) {
++        addNotification('✅ Program approved and now live for patients', 'success');
++        fetchAllData();
++        fetchAllPrograms();
++        setSelectedProgram(null);
++      } else {
++        addNotification(res.data.message || 'Approve failed', 'error');
++      }
+     } catch (error) {
+       addNotification('Failed: ' + (error.response?.data?.error || error.message), 'error');
++    } finally {
++      setProgramActionLoading(null);
+     }
+   };
+ 
+   const rejectProgram = async (doctorId, programId, reason) => {
+-    if (!reason) {
+-      addNotification('Rejection reason required', 'error');
++    if (!reason || reason.trim().length < 5) {
++      addNotification('Rejection reason must be at least 5 characters', 'error');
+       return;
+     }
++    const key = `${doctorId}_${programId}`;
++    if (programActionLoading === key) return;
++    setProgramActionLoading(key);
+     try {
+-      await axios.put(
++      const res = await axios.put(
+         `${API_BASE}/api/ayurveda/admin/programs/${doctorId}/${programId}/reject`,
+-        { reason },
++        { reason: reason.trim() },
+         { headers: { 'x-admin-key': ADMIN_KEY } }
+       );
+-      addNotification('Program rejected', 'success');
+-      fetchAllData();
++      if (res.data.success) {
++        addNotification('❌ Program rejected', 'success');
++        setShowProgramRejectModal(null);
++        setProgramRejectionReason('');
++        fetchAllData();
++        fetchAllPrograms();
++        setSelectedProgram(null);
++      } else {
++        addNotification(res.data.message || 'Reject failed', 'error');
++      }
+     } catch (error) {
+       addNotification('Failed: ' + (error.response?.data?.error || error.message), 'error');
++    } finally {
++      setProgramActionLoading(null);
+     }
+   };
+ 
++  // ─── PROGRAMS: Fetch all programs (for Programs tab) ───
++  const fetchAllPrograms = useCallback(async () => {
++    try {
++      const res = await axios.get(
++        `${API_BASE}/api/ayurveda/admin/programs/all`,
++        { headers: { 'x-admin-key': ADMIN_KEY } }
++      ).catch(() => ({ data: { data: [] } }));
++      setAllPrograms(res.data?.data || []);
++    } catch (err) {
++      console.error('Fetch all programs error:', err);
++      setAllPrograms([]);
++    }
++  }, []);
++
++  // ─── PROGRAMS: Filtered view + counts ───
++  const filteredPrograms = useMemo(() => {
++    let list = allPrograms;
++    if (programFilter !== 'all') {
++      list = list.filter(p => (p.approvalStatus || 'pending') === programFilter);
++    }
++    if (programSearchQuery.trim()) {
++      const q = programSearchQuery.toLowerCase();
++      list = list.filter(p =>
++        p.name?.toLowerCase().includes(q) ||
++        p.doctorName?.toLowerCase().includes(q) ||
++        p.doctorCity?.toLowerCase().includes(q)
++      );
++    }
++    return list;
++  }, [allPrograms, programFilter, programSearchQuery]);
++
++  const programCounts = useMemo(() => ({
++    all: allPrograms.length,
++    pending: allPrograms.filter(p => (p.approvalStatus || 'pending') === 'pending').length,
++    approved: allPrograms.filter(p => p.approvalStatus === 'approved').length,
++    rejected: allPrograms.filter(p => p.approvalStatus === 'rejected').length,
++  }), [allPrograms]);
++
+ 
+   const bulkApproveDoctors = async () => {
+     if (bulkSelected.length === 0) return;
+@@ -484,15 +558,10 @@ const handleExportSettlements = () => {
+     }
+   };
+ 
+-    const createDiscount = async (e) => {
+-  e.preventDefault();
+-  console.log('=== createDiscount called ===');
+-  const form = e.target;
+-  console.log('form:', form);
+-  console.log('form.code:', form.code);
+-  console.log('form.value:', form.value);
+-  console.log('form.validFrom:', form.validFrom);
+-  try {
++  const createDiscount = async (e) => {
++    e.preventDefault();
++    const form = e.target;
++    try {
+       const applicableTags = Array.from(form.querySelectorAll('input[name="applicableTags"]:checked'))
+         .map(cb => cb.value);
+ 
+@@ -501,7 +570,7 @@ const handleExportSettlements = () => {
+         return;
+       }
+ 
+-            await axios.post(`${API_BASE}/api/ayurveda/discounts`, {
++      await axios.post(`${API_BASE}/api/ayurveda/discounts`, {
+         code: form.code.value,
+         discountType: form.discountType.value,
+         value: Number(form.value.value),
