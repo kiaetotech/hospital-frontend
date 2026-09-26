@@ -296,6 +296,20 @@ const handleExportSettlements = () => {
     fetchAllData();
   }, [fetchAllData]);
 
+	  // ─── PROGRAMS: Fetch all programs (for Programs tab) ───
+  const fetchAllPrograms = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/ayurveda/admin/programs/all`,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      ).catch(() => ({ data: { data: [] } }));
+      setAllPrograms(res.data?.data || []);
+    } catch (err) {
+      console.error('Fetch all programs error:', err);
+      setAllPrograms([]);
+    }
+  }, []);
+
     useEffect(() => {
   if (tab === 'settlements') {
     if (settlementTab === 'all') fetchAllSettlements();
@@ -482,20 +496,6 @@ const handleExportSettlements = () => {
       setProgramActionLoading(null);
     }
   };
-
-  // ─── PROGRAMS: Fetch all programs (for Programs tab) ───
-  const fetchAllPrograms = useCallback(async () => {
-    try {
-      const res = await axios.get(
-        `${API_BASE}/api/ayurveda/admin/programs/all`,
-        { headers: { 'x-admin-key': ADMIN_KEY } }
-      ).catch(() => ({ data: { data: [] } }));
-      setAllPrograms(res.data?.data || []);
-    } catch (err) {
-      console.error('Fetch all programs error:', err);
-      setAllPrograms([]);
-    }
-  }, []);
 
   // ─── PROGRAMS: Filtered view + counts ───
   const filteredPrograms = useMemo(() => {
