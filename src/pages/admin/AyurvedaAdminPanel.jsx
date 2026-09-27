@@ -1439,7 +1439,21 @@ const handleExportSettlements = () => {
                           {r.scopeType || 'global'}
                         </span>
                       </td>
-                      <td style={td}><strong>{r.scopeValue || '—'}</strong></td>
+                      <td style={td}>
+  			<strong>
+    			{(() => {
+     			 if (!r.scopeValue) return '—';
+      			 if (r.scopeType === 'provider') {
+        		 const doctor = allDoctors.find(d => String(d._id) === String(r.scopeValue));
+        		 if (doctor) return `👨‍⚕️ Dr. ${doctor.name}`;
+        		 const center = allCenters.find(c => String(c._id) === String(r.scopeValue));
+       			 if (center) return `🏨 ${center.name}`;
+       			return `Provider ${String(r.scopeValue).slice(-6)}`;
+     			 }
+     			return r.scopeValue;
+    		       })()}
+ 		      </strong>
+		     </td>
                       <td style={td}>
   			{({
     			'ayurveda_consultation': 'Doctor Consultation',
