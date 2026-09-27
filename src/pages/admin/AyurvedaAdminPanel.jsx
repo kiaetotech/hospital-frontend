@@ -80,6 +80,13 @@ const AyurvedaAdminPanel = () => {
   const [programSearchQuery, setProgramSearchQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState(null); // for detail modal
   const [allPrograms, setAllPrograms] = useState([]); // full list with approvalStatus
+  // ─── COMMISSION RULES (NEW) ───
+  const [commissionRules, setCommissionRules] = useState([]);
+  const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [editingCommissionRule, setEditingCommissionRule] = useState(null);
+  const [commissionRuleFilter, setCommissionRuleFilter] = useState('all');
+  const [commissionRuleSearch, setCommissionRuleSearch] = useState('');
+  const [commissionActionLoading, setCommissionActionLoading] = useState(false);
   const [stats, setStats] = useState({
     totalDoctors: 0, totalCenters: 0, totalBookings: 0,
     totalRevenue: 0, pendingDoctors: 0, pendingCenters: 0,
@@ -317,11 +324,15 @@ const handleExportSettlements = () => {
     else if (settlementTab === 'cities') fetchCityBreakdown();
     else if (settlementTab === 'dates') fetchDateBreakdown();
   }
-  // ─── PROGRAMS: fetch all when tab opens ───
+    // ─── PROGRAMS: fetch all when tab opens ───
   if (tab === 'programs') {
     fetchAllPrograms();
   }
-}, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange, fetchAllPrograms]);
+  // ─── COMMISSION RULES: fetch when tab opens (NEW) ───
+  if (tab === 'commission') {
+    fetchCommissionRules();
+  }
+}, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange, fetchAllPrograms, fetchCommissionRules]);
 
     useEffect(() => {
     // Pause auto-refresh while any modal is open (so form inputs don't lose focus)
@@ -545,6 +556,112 @@ const handleExportSettlements = () => {
       addNotification('Failed: ' + error.message, 'error');
     }
   };
+
+  // ============================================
+  // COMMISSION RULES HANDLERS (NEW)
+  // ============================================
+  const createCommissionRule = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+
+    const payload = {
+      scopeType: form.scopeType.value,
+      scopeValue: form.scopeValue.value.trim() || null,
+      scopeState: form.scopeState?.value.trim() || null,
+      serviceType: form.serviceType.value,
+      commissionType: form.commissionType.value,
+      percentageRate: Number(form.percentageRate.value || 0),
+      fixedAmount: Number(form.fixedAmount.value || 0),
+      effectiveFrom: form.effectiveFrom.value || new Date().toISOString(),
+      effectiveUntil: form.effectiveUntil.value || null,
+      changeReason: form.changeReason.value.trim()
+    };
+
+    if (!payload.changeReason || payload.changeReason.length < 5) {
+      addNotification('Reason must be at least 5 characters', 'error');
+      return;
+    }
+
+    if (payload.scopeType !== 'global' && !payload.scopeValue) {
+      addNotification('Scope value required for non-global scope', 'error');
+      return;
+    }
+
+    setCommissionActionLoading(true);
+    try {
+      const res = await axios.post(
+        `${API_BASE}/api/ayurveda/admin/commission-rules`,
+        payload,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('✅ Commission rule created', 'success');
+        setShowCommissionModal(false);
+        fetchCommissionRules();
+      } else {
+        addNotification(res.data.error || 'Create failed', 'error');
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setCommissionActionLoading(false);
+    }
+  };
+
+  const updateCommissionRule = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const payload = {
+      percentageRate: Number(form.percentageRate.value || 0),
+      fixedAmount: Number(form.fixedAmount?.value || 0),
+      priority: Number(form.priority.value || 0),
+      effectiveUntil: form.effectiveUntil.value || null,
+      isActive: form.isActive.checked,
+      changeReason: form.changeReason.value.trim()
+    };
+
+    if (!payload.changeReason || payload.changeReason.length < 5) {
+      addNotification('Reason must be at least 5 characters', 'error');
+      return;
+    }
+
+    setCommissionActionLoading(true);
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/ayurveda/admin/commission-rules/${editingCommissionRule._id}`,
+        payload,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('✅ Commission rule updated', 'success');
+        setEditingCommissionRule(null);
+        fetchCommissionRules();
+      } else {
+        addNotification(res.data.error || 'Update failed', 'error');
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setCommissionActionLoading(false);
+    }
+  };
+
+  const deleteCommissionRule = async (id) => {
+    if (!window.confirm('Delete this commission rule?')) return;
+    try {
+      const res = await axios.delete(
+        `${API_BASE}/api/ayurveda/admin/commission-rules/${id}`,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('Rule deleted', 'success');
+        fetchCommissionRules();
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.error || err.message), 'error');
+    }
+  };
+
 
   const approveSettlement = async (payoutId) => {
     try {
@@ -870,6 +987,7 @@ const handleExportSettlements = () => {
           { id: 'centers', label: `🏨 Centers (${stats.totalCenters})`, icon: FaBuilding },
           { id: 'bookings', label: `📋 Bookings (${stats.totalBookings})`, icon: FaCalendarAlt },
           { id: 'discounts', label: `🏷️ Discounts (${stats.activeDiscounts})`, icon: FaTag },
+          { id: 'commission', label: `💰 Commission Rules (${commissionRules.length})`, icon: FaRupeeSign },
           { id: 'settlements', label: `💰 Settlements (${stats.pendingPayouts})`, icon: FaRupeeSign },
           { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters + (stats.pendingPackages || 0) + (stats.pendingPrograms || 0)})`, icon: FaExclamationTriangle },
           { id: 'programs', label: '💪 Programs', icon: FaTag },
@@ -1240,6 +1358,88 @@ const handleExportSettlements = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* COMMISSION RULES TAB (NEW) */}
+        {tab === 'commission' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>💰 Commission Rules ({commissionRules.length})</h2>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="🔍 Search by value..."
+                  value={commissionRuleSearch}
+                  onChange={e => setCommissionRuleSearch(e.target.value)}
+                  style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.85rem', minWidth: 200 }}
+                />
+                <select value={commissionRuleFilter} onChange={e => setCommissionRuleFilter(e.target.value)}
+                  style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.85rem' }}>
+                  <option value="all">All Scopes</option>
+                  <option value="provider">Provider</option>
+                  <option value="city">City</option>
+                  <option value="state">State</option>
+                  <option value="global">Global</option>
+                </select>
+                <button
+                  onClick={() => setShowCommissionModal(true)}
+                  style={{ padding: '0.5rem 1rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                >
+                  + Add Rule
+                </button>
+              </div>
+            </div>
+
+            {commissionRules.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No commission rules yet. Defaults apply.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={th}>Scope</th>
+                    <th style={th}>Target</th>
+                    <th style={th}>Service</th>
+                    <th style={th}>Rate</th>
+                    <th style={th}>Priority</th>
+                    <th style={th}>Valid From</th>
+                    <th style={th}>Status</th>
+                    <th style={th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commissionRules.map(r => (
+                    <tr key={r._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={td}>
+                        <span style={{
+                          padding: '3px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700,
+                          background: r.scopeType === 'provider' ? '#dbeafe' : r.scopeType === 'city' ? '#fef3c7' : r.scopeType === 'state' ? '#fce7f3' : '#f1f5f9',
+                          color: r.scopeType === 'provider' ? '#1e40af' : r.scopeType === 'city' ? '#b45309' : r.scopeType === 'state' ? '#9d174d' : '#475569'
+                        }}>
+                          {r.scopeType || 'global'}
+                        </span>
+                      </td>
+                      <td style={td}><strong>{r.scopeValue || '—'}</strong></td>
+                      <td style={td}>{r.serviceType?.replace('ayurveda_', '')}</td>
+                      <td style={td}>
+                        {r.commissionType === 'fixed'
+                          ? `₹${r.fixedAmount}`
+                          : `${r.percentageRate}%`}
+                      </td>
+                      <td style={td}>{r.priority || 0}</td>
+                      <td style={td}>{r.effectiveFrom ? new Date(r.effectiveFrom).toLocaleDateString() : '—'}</td>
+                      <td style={td}>
+                        {r.isActive ? <span style={{ color: '#059669', fontWeight: 600 }}>🟢 Active</span> : <span style={{ color: '#dc2626' }}>🔴 Inactive</span>}
+                      </td>
+                      <td style={td}>
+                        <button onClick={() => setEditingCommissionRule(r)} style={actionBtn('#3b82f6')}>Edit</button>
+                        <button onClick={() => deleteCommissionRule(r._id)} style={actionBtn('#dc2626')}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
@@ -2346,6 +2546,110 @@ const handleExportSettlements = () => {
               <button onClick={() => { handleExport('bookings'); setShowExport(false); }} style={{ padding: '0.75rem', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>📋 Export Bookings</button>
               <button onClick={() => setShowExport(false)} style={{ padding: '0.75rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE COMMISSION RULE MODAL (NEW) */}
+      {showCommissionModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: 12, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem' }}>💰 Create Commission Rule</h3>
+            <form onSubmit={createCommissionRule} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Scope Type *</label>
+              <select name="scopeType" required style={inputStyle}>
+                <option value="provider">Provider (Doctor / Center)</option>
+                <option value="city">City</option>
+                <option value="state">State</option>
+                <option value="global">Global (all providers)</option>
+              </select>
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Target Value</label>
+              <select name="scopeValue" style={inputStyle}>
+                <option value="">— Select —</option>
+                {allDoctors.map(d => (
+                  <option key={d._id} value={d._id}>👨‍⚕️ {d.name} ({d.address?.city})</option>
+                ))}
+                {allCenters.map(c => (
+                  <option key={c._id} value={c._id}>🏨 {c.name} ({c.address?.city})</option>
+                ))}
+              </select>
+              <input name="scopeState" placeholder="State (for city scope, optional)" style={inputStyle} />
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Service Type *</label>
+              <select name="serviceType" required style={inputStyle}>
+                <option value="ayurveda_consultation">Doctor Consultation</option>
+                <option value="ayurveda_panchakarma">Panchakarma Package</option>
+                <option value="ayurveda_wellness_center">Wellness Program</option>
+                <option value="ayurveda_home_therapy">Home Therapy</option>
+                <option value="ayurveda_medicine">Medicine Order</option>
+              </select>
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Commission Type *</label>
+              <select name="commissionType" required style={inputStyle}>
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed (₹)</option>
+              </select>
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Percentage Rate (%)</label>
+              <input name="percentageRate" type="number" min="0" max="50" step="0.1" placeholder="e.g., 10" style={inputStyle} />
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Fixed Amount (₹) — used if Fixed type</label>
+              <input name="fixedAmount" type="number" min="0" placeholder="e.g., 100" style={inputStyle} />
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Effective From</label>
+              <input name="effectiveFrom" type="date" style={inputStyle} defaultValue={new Date().toISOString().split('T')[0]} />
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Effective Until (optional)</label>
+              <input name="effectiveUntil" type="date" style={inputStyle} />
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Reason (required for audit) *</label>
+              <textarea name="changeReason" required rows="2" placeholder="e.g., Negotiated rate for Dr. Ajay — Sept 2026" style={inputStyle} />
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="submit" disabled={commissionActionLoading} style={{ flex: 1, padding: '0.6rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  {commissionActionLoading ? 'Saving...' : 'Create Rule'}
+                </button>
+                <button type="button" onClick={() => setShowCommissionModal(false)} style={{ flex: 1, padding: '0.6rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT COMMISSION RULE MODAL (NEW) */}
+      {editingCommissionRule && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: 12, maxWidth: 500, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem' }}>✏️ Edit Rule — {editingCommissionRule.scopeType}:{editingCommissionRule.scopeValue}</h3>
+            <form onSubmit={updateCommissionRule} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Percentage Rate (%)</label>
+              <input name="percentageRate" type="number" min="0" max="50" step="0.1" defaultValue={editingCommissionRule.percentageRate || 0} style={inputStyle} />
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Fixed Amount (₹)</label>
+              <input name="fixedAmount" type="number" min="0" defaultValue={editingCommissionRule.fixedAmount || 0} style={inputStyle} />
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Priority</label>
+              <input name="priority" type="number" defaultValue={editingCommissionRule.priority || 0} style={inputStyle} />
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Effective Until</label>
+              <input name="effectiveUntil" type="date" defaultValue={editingCommissionRule.effectiveUntil ? new Date(editingCommissionRule.effectiveUntil).toISOString().split('T')[0] : ''} style={inputStyle} />
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                <input type="checkbox" name="isActive" defaultChecked={editingCommissionRule.isActive} />
+                Active
+              </label>
+
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Reason *</label>
+              <textarea name="changeReason" required rows="2" placeholder="Reason for change" style={inputStyle} />
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="submit" disabled={commissionActionLoading} style={{ flex: 1, padding: '0.6rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  {commissionActionLoading ? 'Saving...' : 'Save'}
+                </button>
+                <button type="button" onClick={() => setEditingCommissionRule(null)} style={{ flex: 1, padding: '0.6rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
