@@ -1440,7 +1440,15 @@ const handleExportSettlements = () => {
                         </span>
                       </td>
                       <td style={td}><strong>{r.scopeValue || '—'}</strong></td>
-                      <td style={td}>{r.serviceType?.replace('ayurveda_', '')}</td>
+                      <td style={td}>
+  			{({
+    			'ayurveda_consultation': 'Doctor Consultation',
+    			'ayurveda_wellness_center': 'Wellness Program',
+    			'ayurveda_panchakarma': 'Panchakarma Package',
+    			'ayurveda_home_therapy': 'Home Therapy',
+    			'ayurveda_medicine': 'Medicine Order'
+ 			 })[r.serviceType] || r.serviceType}
+			</td>
                       <td style={td}>
                         {r.commissionType === 'fixed'
                           ? `₹${r.fixedAmount}`
