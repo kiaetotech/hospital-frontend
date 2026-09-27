@@ -86,6 +86,7 @@ const AyurvedaAdminPanel = () => {
   const [editingCommissionRule, setEditingCommissionRule] = useState(null);
   const [commissionRuleFilter, setCommissionRuleFilter] = useState('all');
   const [commissionRuleSearch, setCommissionRuleSearch] = useState('');
+  const [commissionModalScopeType, setCommissionModalScopeType] = useState('provider');
   const [commissionActionLoading, setCommissionActionLoading] = useState(false);
   const [stats, setStats] = useState({
     totalDoctors: 0, totalCenters: 0, totalBookings: 0,
@@ -2568,31 +2569,62 @@ const handleExportSettlements = () => {
         </div>
       )}
 
-      {/* CREATE COMMISSION RULE MODAL (NEW) */}
+            {/* CREATE COMMISSION RULE MODAL (NEW) */}
       {showCommissionModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
           <div style={{ background: 'white', borderRadius: 12, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' }}>
             <h3 style={{ margin: '0 0 1rem' }}>💰 Create Commission Rule</h3>
             <form onSubmit={createCommissionRule} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Scope Type *</label>
-              <select name="scopeType" required style={inputStyle}>
+              <select
+                name="scopeType"
+                required
+                style={inputStyle}
+                value={commissionModalScopeType}
+                onChange={(e) => setCommissionModalScopeType(e.target.value)}
+              >
                 <option value="provider">Provider (Doctor / Center)</option>
                 <option value="city">City</option>
                 <option value="state">State</option>
                 <option value="global">Global (all providers)</option>
               </select>
 
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Target Value</label>
-              <select name="scopeValue" style={inputStyle}>
-                <option value="">— Select —</option>
-                {allDoctors.map(d => (
-                  <option key={d._id} value={d._id}>👨‍⚕️ {d.name} ({d.address?.city})</option>
-                ))}
-                {allCenters.map(c => (
-                  <option key={c._id} value={c._id}>🏨 {c.name} ({c.address?.city})</option>
-                ))}
-              </select>
-              <input name="scopeState" placeholder="State (for city scope, optional)" style={inputStyle} />
+              {commissionModalScopeType === 'provider' && (
+                <>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Select Provider *</label>
+                  <select name="scopeValue" required style={inputStyle}>
+                    <option value="">— Select a doctor or center —</option>
+                    {allDoctors.map(d => (
+                      <option key={d._id} value={d._id}>👨‍⚕️ Dr. {d.name} ({d.address?.city})</option>
+                    ))}
+                    {allCenters.map(c => (
+                      <option key={c._id} value={c._id}>🏨 {c.name} ({c.address?.city})</option>
+                    ))}
+                  </select>
+                </>
+              )}
+
+              {commissionModalScopeType === 'city' && (
+                <>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>City Name *</label>
+                  <input name="scopeValue" required placeholder="Enter city name" style={inputStyle} />
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>State (optional)</label>
+                  <input name="scopeState" placeholder="State (optional)" style={inputStyle} />
+                </>
+              )}
+
+              {commissionModalScopeType === 'state' && (
+                <>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>State Name *</label>
+                  <input name="scopeValue" required placeholder="Enter state name" style={inputStyle} />
+                </>
+              )}
+
+              {commissionModalScopeType === 'global' && (
+                <div style={{ padding: '0.75rem', background: '#f1f5f9', borderRadius: 8, fontSize: '0.85rem', color: '#475569' }}>
+                  ℹ️ Global rule applies to all providers of this service type.
+                </div>
+              )}
 
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Service Type *</label>
               <select name="serviceType" required style={inputStyle}>
@@ -2610,10 +2642,10 @@ const handleExportSettlements = () => {
               </select>
 
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Percentage Rate (%)</label>
-              <input name="percentageRate" type="number" min="0" max="50" step="0.1" placeholder="e.g., 10" style={inputStyle} />
+              <input name="percentageRate" type="number" min="0" max="50" step="0.1" placeholder="Enter rate" style={inputStyle} />
 
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Fixed Amount (₹) — used if Fixed type</label>
-              <input name="fixedAmount" type="number" min="0" placeholder="e.g., 100" style={inputStyle} />
+              <input name="fixedAmount" type="number" min="0" placeholder="Enter amount in ₹" style={inputStyle} />
 
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Effective From</label>
               <input name="effectiveFrom" type="date" style={inputStyle} defaultValue={new Date().toISOString().split('T')[0]} />
@@ -2622,7 +2654,7 @@ const handleExportSettlements = () => {
               <input name="effectiveUntil" type="date" style={inputStyle} />
 
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Reason (required for audit) *</label>
-              <textarea name="changeReason" required rows="2" placeholder="e.g., Negotiated rate for Dr. Ajay — Sept 2026" style={inputStyle} />
+              <textarea name="changeReason" required rows="2" placeholder="Why is this rule being created?" style={inputStyle} />
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button type="submit" disabled={commissionActionLoading} style={{ flex: 1, padding: '0.6rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
