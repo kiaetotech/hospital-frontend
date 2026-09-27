@@ -317,6 +317,24 @@ const handleExportSettlements = () => {
     }
   }, []);
 
+  // ─── COMMISSION RULES: Fetch all (NEW) ───
+  const fetchCommissionRules = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (commissionRuleFilter !== 'all') params.append('scopeType', commissionRuleFilter);
+      if (commissionRuleSearch.trim()) params.append('search', commissionRuleSearch.trim());
+
+      const res = await axios.get(
+        `${API_BASE}/api/ayurveda/admin/commission-rules?${params}`,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      ).catch(() => ({ data: { data: [] } }));
+      setCommissionRules(res.data?.data || []);
+    } catch (err) {
+      console.error('Fetch commission rules error:', err);
+      setCommissionRules([]);
+    }
+  }, [commissionRuleFilter, commissionRuleSearch]);
+
     useEffect(() => {
   if (tab === 'settlements') {
     if (settlementTab === 'all') fetchAllSettlements();
