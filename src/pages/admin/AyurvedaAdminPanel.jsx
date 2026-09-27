@@ -1422,6 +1422,7 @@ const handleExportSettlements = () => {
                     <th style={th}>Rate</th>
                     <th style={th}>Priority</th>
                     <th style={th}>Valid From</th>
+                    <th style={th}>Valid Until</th>
                     <th style={th}>Status</th>
                     <th style={th}>Actions</th>
                   </tr>
@@ -1447,6 +1448,11 @@ const handleExportSettlements = () => {
                       </td>
                       <td style={td}>{r.priority || 0}</td>
                       <td style={td}>{r.effectiveFrom ? new Date(r.effectiveFrom).toLocaleDateString() : '—'}</td>
+                      <td style={td}>
+                        {r.effectiveUntil
+                          ? new Date(r.effectiveUntil).toLocaleDateString()
+                          : <span style={{ color: '#94a3b8' }}>Never</span>}
+                      </td>
                       <td style={td}>
                         {r.isActive ? <span style={{ color: '#059669', fontWeight: 600 }}>🟢 Active</span> : <span style={{ color: '#dc2626' }}>🔴 Inactive</span>}
                       </td>
