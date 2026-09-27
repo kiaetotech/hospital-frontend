@@ -23,7 +23,17 @@ const getTokenForCurrentContext = () => {
   if (path.startsWith('/ayurveda/doctor/')) {
     return localStorage.getItem('doctorToken');
   }
-  if (path.startsWith('/ayurveda/center/') || path.startsWith('/ayurveda/wellness-center')) {
+    // Center token ONLY for center-owner pages, NOT patient-facing booking pages
+  // Patient booking URL: /ayurveda/center/:centerId/book/:packageId  → must use patient token
+  const isCenterOwnerPage =
+    path === '/ayurveda/center/dashboard' ||
+    path.startsWith('/ayurveda/center/dashboard/') ||
+    path === '/ayurveda/center/profile' ||
+    path === '/ayurveda/center/bookings' ||
+    path === '/ayurveda/center/packages' ||
+    path === '/ayurveda/center/settings' ||
+    path.startsWith('/ayurveda/wellness-center');
+  if (isCenterOwnerPage) {
     return localStorage.getItem('centerToken');
   }
   if (path.startsWith('/ambulance/dashboard') || path.startsWith('/ambulance/login')) {
@@ -93,7 +103,15 @@ api.interceptors.response.use(
       localStorage.removeItem('doctorToken');
       localStorage.removeItem('doctor');
       window.location.href = '/ayurveda/doctor/login';
-    } else if (path.startsWith('/ayurveda/center/') || path.startsWith('/ayurveda/wellness-center')) {
+    } else if (
+      path === '/ayurveda/center/dashboard' ||
+      path.startsWith('/ayurveda/center/dashboard/') ||
+      path === '/ayurveda/center/profile' ||
+      path === '/ayurveda/center/bookings' ||
+      path === '/ayurveda/center/packages' ||
+      path === '/ayurveda/center/settings' ||
+      path.startsWith('/ayurveda/wellness-center')
+    ) {
       localStorage.removeItem('centerToken');
       localStorage.removeItem('center');
       window.location.href = '/ayurveda/center/login';

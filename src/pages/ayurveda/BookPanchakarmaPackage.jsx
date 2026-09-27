@@ -42,15 +42,18 @@ const BookPanchakarmaPackage = () => {
     return;
   }
 
-  const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
   let user = null;
   try {
     user = JSON.parse(userStr || '{}');
   } catch (e) {}
 
+  // Accept multiple role field names (role / userType / type) — defensive
+  const role = user?.role || user?.userType || user?.type;
+
   // Only allow users with role 'patient'
-  if (!token || !user || user.role !== 'patient') {
+  if (!token || !user || role !== 'patient') {
     alert('Please login as a patient to book this package.');
     navigate('/login?redirect=/ayurveda/panchakarma-centers');
     return;
