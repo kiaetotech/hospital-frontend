@@ -132,6 +132,7 @@ import AdminFinancing from './pages/admin/AdminFinancing';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminInsuranceClaims from './pages/admin/AdminInsuranceClaims';
 import AdminOnlineDoctor from './pages/admin/AdminOnlineDoctor';
+import CommandCenter from './pages/admin/CommandCenter';
 
 // ============================================
 // INSURANCE MODULE IMPORTS
@@ -386,6 +387,7 @@ function App() {
 	  <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 	  <Route path="/admin/reset-password" element={<AdminPasswordReset />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+	  <Route path="/admin/command-center" element={<CommandCenter />} />
           <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
           <Route path="/admin/commission" element={<AdminCommission />} />
           <Route path="/admin/discounts" element={<AdminDiscounts />} />
@@ -403,6 +405,7 @@ function App() {
           <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
           <Route path="/admin/corporate" element={<AdminCorporate />} />
           <Route path="/admin/online-doctor" element={<AdminOnlineDoctor />} />
+	  <Route path="/admin/command-center" component={CommandCenter} />
 
           {/* INSURANCE TAG */}
           <Route path="/insurance" element={<InsuranceHub />} />
