@@ -119,6 +119,7 @@ import AdminFinancialDashboard from './pages/admin/AdminFinancialDashboard';
 import HomeopathyAdminPanel from './pages/admin/HomeopathyAdminPanel';
 import AdminMentalHealth from './pages/admin/AdminMentalHealth';
 import AdminCorporate from './pages/admin/AdminCorporate';
+import TaxesAndFees from './pages/admin/TaxesAndFees';
 
 // ============================================
 // NEW ADMIN PANEL IMPORTS
@@ -389,6 +390,7 @@ function App() {
           <Route path="/admin/commission" element={<AdminCommission />} />
           <Route path="/admin/discounts" element={<AdminDiscounts />} />
           <Route path="/admin/ayurveda" element={<AyurvedaAdminPanel />} />
+	  <Route path="/admin/taxes" element={<TaxesAndFees />} />
           <Route path="/admin/finance" element={<AdminFinancialDashboard />} />
           <Route path="/admin/homeopathy" element={<HomeopathyAdminPanel />} />
           <Route path="/admin/hospitals" element={<AdminHospitals />} />
