@@ -14,6 +14,7 @@ const AdminDashboard = () => {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [showExport, setShowExport] = useState(false);
+  const [period, setPeriod] = useState('7d'); // default to 7 days (matches existing view)
   
   const [stats, setStats] = useState({
     lenders: { total: 0, pending: 0, active: 0, suspended: 0 },
@@ -224,11 +225,28 @@ const AdminDashboard = () => {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+	<style>{`
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(25,169,116,0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(25,169,116,0); }
+    100% { box-shadow: 0 0 0 0 rgba(25,169,116,0); }
+  }
+`}</style>
       {/* HEADER */}
       <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e3a5f)', padding: '1rem 2rem', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>⚙️ Admin Dashboard</h1>
-          <p style={{ opacity: 0.7, fontSize: '0.8rem', margin: '2px 0 0' }}>Last updated: {lastRefresh.toLocaleTimeString()} • Auto-refreshes every 60s</p>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>
+  ⚙️ Admin Dashboard
+  <span style={{ display:'inline-flex', alignItems:'center', gap:6, marginLeft:16, fontSize:'0.75rem', fontWeight:600, verticalAlign:'middle' }}>
+    <span style={{
+      width:9, height:9, borderRadius:'50%', background:'#19a974',
+      display:'inline-block', boxShadow:'0 0 0 0 rgba(25,169,116,0.7)',
+      animation:'pulse 2s infinite'
+    }} />
+    Live
+  </span>
+</h1>
+<p style={{ opacity: 0.7, fontSize: '0.8rem', margin: '2px 0 0' }}>Last updated: {lastRefresh.toLocaleTimeString()} • Auto-refreshes every 60s</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <form onSubmit={handleSearch} style={{ display: 'flex', gap: 4 }}>
@@ -293,8 +311,22 @@ const AdminDashboard = () => {
         {activeTab === 'overview' && (
           <>
             {/* Revenue Trend Chart */}
-            <div style={{ backgroundColor:'#fff', borderRadius:16, padding:'1.5rem', marginBottom:'1.5rem', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
-              <h3 style={{ fontWeight:700, marginBottom:16 }}>📈 Revenue Trend (Last 7 Days)</h3>
+<div style={{ backgroundColor:'#fff', borderRadius:16, padding:'1.5rem', marginBottom:'1.5rem', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
+  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, flexWrap:'wrap', gap:8 }}>
+    <h3 style={{ fontWeight:700, margin:0 }}>📈 Revenue Trend</h3>
+    <select
+      value={period}
+      onChange={(e) => setPeriod(e.target.value)}
+      style={{ padding:'6px 12px', border:'1px solid #d1d5db', borderRadius:6, fontSize:'0.85rem', cursor:'pointer' }}
+    >
+      <option value="today">Today</option>
+      <option value="7d">Last 7 Days</option>
+      <option value="30d">Last 30 Days</option>
+      <option value="mtd">This Month</option>
+      <option value="qtd">This Quarter</option>
+      <option value="fy">Financial Year</option>
+    </select>
+  </div>
               <div style={{ display:'flex', alignItems:'flex-end', gap:12, height:140, paddingTop:8 }}>
                 {revenueTrend.map((d,i) => (
                   <div key={i} style={{ flex:1, textAlign:'center' }}>
@@ -309,24 +341,28 @@ const AdminDashboard = () => {
             {/* Module Stats Cards */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:'0.75rem', marginBottom:'1.5rem' }}>
               {[
-                { icon:'🏥', label:'Hospitals', value:moduleStats.hospitals, color:'#dc2626', path:'/admin/hospitals' },
-                { icon:'🚑', label:'Ambulance', value:moduleStats.ambulance, color:'#f59e0b', path:'/admin/ambulance' },
-                { icon:'🏠', label:'Caregivers', value:moduleStats.caregivers, color:'#8b5cf6', path:'/admin/caregivers' },
-                { icon:'🔬', label:'Diagnostics', value:moduleStats.diagnostics, color:'#06b6d4', path:'/admin/diagnostics' },
-                { icon:'🧠', label:'Mental Health', value:moduleStats.mentalHealth, color:'#8b5cf6', path:'/admin/mentalhealth' },
-                { icon:'📱', label:'Online Doctors', value:moduleStats.onlineDoctor, color:'#0891b2', path:'/admin/online-doctor' },
-                { icon:'🧘', label:'Ayurveda', value:moduleStats.ayurveda, color:'#4CAF50', path:'/admin/ayurveda' },
-                { icon:'🌿', label:'Homeopathy', value:moduleStats.homeopathy, color:'#7C3AED', path:'/admin/homeopathy' },
-                { icon:'🛡️', label:'Insurance', value:moduleStats.insurance, color:'#2563eb', tab:'insurance' },
-                { icon:'🏢', label:'Corporate', value:corporateStats.totalPlans, color:'#1e3a5f', tab:'corporate' },
-                { icon:'💰', label:'Lenders', value:stats.lenders.total, color:'#059669', tab:'lenders' },
-                { icon:'👥', label:'Users', value:moduleStats.users, color:'#4b5563', path:'/admin/users' },
-              ].map((m,i) => (
-                <div key={i} onClick={() => { if(m.tab) setActiveTab(m.tab); if(m.path) navigate(m.path); }} style={{ backgroundColor:'#fff', padding:'1rem', borderRadius:12, boxShadow:'0 1px 3px rgba(0,0,0,0.04)', borderLeft:`4px solid ${m.color}`, cursor:'pointer', transition:'all .2s' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>
-                  <div style={{ fontSize:'0.8rem', color:'#64748b', marginBottom:4 }}>{m.icon} {m.label}</div>
-                  <div style={{ fontSize:'1.5rem', fontWeight:700, color:m.color }}>{m.value||0}</div>
-                </div>
-              ))}
+  { icon:'🏥', label:'Hospitals', value:moduleStats.hospitals, color:'#dc2626', path:'/admin/hospitals' },
+  { icon:'🚑', label:'Ambulance', value:moduleStats.ambulance, color:'#f59e0b', path:'/admin/ambulance' },
+  { icon:'🏠', label:'Caregivers', value:moduleStats.caregivers, color:'#8b5cf6', path:'/admin/caregivers' },
+  { icon:'🔬', label:'Diagnostics', value:moduleStats.diagnostics, color:'#06b6d4', path:'/admin/diagnostics' },
+  { icon:'🧠', label:'Mental Health', value:moduleStats.mentalHealth, color:'#8b5cf6', path:'/admin/mentalhealth' },
+  { icon:'📱', label:'Online Doctors', value:moduleStats.onlineDoctor, color:'#0891b2', path:'/admin/online-doctor' },
+  { icon:'🧘', label:'Ayurveda', value:moduleStats.ayurveda, color:'#4CAF50', path:'/admin/ayurveda' },
+  { icon:'🌿', label:'Homeopathy', value:moduleStats.homeopathy, color:'#7C3AED', path:'/admin/homeopathy' },
+  { icon:'🛡️', label:'Insurance', value:moduleStats.insurance, color:'#2563eb', tab:'insurance' },
+  { icon:'🏢', label:'Corporate', value:corporateStats.totalPlans, color:'#1e3a5f', tab:'corporate' },
+  { icon:'💰', label:'Lenders', value:stats.lenders.total, color:'#059669', tab:'lenders' },
+  { icon:'👥', label:'Users', value:moduleStats.users, color:'#4b5563', path:'/admin/users' },
+].map((m,i) => (
+  <div key={i} onClick={() => { if(m.tab) setActiveTab(m.tab); if(m.path) navigate(m.path); }} style={{ backgroundColor:'#fff', padding:'1rem', borderRadius:12, boxShadow:'0 1px 3px rgba(0,0,0,0.04)', borderLeft:`4px solid ${m.color}`, cursor:'pointer', transition:'all .2s' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>
+    <div style={{ fontSize:'0.8rem', color:'#64748b', marginBottom:4 }}>{m.icon} {m.label}</div>
+    <div style={{ fontSize:'1.5rem', fontWeight:700, color:m.color }}>{m.value||0}</div>
+    <div style={{ fontSize:'0.65rem', color:'#94a3b8', marginTop:6, display:'flex', gap:8 }}>
+      <span>Pending: 0</span>
+      <span>Complaints: 0</span>
+    </div>
+  </div>
+))}
             </div>
 
             {/* Pending + Revenue Row */}
@@ -347,7 +383,7 @@ const AdminDashboard = () => {
                   <span>Total</span><span style={{ color:'#dc2626' }}>{totalPendingApprovals}</span>
                 </div>
               </div>
-              <div style={{ backgroundColor:'#fff', borderRadius:16, padding:'1.5rem', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
+                            <div style={{ backgroundColor:'#fff', borderRadius:16, padding:'1.5rem', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
                 <h3 style={{ fontWeight:700, marginBottom:12 }}>💰 Revenue Summary</h3>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   {[
@@ -355,12 +391,16 @@ const AdminDashboard = () => {
                     { label:'Paid', value:`₹${fmt(stats.commission.paid)}`, color:'#10b981' },
                     { label:'Pending', value:`₹${fmt(stats.commission.pending)}`, color:'#ef4444' },
                     { label:'Insurance Settlements', value:`₹${fmt(insuranceStats.settlements.totalAmount)}`, color:'#f59e0b' },
+                    { label:'Refunds (This Month)', value:`₹${fmt(0)}`, color:'#ef4444', placeholder: true },
+                    { label:'GST Collected', value:`₹${fmt(Math.round((stats.commission.total || 0) * 0.18))}`, color:'#0891b2' },
                   ].map((r,i)=>(
-                    <div key={i} style={{ padding:12, backgroundColor:'#f8fafc', borderRadius:8 }}>
+                    <div key={i} style={{ padding:12, backgroundColor:'#f8fafc', borderRadius:8, opacity: r.placeholder ? 0.6 : 1 }}>
                       <div style={{ fontSize:'0.75rem', color:'#64748b' }}>{r.label}</div>
                       <div style={{ fontSize:'1.1rem', fontWeight:700, color:r.color }}>{r.value}</div>
                     </div>
                   ))}
+                </div>
+              </div>
                 </div>
               </div>
             </div>
