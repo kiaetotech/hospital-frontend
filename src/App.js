@@ -405,8 +405,7 @@ function App() {
           <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
           <Route path="/admin/corporate" element={<AdminCorporate />} />
           <Route path="/admin/online-doctor" element={<AdminOnlineDoctor />} />
-	  <Route path="/admin/command-center" component={CommandCenter} />
-
+	
           {/* INSURANCE TAG */}
           <Route path="/insurance" element={<InsuranceHub />} />
           <Route path="/insurance/list" element={<InsuranceList />} />
