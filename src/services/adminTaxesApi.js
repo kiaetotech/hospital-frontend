@@ -52,6 +52,63 @@ export const previewGst = (data) =>
   axios.post(`${API_BASE}/api/admin/taxes/gst/preview`, data, { headers: adminHeaders() });
 
 // ============================================
+// COMMISSION RULES APIs (aliases)
+// ============================================
+
+export const listCommissionRules = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return axios.get(`${API_BASE}/api/admin/taxes/commission-rules${qs ? '?' + qs : ''}`, { headers: adminHeaders() });
+};
+
+export const createCommissionRule = (data) =>
+  axios.post(`${API_BASE}/api/admin/taxes/commission-rules`, data, { headers: adminHeaders() });
+
+export const updateCommissionRule = (id, data) =>
+  axios.put(`${API_BASE}/api/admin/taxes/commission-rules/${id}`, data, { headers: adminHeaders() });
+
+export const deleteCommissionRule = (id) =>
+  axios.delete(`${API_BASE}/api/admin/taxes/commission-rules/${id}`, { headers: adminHeaders() });
+
+// ============================================
+// DISCOUNT APIs (aliases)
+// ============================================
+
+export const listDiscounts = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return axios.get(`${API_BASE}/api/admin/taxes/discounts${qs ? '?' + qs : ''}`, { headers: adminHeaders() });
+};
+
+export const createDiscount = (data) =>
+  axios.post(`${API_BASE}/api/admin/taxes/discounts`, data, { headers: adminHeaders() });
+
+export const updateDiscount = (id, data) =>
+  axios.put(`${API_BASE}/api/admin/taxes/discounts/${id}`, data, { headers: adminHeaders() });
+
+export const updateDiscountFull = (id, data) =>
+  axios.put(`${API_BASE}/api/admin/taxes/discounts/${id}/full`, data, { headers: adminHeaders() });
+
+export const deleteDiscount = (id) =>
+  axios.delete(`${API_BASE}/api/admin/taxes/discounts/${id}`, { headers: adminHeaders() });
+
+// ============================================
+// TAG-TO-SERVICE MAP (for filters)
+// ============================================
+
+export const TAGS = {
+  'Ayurveda': ['ayurveda_consultation', 'ayurveda_panchakarma', 'ayurveda_online_doctor', 'ayurveda_wellness_center', 'ayurveda_home_therapy', 'ayurveda_medicine', 'ayurveda_product', 'ayurveda_corporate'],
+  'Hospitals': ['hospital_opd', 'hospital_admission'],
+  'Ambulance': ['ambulance', 'ambulance_emergency', 'ambulance_scheduled'],
+  'Diagnostics': ['labtest', 'health_package'],
+  'Caregivers': ['caregiver'],
+  'Mental Health': ['mental_health'],
+  'Online Doctor': ['online_consult'],
+  'Homeopathy': ['homeopathy_consult', 'homeopathy_medicine'],
+  'Insurance': ['insurance'],
+  'Corporate': ['corporate_health'],
+  'Lenders': ['health_emi'],
+};
+
+// ============================================
 // SEED APIs
 // ============================================
 
