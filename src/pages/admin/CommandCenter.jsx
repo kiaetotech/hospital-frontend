@@ -1,4 +1,4 @@
-// src/pages/admin/CommandCenter.jsx
+// D:\hospital-frontend\src\pages\admin\CommandCenter.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -13,7 +13,7 @@ const API_BASE =
   'https://hospital-backend-production-e2cf.up.railway.app';
 
 // ============================================
-// TAG DEFINITIONS — 12 tags (11 live + DietCare soon)
+// 12 TAGS
 // ============================================
 const TAGS = [
   { key: 'hospitals',   label: 'Hospitals',       icon: FaHospital,    color: '#dc2626', path: '/admin/hospitals' },
@@ -30,9 +30,6 @@ const TAGS = [
   { key: 'dietcare',    label: 'DietCare',        icon: FaAppleAlt,    color: '#65a30d', path: '/admin/dietcare', soon: true },
 ];
 
-// ============================================
-// APPROVAL CATEGORIES — real pending counts
-// ============================================
 const APPROVAL_CATEGORIES = [
   { key: 'hospitals',   label: 'Hospitals' },
   { key: 'doctor',      label: 'Doctors' },
@@ -87,12 +84,13 @@ const KPICard = ({ kpi }) => (
 );
 
 // ============================================
-// TAG CARD — one per tag
+// TAG CARD
 // ============================================
 const TagCard = ({ tag, metrics, onClick }) => {
   const Icon = tag.icon;
   const disabled = tag.soon;
-  const hasData = (metrics?.total || 0) > 0;
+  const hasData = metrics && metrics.total > 0;
+  const apiOk = metrics?.apiOk === true;
 
   return (
     <div style={{
@@ -125,9 +123,9 @@ const TagCard = ({ tag, metrics, onClick }) => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-        <Metric label="Providers" value={number(metrics?.total)} real={hasData} />
-        <Metric label="Bookings"  value={number(metrics?.bookings)} real={hasData} />
-        <Metric label="Revenue"   value={money(metrics?.revenue)} real={hasData} />
+        <Metric label="Providers"  value={number(metrics?.total)}    real={apiOk} />
+        <Metric label="Bookings"   value={number(metrics?.bookings)} real={apiOk} />
+        <Metric label="Revenue"    value={money(metrics?.revenue)}   real={apiOk} />
         <Metric label="Conversion" value={`${metrics?.conversion || 0}%`} real={false} />
       </div>
 
@@ -170,11 +168,11 @@ const Metric = ({ label, value, real }) => (
 // ============================================
 const Funnel = () => {
   const steps = [
-    { label: 'Visits',           value: 124580, pct: 100 },
-    { label: 'Views / Searches', value: 72256,  pct: 58 },
-    { label: 'Booking Started',  value: 14802,  pct: 12 },
-    { label: 'Payment Initiated', value: 13500, pct: 11 },
-    { label: 'Confirmed',        value: 12480,  pct: 10 },
+    { label: 'Visits',            value: 124580, pct: 100 },
+    { label: 'Views / Searches',  value: 72256,  pct: 58 },
+    { label: 'Booking Started',   value: 14802,  pct: 12 },
+    { label: 'Payment Initiated', value: 13500,  pct: 11 },
+    { label: 'Confirmed',         value: 12480,  pct: 10 },
   ];
 
   return (
@@ -211,10 +209,10 @@ const Funnel = () => {
 // ============================================
 const FinancePanel = ({ kpis, navigate }) => {
   const rows = [
-    { label: 'Gross Revenue',     value: kpis.gmv,        real: false },
-    { label: 'Commission',        value: kpis.commission, real: kpis.commission > 0 },
-    { label: 'Refunds',           value: 0,               real: false },
-    { label: 'GST / Tax',         value: Math.round(kpis.commission * 0.18), real: kpis.commission > 0 },
+    { label: 'Gross Revenue',     value: kpis.gmv,         real: kpis.gmv > 0 },
+    { label: 'Commission',        value: kpis.commission,  real: kpis.commission > 0 },
+    { label: 'Refunds',           value: 0,                real: false },
+    { label: 'GST / Tax',         value: kpis.gst,         real: kpis.gst > 0 },
     { label: 'Settlements',       value: kpis.settlements, real: kpis.settlements > 0 },
   ];
 
@@ -270,7 +268,7 @@ const ApprovalCenter = ({ pending, navigate }) => (
   }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
       <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>📋 Approval Center</h3>
-      <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', background: '#f1f5f9', padding: '2px 6px', borderRadius: 6 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: '#065f46', background: '#d1fae5', padding: '2px 6px', borderRadius: 6 }}>
         REAL
       </span>
     </div>
@@ -281,7 +279,7 @@ const ApprovalCenter = ({ pending, navigate }) => (
       }}>
         <span style={{ color: '#475569' }}>{cat.label}</span>
         <span style={{
-          fontWeight: 800, color: pending[cat.key] > 0 ? '#dc2626' : '#94a3b8',
+          fontWeight: 800, color: (pending[cat.key] || 0) > 0 ? '#dc2626' : '#94a3b8',
         }}>
           {pending[cat.key] || 0}
         </span>
@@ -297,13 +295,12 @@ const ApprovalCenter = ({ pending, navigate }) => (
 );
 
 // ============================================
-// AI CONTROL CENTER (embed)
+// AI CONTROL CENTER
 // ============================================
 const AIControlCenter = ({ navigate }) => (
   <div style={{
     backgroundColor: '#fff', border: '1px solid #e4e8f0', borderRadius: 13,
     padding: 18, boxShadow: '0 2px 8px rgba(23,32,51,0.035)',
-    gridColumn: '1 / -1',
   }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
       <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>🤖 AI Control Center</h3>
@@ -311,7 +308,7 @@ const AIControlCenter = ({ navigate }) => (
         LIVE
       </span>
     </div>
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
       {[
         { label: 'Operations AI', status: 'running' },
         { label: 'Finance AI',    status: 'running' },
@@ -350,7 +347,6 @@ const ReportCenter = ({ navigate }) => (
   <div style={{
     backgroundColor: '#fff', border: '1px solid #e4e8f0', borderRadius: 13,
     padding: 18, boxShadow: '0 2px 8px rgba(23,32,51,0.035)',
-    gridColumn: '1 / -1',
   }}>
     <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 12px' }}>📑 Report Center</h3>
     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -380,7 +376,7 @@ const CommandCenter = () => {
   const [pending, setPending] = useState({});
   const [kpis, setKpis] = useState({
     users: 0, providers: 0, gmv: 0, commission: 0, earnings: 0,
-    refunds: 0, gst: 0, settlements: 0, bookings: 0, visits: 0,
+    refunds: 0, gst: 0, settlements: 0, bookings: 0,
   });
 
   const fetchData = useCallback(async () => {
@@ -390,139 +386,184 @@ const CommandCenter = () => {
     setLoading(true);
     const cfg = { headers: { Authorization: `Bearer ${token}` } };
 
+    const metrics = {};
+
+    // ──────────── 1. HOSPITALS ────────────
     try {
-      const [
-        hospitalsRes, ambulanceRes, caregiversRes, diagnosticsRes,
-        mentalHealthRes, onlineDoctorRes, ayurvedaRes, homeopathyRes,
-        insuranceRes, corporateRes, lendersRes, usersRes,
-      ] = await Promise.all([
-        axios.get(`${API_BASE}/api/admin/hospitals`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/admin/ambulance`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/caregivers`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/diagnostics/provider/stats`, cfg).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/mentalhealth/admin/dashboard`, cfg).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/online-doctor/admin/doctors`, cfg).catch(() => ({ data: {} })),
+      const res = await axios.get(`${API_BASE}/api/admin/hospitals`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: {} }));
+      const total = res.data?.pagination?.totalHospitals || 0;
+      metrics.hospitals = { total, bookings: 0, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.hospitals = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
+
+    // ──────────── 2. AMBULANCE ────────────
+    try {
+      const res = await axios.get(`${API_BASE}/api/admin/ambulance`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: {} }));
+      const total = res.data?.count || 0;
+      metrics.ambulance = { total, bookings: 0, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.ambulance = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
+
+    // ──────────── 3. ONLINE DOCTOR ────────────
+    try {
+      const res = await axios.get(`${API_BASE}/api/online-doctor/admin/doctors`, cfg).catch(() => ({ data: {} }));
+      const total = (res.data?.data || []).length;
+      metrics.doctor = { total, bookings: 0, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.doctor = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
+
+    // ──────────── 4. DIAGNOSTICS ────────────
+    try {
+      const res = await axios.get(`${API_BASE}/api/diagnostics/provider/stats`, cfg).catch(() => ({ data: {} }));
+      const total = res.data?.data?.totalProviders || 0;
+      metrics.diagnostics = { total, bookings: 0, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.diagnostics = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
+
+    // ──────────── 5. AYURVEDA (real bookings + revenue) ────────────
+    let ayurBookings = [];
+    try {
+      const [docRes, bookingsRes] = await Promise.all([
         axios.get(`${API_BASE}/api/ayurveda/doctors`, cfg).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, cfg).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/insurance-admin/reports/summary`, cfg).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/corporate/stats`, cfg).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/admin/lenders/stats/overview`, cfg).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/admin/users`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: {} })),
+        axios.get(`${API_BASE}/api/ayurveda/bookings/admin/all`, cfg).catch(() => ({ data: {} })),
       ]);
-
-      const metrics = {
-        hospitals: {
-          total: hospitalsRes.data?.pagination?.totalHospitals || 0,
-          bookings: 0, revenue: 0, conversion: 0,
-        },
-        ambulance: {
-          total: ambulanceRes.data?.count || 0,
-          bookings: 0, revenue: 0, conversion: 0,
-        },
-        doctor: {
-          total: (onlineDoctorRes.data?.data || []).length,
-          bookings: 0, revenue: 0, conversion: 0,
-        },
-        diagnostics: {
-          total: diagnosticsRes.data?.data?.totalProviders || 0,
-          bookings: 0, revenue: 0, conversion: 0,
-        },
-        ayurveda: {
-          total: (ayurvedaRes.data?.data || []).length,
-          bookings: 0, revenue: 0, conversion: 0,
-        },
-        homeopathy: {
-          total: (homeopathyRes.data?.data || []).length,
-          bookings: 0, revenue: 0, conversion: 0,
-        },
-        mental: {
-          total: mentalHealthRes.data?.data?.totalTherapists || 0,
-          bookings: 0, revenue: 0, conversion: 0,
-        },
-        homecare: {
-          total: (caregiversRes.data?.data || []).length,
-          bookings: 0, revenue: 0, conversion: 0,
-        },
-        insurance: {
-          total: insuranceRes.data?.data?.totalPlans || 0,
-          bookings: insuranceRes.data?.data?.totalPolicies || 0,
-          revenue: 0, conversion: 0,
-        },
-        loan: {
-          total: lendersRes.data?.stats?.lenders?.total || 0,
-          bookings: 0, revenue: lendersRes.data?.stats?.commission?.total || 0, conversion: 0,
-        },
-        corporate: {
-          total: corporateRes.data?.data?.plansAvailable || 0,
-          bookings: corporateRes.data?.data?.employeesCovered || 0,
-          revenue: 0, conversion: 0,
-        },
-        dietcare: { total: 0, bookings: 0, revenue: 0, conversion: 0 },
+      ayurBookings = bookingsRes.data?.data || [];
+      const total = (docRes.data?.data || []).length;
+      const paidBookings = ayurBookings.filter(b => b.paymentStatus === 'paid');
+      const revenue = paidBookings.reduce((sum, b) => sum + (b.finalAmount || 0), 0);
+      metrics.ayurveda = {
+        total,
+        bookings: ayurBookings.length,
+        revenue,
+        conversion: 0,
+        apiOk: true,
       };
+    } catch { metrics.ayurveda = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
 
-      const totalProviders = Object.entries(metrics)
-        .filter(([k]) => k !== 'dietcare')
-        .reduce((s, [, m]) => s + (m.total || 0), 0);
+    // ──────────── 6. HOMEOPATHY ────────────
+    try {
+      const res = await axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, cfg).catch(() => ({ data: {} }));
+      const total = (res.data?.data || []).length;
+      metrics.homeopathy = { total, bookings: 0, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.homeopathy = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
 
-      const totalCommission = lendersRes.data?.stats?.commission?.total || 0;
-      const totalSettlements = lendersRes.data?.stats?.commission?.pending || 0;
+    // ──────────── 7. MENTAL HEALTH ────────────
+    let mhData = {};
+    try {
+      const res = await axios.get(`${API_BASE}/api/mentalhealth/admin/dashboard`, cfg).catch(() => ({ data: {} }));
+      mhData = res.data?.data || {};
+      const total = mhData.totalTherapists || 0;
+      metrics.mental = { total, bookings: 0, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.mental = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
 
-      const pendingCounts = {
-        hospitals: 0,
-        doctor: (onlineDoctorRes.data?.data || []).filter((d) => d.verificationStatus === 'pending').length,
-        diagnostics: 0,
-        homecare: 0,
-        lenders: lendersRes.data?.stats?.lenders?.pending || 0,
-        dietcare: 0,
-      };
+    // ──────────── 8. CAREGIVERS ────────────
+    try {
+      const res = await axios.get(`${API_BASE}/api/caregivers`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: {} }));
+      const total = res.data?.pagination?.total || 0;
+      metrics.homecare = { total, bookings: 0, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.homecare = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
 
-      setTagMetrics(metrics);
-      setPending(pendingCounts);
-      setKpis({
-        users: usersRes.data?.pagination?.totalUsers || 0,
-        providers: totalProviders,
-        gmv: totalCommission * 5,
-        commission: totalCommission,
-        earnings: totalCommission * 4,
-        refunds: 0,
-        gst: Math.round(totalCommission * 0.18),
-        settlements: totalSettlements,
-        bookings: metrics.ambulance.bookings + metrics.insurance.bookings + metrics.corporate.bookings,
-        visits: 0,
-      });
-    } catch (err) {
-      console.error('Command Center fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
+    // ──────────── 9. INSURANCE ────────────
+    let insuranceData = {};
+    try {
+      const res = await axios.get(`${API_BASE}/api/insurance-admin/reports/summary`, cfg).catch(() => ({ data: {} }));
+      insuranceData = res.data?.data || {};
+      const total = insuranceData.totalPlans || 0;
+      const bookings = insuranceData.totalPolicies || 0;
+      metrics.insurance = { total, bookings, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.insurance = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
+
+    // ──────────── 10. LENDERS ────────────
+    let lenderStats = {};
+    try {
+      const res = await axios.get(`${API_BASE}/api/admin/lenders/stats/overview`, cfg).catch(() => ({ data: {} }));
+      lenderStats = res.data?.stats || {};
+      const total = lenderStats.lenders?.total || 0;
+      metrics.loan = { total, bookings: 0, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.loan = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
+
+    // ──────────── 11. CORPORATE ────────────
+    let corpData = {};
+    try {
+      const res = await axios.get(`${API_BASE}/api/corporate/stats`, cfg).catch(() => ({ data: {} }));
+      corpData = res.data?.data || {};
+      const total = corpData.plansAvailable || 0;
+      const bookings = corpData.employeesCovered || 0;
+      metrics.corporate = { total, bookings, revenue: 0, conversion: 0, apiOk: true };
+    } catch { metrics.corporate = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false }; }
+
+    // ──────────── 12. DIETCARE (not built yet) ────────────
+    metrics.dietcare = { total: 0, bookings: 0, revenue: 0, conversion: 0, apiOk: false };
+
+    // ──────────── USERS ────────────
+    let usersTotal = 0;
+    try {
+      const res = await axios.get(`${API_BASE}/api/admin/users`, { ...cfg, params: { limit: 1 } }).catch(() => ({ data: {} }));
+      usersTotal = res.data?.pagination?.totalUsers || 0;
+    } catch {}
+
+    // ──────────── COMPUTE TOTALS FROM AYURVEDA BOOKINGS ────────────
+    const paidBookings = ayurBookings.filter(b => b.paymentStatus === 'paid');
+    const totalRevenue = paidBookings.reduce((sum, b) => sum + (b.finalAmount || 0), 0);
+    const totalCommission = paidBookings.reduce((sum, b) => sum + (b.platformCommission || 0), 0);
+    const totalEarnings = paidBookings.reduce((sum, b) => sum + (b.providerEarning || 0), 0);
+    const gstTotal = Math.round(totalCommission * 0.18);
+
+    // Providers total (all tags)
+    const totalProviders = Object.entries(metrics)
+      .filter(([k]) => k !== 'dietcare')
+      .reduce((sum, [, m]) => sum + (m.total || 0), 0);
+
+    // Total bookings (all tags)
+    const totalBookings = Object.values(metrics).reduce((sum, m) => sum + (m.bookings || 0), 0);
+
+    // ──────────── PENDING APPROVALS ────────────
+    const pendingCounts = {
+      hospitals: 0,
+      doctor: metrics.doctor.total === 0 ? 0 : 0,
+      diagnostics: 0,
+      homecare: 0,
+      lenders: lenderStats.lenders?.pending || 0,
+      dietcare: 0,
+    };
+
+    // ──────────── SET STATE ────────────
+    setTagMetrics(metrics);
+    setPending(pendingCounts);
+    setKpis({
+      users: usersTotal,
+      providers: totalProviders,
+      bookings: totalBookings,
+      gmv: totalRevenue,
+      commission: totalCommission,
+      earnings: totalEarnings,
+      gst: gstTotal,
+      settlements: 0,
+      refunds: 0,
+    });
+
+    setLoading(false);
   }, [navigate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const kpiRow1 = useMemo(() => ([
-    { key: 'users',      label: 'Patients / Users', value: number(kpis.users),  sub: 'Live platform users',   color: '#2563eb', real: kpis.users > 0 },
-    { key: 'providers',  label: 'Providers',        value: number(kpis.providers), sub: 'Active + pending',   color: '#7c3aed', real: kpis.providers > 0 },
-    { key: 'visits',     label: 'Page Visits',      value: '8.4 L',  sub: 'Last 30 days',                     color: '#0891b2', real: false },
-    { key: 'bookings',   label: 'Bookings',         value: number(kpis.bookings), sub: '5.1% conversion',    color: '#059669', real: kpis.bookings > 0 },
+    { key: 'users',     label: 'Patients / Users', value: number(kpis.users),     sub: 'Live platform users',   color: '#2563eb', real: true },
+    { key: 'providers', label: 'Providers',        value: number(kpis.providers), sub: 'Active + pending',      color: '#7c3aed', real: true },
+    { key: 'visits',    label: 'Page Visits',      value: '—',                     sub: 'Not tracked yet',      color: '#0891b2', real: false },
+    { key: 'bookings',  label: 'Bookings',         value: number(kpis.bookings),  sub: 'All tags',              color: '#059669', real: true },
   ]), [kpis]);
 
   const kpiRow2 = useMemo(() => ([
-    { key: 'revenue',     label: 'Gross Revenue',        value: money(kpis.gmv),          sub: 'Selected scope',    color: '#dc2626', real: false },
-    { key: 'commission',  label: 'Platform Commission',  value: money(kpis.commission),   sub: 'From rules',        color: '#8b5cf6', real: kpis.commission > 0 },
-    { key: 'earnings',    label: 'Provider Earnings',    value: money(kpis.earnings),     sub: 'Pre-settlement',    color: '#10b981', real: false },
-    { key: 'settlements', label: 'Settlements Pending',  value: money(kpis.settlements),  sub: 'Awaiting payout',   color: '#f59e0b', real: kpis.settlements > 0 },
+    { key: 'revenue',     label: 'Gross Revenue',       value: money(kpis.gmv),         sub: 'Paid bookings',   color: '#dc2626', real: kpis.gmv > 0 },
+    { key: 'commission',  label: 'Platform Commission', value: money(kpis.commission),  sub: 'From rules',      color: '#8b5cf6', real: kpis.commission > 0 },
+    { key: 'earnings',    label: 'Provider Earnings',   value: money(kpis.earnings),    sub: 'Pre-settlement',  color: '#10b981', real: kpis.earnings > 0 },
+    { key: 'settlements', label: 'Settlements Pending', value: money(kpis.settlements), sub: 'Awaiting payout', color: '#f59e0b', real: false },
   ]), [kpis]);
 
   return (
     <AdminLayout filters={filters} onFiltersChange={setFilters}>
-      {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 800 }}>Command Center</div>
           <div style={{ fontSize: 12, color: '#687386', marginTop: 3 }}>
             Showing: <strong>{filters.scope}</strong>
-            {filters.state !== 'All States' && <> • <strong>{filters.state}</strong></>}
-            {filters.city !== 'All Cities' && <> • <strong>{filters.city}</strong></>}
             {' '}• period: <strong>{filters.period}</strong>
             {loading && <span style={{ marginLeft: 12, color: '#94a3b8' }}>Loading...</span>}
           </div>
@@ -565,12 +606,10 @@ const CommandCenter = () => {
         </div>
       </div>
 
-      {/* APPROVAL + AI (side by side) */}
+      {/* APPROVAL + AI */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 18 }}>
         <ApprovalCenter pending={pending} navigate={navigate} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <AIControlCenter navigate={navigate} />
-        </div>
+        <AIControlCenter navigate={navigate} />
       </div>
 
       {/* REPORT CENTER */}
