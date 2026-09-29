@@ -384,7 +384,13 @@ const CommandCenter = () => {
     if (!token) { navigate('/admin/login'); return; }
 
     setLoading(true);
-    const cfg = { headers: { Authorization: `Bearer ${token}` } };
+    const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
+const cfg = {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'x-admin-key': ADMIN_KEY,
+  }
+};
 
     const metrics = {};
 
