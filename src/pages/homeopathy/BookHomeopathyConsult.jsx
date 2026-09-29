@@ -1,578 +1,837 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import api from '../../services/api';
+import {
+  FaVideo, FaBuilding, FaStar, FaClock, FaShieldAlt, FaTag,
+  FaUser, FaCalendarAlt, FaChevronRight, FaCheckCircle,
+  FaTimesCircle, FaInfoCircle, FaUserPlus, FaHeartbeat
+} from 'react-icons/fa';
 
 const BookHomeopathyConsult = () => {
-  const { doctorId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { doctorId: paramDoctorId } = useParams();
+  const doctorId = location.state?.doctorId || location.state?.doctor?._id || paramDoctorId;
 
-  // Doctor passed via navigation state OR fetched by ID
   const [doctor, setDoctor] = useState(location.state?.doctor || null);
+  const [loading, setLoading] = useState(!doctor);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
   const [consultationType, setConsultationType] = useState(location.state?.consultationType || 'online');
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
 
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({
-    patientName: '', phone: '', email: '', age: '', gender: '',
-    date: '', time: '', symptoms: ''
+  const [couponCode, setCouponCode] = useState('');
+  const [couponApplied, setCouponApplied] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  const [patientProfiles, setPatientProfiles] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState('self');
+  const [showAddPatient, setShowAddPatient] = useState(false);
+  const [newPatient, setNewPatient] = useState({
+    name: '', age: '', gender: 'male', phone: '', relation: 'self'
   });
-  const [slotList, setSlotList] = useState([]);
-  const [slotLoading, setSlotLoading] = useState(false);
 
-  const [discountCode, setDiscountCode] = useState('');
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [discountMessage, setDiscountMessage] = useState('');
+  const [formData, setFormData] = useState({
+    patientName: '',
+    patientPhone: '',
+    patientEmail: '',
+    patientAge: '',
+    patientGender: '',
+    symptoms: '',
+    medicalHistory: '',
+    currentMedications: '',
+    allergies: '',
+    duration: '',
+    previousTreatment: '',
+    diet: '',
+    sleep: '',
+    stress: ''
+  });
 
-  const [pricing, setPricing] = useState(null);
-  const [pricingLoading, setPricingLoading] = useState(false);
+  const [fees, setFees] = useState({
+    consultationFee: 0,
+    platformFee: 0,
+    discountAmount: 0,
+    discountedFee: 0,
+    gst: 0,
+    total: 0
+  });
 
-  const [loading, setLoading] = useState(false);
-  const [bookingData, setBookingData] = useState(null);
-  const [otp, setOtp] = useState('');
-  const [otpError, setOtpError] = useState('');
-  const [resendCooldown, setResendCooldown] = useState(0);
-
-  const token = localStorage.getItem('patientToken') || localStorage.getItem('token');
-
-  const today = new Date().toISOString().split('T')[0];
-
-  // ============================================
-  // AUTH GUARD
-  // ============================================
-  useEffect(() => {
-    if (!token) {
-      navigate(`/login?redirect=/homeopathy/book/${doctorId}`);
+  // Next 7 days
+  const nextDays = useMemo(() => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      days.push({
+        date: date.toISOString().split('T')[0],
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        dayNumber: date.getDate(),
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        isToday: i === 0,
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
+      });
     }
-  }, [token, doctorId, navigate]);
+    return days;
+  }, []);
 
-  // ============================================
-  // FETCH DOCTOR IF NOT IN STATE
-  // ============================================
+  // Fetch doctor
   useEffect(() => {
-    if (!doctor && doctorId) {
-      (async () => {
+    const fetchDoctor = async () => {
+      if (doctorId && !doctor) {
         try {
           const res = await api.get(`/homeopathy/doctors/${doctorId}`);
           if (res.data?.success) setDoctor(res.data.data);
         } catch (err) {
-          console.error('Doctor fetch error:', err);
+          setError('Failed to load doctor details');
+        } finally {
+          setLoading(false);
         }
-      })();
-    }
-  }, [doctor, doctorId]);
+      }
+    };
+    fetchDoctor();
+  }, [doctorId, doctor]);
 
-  // ============================================
-  // FETCH AVAILABLE SLOTS WHEN DATE CHANGES
-  // ============================================
+  // Auth guard
   useEffect(() => {
-    if (!form.date || !doctorId) {
-      setSlotList([]);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate(`/login?redirect=/homeopathy/book/${doctorId}`);
+    }
+  }, [doctorId, navigate]);
+
+  // Patient profiles + prefill from user
+  useEffect(() => {
+    const profiles = JSON.parse(localStorage.getItem('patientProfiles') || '[]');
+    setPatientProfiles(profiles);
+
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    if (userData) {
+      setFormData(prev => ({
+        ...prev,
+        patientName: userData.name || '',
+        patientPhone: userData.phone || '',
+        patientEmail: userData.email || ''
+      }));
+    }
+  }, []);
+
+  // Fetch available slots when date changes
+  useEffect(() => {
+    if (!selectedDate || !doctorId) {
+      setAvailableSlots([]);
       return;
     }
-    setSlotLoading(true);
-    api.get(`/homeopathy/doctor/${doctorId}/slots?date=${form.date}`)
+    setSlotsLoading(true);
+    api.get(`/homeopathy/doctor/${doctorId}/slots?date=${selectedDate}`)
       .then(res => {
         const slots = res.data?.data?.slots || [];
-        setSlotList(slots.filter(s => s.available !== false).map(s => s.startTime));
+        setAvailableSlots(
+          slots.filter(s => s.available !== false).map(s => ({ time: s.startTime }))
+        );
       })
-      .catch(() => setSlotList([]))
-      .finally(() => setSlotLoading(false));
-  }, [form.date, doctorId]);
+      .catch(() => setAvailableSlots([]))
+      .finally(() => setSlotsLoading(false));
+  }, [selectedDate, doctorId]);
 
-  // ============================================
-  // FETCH PRICING WHEN STEP 2 IS REACHED
-  // ============================================
+  // Pricing preview
   useEffect(() => {
-    if (step !== 2 || !doctor) return;
-    const amount = doctor.consultationFee || 500;
-    setPricingLoading(true);
+    const consultationFee = doctor?.consultationFee || 0;
+    if (!consultationFee) return;
+
+    const discountAmount = couponApplied?.discountAmount || 0;
+
     api.post('/homeopathy/bookings/pricing-preview', {
       bookingType: 'homeopathy_consult',
-      amount,
+      amount: consultationFee,
       discountAmount,
       providerId: doctorId,
       providerModel: 'HomeopathyDoctor',
-      city: doctor.address?.city,
-      state: doctor.address?.state
+      city: doctor?.address?.city,
+      state: doctor?.address?.state
     })
       .then(res => {
-        if (res.data?.success) setPricing(res.data.data);
+        if (res.data?.success) {
+          const p = res.data.data;
+          setFees({
+            consultationFee: p.baseAmount,
+            platformFee: p.platformFee,
+            discountAmount: p.discountAmount,
+            discountedFee: p.discountedFee,
+            gst: p.gstAmount,
+            total: p.total
+          });
+        }
       })
       .catch(err => {
-        console.error('Pricing preview error:', err);
-        setPricing(null);
-      })
-      .finally(() => setPricingLoading(false));
-  }, [step, doctor, discountAmount, doctorId]);
+        console.error('Pricing preview failed:', err);
+      });
+  }, [doctor, couponApplied, doctorId]);
 
-  // ============================================
-  // RESEND OTP COOLDOWN
-  // ============================================
-  useEffect(() => {
-    if (resendCooldown > 0) {
-      const t = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
-      return () => clearTimeout(t);
+  const handleApplyCoupon = async () => {
+    setCouponError('');
+    setCouponApplied(null);
+
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
     }
-  }, [resendCooldown]);
 
-  // ============================================
-  // VALIDATE DISCOUNT (via server, when creating booking)
-  // Just clear stale state — real validation happens on submit
-  // ============================================
-  const applyDiscountCode = () => {
-    setDiscountMessage('Code will be validated on booking');
-    // We don't know the discount without the server — the pricing preview
-    // will re-run when the booking is created. For UX, we optimistically
-    // show a "will be applied" message.
+    // Validate by attempting a preview with the code — actual validation happens on create
+    try {
+      // Create preview with discount — backend will validate during create anyway
+      // Here we just show the code will be applied
+      setCouponApplied({
+        code: couponCode.trim().toUpperCase(),
+        discountAmount: 0 // Will be resolved by server during create
+      });
+      setCouponError('Code will be validated when you proceed');
+    } catch (err) {
+      setCouponError('Unable to validate coupon');
+    }
   };
 
-  // ============================================
-  // STEP NAVIGATION
-  // ============================================
-  const handleContinue = (e) => {
+  const handleAddPatient = () => {
+    if (newPatient.name && newPatient.phone) {
+      const updatedProfiles = [...patientProfiles, { ...newPatient, id: Date.now() }];
+      setPatientProfiles(updatedProfiles);
+      localStorage.setItem('patientProfiles', JSON.stringify(updatedProfiles));
+      setShowAddPatient(false);
+      setNewPatient({ name: '', age: '', gender: 'male', phone: '', relation: 'self' });
+    }
+  };
+
+  const handleSelectPatient = (profileId) => {
+    const profile = patientProfiles.find(p => p.id === profileId);
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        patientName: profile.name,
+        patientPhone: profile.phone,
+        patientAge: profile.age,
+        patientGender: profile.gender
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.patientName || !form.phone || !form.date || !form.time) {
-      alert('Please fill all required fields');
+    setError('');
+
+    if (!selectedDate) {
+      setError('Please select a date');
       return;
     }
-    setStep(2);
-    window.scrollTo(0, 0);
-  };
+    if (!selectedSlot) {
+      setError('Please select a time slot');
+      return;
+    }
+    if (!formData.patientName || !formData.patientPhone) {
+      setError('Patient name and phone are required');
+      return;
+    }
+    if (!acceptedTerms) {
+      setError('Please accept the terms and conditions');
+      return;
+    }
 
-  // ============================================
-  // RAZORPAY SCRIPT LOADER
-  // ============================================
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) return resolve(true);
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
+    setBookingLoading(true);
 
-  // ============================================
-  // CREATE BOOKING → OPEN RAZORPAY → VERIFY
-  // ============================================
-  const handlePayment = async () => {
-    setLoading(true);
     try {
-      // 1. Create booking on backend
-      const createRes = await api.post('/homeopathy/bookings/create', {
+      const res = await api.post('/homeopathy/bookings/create', {
         type: 'homeopathy_consult',
-        doctorId,
+        doctorId: doctor._id,
         consultationType,
-        bookingDate: form.date,
-        slotTime: form.time,
-        symptoms: form.symptoms,
-        patientName: form.patientName,
-        patientPhone: form.phone,
-        patientEmail: form.email,
-        patientAge: form.age ? parseInt(form.age) : null,
-        patientGender: form.gender,
-        discountCode: discountCode || undefined
+        bookingDate: selectedDate,
+        slotTime: selectedSlot.time,
+        symptoms: formData.symptoms,
+        medicalHistory: formData.medicalHistory,
+        patientName: formData.patientName,
+        patientPhone: formData.patientPhone,
+        patientEmail: formData.patientEmail,
+        patientAge: formData.patientAge,
+        patientGender: formData.patientGender,
+        discountCode: couponApplied?.code
       });
 
-      if (!createRes.data?.success) {
-        throw new Error(createRes.data?.message || 'Failed to create booking');
-      }
-
-      const { bookingId, razorpayOrderId, razorpayKeyId, amount, otp: bookingOtp } = createRes.data.data;
-      setBookingData({ bookingId, amount, otp: bookingOtp });
-
-      // 2. Load Razorpay
-      const scriptOk = await loadRazorpayScript();
-      if (!scriptOk) {
-        alert('Failed to load payment gateway. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      // 3. Open Razorpay checkout
-      const options = {
-        key: razorpayKeyId,
-        amount: Math.round(amount * 100),
-        currency: 'INR',
-        name: 'KiaetoCare',
-        description: `Homeopathy Consultation - Dr ${doctor.name}`,
-        order_id: razorpayOrderId,
-        prefill: {
-          name: form.patientName,
-          email: form.email || '',
-          contact: form.phone
-        },
-        theme: { color: '#7c3aed' },
-        handler: async function (response) {
-          try {
-            const verifyRes = await api.post('/homeopathy/bookings/verify-payment', {
-              bookingId,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature
-            });
-
-            if (verifyRes.data?.success) {
-              setStep(3);
-              window.scrollTo(0, 0);
-            } else {
-              alert('Payment verification failed: ' + (verifyRes.data?.message || 'Unknown error'));
-            }
-          } catch (err) {
-            console.error('Verify error:', err);
-            alert(err.response?.data?.message || 'Payment verification failed. Contact support.');
-          } finally {
-            setLoading(false);
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
-          }
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-
-    } catch (err) {
-      console.error('Booking create error:', err);
-      alert(err.response?.data?.message || err.message || 'Booking failed');
-      setLoading(false);
-    }
-  };
-
-  // ============================================
-  // VERIFY OTP
-  // ============================================
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length < 4) {
-      setOtpError('Enter the 4-digit OTP');
-      return;
-    }
-    setLoading(true);
-    setOtpError('');
-    try {
-      const res = await api.post('/homeopathy/bookings/verify-otp', {
-        bookingId: bookingData.bookingId,
-        otp
-      });
       if (res.data?.success) {
-        setStep(4);
+        navigate('/homeopathy/payment', {
+          state: {
+            bookingData: res.data.data,
+            doctor,
+            consultationType
+          }
+        });
       } else {
-        setOtpError(res.data?.message || 'Invalid OTP');
+        setError(res.data?.message || 'Failed to create booking');
       }
     } catch (err) {
-      setOtpError(err.response?.data?.message || 'Verification failed');
+      setError(err.response?.data?.message || 'Failed to create booking');
     } finally {
-      setLoading(false);
+      setBookingLoading(false);
     }
   };
 
-  const handleResendOtp = async () => {
-    try {
-      await api.post('/homeopathy/bookings/resend-otp', { bookingId: bookingData.bookingId });
-      setResendCooldown(30);
-    } catch (err) {
-      alert('Failed to resend OTP');
-    }
-  };
-
-  // ============================================
-  // RENDER: STEP 4 — CONFIRMED
-  // ============================================
-  if (step === 4 && bookingData) {
+  if (loading) {
     return (
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '5rem' }}>✅</div>
-        <h1 style={{ color: '#059669' }}>Booking Confirmed!</h1>
-        <p style={{ color: '#64748b' }}>A confirmation has been sent to {form.phone}</p>
-        <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'left', margin: '1.5rem 0' }}>
-          {[
-            ['Booking ID', bookingData.bookingId],
-            ['Doctor', doctor?.name],
-            ['Type', consultationType === 'online' ? '💻 Online' : '🏥 Clinic'],
-            ['Patient', form.patientName],
-            ['Date', new Date(form.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })],
-            ['Time', form.time],
-            ['Total Paid', `₹${bookingData.amount}`]
-          ].map(([l, v], i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #e2e8f0' }}>
-              <span style={{ color: '#64748b' }}>{l}</span>
-              <span style={{ fontWeight: 'bold' }}>{v}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => navigate('/homeopathy')} style={{ padding: '0.75rem 2rem', backgroundColor: '#7C3AED', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>🏠 Home</button>
-          <button onClick={() => navigate('/homeopathy/my-bookings')} style={{ padding: '0.75rem 2rem', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>📋 My Bookings</button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
-  // ============================================
-  // RENDER: STEP 3 — OTP
-  // ============================================
-  if (step === 3 && bookingData) {
+  if (!doctor) {
     return (
-      <div style={{ maxWidth: '500px', margin: '0 auto', padding: '2rem' }}>
-        <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🔐</div>
-          <h2 style={{ color: '#7C3AED', marginTop: 0 }}>Verify OTP</h2>
-          <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-            Enter the 4-digit OTP sent to {form.phone}
-          </p>
-          <p style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 'bold' }}>
-            Booking {bookingData.bookingId} • Paid ₹{bookingData.amount}
-          </p>
-
-          <input
-            type="text"
-            inputMode="numeric"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            maxLength={4}
-            placeholder="----"
-            style={{
-              width: '100%',
-              padding: '1rem',
-              fontSize: '2rem',
-              letterSpacing: '1rem',
-              textAlign: 'center',
-              borderRadius: '0.75rem',
-              border: '2px solid #e2e8f0',
-              marginTop: '1rem',
-              marginBottom: '1rem',
-              boxSizing: 'border-box'
-            }}
-          />
-
-          {otpError && <p style={{ color: '#dc2626', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{otpError}</p>}
-
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-gray-600">Doctor not found</p>
           <button
-            onClick={handleVerifyOtp}
-            disabled={loading || otp.length < 4}
-            style={{
-              width: '100%',
-              padding: '1rem',
-              backgroundColor: loading || otp.length < 4 ? '#a5b4fc' : '#7C3AED',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              cursor: loading || otp.length < 4 ? 'not-allowed' : 'pointer'
-            }}>
-            {loading ? 'Verifying...' : 'Confirm Booking'}
-          </button>
-
-          <button
-            onClick={handleResendOtp}
-            disabled={resendCooldown > 0}
-            style={{ marginTop: '1rem', background: 'none', border: 'none', color: resendCooldown > 0 ? '#94a3b8' : '#7C3AED', cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>
-            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
+            onClick={() => navigate('/homeopathy/doctors')}
+            className="mt-4 text-green-600"
+          >
+            Browse Doctors
           </button>
         </div>
       </div>
     );
   }
 
-  // ============================================
-  // RENDER: STEP 2 — PAYMENT REVIEW
-  // ============================================
-  if (step === 2) {
-    const baseAmount = doctor?.consultationFee || 500;
-    return (
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.5rem' }}>
-        <button onClick={() => setStep(1)} style={{ padding: '0.5rem 1rem', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold', marginBottom: '1rem' }}>← Back</button>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '1rem' }}>💳 Payment</h1>
-
-        <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '1rem' }}>
-          <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Order Summary</h3>
-          {pricingLoading ? (
-            <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Calculating...</p>
-          ) : pricing ? (
-            <>
-              <Row label="Consultation Fee" value={`₹${pricing.baseAmount}`} />
-              {pricing.discountAmount > 0 && <Row label="Discount" value={`-₹${pricing.discountAmount}`} color="#059669" />}
-              <Row label={`Platform Fee`} value={`₹${pricing.platformFee}`} />
-              <Row label={`GST (${pricing.gstPercentage}%)`} value={`₹${pricing.gstAmount}`} />
-              <hr />
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                <span>Total</span>
-                <span style={{ color: '#7C3AED' }}>₹{pricing.total}</span>
-              </div>
-            </>
-          ) : (
-            <p style={{ color: '#dc2626', fontSize: '0.9rem' }}>
-              Unable to load pricing. Admin may not have configured Homeopathy pricing yet.
-            </p>
-          )}
-        </div>
-
-        <div style={{ backgroundColor: '#f8fafc', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1rem', fontSize: '0.9rem' }}>
-          <p style={{ margin: '0.25rem 0' }}><strong>Patient:</strong> {form.patientName}</p>
-          <p style={{ margin: '0.25rem 0' }}><strong>Date:</strong> {new Date(form.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-          <p style={{ margin: '0.25rem 0' }}><strong>Time:</strong> {form.time}</p>
-          <p style={{ margin: '0.25rem 0' }}><strong>Doctor:</strong> {doctor?.name}</p>
-        </div>
-
-        <button
-          onClick={handlePayment}
-          disabled={loading || !pricing}
-          style={{
-            width: '100%',
-            padding: '1rem',
-            backgroundColor: loading || !pricing ? '#a5b4fc' : '#7C3AED',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.5rem',
-            fontWeight: 'bold',
-            fontSize: '1.1rem',
-            cursor: loading || !pricing ? 'not-allowed' : 'pointer'
-          }}>
-          {loading ? '⏳ Processing...' : `💳 Pay ₹${pricing?.total || 0}`}
-        </button>
-      </div>
-    );
-  }
-
-  // ============================================
-  // RENDER: STEP 1 — DETAILS
-  // ============================================
-  const fee = doctor?.consultationFee || 500;
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.5rem' }}>
-      <button onClick={() => navigate(-1)} style={{ padding: '0.5rem 1rem', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold', marginBottom: '1rem' }}>← Back</button>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 py-8">
+      <div className="max-w-5xl mx-auto px-4">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6 flex-wrap">
+          <button onClick={() => navigate('/homeopathy')} className="hover:text-green-600">Homeopathy</button>
+          <FaChevronRight className="text-xs" />
+          <button onClick={() => navigate('/homeopathy/doctors')} className="hover:text-green-600">Doctors</button>
+          <FaChevronRight className="text-xs" />
+          <span className="font-medium">Book Consultation</span>
+        </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1.5rem' }}>
-        {[1, 2, 3].map(s => (
-          <div key={s} style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '35px', height: '35px', borderRadius: '50%',
-              backgroundColor: step >= s ? '#7C3AED' : '#e2e8f0',
-              color: step >= s ? 'white' : '#64748b',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 'bold', margin: '0 auto 0.3rem'
-            }}>
-              {step > s ? '✓' : s}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg mb-6 flex items-center gap-2">
+            <FaTimesCircle /> {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* LEFT — Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Doctor Card */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-green-600 to-green-500 p-6 text-white">
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-3xl font-bold">
+                    {doctor.name?.charAt(0) || 'D'}
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold">{doctor.name}</h1>
+                    <p className="text-green-100">{doctor.specialization}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <FaStar className="text-yellow-400" /> {doctor.rating || 'New'}
+                      </span>
+                      <span>{doctor.experience || 0} years exp.</span>
+                      {doctor.verifiedKyc && (
+                        <span className="flex items-center gap-1"><FaShieldAlt /> Verified</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-green-50 flex items-center gap-4 text-sm flex-wrap">
+                {doctor.consultationTypes?.online && (
+                  <span className="flex items-center gap-1"><FaVideo className="text-green-600" /> Online</span>
+                )}
+                {doctor.consultationTypes?.clinic && (
+                  <span className="flex items-center gap-1"><FaBuilding className="text-green-600" /> Clinic</span>
+                )}
+                {doctor.address?.city && (
+                  <span className="flex items-center gap-1 text-gray-600">📍 {doctor.address.city}</span>
+                )}
+              </div>
             </div>
-            <span style={{ fontSize: '0.75rem', color: step >= s ? '#7C3AED' : '#64748b' }}>
-              {s === 1 ? 'Details' : s === 2 ? 'Payment' : 'Confirm'}
-            </span>
+
+            {/* Consultation Type */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4">Select Consultation Type</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {doctor.consultationTypes?.online && (
+                  <button
+                    type="button"
+                    onClick={() => setConsultationType('online')}
+                    className={`p-4 rounded-lg border-2 text-center transition-all ${
+                      consultationType === 'online'
+                        ? 'border-green-600 bg-green-50 shadow-lg'
+                        : 'border-gray-200 hover:border-green-300'
+                    }`}
+                  >
+                    <FaVideo className={`mx-auto text-2xl mb-2 ${consultationType === 'online' ? 'text-green-600' : 'text-gray-400'}`} />
+                    <p className="font-medium">Video Consult</p>
+                    <p className="text-xs text-gray-500">15-30 min</p>
+                  </button>
+                )}
+                {doctor.consultationTypes?.clinic && (
+                  <button
+                    type="button"
+                    onClick={() => setConsultationType('clinic')}
+                    className={`p-4 rounded-lg border-2 text-center transition-all ${
+                      consultationType === 'clinic'
+                        ? 'border-green-600 bg-green-50 shadow-lg'
+                        : 'border-gray-200 hover:border-green-300'
+                    }`}
+                  >
+                    <FaBuilding className={`mx-auto text-2xl mb-2 ${consultationType === 'clinic' ? 'text-green-600' : 'text-gray-400'}`} />
+                    <p className="font-medium">Clinic Visit</p>
+                    <p className="text-xs text-gray-500">In-person</p>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Date */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <FaCalendarAlt className="text-green-600" /> Select Date
+              </h2>
+              <div className="grid grid-cols-7 gap-2">
+                {nextDays.map(day => (
+                  <button
+                    key={day.date}
+                    type="button"
+                    onClick={() => { setSelectedDate(day.date); setSelectedSlot(null); }}
+                    className={`p-3 rounded-lg border-2 text-center transition-all ${
+                      selectedDate === day.date
+                        ? 'border-green-600 bg-green-50'
+                        : 'border-gray-200 hover:border-green-300'
+                    } ${day.isWeekend ? 'bg-orange-50' : ''}`}
+                  >
+                    <p className="text-xs text-gray-500">{day.dayName}</p>
+                    <p className="text-lg font-bold">{day.dayNumber}</p>
+                    <p className="text-xs text-gray-500">{day.month}</p>
+                    {day.isToday && <p className="text-xs text-green-600 font-medium">Today</p>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time slot */}
+            {selectedDate && (
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <FaClock className="text-green-600" /> Select Time Slot
+                </h2>
+                {slotsLoading ? (
+                  <p className="text-gray-500 text-sm py-4">Loading available slots...</p>
+                ) : availableSlots.length === 0 ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                    No slots available for this date. Please pick another day.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                    {availableSlots.map(slot => (
+                      <button
+                        key={slot.time}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot)}
+                        className={`p-3 rounded-lg border-2 text-center transition-all text-sm ${
+                          selectedSlot?.time === slot.time
+                            ? 'border-green-600 bg-green-50'
+                            : 'border-gray-200 hover:border-green-300'
+                        }`}
+                      >
+                        <p className="font-medium">{slot.time}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedSlot && (
+                  <div className="mt-4 p-3 bg-green-50 rounded-lg flex items-center gap-2 text-sm">
+                    <FaInfoCircle className="text-green-600" />
+                    <span>Slot selected: {selectedSlot.time}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Patient details */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <FaUser className="text-green-600" /> Patient Details
+              </h2>
+
+              {patientProfiles.length > 0 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Book for</label>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPatient('self')}
+                      className={`px-3 py-2 rounded-lg border ${selectedPatient === 'self' ? 'border-green-600 bg-green-50' : 'border-gray-200'}`}
+                    >
+                      Self
+                    </button>
+                    {patientProfiles.map(profile => (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => { setSelectedPatient(profile.id); handleSelectPatient(profile.id); }}
+                        className={`px-3 py-2 rounded-lg border ${selectedPatient === profile.id ? 'border-green-600 bg-green-50' : 'border-gray-200'}`}
+                      >
+                        {profile.name} ({profile.relation})
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPatient(true)}
+                      className="px-3 py-2 rounded-lg border border-dashed border-green-400 text-green-600 flex items-center gap-1"
+                    >
+                      <FaUserPlus /> Add
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showAddPatient && (
+                <div className="mb-4 p-4 border border-green-200 rounded-lg bg-green-50">
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={newPatient.name}
+                      onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone"
+                      value={newPatient.phone}
+                      onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Age"
+                      value={newPatient.age}
+                      onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <select
+                      value={newPatient.gender}
+                      onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
+                      className="p-2 border rounded"
+                    >
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <select
+                      value={newPatient.relation}
+                      onChange={(e) => setNewPatient({ ...newPatient, relation: e.target.value })}
+                      className="p-2 border rounded"
+                    >
+                      <option value="self">Self</option>
+                      <option value="spouse">Spouse</option>
+                      <option value="parent">Parent</option>
+                      <option value="child">Child</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAddPatient}
+                        className="flex-1 bg-green-600 text-white p-2 rounded"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddPatient(false)}
+                        className="flex-1 bg-gray-300 p-2 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={formData.patientName}
+                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                    required
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone *</label>
+                  <input
+                    type="tel"
+                    value={formData.patientPhone}
+                    onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    required
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.patientEmail}
+                    onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Age</label>
+                    <input
+                      type="number"
+                      value={formData.patientAge}
+                      onChange={(e) => setFormData({ ...formData, patientAge: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Gender</label>
+                    <select
+                      value={formData.patientGender}
+                      onChange={(e) => setFormData({ ...formData, patientGender: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Select</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Medical details */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <FaHeartbeat className="text-green-600" /> Medical Details
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Symptoms *</label>
+                  <textarea
+                    value={formData.symptoms}
+                    onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
+                    rows="3"
+                    placeholder="Describe your symptoms..."
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Duration of Symptoms</label>
+                    <select
+                      value={formData.duration}
+                      onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg"
+                    >
+                      <option value="">Select duration</option>
+                      <option value="less_than_week">Less than a week</option>
+                      <option value="1_4_weeks">1-4 weeks</option>
+                      <option value="1_6_months">1-6 months</option>
+                      <option value="6_12_months">6-12 months</option>
+                      <option value="over_1_year">Over 1 year</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Previous Treatment</label>
+                    <select
+                      value={formData.previousTreatment}
+                      onChange={(e) => setFormData({ ...formData, previousTreatment: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg"
+                    >
+                      <option value="">Select</option>
+                      <option value="none">None</option>
+                      <option value="allopathy">Allopathy</option>
+                      <option value="homeopathy">Homeopathy</option>
+                      <option value="ayurveda">Ayurveda</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Diet Preference</label>
+                    <select
+                      value={formData.diet}
+                      onChange={(e) => setFormData({ ...formData, diet: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg"
+                    >
+                      <option value="">Select</option>
+                      <option value="vegetarian">Vegetarian</option>
+                      <option value="non_vegetarian">Non-Vegetarian</option>
+                      <option value="vegan">Vegan</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Sleep Pattern</label>
+                    <select
+                      value={formData.sleep}
+                      onChange={(e) => setFormData({ ...formData, sleep: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg"
+                    >
+                      <option value="">Select</option>
+                      <option value="good">Good (7-8 hrs)</option>
+                      <option value="fair">Fair (5-6 hrs)</option>
+                      <option value="poor">Poor</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Stress Level</label>
+                    <select
+                      value={formData.stress}
+                      onChange={(e) => setFormData({ ...formData, stress: e.target.value })}
+                      className="w-full p-2.5 border rounded-lg"
+                    >
+                      <option value="">Select</option>
+                      <option value="low">Low</option>
+                      <option value="moderate">Moderate</option>
+                      <option value="high">High</option>
+                      <option value="severe">Severe</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Allergies</label>
+                    <input
+                      type="text"
+                      value={formData.allergies}
+                      onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+                      placeholder="Any known allergies"
+                      className="w-full p-2.5 border rounded-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Coupon */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                className="w-full flex items-center justify-between font-semibold"
+              >
+                <span className="flex items-center gap-2">
+                  <FaTag className="text-green-600" /> Have a coupon code?
+                </span>
+                <span className="text-green-600">{showAdvancedOptions ? '−' : '+'}</span>
+              </button>
+              {showAdvancedOptions && (
+                <div className="mt-4">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="Enter coupon code"
+                      className="flex-1 p-2.5 border rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {couponError && <p className="text-yellow-600 text-sm mt-1">{couponError}</p>}
+                  {couponApplied && (
+                    <p className="text-green-600 text-sm mt-1">
+                      ✅ {couponApplied.code} — will be validated on payment
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        ))}
-      </div>
 
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '1rem' }}>
-        📞 Book {consultationType === 'online' ? 'Online' : 'Clinic'} Consultation
-      </h1>
+          {/* RIGHT — Fee summary */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-md p-6 sticky top-4">
+              <h2 className="text-lg font-semibold mb-4">Fee Summary</h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Consultation Fee</span>
+                  <span>₹{fees.consultationFee}</span>
+                </div>
+                {fees.discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600 font-semibold">
+                    <span>Discount</span>
+                    <span>-₹{fees.discountAmount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Platform Fee</span>
+                  <span>₹{fees.platformFee}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">GST</span>
+                  <span>₹{fees.gst}</span>
+                </div>
+                <div className="border-t pt-3 flex justify-between items-center">
+                  <span className="font-bold">Total</span>
+                  <span className="font-bold text-2xl text-green-600">₹{fees.total}</span>
+                </div>
+              </div>
 
-      <div style={{ backgroundColor: '#ede9fe', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem' }}>
-        <p style={{ fontWeight: 'bold', margin: 0 }}>👨‍⚕️ {doctor?.name}</p>
-        <p style={{ color: '#7C3AED', fontSize: '0.9rem', margin: '0.25rem 0' }}>{doctor?.specialization}</p>
-        {doctor?.clinicName && <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0.25rem 0' }}>🏥 {doctor.clinicName}</p>}
-        <p style={{ fontWeight: 'bold', color: '#7C3AED', marginTop: '0.5rem', marginBottom: 0 }}>Fee: ₹{fee}</p>
-      </div>
+              <div className="mt-4">
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <span className="text-gray-600">
+                    I agree to the <span className="text-green-600">Terms & Conditions</span> and
+                    <span className="text-green-600"> Privacy Policy</span>
+                  </span>
+                </label>
+              </div>
 
-      {/* Consultation type toggle */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        {doctor?.consultationTypes?.online && (
-          <button
-            type="button"
-            onClick={() => setConsultationType('online')}
-            style={{
-              flex: 1, padding: '0.6rem',
-              backgroundColor: consultationType === 'online' ? '#7C3AED' : '#f1f5f9',
-              color: consultationType === 'online' ? 'white' : '#334155',
-              border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem'
-            }}>
-            💻 Online
-          </button>
-        )}
-        {doctor?.consultationTypes?.clinic && (
-          <button
-            type="button"
-            onClick={() => setConsultationType('clinic')}
-            style={{
-              flex: 1, padding: '0.6rem',
-              backgroundColor: consultationType === 'clinic' ? '#059669' : '#f1f5f9',
-              color: consultationType === 'clinic' ? 'white' : '#334155',
-              border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem'
-            }}>
-            🏥 Clinic
-          </button>
-        )}
-      </div>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={bookingLoading || !fees.total}
+                className="w-full mt-4 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+              >
+                {bookingLoading ? 'Creating booking...' : 'Proceed to Payment →'}
+              </button>
 
-      <form onSubmit={handleContinue} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <input required placeholder="Full Name *" value={form.patientName} onChange={e => setForm({ ...form, patientName: e.target.value })} style={inp} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <input required placeholder="Phone *" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} style={inp} />
-          <input placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={inp} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <input placeholder="Age" value={form.age} onChange={e => setForm({ ...form, age: e.target.value.replace(/\D/g, '').slice(0, 3) })} style={inp} />
-          <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} style={inp}>
-            <option value="">Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div>
-          <label style={lbl}>📅 Date *</label>
-          <input required type="date" value={form.date} min={today} onChange={e => setForm({ ...form, date: e.target.value })} style={inp} />
-        </div>
-        <div>
-          <label style={lbl}>🕐 Time *</label>
-          {slotLoading ? (
-            <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Loading available slots...</p>
-          ) : form.date && slotList.length === 0 ? (
-            <p style={{ color: '#dc2626', fontSize: '0.85rem' }}>No slots available for this date. Pick another day.</p>
-          ) : (
-            <select required value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} style={inp} disabled={!form.date}>
-              <option value="">{form.date ? 'Select Time' : 'Pick a date first'}</option>
-              {slotList.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          )}
-        </div>
-        <div>
-          <label style={lbl}>🏷️ Discount Code (optional)</label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              placeholder="e.g. FIRST100"
-              value={discountCode}
-              onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountMessage(''); }}
-              style={{ ...inp, flex: 1, marginBottom: 0 }}
-            />
-            <button
-              type="button"
-              onClick={applyDiscountCode}
-              style={{ padding: '0.75rem 1.5rem', backgroundColor: '#7C3AED', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Apply
-            </button>
+              <div className="mt-4 space-y-2 text-xs text-gray-500">
+                <p className="flex items-center gap-1"><FaShieldAlt className="text-green-600" /> 100% Secure Payment</p>
+                <p className="flex items-center gap-1"><FaCheckCircle className="text-green-600" /> Verified Doctor</p>
+                <p className="flex items-center gap-1"><FaClock className="text-green-600" /> Free Rescheduling (up to 2 times)</p>
+              </div>
+            </div>
           </div>
-          {discountMessage && <p style={{ color: '#059669', fontSize: '0.8rem', marginTop: '0.3rem' }}>{discountMessage}</p>}
         </div>
-        <textarea placeholder="Describe your symptoms / health concerns..." value={form.symptoms} onChange={e => setForm({ ...form, symptoms: e.target.value })} style={{ ...inp, height: '80px', resize: 'vertical' }} />
-        <button type="submit" style={{ padding: '1rem', backgroundColor: '#7C3AED', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
-          Continue to Payment →
-        </button>
-      </form>
+      </div>
     </div>
   );
 };
-
-const inp = { padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '1rem', width: '100%', boxSizing: 'border-box', fontFamily: 'inherit' };
-const lbl = { fontWeight: 'bold', display: 'block', marginBottom: '0.3rem', fontSize: '0.9rem' };
-
-const Row = ({ label, value, color }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', color: color || '#64748b' }}>
-    <span>{label}</span>
-    <span>{value}</span>
-  </div>
-);
 
 export default BookHomeopathyConsult;
