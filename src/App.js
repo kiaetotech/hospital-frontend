@@ -96,7 +96,7 @@ import HomeopathyBookingDetail from './pages/homeopathy/HomeopathyBookingDetail'
 import HomeopathyCenterDetail from './pages/homeopathy/HomeopathyCenterDetail';
 import BookNaturopathyPackage from './pages/homeopathy/BookNaturopathyPackage';
 import HomeopathyCheckout from './pages/homeopathy/HomeopathyCheckout';
-mport HomeopathyCenterDashboard from './pages/homeopathy/HomeopathyCenterDashboard';
+import HomeopathyCenterDashboard from './pages/homeopathy/HomeopathyCenterDashboard';
 import HomeopathyPharmacyDashboard from './pages/homeopathy/HomeopathyPharmacyDashboard';
 
 // ============================================
