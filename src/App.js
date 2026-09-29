@@ -93,6 +93,11 @@ import HomeopathyDoctorDetail from './pages/homeopathy/HomeopathyDoctorDetail';
 import HomeopathyPayment from './pages/homeopathy/HomeopathyPayment';
 import HomeopathyMyBookings from './pages/homeopathy/HomeopathyMyBookings';
 import HomeopathyBookingDetail from './pages/homeopathy/HomeopathyBookingDetail';
+import HomeopathyCenterDetail from './pages/homeopathy/HomeopathyCenterDetail';
+import BookNaturopathyPackage from './pages/homeopathy/BookNaturopathyPackage';
+import HomeopathyCheckout from './pages/homeopathy/HomeopathyCheckout';
+mport HomeopathyCenterDashboard from './pages/homeopathy/HomeopathyCenterDashboard';
+import HomeopathyPharmacyDashboard from './pages/homeopathy/HomeopathyPharmacyDashboard';
 
 // ============================================
 // LEGAL PAGES
@@ -330,6 +335,11 @@ function App() {
           <Route path="/homeopathy/payment" element={<HomeopathyPayment />} />
           <Route path="/homeopathy/my-bookings" element={<HomeopathyMyBookings />} />
           <Route path="/homeopathy/booking/:bookingId" element={<HomeopathyBookingDetail />} />
+	  <Route path="/homeopathy/center/:id" element={<HomeopathyCenterDetail />} />
+	  <Route path="/homeopathy/center/:centerId/book/:packageId" element={<BookNaturopathyPackage />} />
+	  <Route path="/homeopathy/checkout" element={<HomeopathyCheckout />} />
+          <Route path="/homeopathy/center/dashboard" element={<HomeopathyCenterDashboard />} />
+	  <Route path="/homeopathy/pharmacy/dashboard" element={<HomeopathyPharmacyDashboard />} />
 
           {/* LEGAL PAGES */}
           <Route path="/terms" element={<TermsAndConditions />} />
