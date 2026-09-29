@@ -88,6 +88,10 @@ import HomeoCenterRegistration from './pages/homeopathy/CenterRegistration';
 import HomeoPharmacyRegistration from './pages/homeopathy/PharmacyRegistration';
 import NaturopathyCenters from './pages/homeopathy/NaturopathyCenters';
 import RemedyMatcher from './pages/homeopathy/RemedyMatcher';
+import HomeopathyDoctorDetail from './pages/homeopathy/HomeopathyDoctorDetail';
+import HomeopathyPayment from './pages/homeopathy/HomeopathyPayment';
+import HomeopathyMyBookings from './pages/homeopathy/HomeopathyMyBookings';
+import HomeopathyBookingDetail from './pages/homeopathy/HomeopathyBookingDetail';
 
 // ============================================
 // LEGAL PAGES
@@ -318,7 +322,13 @@ function App() {
           <Route path="/homeopathy/center/register" element={<HomeoCenterRegistration />} />
           <Route path="/homeopathy/pharmacy/register" element={<HomeoPharmacyRegistration />} />
           <Route path="/homeopathy/centers" element={<NaturopathyCenters />} />
-	  <Route path="/homeopathy/remedy-matcher" element={<RemedyMatcher />} />
+          <Route path="/homeopathy/remedy-matcher" element={<RemedyMatcher />} />
+          {/* 🆕 Bundle 2 additions */}
+          <Route path="/homeopathy/doctor/:id" element={<HomeopathyDoctorDetail />} />
+          <Route path="/homeopathy/payment" element={<HomeopathyPayment />} />
+          <Route path="/homeopathy/my-bookings" element={<HomeopathyMyBookings />} />
+          <Route path="/homeopathy/booking/:bookingId" element={<HomeopathyBookingDetail />} />
+          <Route path="/homeopathy/checkout" element={<HomeopathyCheckout />} />
 
           {/* LEGAL PAGES */}
           <Route path="/terms" element={<TermsAndConditions />} />
