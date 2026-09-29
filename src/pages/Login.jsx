@@ -4,7 +4,7 @@ import api from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
-  const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/';
+  const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/dashboard';
   const [activeTab, setActiveTab] = useState('mobile');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
