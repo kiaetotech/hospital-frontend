@@ -1,62 +1,136 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 
 const DoctorLogin = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('email');
-  const [form, setForm] = useState({ email: '', phone: '', password: '', otp: '' });
+  const [form, setForm] = useState({ phone: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCountdown, setOtpCountdown] = useState(0);
 
-  useEffect(() => { if (otpCountdown > 0) { const t = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000); return () => clearTimeout(t); } }, [otpCountdown]);
-  const handleChange = (f, v) => { setForm(p => ({ ...p, [f]: v })); setError(''); };
-  const handleSendOTP = async () => {
-    if (!form.phone || form.phone.length < 10) { setError('Enter valid 10-digit number'); return; }
-    try { await api.post('/otp/send', { phone: `+91${form.phone}`, type: 'login' }); setOtpSent(true); setOtpCountdown(30); setError(''); } catch (e) { setError('Failed'); }
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    setError('');
   };
+
   const handleLogin = async (e) => {
-    e.preventDefault(); setLoading(true); setError('');
+    e.preventDefault();
+    setError('');
+
+    if (!form.phone || !form.password) {
+      setError('Please enter phone and password');
+      return;
+    }
+
+    setLoading(true);
     try {
-      let res;
-      if (activeTab === 'email') {
-        if (!form.email || !form.password) { setError('Fill all fields'); setLoading(false); return; }
-        res = await api.post('/auth/login', { email: form.email, password: form.password, role: 'homeopathy_doctor' });
-      } else {
-        if (!form.phone || !form.otp) { setError('Enter phone and OTP'); setLoading(false); return; }
-        res = await api.post('/otp/verify', { phone: `+91${form.phone}`, otp: form.otp, type: 'login' });
-        if (res.data?.success) res = await api.post('/auth/login', { phone: `+91${form.phone}`, role: 'homeopathy_doctor', otpLogin: true });
+      // Homeopathy-specific login (matches backend routes/homeopathy-advanced.js)
+      const res = await api.post('/homeopathy/doctor/login', {
+        phone: form.phone.trim(),
+        password: form.password
+      });
+
+      if (!res.data?.success || !res.data?.token || !res.data?.doctor) {
+        setError(res.data?.error || res.data?.message || 'Login failed');
+        setLoading(false);
+        return;
       }
-      if (res.data?.success) {
-        localStorage.setItem('providerToken', res.data.token);
-        localStorage.setItem('providerId', res.data.user?._id || '');
-        localStorage.setItem('providerType', 'homeopathy_doctor');
-        navigate('/homeopathy/doctor/dashboard');
-      } else setError(res.data?.message || 'Login failed');
-    } catch (e) { setError('Login failed'); } finally { setLoading(false); }
+
+      // Store using Ayurveda-style keys (doctorToken + doctor JSON)
+      const doctor = {
+        _id: res.data.doctor.id || res.data.doctor._id,
+        id: res.data.doctor.id || res.data.doctor._id,
+        name: res.data.doctor.name,
+        specialization: res.data.doctor.specialization
+      };
+
+      localStorage.setItem('doctorToken', res.data.token);
+      localStorage.setItem('doctor', JSON.stringify(doctor));
+      localStorage.setItem('providerType', 'homeopathy_doctor');
+
+      navigate('/homeopathy/doctor/dashboard', { replace: true });
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.error || err.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const c = '#7B1FA2';
+  const c = '#059669'; // Homeopathy green (matches Hub / Doctors / Pharmacy)
+
   return (
-    <div style={{ minHeight:'100vh',background:'linear-gradient(135deg,#7B1FA2,#4A148C)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',fontFamily:'Arial' }}>
-      <div style={{ width:'100%',maxWidth:'420px',background:'#fff',borderRadius:'20px',padding:'30px 24px',boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
-        <div style={{ textAlign:'center',marginBottom:'24px' }}><span style={{ fontSize:'44px',display:'block' }}>🌿</span><h2 style={{ margin:'8px 0 0',fontSize:'22px',fontWeight:800 }}>Homeopathy Doctor Login</h2><p style={{ fontSize:'13px',color:'#888' }}>Access your doctor dashboard</p></div>
-        <div style={{ display:'flex',background:'#f5f5f5',borderRadius:'12px',padding:'4px',marginBottom:'20px' }}><button onClick={()=>{setActiveTab('email');setError('');}} style={{ flex:1,padding:'12px',border:'none',borderRadius:'10px',background:activeTab==='email'?c:'transparent',color:activeTab==='email'?'#fff':'#666',fontWeight:600,fontSize:'13px',cursor:'pointer' }}>✉️ Email</button><button onClick={()=>{setActiveTab('phone');setError('');}} style={{ flex:1,padding:'12px',border:'none',borderRadius:'10px',background:activeTab==='phone'?c:'transparent',color:activeTab==='phone'?'#fff':'#666',fontWeight:600,fontSize:'13px',cursor:'pointer' }}>📱 Mobile OTP</button></div>
-        {error&&<div style={{ background:'#ffebee',color:'#c62828',padding:'10px',borderRadius:'8px',fontSize:'13px',marginBottom:'15px',textAlign:'center' }}>{error}</div>}
-        <form onSubmit={handleLogin}>
-          {activeTab==='email'?<><div style={{ marginBottom:'14px' }}><label style={ls}>Email</label><input type="email" placeholder="Enter email" value={form.email} onChange={e=>handleChange('email',e.target.value)} style={is} /></div><div style={{ marginBottom:'10px' }}><label style={ls}>Password</label><div style={{ position:'relative' }}><input type={showPassword?'text':'password'} placeholder="Password" autoComplete="new-password" value={form.password} onChange={e=>handleChange('password',e.target.value)} style={{...is,paddingRight:'40px'}} /><button type="button" onClick={()=>setShowPassword(!showPassword)} style={{ position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',fontSize:'18px',cursor:'pointer' }}>{showPassword?'🙈':'👁️'}</button></div></div><div style={{ textAlign:'right',marginBottom:'16px' }}><Link to="/homeopathy/doctor/forgot-password" style={{ fontSize:'12px',color:c,textDecoration:'none',fontWeight:600 }}>Forgot Password?</Link></div></>:<><div style={{ marginBottom:'14px' }}><label style={ls}>Phone</label><div style={{ display:'flex',gap:'8px' }}><span style={cc}>+91</span><input type="tel" placeholder="Phone" value={form.phone} onChange={e=>handleChange('phone',e.target.value.replace(/\D/g,'').slice(0,10))} style={{...is,flex:1}} /></div></div><div style={{ display:'flex',gap:'8px',marginBottom:'10px' }}><button type="button" onClick={handleSendOTP} disabled={otpCountdown>0} style={{ padding:'12px 16px',background:otpCountdown>0?'#ccc':c,color:'#fff',border:'none',borderRadius:'10px',fontSize:'12px',fontWeight:600,cursor:otpCountdown>0?'not-allowed':'pointer',whiteSpace:'nowrap' }}>{otpCountdown>0?`Resend ${otpCountdown}s`:'Send OTP'}</button>{otpSent&&<input type="text" placeholder="6-digit OTP" value={form.otp} onChange={e=>handleChange('otp',e.target.value.replace(/\D/g,'').slice(0,6))} maxLength={6} style={{...is,flex:1,letterSpacing:'6px',textAlign:'center',fontSize:'18px'}} />}</div></>}
-          <button type="submit" disabled={loading} style={{ width:'100%',padding:'14px',background:c,color:'#fff',border:'none',borderRadius:'12px',fontSize:'15px',fontWeight:700,cursor:'pointer',opacity:loading?0.7:1 }}>{loading?'Logging in...':'Login'}</button>
+    <div className="min-h-screen flex items-center justify-center p-5" style={{ background: 'linear-gradient(135deg, #4c1d95, #059669)', fontFamily: 'system-ui, sans-serif' }}>
+      <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-2xl">
+        <div className="text-center mb-6">
+          <span className="text-5xl block">🌿</span>
+          <h2 className="mt-2 text-2xl font-extrabold text-slate-800">Homeopathy Doctor Login</h2>
+          <p className="text-sm text-slate-500 mt-1">Access your doctor dashboard</p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm text-center font-medium">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-600 mb-1.5">Phone Number</label>
+            <input
+              type="tel"
+              placeholder="10-digit phone number"
+              value={form.phone}
+              onChange={(e) => handleChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+              maxLength={10}
+              className="w-full p-3 border-2 border-slate-200 rounded-xl text-sm outline-none focus:border-green-500 transition-colors"
+              autoComplete="tel"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-600 mb-1.5">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Your password"
+                value={form.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                className="w-full p-3 pr-12 border-2 border-slate-200 rounded-xl text-sm outline-none focus:border-green-500 transition-colors"
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-lg bg-transparent border-none cursor-pointer"
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 rounded-xl text-white font-bold text-base transition-opacity"
+            style={{ backgroundColor: loading ? '#a7f3d0' : c, cursor: loading ? 'not-allowed' : 'pointer' }}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
         </form>
-        <div style={{ textAlign:'center',marginTop:'18px',paddingTop:'16px',borderTop:'1px solid #eee' }}><p style={{ fontSize:'13px',color:'#888',margin:0 }}>Don't have an account? <Link to="/homeopathy/doctor/register" style={{ color:c,fontWeight:700,textDecoration:'none' }}>Register Here</Link></p></div>
+
+        <div className="mt-5 pt-4 border-t border-slate-100 text-center">
+          <p className="text-sm text-slate-500">
+            Don't have an account?{' '}
+            <Link to="/homeopathy/doctor/register" className="text-green-600 font-bold no-underline">
+              Register Here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
 };
-const ls={display:'block',fontSize:'13px',fontWeight:600,color:'#555',marginBottom:'6px'};
-const is={width:'100%',padding:'13px',border:'2px solid #e0e0e0',borderRadius:'10px',fontSize:'14px',outline:'none',boxSizing:'border-box',marginBottom:'12px'};
-const cc={padding:'13px 10px',background:'#f5f5f5',border:'2px solid #e0e0e0',borderRadius:'10px',fontSize:'14px',fontWeight:600,color:'#555'};
-export default DoctorLogin;
 
+export default DoctorLogin;
