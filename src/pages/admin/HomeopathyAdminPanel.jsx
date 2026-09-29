@@ -1,77 +1,2435 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import axios from 'axios';
+import {
+  FaSearch, FaFilter, FaDownload, FaSync, FaArrowLeft,
+  FaUserMd, FaBuilding, FaCalendarAlt, FaTag, FaRupeeSign,
+  FaEye, FaCheck, FaTimes, FaBan, FaChartBar, FaBell,
+  FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaStar
+} from 'react-icons/fa';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  PieChart, Pie, Cell, ResponsiveContainer
+} from 'recharts';
+
+const API_BASE = 'https://hospital-backend-production-e2cf.up.railway.app';
+const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
 
 const HomeopathyAdminPanel = () => {
   const navigate = useNavigate();
-  const [tab, setTab] = useState('doctors');
-  const [pendingDoctors, setPendingDoctors] = useState([]);
-  const [pendingCenters, setPendingCenters] = useState([]);
+  const [tab, setTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [page, setPage] = useState(1);
+  const [perPage] = useState(10);
+
+  const [allDoctors, setAllDoctors] = useState([]);
+  const [allCenters, setAllCenters] = useState([]);
+  const [allPharmacies, setAllPharmacies] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
+  const [discounts, setDiscounts] = useState([]);
+  const [settlements, setSettlements] = useState([]);
+  const [settlementTab, setSettlementTab] = useState('pending');
+  const [settlementFilter, setSettlementFilter] = useState({ status: '', providerType: '', search: '' });
+  const [settlementPage, setSettlementPage] = useState(1);
+  const [settlementStats, setSettlementStats] = useState(null);
+  const [selectedPayouts, setSelectedPayouts] = useState([]);
+  const [providerGroups, setProviderGroups] = useState([]);
+  const [cityData, setCityData] = useState([]);
+  const [dateData, setDateData] = useState([]);
+  const [dateGroupBy, setDateGroupBy] = useState('day');
+  const [settlementSummary, setSettlementSummary] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [reviewFilter, setReviewFilter] = useState('all');
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [reviewActionLoading, setReviewActionLoading] = useState(false);
+  const [complaints, setComplaints] = useState([]);
+  const [complaintFilter, setComplaintFilter] = useState('all');
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [complaintActionLoading, setComplaintActionLoading] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedCenter, setSelectedCenter] = useState(null);
+  const [selectedPharmacy, setSelectedPharmacy] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showRejectModal, setShowRejectModal] = useState(null);
+  const [showRefundModal, setShowRefundModal] = useState(null);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(300000);
+  const [editingDiscount, setEditingDiscount] = useState(null);
+  const [showExport, setShowExport] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [bulkSelected, setBulkSelected] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingCentersList, setPendingCentersList] = useState([]);
   const [pendingPharmacies, setPendingPharmacies] = useState([]);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!localStorage.getItem('adminToken')) { navigate('/admin/login'); return; }
-    loadData();
-  }, [tab]);
+  // Commission rules (mirror Ayurveda structure)
+  const [commissionRules, setCommissionRules] = useState([]);
+  const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [editingCommissionRule, setEditingCommissionRule] = useState(null);
+  const [commissionRuleFilter, setCommissionRuleFilter] = useState('all');
+  const [commissionRuleSearch, setCommissionRuleSearch] = useState('');
+  const [commissionModalScopeType, setCommissionModalScopeType] = useState('provider');
+  const [commissionActionLoading, setCommissionActionLoading] = useState(false);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      if (tab === 'doctors') {
-        const res = await api.get('/homeopathy/admin/pending-doctors');
-        setPendingDoctors(res.data?.data || []);
-      } else if (tab === 'centers') {
-        const res = await api.get('/homeopathy/admin/pending-centers');
-        setPendingCenters(res.data?.data || []);
-      } else if (tab === 'pharmacies') {
-        const res = await api.get('/homeopathy/admin/pending-pharmacies');
-        setPendingPharmacies(res.data?.data || []);
-      }
-    } catch (error) { console.error(error); }
-    setLoading(false);
+  // Fee config (Homeopathy-specific naming to match backend)
+  const [feeConfig, setFeeConfig] = useState(null);
+  const [feeConfigLoading, setFeeConfigLoading] = useState(false);
+
+  const [stats, setStats] = useState({
+    totalDoctors: 0, totalCenters: 0, totalPharmacies: 0, totalBookings: 0,
+    totalRevenue: 0, pendingDoctors: 0, pendingCenters: 0, pendingPharmacies: 0,
+    activeDiscounts: 0, completedBookings: 0, cancelledBookings: 0,
+    totalCommission: 0, pendingPayouts: 0
+  });
+
+  const [revenueData, setRevenueData] = useState([]);
+  const [bookingTypeData, setBookingTypeData] = useState([]);
+
+  const addNotification = (message, type = 'info') => {
+    const notif = { id: Date.now(), message, type, time: new Date().toLocaleTimeString() };
+    setNotifications(prev => [notif, ...prev].slice(0, 20));
   };
 
-  const verifyDoctor = async (id, status) => {
-    try { await api.put(`/homeopathy/admin/verify-doctor/${id}`, { status }); alert(`Doctor ${status}!`); loadData(); }
-    catch (e) { alert('Failed'); }
+  // ============================================
+  // MAIN DATA FETCH
+  // ============================================
+  const fetchAllData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
+
+      const [
+        doctorsRes, centersRes, pharmaciesRes,
+        pendingDocRes, pendingCenterRes, pendingPharmRes,
+        bookingsRes, discountsRes, settlementsRes,
+        reviewsRes, complaintsRes
+      ] = await Promise.all([
+        api.get('/homeopathy/doctors'),
+        api.get('/homeopathy/centers'),
+        api.get('/homeopathy/pharmacies').catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/pending-centers`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/bookings/admin/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/bookings/admin/discounts`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/settlements/admin/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/bookings/admin/reviews/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/bookings/admin/complaints/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+      ]);
+
+      const doctors = doctorsRes.data?.data || [];
+      const centers = centersRes.data?.data || [];
+      const pharmacies = pharmaciesRes.data?.data || [];
+      const pendingDocs = pendingDocRes.data?.data || [];
+      const pendingCents = pendingCenterRes.data?.data || [];
+      const pendingPharms = pendingPharmRes.data?.data || [];
+      const bookings = bookingsRes.data?.data || [];
+      const disc = discountsRes.data?.data || [];
+      const settles = settlementsRes.data?.data || [];
+      const revs = reviewsRes.data?.data || [];
+      const comps = complaintsRes.data?.data || [];
+
+      setAllDoctors([...doctors, ...pendingDocs]);
+      setAllCenters([...centers, ...pendingCents]);
+      setAllPharmacies([...pharmacies, ...pendingPharms]);
+      setPendingCentersList(pendingCents);
+      setPendingPharmacies(pendingPharms);
+      setAllBookings(bookings);
+      setDiscounts(disc);
+      setSettlements(settles);
+      setReviews(revs);
+      setComplaints(comps);
+
+      const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
+        .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
+      const totalCommission = bookings.filter(b => b.paymentStatus === 'paid')
+        .reduce((sum, b) => sum + (b.platformCommission || 0), 0);
+
+      setStats({
+        totalDoctors: doctors.length,
+        totalCenters: centers.length,
+        totalPharmacies: pharmacies.length,
+        totalBookings: bookings.length,
+        totalRevenue,
+        pendingDoctors: pendingDocs.length,
+        pendingCenters: pendingCents.length,
+        pendingPharmacies: pendingPharms.length,
+        activeDiscounts: disc.filter(d => d.isActive).length,
+        completedBookings: bookings.filter(b => b.status === 'completed').length,
+        cancelledBookings: bookings.filter(b => b.status === 'cancelled').length,
+        totalCommission,
+        pendingPayouts: settles.length
+      });
+
+      // 7-day revenue trend
+      const last7Days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayBookings = bookings.filter(b =>
+          new Date(b.createdAt).toISOString().split('T')[0] === dateStr &&
+          b.paymentStatus === 'paid'
+        );
+        last7Days.push({
+          date: date.toLocaleDateString('en-US', { weekday: 'short' }),
+          revenue: dayBookings.reduce((s, b) => s + (b.finalAmount || 0), 0),
+          bookings: dayBookings.length
+        });
+      }
+      setRevenueData(last7Days);
+
+      // Booking type distribution
+      const typeMap = {};
+      bookings.forEach(b => {
+        const type = b.type || 'unknown';
+        typeMap[type] = (typeMap[type] || 0) + 1;
+      });
+      setBookingTypeData(Object.entries(typeMap).map(([name, value]) => ({ name, value })));
+
+      setLastRefresh(new Date());
+    } catch (error) {
+      console.error('Failed to load homeopathy admin data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  // ============================================
+  // SETTLEMENTS SUB-TABS
+  // ============================================
+  const fetchAllSettlements = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const params = new URLSearchParams({ page: settlementPage, limit: 50 });
+      if (settlementFilter.status) params.append('status', settlementFilter.status);
+      if (settlementFilter.providerType) params.append('providerType', settlementFilter.providerType);
+      if (settlementFilter.search) params.append('search', settlementFilter.search);
+
+      const res = await axios.get(
+        `${API_BASE}/api/homeopathy/settlements/admin/all?${params}`,
+        { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        setSettlements(res.data.data || []);
+        setSettlementStats(res.data.stats || null);
+      }
+    } catch (error) {
+      console.error('Fetch all settlements error:', error);
+    }
+  }, [settlementPage, settlementFilter]);
+
+  const fetchProviderGroups = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.get(
+        `${API_BASE}/api/homeopathy/settlements/admin/providers`,
+        { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) setProviderGroups(res.data.data || []);
+    } catch (error) {
+      console.error('Fetch providers error:', error);
+    }
+  }, []);
+
+  const fetchCityBreakdown = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.get(
+        `${API_BASE}/api/homeopathy/settlements/admin/by-city`,
+        { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) setCityData(res.data.data || []);
+    } catch (error) {
+      console.error('Fetch cities error:', error);
+    }
+  }, []);
+
+  const fetchDateBreakdown = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const params = new URLSearchParams({ groupBy: dateGroupBy });
+      if (dateRange.from) params.append('from', dateRange.from);
+      if (dateRange.to) params.append('to', dateRange.to);
+
+      const res = await axios.get(
+        `${API_BASE}/api/homeopathy/settlements/admin/by-date?${params}`,
+        { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        setDateData(res.data.data || []);
+        setSettlementSummary(res.data.totals);
+      }
+    } catch (error) {
+      console.error('Fetch dates error:', error);
+    }
+  }, [dateGroupBy, dateRange]);
+
+  useEffect(() => {
+    if (tab === 'settlements') {
+      if (settlementTab === 'all') fetchAllSettlements();
+      else if (settlementTab === 'providers') fetchProviderGroups();
+      else if (settlementTab === 'cities') fetchCityBreakdown();
+      else if (settlementTab === 'dates') fetchDateBreakdown();
+    }
+    if (tab === 'commission') fetchCommissionRules();
+    if (tab === 'fee-config') fetchFeeConfig();
+  }, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange, fetchAllSettlements, fetchProviderGroups, fetchCityBreakdown, fetchDateBreakdown]);
+
+  // ============================================
+  // AUTO-REFRESH (pauses when any modal open)
+  // ============================================
+  useEffect(() => {
+    const anyModalOpen =
+      showDiscountModal || editingDiscount || selectedDoctor ||
+      selectedCenter || selectedPharmacy || selectedBooking ||
+      showRejectModal || showRefundModal || showExport ||
+      showNotifications || showCommissionModal || editingCommissionRule;
+
+    if (autoRefresh && !anyModalOpen) {
+      const interval = setInterval(fetchAllData, refreshInterval);
+      return () => clearInterval(interval);
+    }
+  }, [
+    autoRefresh, refreshInterval, fetchAllData,
+    showDiscountModal, editingDiscount, selectedDoctor,
+    selectedCenter, selectedPharmacy, selectedBooking,
+    showRejectModal, showRefundModal, showExport,
+    showNotifications, showCommissionModal, editingCommissionRule
+  ]);
+
+  // ============================================
+  // COMMISSION RULES
+  // ============================================
+  const fetchCommissionRules = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (commissionRuleFilter !== 'all') params.append('scopeType', commissionRuleFilter);
+      if (commissionRuleSearch.trim()) params.append('search', commissionRuleSearch.trim());
+
+      const res = await axios.get(
+        `${API_BASE}/api/homeopathy/admin/commission-rules?${params}`,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      ).catch(() => ({ data: { data: [] } }));
+      setCommissionRules(res.data?.data || []);
+    } catch (err) {
+      console.error('Fetch commission rules error:', err);
+      setCommissionRules([]);
+    }
+  }, [commissionRuleFilter, commissionRuleSearch]);
+
+  const createCommissionRule = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const payload = {
+      scopeType: form.scopeType.value,
+      scopeValue: form.scopeValue?.value?.trim() || null,
+      scopeState: form.scopeState?.value?.trim() || null,
+      serviceType: form.serviceType.value,
+      commissionType: form.commissionType.value,
+      percentageRate: Number(form.percentageRate.value || 0),
+      fixedAmount: Number(form.fixedAmount.value || 0),
+      effectiveFrom: form.effectiveFrom.value || new Date().toISOString(),
+      effectiveUntil: form.effectiveUntil.value || null,
+      changeReason: form.changeReason.value.trim()
+    };
+
+    if (!payload.changeReason || payload.changeReason.length < 5) {
+      addNotification('Reason must be at least 5 characters', 'error');
+      return;
+    }
+    if (payload.scopeType !== 'global' && !payload.scopeValue) {
+      addNotification('Scope value required for non-global scope', 'error');
+      return;
+    }
+
+    setCommissionActionLoading(true);
+    try {
+      const res = await axios.post(
+        `${API_BASE}/api/homeopathy/admin/commission-rules`,
+        payload,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('✅ Commission rule created', 'success');
+        setShowCommissionModal(false);
+        fetchCommissionRules();
+      } else {
+        addNotification(res.data.error || 'Create failed', 'error');
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setCommissionActionLoading(false);
+    }
+  };
+
+  const updateCommissionRule = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const payload = {
+      percentageRate: Number(form.percentageRate.value || 0),
+      fixedAmount: Number(form.fixedAmount?.value || 0),
+      priority: Number(form.priority.value || 0),
+      effectiveUntil: form.effectiveUntil.value || null,
+      isActive: form.isActive.checked,
+      changeReason: form.changeReason.value.trim()
+    };
+
+    if (!payload.changeReason || payload.changeReason.length < 5) {
+      addNotification('Reason must be at least 5 characters', 'error');
+      return;
+    }
+
+    setCommissionActionLoading(true);
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/homeopathy/admin/commission-rules/${editingCommissionRule._id}`,
+        payload,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('✅ Commission rule updated', 'success');
+        setEditingCommissionRule(null);
+        fetchCommissionRules();
+      } else {
+        addNotification(res.data.error || 'Update failed', 'error');
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setCommissionActionLoading(false);
+    }
+  };
+
+  const deleteCommissionRule = async (id) => {
+    if (!window.confirm('Delete this commission rule?')) return;
+    try {
+      const res = await axios.delete(
+        `${API_BASE}/api/homeopathy/admin/commission-rules/${id}`,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('Rule deleted', 'success');
+        fetchCommissionRules();
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.error || err.message), 'error');
+    }
+  };
+
+  // ============================================
+  // FEE CONFIG
+  // ============================================
+  const fetchFeeConfig = useCallback(async () => {
+    setFeeConfigLoading(true);
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/homeopathy/admin/fee-config`,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data?.success) setFeeConfig(res.data.data);
+    } catch (err) {
+      console.error('Fee config fetch error:', err);
+    } finally {
+      setFeeConfigLoading(false);
+    }
+  }, []);
+
+  const handleSeedFeeConfig = async () => {
+    if (!window.confirm('Seed default fee configs for Homeopathy services?')) return;
+    try {
+      const res = await axios.post(
+        `${API_BASE}/api/homeopathy/admin/fee-config/seed`,
+        {},
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data?.success) {
+        addNotification('Fee configs seeded', 'success');
+        fetchFeeConfig();
+      }
+    } catch (err) {
+      addNotification('Seed failed', 'error');
+    }
+  };
+
+  // ============================================
+  // PROVIDER VERIFICATION
+  // ============================================
+  const verifyDoctor = async (id, status, reason = '') => {
+    try {
+      await axios.put(
+        `${API_BASE}/api/homeopathy/admin/verify-doctor/${id}`,
+        { status, rejectionReason: reason },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      setShowRejectModal(null);
+      setRejectionReason('');
+      fetchAllData();
+      addNotification(`Doctor ${status}`, 'success');
+    } catch (error) {
+      addNotification(`Failed: ${error.message}`, 'error');
+    }
   };
 
   const verifyCenter = async (id, status) => {
-    try { await api.put(`/homeopathy/admin/verify-center/${id}`, { status }); alert(`Center ${status}!`); loadData(); }
-    catch (e) { alert('Failed'); }
+    try {
+      await axios.put(
+        `${API_BASE}/api/homeopathy/admin/verify-center/${id}`,
+        { status },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      fetchAllData();
+      addNotification(`Center ${status}`, 'success');
+    } catch (error) {
+      addNotification(`Failed: ${error.message}`, 'error');
+    }
   };
 
   const verifyPharmacy = async (id, status) => {
-    try { await api.put(`/homeopathy/admin/verify-pharmacy/${id}`, { status }); alert(`Pharmacy ${status}!`); loadData(); }
-    catch (e) { alert('Failed'); }
+    try {
+      await axios.put(
+        `${API_BASE}/api/homeopathy/admin/verify-pharmacy/${id}`,
+        { status },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      fetchAllData();
+      addNotification(`Pharmacy ${status}`, 'success');
+    } catch (error) {
+      addNotification(`Failed: ${error.message}`, 'error');
+    }
   };
 
+  const suspendDoctor = async (id) => {
+    if (window.confirm('Suspend this doctor?')) verifyDoctor(id, 'suspended');
+  };
+
+  // ============================================
+  // BOOKING ADMIN ACTIONS
+  // ============================================
+  const processRefund = async (bookingId) => {
+    try {
+      await axios.put(
+        `${API_BASE}/api/homeopathy/bookings/admin/force-cancel/${bookingId}`,
+        { reason: refundReason },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      setShowRefundModal(null);
+      setRefundReason('');
+      fetchAllData();
+      addNotification('Refund processed', 'success');
+    } catch (error) {
+      addNotification('Refund failed: ' + error.message, 'error');
+    }
+  };
+
+  const forceCancelBooking = async (bookingId, reason) => {
+    if (!window.confirm(`Force cancel booking ${bookingId}?`)) return;
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/homeopathy/bookings/admin/force-cancel/${bookingId}`,
+        { reason },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('Booking force-cancelled', 'success');
+        fetchAllData();
+      } else {
+        addNotification(res.data.message || 'Cancel failed', 'error');
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
+    }
+  };
+
+  const markNoShow = async (bookingId) => {
+    const reason = window.prompt('No-show reason:') || 'Patient did not attend';
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/homeopathy/bookings/admin/mark-no-show/${bookingId}`,
+        { reason },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('Marked as no-show — provider earning protected', 'success');
+        fetchAllData();
+      } else {
+        addNotification(res.data.message || 'Failed', 'error');
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
+    }
+  };
+
+  // ============================================
+  // DISCOUNTS
+  // ============================================
+  const toggleDiscount = async (id, isActive) => {
+    try {
+      await axios.put(
+        `${API_BASE}/api/homeopathy/discounts/${id}`,
+        { isActive: !isActive },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      fetchAllData();
+      addNotification('Discount updated', 'success');
+    } catch (error) {
+      addNotification('Failed: ' + error.message, 'error');
+    }
+  };
+
+  const createDiscount = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    try {
+      const applicableTags = Array.from(form.querySelectorAll('input[name="applicableTags"]:checked'))
+        .map(cb => cb.value);
+
+      if (applicableTags.length === 0) {
+        addNotification('Select at least one service type', 'error');
+        return;
+      }
+
+      await axios.post(
+        `${API_BASE}/api/homeopathy/discounts`,
+        {
+          code: form.code.value,
+          discountType: form.discountType.value,
+          value: Number(form.value.value),
+          maxDiscount: form.maxDiscount.value ? Number(form.maxDiscount.value) : undefined,
+          validFrom: form.validFrom.value,
+          validTill: form.validTill.value,
+          applicableTags
+        },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      setShowDiscountModal(false);
+      fetchAllData();
+      addNotification('Discount created', 'success');
+    } catch (error) {
+      addNotification('Failed: ' + error.message, 'error');
+    }
+  };
+
+  // ============================================
+  // SETTLEMENTS BULK
+  // ============================================
+  const handleBulkApprove = async () => {
+    if (selectedPayouts.length === 0) return;
+    if (!window.confirm(`Approve ${selectedPayouts.length} payouts?`)) return;
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.put(
+        `${API_BASE}/api/homeopathy/settlements/admin/bulk-approve`,
+        { payoutIds: selectedPayouts, note: 'Bulk approved by admin' },
+        { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification(`Approved ${selectedPayouts.length} payouts`, 'success');
+        setSelectedPayouts([]);
+        if (settlementTab === 'all') fetchAllSettlements();
+        else fetchAllData();
+      }
+    } catch (error) {
+      addNotification('Bulk approve failed', 'error');
+    }
+  };
+
+  const approveSettlement = async (payoutId) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.put(
+        `${API_BASE}/api/homeopathy/settlements/admin/approve/${payoutId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+      );
+      fetchAllData();
+      addNotification('Settlement approved', 'success');
+    } catch (error) {
+      addNotification('Failed: ' + error.message, 'error');
+    }
+  };
+
+  const handleExportSettlements = () => {
+    const params = new URLSearchParams(settlementFilter);
+    window.open(
+      `${API_BASE}/api/homeopathy/settlements/admin/export?${params}&x-admin-key=${ADMIN_KEY}`,
+      '_blank'
+    );
+  };
+
+  // ============================================
+  // REVIEWS
+  // ============================================
+  const updateReviewAction = async (bookingId, action, payload = {}, successMsg = 'Updated') => {
+    setReviewActionLoading(true);
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/homeopathy/bookings/admin/reviews/${bookingId}/${action}`,
+        payload,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification(successMsg, 'success');
+        setSelectedReview(null);
+        fetchAllData();
+      } else {
+        addNotification(res.data.message || 'Failed', 'error');
+      }
+    } catch (err) {
+      addNotification('Failed: ' + (err.response?.data?.message || err.message), 'error');
+    } finally {
+      setReviewActionLoading(false);
+    }
+  };
+
+  const flagReview = (r) => {
+    const reason = window.prompt('Reason for flagging this review:') || 'Flagged by admin';
+    updateReviewAction(r.bookingId, 'flag', { reason }, 'Review flagged');
+  };
+  const unflagReview = (r) => updateReviewAction(r.bookingId, 'unflag', {}, 'Review unflagged');
+  const hideReview = (r) => {
+    const reason = window.prompt('Reason for hiding this review:') || 'Hidden by admin';
+    updateReviewAction(r.bookingId, 'hide', { reason }, 'Review hidden');
+  };
+  const unhideReview = (r) => updateReviewAction(r.bookingId, 'hide', { unhide: true }, 'Review restored');
+
+  // ============================================
+  // COMPLAINTS
+  // ============================================
+  const escalateComplaint = async (bookingId, complaintId) => {
+    if (!window.confirm('Escalate this complaint for priority review?')) return;
+    setComplaintActionLoading(true);
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/homeopathy/bookings/admin/complaints/${bookingId}/${complaintId}`,
+        { status: 'escalated' },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('Complaint escalated', 'success');
+        setSelectedComplaint(null);
+        fetchAllData();
+      } else {
+        addNotification(res.data.message || 'Escalation failed', 'error');
+      }
+    } catch (error) {
+      addNotification('Failed: ' + (error.response?.data?.message || error.message), 'error');
+    } finally {
+      setComplaintActionLoading(false);
+    }
+  };
+
+  // ============================================
+  // BULK APPROVE DOCTORS
+  // ============================================
+  const bulkApproveDoctors = async () => {
+    if (bulkSelected.length === 0) return;
+    if (!window.confirm(`Approve ${bulkSelected.length} doctors?`)) return;
+    for (const id of bulkSelected) {
+      await verifyDoctor(id, 'approved');
+    }
+    setBulkSelected([]);
+    fetchAllData();
+  };
+
+  // ============================================
+  // EXPORT
+  // ============================================
+  const handleExport = (type) => {
+    let data = [];
+    let filename = '';
+
+    if (type === 'doctors') {
+      data = allDoctors.map(d => ({
+        Name: d.name, Specialty: d.specialization, Phone: d.phone,
+        Email: d.email, City: d.address?.city, Fee: d.consultationFee, Status: d.verificationStatus
+      }));
+      filename = 'homeopathy-doctors.csv';
+    } else if (type === 'centers') {
+      data = allCenters.map(c => ({
+        Name: c.name, Type: c.type, City: c.address?.city, Phone: c.phone, Status: c.verificationStatus
+      }));
+      filename = 'homeopathy-centers.csv';
+    } else if (type === 'pharmacies') {
+      data = allPharmacies.map(p => ({
+        Business: p.businessName, License: p.drugLicenseNumber,
+        City: p.address?.city, Phone: p.phone, Status: p.verificationStatus
+      }));
+      filename = 'homeopathy-pharmacies.csv';
+    } else if (type === 'bookings') {
+      data = allBookings.map(b => ({
+        BookingID: b.bookingId, Type: b.type, Patient: b.patient?.name,
+        Provider: b.doctorName || b.centerName || b.pharmacyName,
+        Amount: b.finalAmount, Payment: b.paymentStatus, Status: b.status
+      }));
+      filename = 'homeopathy-bookings.csv';
+    }
+
+    const csv = data.length > 0 ?
+      [Object.keys(data[0]).join(','), ...data.map(row => Object.values(row).join(','))].join('\n') : '';
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ============================================
+  // FILTERS
+  // ============================================
+  const filteredDoctors = useMemo(() => {
+    let result = allDoctors;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(d =>
+        d.name?.toLowerCase().includes(q) ||
+        d.specialization?.toLowerCase().includes(q) ||
+        d.phone?.includes(q)
+      );
+    }
+    if (statusFilter !== 'all') {
+      result = result.filter(d => d.verificationStatus === statusFilter);
+    }
+    return result;
+  }, [allDoctors, searchQuery, statusFilter]);
+
+  const filteredCenters = useMemo(() => {
+    let result = allCenters;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(c => c.name?.toLowerCase().includes(q));
+    }
+    return result;
+  }, [allCenters, searchQuery]);
+
+  const filteredPharmacies = useMemo(() => {
+    let result = allPharmacies;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p => p.businessName?.toLowerCase().includes(q));
+    }
+    return result;
+  }, [allPharmacies, searchQuery]);
+
+  const filteredBookings = useMemo(() => {
+    let result = allBookings;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(b =>
+        b.bookingId?.toLowerCase().includes(q) ||
+        b.patient?.name?.toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter !== 'all') {
+      result = result.filter(b => b.status === statusFilter || b.paymentStatus === statusFilter);
+    }
+    if (dateRange.from) {
+      result = result.filter(b => new Date(b.createdAt) >= new Date(dateRange.from));
+    }
+    if (dateRange.to) {
+      result = result.filter(b => new Date(b.createdAt) <= new Date(dateRange.to));
+    }
+    return result;
+  }, [allBookings, searchQuery, statusFilter, dateRange]);
+
+  const filteredReviews = useMemo(() => {
+    if (reviewFilter === 'all') return reviews;
+    if (reviewFilter === 'flagged') return reviews.filter(r => r.isFlagged);
+    if (reviewFilter === 'hidden') return reviews.filter(r => r.isHidden);
+    const ratingNum = parseInt(reviewFilter);
+    if (ratingNum) return reviews.filter(r => r.rating === ratingNum);
+    return reviews;
+  }, [reviews, reviewFilter]);
+
+  const reviewCounts = useMemo(() => ({
+    all: reviews.length,
+    flagged: reviews.filter(r => r.isFlagged).length,
+    hidden: reviews.filter(r => r.isHidden).length,
+    5: reviews.filter(r => r.rating === 5).length,
+    4: reviews.filter(r => r.rating === 4).length,
+    3: reviews.filter(r => r.rating === 3).length,
+    2: reviews.filter(r => r.rating === 2).length,
+    1: reviews.filter(r => r.rating === 1).length
+  }), [reviews]);
+
+  const filteredComplaints = useMemo(() => {
+    if (complaintFilter === 'all') return complaints;
+    return complaints.filter(c => (c.status || 'pending') === complaintFilter);
+  }, [complaints, complaintFilter]);
+
+  const complaintCounts = useMemo(() => {
+    const counts = { all: complaints.length, pending: 0, in_review: 0, resolved: 0, escalated: 0 };
+    complaints.forEach(c => {
+      const s = c.status || 'pending';
+      if (counts[s] !== undefined) counts[s]++;
+    });
+    return counts;
+  }, [complaints]);
+
+  const paginatedDoctors = filteredDoctors.slice((page - 1) * perPage, page * perPage);
+  const paginatedCenters = filteredCenters.slice((page - 1) * perPage, page * perPage);
+  const paginatedPharmacies = filteredPharmacies.slice((page - 1) * perPage, page * perPage);
+  const paginatedBookings = filteredBookings.slice((page - 1) * perPage, page * perPage);
+  const totalPages = Math.ceil(Math.max(
+    filteredDoctors.length, filteredCenters.length,
+    filteredPharmacies.length, filteredBookings.length
+  ) / perPage);
+
+  const COLORS = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#059669'];
+
+  // ⬇️⬇️ PART B CONTINUES IN NEXT MESSAGE — JSX RETURN BELOW THIS LINE ⬇️⬇️
+  // Do not close the component until Part B is added.
+
+  // ============================================
+  // RENDER
+  // ============================================
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem' }}>🌿</div>
+          <p style={{ fontWeight: 600, color: '#64748b' }}>Loading Homeopathy Admin...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ maxWidth:'1200px',margin:'0 auto',padding:'1.5rem' }}>
-      <div style={{ display:'flex',justifyContent:'space-between',marginBottom:'2rem' }}>
-        <h1 style={{ color:'#7C3AED' }}>🌿 Homeopathy Admin Panel</h1>
-        <button onClick={()=>navigate('/admin/dashboard')} style={{ padding:'0.5rem 1rem',backgroundColor:'#e2e8f0',border:'none',borderRadius:'0.5rem',cursor:'pointer' }}>← Back</button>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
+      {/* HEADER */}
+      <div style={{ background: 'linear-gradient(135deg, #4c1d95, #7c3aed)', padding: '1.2rem 2rem', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>🌿 Homeopathy Admin Panel</h1>
+          <p style={{ opacity: 0.85, fontSize: '0.85rem', margin: '2px 0 0' }}>
+            Last updated: {lastRefresh.toLocaleTimeString()} • Auto-refresh: {autoRefresh ? 'ON' : 'OFF'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button onClick={() => setShowNotifications(!showNotifications)} style={headerBtn('#f59e0b')}>
+            <FaBell /> {notifications.length > 0 && `(${notifications.length})`}
+          </button>
+          <button onClick={() => setShowExport(true)} style={headerBtn('#8b5cf6')}>
+            <FaDownload /> Export
+          </button>
+          <button onClick={() => setAutoRefresh(!autoRefresh)} style={headerBtn(autoRefresh ? '#10b981' : '#ef4444')}>
+            <FaSync /> {autoRefresh ? `Auto ${refreshInterval / 60000}m` : 'Auto OFF'}
+          </button>
+          {autoRefresh && (
+            <select
+              value={refreshInterval}
+              onChange={(e) => setRefreshInterval(Number(e.target.value))}
+              style={{ padding: '0.5rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+            >
+              <option value={60000}>1m</option>
+              <option value={120000}>2m</option>
+              <option value={300000}>5m</option>
+              <option value={600000}>10m</option>
+              <option value={1800000}>30m</option>
+            </select>
+          )}
+          <button onClick={fetchAllData} style={headerBtn('#3b82f6')}>
+            <FaSync /> Refresh
+          </button>
+          <button onClick={() => navigate('/admin')} style={headerBtn('#64748b')}>
+            <FaArrowLeft /> Back
+          </button>
+        </div>
       </div>
 
-      <div style={{ display:'flex',gap:'0.5rem',marginBottom:'2rem' }}>
-        {['doctors','centers','pharmacies'].map(t=>(<button key={t} onClick={()=>setTab(t)} style={{ padding:'0.5rem 1.5rem',borderRadius:'0.5rem',border:'none',fontWeight:'bold',cursor:'pointer',backgroundColor:tab===t?'#7C3AED':'#e2e8f0',color:tab===t?'white':'#1e293b' }}>{t==='doctors'?'👨‍⚕️ Doctors':t==='centers'?'🏨 Centers':'💊 Pharmacies'}</button>))}
+      {/* NOTIFICATIONS PANEL */}
+      {showNotifications && (
+        <div style={{ position: 'absolute', right: '2rem', top: '4.5rem', width: 350, maxHeight: 400, overflowY: 'auto', backgroundColor: 'white', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', zIndex: 1000 }}>
+          <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e2e8f0', fontWeight: 700 }}>🔔 Notifications</div>
+          {notifications.length === 0 ? (
+            <div style={{ padding: '1rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>No notifications</div>
+          ) : (
+            notifications.map(n => (
+              <div key={n.id} style={{ padding: '0.5rem 1rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.8rem', color: n.type === 'success' ? '#059669' : n.type === 'error' ? '#dc2626' : '#475569' }}>
+                <div>{n.message}</div>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{n.time}</div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* TABS */}
+      <div style={{ backgroundColor: 'white', padding: '0.75rem 2rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 100 }}>
+        {[
+          { id: 'overview', label: '📊 Overview', icon: FaChartBar },
+          { id: 'doctors', label: `👨‍⚕️ Doctors (${stats.totalDoctors})`, icon: FaUserMd },
+          { id: 'centers', label: `🏨 Centers (${stats.totalCenters})`, icon: FaBuilding },
+          { id: 'pharmacies', label: `💊 Pharmacies (${stats.totalPharmacies})`, icon: FaTag },
+          { id: 'bookings', label: `📋 Bookings (${stats.totalBookings})`, icon: FaCalendarAlt },
+          { id: 'discounts', label: `🏷️ Discounts (${stats.activeDiscounts})`, icon: FaTag },
+          { id: 'commission', label: `💰 Commission Rules (${commissionRules.length})`, icon: FaRupeeSign },
+          { id: 'fee-config', label: '💵 Fee Config', icon: FaRupeeSign },
+          { id: 'settlements', label: `💰 Settlements (${stats.pendingPayouts})`, icon: FaRupeeSign },
+          { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters + stats.pendingPharmacies})`, icon: FaExclamationTriangle },
+          { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
+          { id: 'complaints', label: '🚨 Complaints', icon: FaExclamationTriangle }
+        ].map(t => (
+          <button key={t.id} onClick={() => { setTab(t.id); setPage(1); }}
+            style={{
+              padding: '0.6rem 1.25rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+              fontSize: '0.85rem', fontWeight: tab === t.id ? 700 : 400,
+              background: tab === t.id ? '#7c3aed' : 'transparent',
+              color: tab === t.id ? 'white' : '#475569',
+              display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap'
+            }}>
+            <t.icon /> {t.label}
+          </button>
+        ))}
       </div>
 
-      {loading && <p>Loading...</p>}
+      {/* SEARCH & FILTER */}
+      <div style={{ padding: '1rem 2rem', backgroundColor: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          placeholder="🔍 Search..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          style={{ padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem', flex: 1, minWidth: 200 }}
+        />
+        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+          style={{ padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }}>
+          <option value="all">All Status</option>
+          <option value="approved">Approved</option>
+          <option value="pending">Pending</option>
+          <option value="suspended">Suspended</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="paid">Paid</option>
+        </select>
+        {tab === 'bookings' && (
+          <>
+            <input type="date" value={dateRange.from} onChange={e => setDateRange({...dateRange, from: e.target.value})}
+              style={{ padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db' }} />
+            <span style={{ color: '#64748b' }}>to</span>
+            <input type="date" value={dateRange.to} onChange={e => setDateRange({...dateRange, to: e.target.value})}
+              style={{ padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db' }} />
+          </>
+        )}
+      </div>
 
-      {tab==='doctors'&&pendingDoctors.map(d=>(<div key={d._id} style={{ backgroundColor:'white',borderRadius:'1rem',padding:'1.5rem',marginBottom:'1rem',boxShadow:'0 2px 8px rgba(0,0,0,0.08)' }}><div style={{ display:'flex',justifyContent:'space-between',flexWrap:'wrap' }}><div><h3 style={{ fontWeight:'bold' }}>{d.name}</h3><p style={{ color:'#7C3AED' }}>{d.specialization}</p><p>📍 {d.address?.city} | 📞 {d.phone}</p><p>Reg: {d.registrationNumber} | Exp: {d.experience}yrs | Fee: ₹{d.consultationFee}</p></div><div style={{ display:'flex',gap:'0.5rem',alignItems:'center' }}><button onClick={()=>verifyDoctor(d._id,'approved')} style={{ padding:'0.5rem 1.5rem',backgroundColor:'#059669',color:'white',border:'none',borderRadius:'0.5rem',cursor:'pointer',fontWeight:'bold' }}>✅ Approve</button><button onClick={()=>verifyDoctor(d._id,'rejected')} style={{ padding:'0.5rem 1.5rem',backgroundColor:'#dc2626',color:'white',border:'none',borderRadius:'0.5rem',cursor:'pointer',fontWeight:'bold' }}>❌ Reject</button></div></div></div>))}
+      {/* CONTENT */}
+      <div style={{ padding: '1.5rem 2rem', maxWidth: 1400, margin: '0 auto' }}>
 
-      {tab==='centers'&&pendingCenters.map(c=>(<div key={c._id} style={{ backgroundColor:'white',borderRadius:'1rem',padding:'1.5rem',marginBottom:'1rem',boxShadow:'0 2px 8px rgba(0,0,0,0.08)' }}><div style={{ display:'flex',justifyContent:'space-between',flexWrap:'wrap' }}><div><h3 style={{ fontWeight:'bold' }}>{c.name}</h3><p>{c.type} | 📍 {c.address?.city} | 📞 {c.phone}</p></div><div style={{ display:'flex',gap:'0.5rem',alignItems:'center' }}><button onClick={()=>verifyCenter(c._id,'approved')} style={{ padding:'0.5rem 1.5rem',backgroundColor:'#059669',color:'white',border:'none',borderRadius:'0.5rem',cursor:'pointer' }}>✅ Approve</button><button onClick={()=>verifyCenter(c._id,'rejected')} style={{ padding:'0.5rem 1.5rem',backgroundColor:'#dc2626',color:'white',border:'none',borderRadius:'0.5rem',cursor:'pointer' }}>❌ Reject</button></div></div></div>))}
+        {/* OVERVIEW TAB */}
+        {tab === 'overview' && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              {[
+                { label: 'Total Doctors', value: stats.totalDoctors, color: '#7c3aed', icon: '👨‍⚕️' },
+                { label: 'Total Centers', value: stats.totalCenters, color: '#059669', icon: '🏨' },
+                { label: 'Pharmacies', value: stats.totalPharmacies, color: '#dc2626', icon: '💊' },
+                { label: 'Total Bookings', value: stats.totalBookings, color: '#3b82f6', icon: '📋' },
+                { label: 'Revenue', value: `₹${stats.totalRevenue.toLocaleString()}`, color: '#e91e63', icon: '💰' },
+                { label: 'Commission', value: `₹${stats.totalCommission.toLocaleString()}`, color: '#f59e0b', icon: '💸' },
+                { label: 'Pending', value: stats.pendingDoctors + stats.pendingCenters + stats.pendingPharmacies, color: '#ff9800', icon: '⏳' },
+                { label: 'Completed', value: stats.completedBookings, color: '#10b981', icon: '✅' }
+              ].map((s, i) => (
+                <div key={i} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderTop: `4px solid ${s.color}`, textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.5rem' }}>{s.icon}</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
 
-      {tab==='pharmacies'&&pendingPharmacies.map(p=>(<div key={p._id} style={{ backgroundColor:'white',borderRadius:'1rem',padding:'1.5rem',marginBottom:'1rem',boxShadow:'0 2px 8px rgba(0,0,0,0.08)' }}><div style={{ display:'flex',justifyContent:'space-between',flexWrap:'wrap' }}><div><h3 style={{ fontWeight:'bold' }}>{p.businessName}</h3><p>📍 {p.address?.city} | 📞 {p.phone}</p><p>License: {p.drugLicenseNumber} | GST: {p.gstNumber}</p></div><div style={{ display:'flex',gap:'0.5rem',alignItems:'center' }}><button onClick={()=>verifyPharmacy(p._id,'approved')} style={{ padding:'0.5rem 1.5rem',backgroundColor:'#059669',color:'white',border:'none',borderRadius:'0.5rem',cursor:'pointer' }}>✅ Approve</button><button onClick={()=>verifyPharmacy(p._id,'rejected')} style={{ padding:'0.5rem 1.5rem',backgroundColor:'#dc2626',color:'white',border:'none',borderRadius:'0.5rem',cursor:'pointer' }}>❌ Reject</button></div></div></div>))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <h3 style={{ fontWeight: 700, marginBottom: '1rem' }}>📈 Revenue Trend (7 Days)</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="revenue" fill="#7c3aed" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <h3 style={{ fontWeight: 700, marginBottom: '1rem' }}>📊 Booking Types</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie data={bookingTypeData} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label>
+                      {bookingTypeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
-      {!loading&&tab==='doctors'&&pendingDoctors.length===0&&<p style={{ textAlign:'center',padding:'2rem',color:'#64748b' }}>No pending doctor verifications ✅</p>}
-      {!loading&&tab==='centers'&&pendingCenters.length===0&&<p style={{ textAlign:'center',padding:'2rem',color:'#64748b' }}>No pending center verifications ✅</p>}
-      {!loading&&tab==='pharmacies'&&pendingPharmacies.length===0&&<p style={{ textAlign:'center',padding:'2rem',color:'#64748b' }}>No pending pharmacy verifications ✅</p>}
+            <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ fontWeight: 700, marginBottom: '1rem' }}>📋 Recent Bookings</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={th}>Booking ID</th>
+                    <th style={th}>Type</th>
+                    <th style={th}>Patient</th>
+                    <th style={th}>Provider</th>
+                    <th style={th}>Amount</th>
+                    <th style={th}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBookings.slice(0, 5).map(b => (
+                    <tr key={b.bookingId} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={td}>{b.bookingId}</td>
+                      <td style={td}>{(b.type || '').replace(/_/g, ' ')}</td>
+                      <td style={td}>{b.patient?.name}</td>
+                      <td style={td}>{b.doctorName || b.centerName || b.pharmacyName || '—'}</td>
+                      <td style={td}>₹{b.finalAmount}</td>
+                      <td style={td}>{b.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* DOCTORS TAB */}
+        {tab === 'doctors' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>👨‍⚕️ Doctors ({filteredDoctors.length})</h2>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={() => handleExport('doctors')} style={actionBtn('#8b5cf6')}><FaDownload /> Export</button>
+                {bulkSelected.length > 0 && (
+                  <button onClick={bulkApproveDoctors} style={actionBtn('#10b981')}>✅ Approve Selected ({bulkSelected.length})</button>
+                )}
+              </div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}><input type="checkbox" onChange={e => {
+                    if (e.target.checked) setBulkSelected(filteredDoctors.filter(d => d.verificationStatus === 'pending').map(d => d._id));
+                    else setBulkSelected([]);
+                  }} /></th>
+                  <th style={th}>Name</th>
+                  <th style={th}>Specialty</th>
+                  <th style={th}>Phone</th>
+                  <th style={th}>City</th>
+                  <th style={th}>Fee</th>
+                  <th style={th}>Status</th>
+                  <th style={th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedDoctors.map(d => (
+                  <tr key={d._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}>
+                      {d.verificationStatus === 'pending' && (
+                        <input type="checkbox" checked={bulkSelected.includes(d._id)}
+                          onChange={e => {
+                            if (e.target.checked) setBulkSelected([...bulkSelected, d._id]);
+                            else setBulkSelected(bulkSelected.filter(id => id !== d._id));
+                          }} />
+                      )}
+                    </td>
+                    <td style={td}><strong>{d.name}</strong></td>
+                    <td style={td}>{d.specialization}</td>
+                    <td style={td}>{d.phone}</td>
+                    <td style={td}>{d.address?.city}</td>
+                    <td style={td}>₹{d.consultationFee}</td>
+                    <td style={td}><span style={statusBadge(d.verificationStatus)}>{d.verificationStatus}</span></td>
+                    <td style={td}>
+                      <button onClick={() => setSelectedDoctor(d)} style={actionBtn('#3b82f6')}><FaEye /></button>
+                      {d.verificationStatus === 'pending' && (
+                        <>
+                          <button onClick={() => verifyDoctor(d._id, 'approved')} style={actionBtn('#10b981')}><FaCheck /></button>
+                          <button onClick={() => setShowRejectModal(d._id)} style={actionBtn('#ef4444')}><FaTimes /></button>
+                        </>
+                      )}
+                      {d.verificationStatus === 'approved' && (
+                        <button onClick={() => suspendDoctor(d._id)} style={actionBtn('#f59e0b')}><FaBan /></button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} style={pageBtn}><FaChevronLeft /></button>
+                <span style={{ padding: '0.4rem 1rem', fontWeight: 600 }}>Page {page} of {totalPages}</span>
+                <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} style={pageBtn}><FaChevronRight /></button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CENTERS TAB */}
+        {tab === 'centers' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>🏨 Naturopathy Centers ({filteredCenters.length})</h2>
+              <button onClick={() => handleExport('centers')} style={actionBtn('#8b5cf6')}><FaDownload /> Export</button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}>Name</th>
+                  <th style={th}>Type</th>
+                  <th style={th}>City</th>
+                  <th style={th}>Phone</th>
+                  <th style={th}>Packages</th>
+                  <th style={th}>Status</th>
+                  <th style={th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedCenters.map(c => (
+                  <tr key={c._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}><strong>{c.name}</strong></td>
+                    <td style={td}>{c.type}</td>
+                    <td style={td}>{c.address?.city}</td>
+                    <td style={td}>{c.phone}</td>
+                    <td style={td}>{c.packages?.length || 0}</td>
+                    <td style={td}><span style={statusBadge(c.verificationStatus)}>{c.verificationStatus}</span></td>
+                    <td style={td}>
+                      <button onClick={() => setSelectedCenter(c)} style={actionBtn('#3b82f6')}><FaEye /></button>
+                      {c.verificationStatus === 'pending' && (
+                        <>
+                          <button onClick={() => verifyCenter(c._id, 'approved')} style={actionBtn('#10b981')}><FaCheck /></button>
+                          <button onClick={() => verifyCenter(c._id, 'rejected')} style={actionBtn('#ef4444')}><FaTimes /></button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* PHARMACIES TAB */}
+        {tab === 'pharmacies' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>💊 Pharmacies ({filteredPharmacies.length})</h2>
+              <button onClick={() => handleExport('pharmacies')} style={actionBtn('#8b5cf6')}><FaDownload /> Export</button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}>Business Name</th>
+                  <th style={th}>License</th>
+                  <th style={th}>City</th>
+                  <th style={th}>Phone</th>
+                  <th style={th}>Medicines</th>
+                  <th style={th}>Status</th>
+                  <th style={th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedPharmacies.map(p => (
+                  <tr key={p._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}><strong>{p.businessName}</strong></td>
+                    <td style={td}>{p.drugLicenseNumber}</td>
+                    <td style={td}>{p.address?.city}</td>
+                    <td style={td}>{p.phone}</td>
+                    <td style={td}>{p.medicines?.length || 0}</td>
+                    <td style={td}><span style={statusBadge(p.verificationStatus)}>{p.verificationStatus}</span></td>
+                    <td style={td}>
+                      <button onClick={() => setSelectedPharmacy(p)} style={actionBtn('#3b82f6')}><FaEye /></button>
+                      {p.verificationStatus === 'pending' && (
+                        <>
+                          <button onClick={() => verifyPharmacy(p._id, 'approved')} style={actionBtn('#10b981')}><FaCheck /></button>
+                          <button onClick={() => verifyPharmacy(p._id, 'rejected')} style={actionBtn('#ef4444')}><FaTimes /></button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* BOOKINGS TAB */}
+        {tab === 'bookings' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>📋 Bookings ({filteredBookings.length})</h2>
+              <button onClick={() => handleExport('bookings')} style={actionBtn('#8b5cf6')}><FaDownload /> Export</button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}>Booking ID</th>
+                  <th style={th}>Type</th>
+                  <th style={th}>Patient</th>
+                  <th style={th}>Provider</th>
+                  <th style={th}>Amount</th>
+                  <th style={th}>Payment</th>
+                  <th style={th}>Status</th>
+                  <th style={th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedBookings.map(b => (
+                  <tr key={b.bookingId} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}>{b.bookingId}</td>
+                    <td style={td}>{(b.type || '').replace(/_/g, ' ')}</td>
+                    <td style={td}>{b.patient?.name}</td>
+                    <td style={td}>{b.doctorName || b.centerName || b.pharmacyName || '—'}</td>
+                    <td style={td}>₹{b.finalAmount}</td>
+                    <td style={td}>{b.paymentStatus}</td>
+                    <td style={td}>{b.status}</td>
+                    <td style={td}>
+                      <button onClick={() => setSelectedBooking(b)} style={actionBtn('#3b82f6')}><FaEye /></button>
+                      {b.paymentStatus === 'paid' && !['completed', 'cancelled', 'no_show'].includes(b.status) && (
+                        <>
+                          {new Date(b.bookingDate) < new Date() ? (
+                            <button onClick={() => markNoShow(b.bookingId)} style={actionBtn('#991b1b')}>No-Show</button>
+                          ) : (
+                            <button onClick={() => {
+                              const reason = window.prompt('Reason for force-cancel:');
+                              if (reason) forceCancelBooking(b.bookingId, reason);
+                            }} style={actionBtn('#b91c1c')}>Force Cancel</button>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* COMMISSION RULES TAB */}
+        {tab === 'commission' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>💰 Commission Rules ({commissionRules.length})</h2>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="🔍 Search by value..."
+                  value={commissionRuleSearch}
+                  onChange={e => setCommissionRuleSearch(e.target.value)}
+                  style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.85rem', minWidth: 200 }}
+                />
+                <select value={commissionRuleFilter} onChange={e => setCommissionRuleFilter(e.target.value)}
+                  style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.85rem' }}>
+                  <option value="all">All Scopes</option>
+                  <option value="provider">Provider</option>
+                  <option value="city">City</option>
+                  <option value="state">State</option>
+                  <option value="global">Global</option>
+                </select>
+                <button onClick={() => setShowCommissionModal(true)}
+                  style={{ padding: '0.5rem 1rem', background: '#7c3aed', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  + Add Rule
+                </button>
+              </div>
+            </div>
+
+            {commissionRules.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No commission rules yet. Defaults apply.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={th}>Scope</th>
+                    <th style={th}>Target</th>
+                    <th style={th}>Service</th>
+                    <th style={th}>Rate</th>
+                    <th style={th}>Priority</th>
+                    <th style={th}>Valid From</th>
+                    <th style={th}>Status</th>
+                    <th style={th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commissionRules.map(r => (
+                    <tr key={r._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={td}>
+                        <span style={{
+                          padding: '3px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700,
+                          background: r.scopeType === 'provider' ? '#dbeafe' : r.scopeType === 'city' ? '#fef3c7' : r.scopeType === 'state' ? '#fce7f3' : '#f1f5f9',
+                          color: r.scopeType === 'provider' ? '#1e40af' : r.scopeType === 'city' ? '#b45309' : r.scopeType === 'state' ? '#9d174d' : '#475569'
+                        }}>
+                          {r.scopeType || 'global'}
+                        </span>
+                      </td>
+                      <td style={td}>
+                        <strong>
+                          {(() => {
+                            if (!r.scopeValue) return '—';
+                            if (r.scopeType === 'provider') {
+                              const doctor = allDoctors.find(d => String(d._id) === String(r.scopeValue));
+                              if (doctor) return `👨‍⚕️ Dr. ${doctor.name}`;
+                              const center = allCenters.find(c => String(c._id) === String(r.scopeValue));
+                              if (center) return `🏨 ${center.name}`;
+                              const pharmacy = allPharmacies.find(p => String(p._id) === String(r.scopeValue));
+                              if (pharmacy) return `💊 ${pharmacy.businessName}`;
+                              return `Provider ${String(r.scopeValue).slice(-6)}`;
+                            }
+                            return r.scopeValue;
+                          })()}
+                        </strong>
+                      </td>
+                      <td style={td}>
+                        {({
+                          'homeopathy_consultation': 'Homeopathy Consultation',
+                          'homeopathy_medicine': 'Medicine Order',
+                          'naturopathy_center': 'Naturopathy Center'
+                        })[r.serviceType] || r.serviceType}
+                      </td>
+                      <td style={td}>
+                        {r.commissionType === 'fixed' ? `₹${r.fixedAmount}` : `${r.percentageRate}%`}
+                      </td>
+                      <td style={td}>{r.priority || 0}</td>
+                      <td style={td}>{r.effectiveFrom ? new Date(r.effectiveFrom).toLocaleDateString() : '—'}</td>
+                      <td style={td}>
+                        {r.isActive ? <span style={{ color: '#059669', fontWeight: 600 }}>🟢 Active</span> : <span style={{ color: '#dc2626' }}>🔴 Inactive</span>}
+                      </td>
+                      <td style={td}>
+                        <button onClick={() => setEditingCommissionRule(r)} style={actionBtn('#3b82f6')}>Edit</button>
+                        <button onClick={() => deleteCommissionRule(r._id)} style={actionBtn('#dc2626')}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* FEE CONFIG TAB */}
+        {tab === 'fee-config' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>💵 Fee Configuration</h2>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={fetchFeeConfig} style={actionBtn('#3b82f6')}><FaSync /> Refresh</button>
+                <button onClick={handleSeedFeeConfig} style={actionBtn('#10b981')}>Seed Defaults</button>
+              </div>
+            </div>
+
+            {feeConfigLoading ? (
+              <p style={{ textAlign: 'center', color: '#64748b' }}>Loading...</p>
+            ) : !feeConfig ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                <p>No fee configs found.</p>
+                <button onClick={handleSeedFeeConfig} style={{ marginTop: '1rem', padding: '0.6rem 1.2rem', background: '#7c3aed', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  Seed Default Fee Configs
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+                {Object.entries(feeConfig).map(([serviceType, config]) => (
+                  <div key={serviceType} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.2rem', backgroundColor: '#fafafa' }}>
+                    <h3 style={{ fontWeight: 700, margin: '0 0 0.75rem', color: '#7c3aed' }}>
+                      {serviceType.replace(/_/g, ' ').toUpperCase()}
+                    </h3>
+                    {config ? (
+                      <>
+                        <div style={{ fontSize: '0.85rem', marginBottom: '0.4rem' }}>
+                          <strong>Commission Rate:</strong> {config.percentageRate}%
+                        </div>
+                        {config.ayurvedaSpecific?.platformFees && (
+                          <div style={{ fontSize: '0.85rem', marginBottom: '0.4rem' }}>
+                            <strong>Platform Fees:</strong>
+                            <ul style={{ margin: '0.25rem 0 0 1rem', padding: 0 }}>
+                              {Object.entries(config.ayurvedaSpecific.platformFees).map(([k, v]) => (
+                                <li key={k}>{k}: ₹{v}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        <div style={{ fontSize: '0.85rem' }}>
+                          <strong>GST:</strong> {config.ayurvedaSpecific?.gstPercentage}%
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                          Version {config.version} • Updated {new Date(config.updatedAt).toLocaleDateString()}
+                        </div>
+                      </>
+                    ) : (
+                      <p style={{ color: '#dc2626', fontSize: '0.85rem' }}>⚠️ Not configured</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SETTLEMENTS TAB */}
+        {tab === 'settlements' && (
+          <div>
+            {settlementStats && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                {[
+                  { label: 'Requested', value: settlementStats.requested, color: '#f59e0b' },
+                  { label: 'Approved', value: settlementStats.approved, color: '#3b82f6' },
+                  { label: 'Paid', value: settlementStats.paid, color: '#10b981' },
+                  { label: 'Rejected', value: settlementStats.rejected, color: '#ef4444' }
+                ].map((s, i) => (
+                  <div key={i} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1rem', borderLeft: `4px solid ${s.color}` }}>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>{s.label}</p>
+                    <p style={{ fontSize: '1.3rem', fontWeight: 800, margin: '4px 0', color: s.color }}>{s.value?.count || 0}</p>
+                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>₹{(s.value?.amount || 0).toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'pending', label: '⏳ Pending' },
+                  { id: 'all', label: '📋 All Settlements' },
+                  { id: 'providers', label: '👥 By Provider' },
+                  { id: 'cities', label: '📍 By City' },
+                  { id: 'dates', label: '📅 By Date' }
+                ].map(t => (
+                  <button key={t.id} onClick={() => setSettlementTab(t.id)} style={{
+                    padding: '0.5rem 1rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+                    background: settlementTab === t.id ? '#7c3aed' : '#f1f5f9',
+                    color: settlementTab === t.id ? 'white' : '#475569',
+                    fontWeight: settlementTab === t.id ? 700 : 400
+                  }}>
+                    {t.label}
+                  </button>
+                ))}
+                <div style={{ marginLeft: 'auto' }}>
+                  <button onClick={handleExportSettlements} style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                    📥 Export CSV
+                  </button>
+                </div>
+              </div>
+
+              {settlementTab === 'all' && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    placeholder="Search provider or payout ID..."
+                    value={settlementFilter.search}
+                    onChange={e => setSettlementFilter({ ...settlementFilter, search: e.target.value })}
+                    style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 8, flex: 1, minWidth: 200 }}
+                  />
+                  <select value={settlementFilter.status} onChange={e => setSettlementFilter({ ...settlementFilter, status: e.target.value })} style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 8 }}>
+                    <option value="">All Status</option>
+                    <option value="requested">Requested</option>
+                    <option value="approved">Approved</option>
+                    <option value="paid">Paid</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                  <select value={settlementFilter.providerType} onChange={e => setSettlementFilter({ ...settlementFilter, providerType: e.target.value })} style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 8 }}>
+                    <option value="">All Provider Types</option>
+                    <option value="homeopathy_doctor">Homeopathy Doctor</option>
+                    <option value="naturopathy_center">Naturopathy Center</option>
+                    <option value="pharmacy">Pharmacy</option>
+                  </select>
+                </div>
+              )}
+
+              {settlementTab === 'all' && selectedPayouts.length > 0 && (
+                <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: 8, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <span style={{ fontWeight: 600 }}>{selectedPayouts.length} selected</span>
+                  <button onClick={handleBulkApprove} style={{ padding: '0.4rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>✅ Bulk Approve</button>
+                  <button onClick={() => setSelectedPayouts([])} style={{ padding: '0.4rem 1rem', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Clear</button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+              {settlementTab === 'pending' && (
+                <>
+                  <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>Pending Settlements ({settlements.filter(s => s.status === 'requested').length})</h2>
+                  {settlements.filter(s => s.status === 'requested').length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No pending settlements</p>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                          <th style={th}>Payout ID</th>
+                          <th style={th}>Provider</th>
+                          <th style={th}>Type</th>
+                          <th style={th}>Amount</th>
+                          <th style={th}>Net</th>
+                          <th style={th}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {settlements.filter(s => s.status === 'requested').map(s => (
+                          <tr key={s.payoutId} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={td}>{s.payoutId}</td>
+                            <td style={td}><strong>{s.providerName}</strong></td>
+                            <td style={td}>{s.providerType?.replace(/_/g, ' ')}</td>
+                            <td style={td}>₹{s.amount?.toLocaleString()}</td>
+                            <td style={td}><strong>₹{s.netAmount?.toLocaleString()}</strong></td>
+                            <td style={td}><button onClick={() => approveSettlement(s.payoutId)} style={actionBtn('#10b981')}>Approve</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+
+              {settlementTab === 'all' && (
+                <>
+                  <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>All Settlements</h2>
+                  {settlements.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No settlements found</p>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                          <th style={th}><input type="checkbox" onChange={e => {
+                            if (e.target.checked) setSelectedPayouts(settlements.filter(s => s.status === 'requested').map(s => s.payoutId));
+                            else setSelectedPayouts([]);
+                          }} /></th>
+                          <th style={th}>Payout ID</th>
+                          <th style={th}>Provider</th>
+                          <th style={th}>Type</th>
+                          <th style={th}>Amount</th>
+                          <th style={th}>Net</th>
+                          <th style={th}>Status</th>
+                          <th style={th}>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {settlements.map(s => (
+                          <tr key={s.payoutId} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={td}>
+                              {s.status === 'requested' && (
+                                <input type="checkbox" checked={selectedPayouts.includes(s.payoutId)} onChange={e => {
+                                  if (e.target.checked) setSelectedPayouts([...selectedPayouts, s.payoutId]);
+                                  else setSelectedPayouts(selectedPayouts.filter(p => p !== s.payoutId));
+                                }} />
+                              )}
+                            </td>
+                            <td style={td}>{s.payoutId}</td>
+                            <td style={td}><strong>{s.providerName}</strong></td>
+                            <td style={td}>{s.providerType?.replace(/_/g, ' ')}</td>
+                            <td style={td}>₹{s.amount?.toLocaleString()}</td>
+                            <td style={td}><strong>₹{s.netAmount?.toLocaleString()}</strong></td>
+                            <td style={td}>
+                              <span style={{
+                                padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700,
+                                background: s.status === 'paid' ? '#e8f5e9' : s.status === 'approved' ? '#dbeafe' : s.status === 'rejected' ? '#fee2e2' : '#fff3e0',
+                                color: s.status === 'paid' ? '#2E7D32' : s.status === 'approved' ? '#1e40af' : s.status === 'rejected' ? '#dc2626' : '#e65100'
+                              }}>
+                                {s.status}
+                              </span>
+                            </td>
+                            <td style={td}>{new Date(s.createdAt).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+
+              {settlementTab === 'providers' && (
+                <>
+                  <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>Providers Awaiting Payout ({providerGroups.length})</h2>
+                  {providerGroups.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No providers awaiting payout</p>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+                      {providerGroups.map((p, i) => (
+                        <div key={i} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', backgroundColor: '#fafafa' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                            <div>
+                              <p style={{ fontWeight: 700, margin: 0 }}>{p.providerName}</p>
+                              <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '2px 0' }}>{p.providerType?.replace(/_/g, ' ')}</p>
+                            </div>
+                            <span style={{ padding: '3px 10px', borderRadius: 20, background: '#fff3e0', color: '#e65100', fontSize: '0.75rem', fontWeight: 700 }}>
+                              {p.totalPayouts} payouts
+                            </span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <div>
+                              <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Total</p>
+                              <p style={{ fontWeight: 700, margin: 0, color: '#10b981' }}>₹{p.totalAmount?.toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Net</p>
+                              <p style={{ fontWeight: 700, margin: 0 }}>₹{p.totalNetAmount?.toLocaleString()}</p>
+                            </div>
+                          </div>
+                          <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '0 0 0.5rem' }}>Oldest: {new Date(p.oldestRequest).toLocaleDateString()}</p>
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm(`Approve all ${p.totalPayouts} payouts for ${p.providerName}?`)) return;
+                              try {
+                                const token = localStorage.getItem('adminToken');
+                                const res = await axios.put(
+                                  `${API_BASE}/api/homeopathy/settlements/admin/bulk-approve`,
+                                  { payoutIds: p.payoutIds, note: 'Bulk approved by provider group' },
+                                  { headers: { Authorization: `Bearer ${token}`, 'x-admin-key': ADMIN_KEY } }
+                                );
+                                if (res.data.success) {
+                                  addNotification(`Approved all payouts for ${p.providerName}`, 'success');
+                                  fetchProviderGroups();
+                                }
+                              } catch (e) {
+                                addNotification('Failed to approve', 'error');
+                              }
+                            }}
+                            style={{ width: '100%', padding: '0.5rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+                          >
+                            ✅ Approve All Payouts
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {settlementTab === 'cities' && (
+                <>
+                  <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>Settlements by City ({cityData.length})</h2>
+                  {cityData.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No data available</p>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                          <th style={th}>City</th>
+                          <th style={th}>Providers</th>
+                          <th style={th}>Payouts</th>
+                          <th style={th}>Total</th>
+                          <th style={th}>Net</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cityData.map((c, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={td}><strong>{c.city}</strong></td>
+                            <td style={td}>{c.providerCount}</td>
+                            <td style={td}>{c.count}</td>
+                            <td style={td}>₹{c.totalAmount?.toLocaleString()}</td>
+                            <td style={td}><strong>₹{c.totalNetAmount?.toLocaleString()}</strong></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+
+              {settlementTab === 'dates' && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <h2 style={{ fontWeight: 700, margin: 0 }}>Settlements by Date</h2>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <select value={dateGroupBy} onChange={e => setDateGroupBy(e.target.value)} style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                        <option value="day">Daily</option>
+                        <option value="week">Weekly</option>
+                        <option value="month">Monthly</option>
+                        <option value="year">Yearly</option>
+                      </select>
+                      <input type="date" value={dateRange.from} onChange={e => setDateRange({ ...dateRange, from: e.target.value })} style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                      <span style={{ alignSelf: 'center' }}>to</span>
+                      <input type="date" value={dateRange.to} onChange={e => setDateRange({ ...dateRange, to: e.target.value })} style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                    </div>
+                  </div>
+
+                  {settlementSummary && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+                      <div style={{ padding: '0.75rem', background: '#eff6ff', borderRadius: 8 }}>
+                        <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Total Payouts</p>
+                        <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>{settlementSummary.count}</p>
+                      </div>
+                      <div style={{ padding: '0.75rem', background: '#dcfce7', borderRadius: 8 }}>
+                        <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Total Amount</p>
+                        <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#10b981' }}>₹{settlementSummary.totalAmount?.toLocaleString()}</p>
+                      </div>
+                      <div style={{ padding: '0.75rem', background: '#fef3c7', borderRadius: 8 }}>
+                        <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Total TDS</p>
+                        <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#f59e0b' }}>₹{settlementSummary.totalTds?.toLocaleString()}</p>
+                      </div>
+                      <div style={{ padding: '0.75rem', background: '#fce7f3', borderRadius: 8 }}>
+                        <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>Net Paid</p>
+                        <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>₹{settlementSummary.totalNetAmount?.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {dateData.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No data available</p>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                          <th style={th}>Period</th>
+                          <th style={th}>Payouts</th>
+                          <th style={th}>Amount</th>
+                          <th style={th}>TDS</th>
+                          <th style={th}>Net</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dateData.map((d, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={td}><strong>{d.period}</strong></td>
+                            <td style={td}>{d.count}</td>
+                            <td style={td}>₹{d.totalAmount?.toLocaleString()}</td>
+                            <td style={td}>₹{d.totalTds?.toLocaleString() || 0}</td>
+                            <td style={td}><strong>₹{d.totalNetAmount?.toLocaleString()}</strong></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* REVIEWS TAB */}
+        {tab === 'reviews' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>⭐ Reviews ({reviews.length})</h2>
+              <button onClick={fetchAllData} style={actionBtn('#3b82f6')}>↻ Refresh</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              {[
+                { id: 'all', label: `All (${reviewCounts.all})`, color: '#64748b' },
+                { id: '5', label: `5★ (${reviewCounts[5]})`, color: '#10b981' },
+                { id: '4', label: `4★ (${reviewCounts[4]})`, color: '#3b82f6' },
+                { id: '3', label: `3★ (${reviewCounts[3]})`, color: '#f59e0b' },
+                { id: 'flagged', label: `🚩 Flagged (${reviewCounts.flagged})`, color: '#dc2626' },
+                { id: 'hidden', label: `🙈 Hidden (${reviewCounts.hidden})`, color: '#64748b' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setReviewFilter(f.id)}
+                  style={{
+                    padding: '0.5rem 1rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+                    fontSize: '0.8rem', fontWeight: reviewFilter === f.id ? 700 : 500,
+                    background: reviewFilter === f.id ? f.color : '#f1f5f9',
+                    color: reviewFilter === f.id ? 'white' : '#475569'
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {filteredReviews.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No reviews found</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={th}>Patient</th>
+                    <th style={th}>Provider</th>
+                    <th style={th}>Rating</th>
+                    <th style={th}>Review</th>
+                    <th style={th}>Date</th>
+                    <th style={th}>Status</th>
+                    <th style={th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReviews.map((r, i) => {
+                    const rid = r.bookingId || r._id || i;
+                    return (
+                      <tr key={rid} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: r.isHidden ? '#f1f5f9' : r.isFlagged ? '#fef2f2' : 'transparent' }}>
+                        <td style={td}>{r.patientName || 'N/A'}</td>
+                        <td style={td}>{r.doctorName || r.centerName || r.pharmacyName || 'N/A'}</td>
+                        <td style={td}>⭐ {r.rating}/5</td>
+                        <td style={{ ...td, maxWidth: 220 }}>{(r.comment || '').slice(0, 80)}</td>
+                        <td style={td}>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'N/A'}</td>
+                        <td style={td}>
+                          {r.isHidden && <span style={statusBadge('suspended')}>Hidden</span>}
+                          {!r.isHidden && r.isFlagged && <span style={statusBadge('pending')}>Flagged</span>}
+                          {!r.isHidden && !r.isFlagged && <span style={statusBadge('approved')}>Visible</span>}
+                        </td>
+                        <td style={td}>
+                          <button onClick={() => setSelectedReview(r)} style={actionBtn('#3b82f6')}>View</button>
+                          {!r.isFlagged && !r.isHidden && (
+                            <button onClick={() => flagReview(r)} disabled={reviewActionLoading} style={actionBtn('#f59e0b')}>🚩</button>
+                          )}
+                          {r.isFlagged && (
+                            <button onClick={() => unflagReview(r)} disabled={reviewActionLoading} style={actionBtn('#10b981')}>Unflag</button>
+                          )}
+                          {!r.isHidden && (
+                            <button onClick={() => hideReview(r)} disabled={reviewActionLoading} style={actionBtn('#dc2626')}>🙈</button>
+                          )}
+                          {r.isHidden && (
+                            <button onClick={() => unhideReview(r)} disabled={reviewActionLoading} style={actionBtn('#10b981')}>Restore</button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* COMPLAINTS TAB */}
+        {tab === 'complaints' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>🚨 Complaints ({complaints.length})</h2>
+              <button onClick={fetchAllData} style={actionBtn('#3b82f6')}>↻ Refresh</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              {[
+                { id: 'all', label: `All (${complaintCounts.all})`, color: '#64748b' },
+                { id: 'pending', label: `⏳ Pending (${complaintCounts.pending})`, color: '#f59e0b' },
+                { id: 'in_review', label: `🔍 In Review (${complaintCounts.in_review})`, color: '#3b82f6' },
+                { id: 'escalated', label: `⚠️ Escalated (${complaintCounts.escalated})`, color: '#dc2626' },
+                { id: 'resolved', label: `✅ Resolved (${complaintCounts.resolved})`, color: '#10b981' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setComplaintFilter(f.id)}
+                  style={{
+                    padding: '0.5rem 1rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+                    fontSize: '0.8rem', fontWeight: complaintFilter === f.id ? 700 : 500,
+                    background: complaintFilter === f.id ? f.color : '#f1f5f9',
+                    color: complaintFilter === f.id ? 'white' : '#475569'
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {filteredComplaints.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No complaints found</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={th}>Booking</th>
+                    <th style={th}>Patient</th>
+                    <th style={th}>Category</th>
+                    <th style={th}>Description</th>
+                    <th style={th}>Priority</th>
+                    <th style={th}>Status</th>
+                    <th style={th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredComplaints.map(c => {
+                    const cid = c.complaintId || c._id;
+                    const isResolved = c.status === 'resolved';
+                    const isEscalated = c.status === 'escalated';
+                    return (
+                      <tr key={cid} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isEscalated ? '#fef2f2' : isResolved ? '#f0fdf4' : 'transparent' }}>
+                        <td style={td}>{c.bookingId || 'N/A'}</td>
+                        <td style={td}>{c.patientName || 'N/A'}</td>
+                        <td style={td}>{c.category || 'N/A'}</td>
+                        <td style={{ ...td, maxWidth: 260 }}>{(c.description || 'N/A').slice(0, 80)}</td>
+                        <td style={td}>
+                          <span style={{
+                            padding: '3px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700,
+                            background: c.priority === 'critical' ? '#fee2e2' : c.priority === 'high' ? '#ffedd5' : '#f1f5f9',
+                            color: c.priority === 'critical' ? '#dc2626' : c.priority === 'high' ? '#ea580c' : '#64748b'
+                          }}>
+                            {c.priority || 'medium'}
+                          </span>
+                        </td>
+                        <td style={td}>
+                          <span style={{
+                            padding: '3px 10px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 700,
+                            background: c.status === 'resolved' ? '#e8f5e9' : c.status === 'escalated' ? '#fee2e2' : c.status === 'in_review' ? '#dbeafe' : '#fff3e0',
+                            color: c.status === 'resolved' ? '#2E7D32' : c.status === 'escalated' ? '#dc2626' : c.status === 'in_review' ? '#1e40af' : '#e65100'
+                          }}>
+                            {(c.status || 'pending').replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td style={td}>
+                          <button onClick={() => setSelectedComplaint(c)} style={actionBtn('#3b82f6')}>View</button>
+                          {!isResolved && !isEscalated && (
+                            <button onClick={() => escalateComplaint(c.bookingId, cid)} disabled={complaintActionLoading} style={actionBtn('#dc2626')}>⚠️</button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* PENDING TAB */}
+        {tab === 'pending' && (
+          <div>
+            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>⏳ Pending Approvals</h2>
+
+            {allDoctors.filter(d => d.verificationStatus === 'pending').map(d => (
+              <div key={d._id} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #7c3aed' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <strong>👨‍⚕️ {d.name}</strong>
+                    <p style={{ margin: '2px 0', color: '#64748b', fontSize: '0.85rem' }}>{d.specialization} • {d.address?.city} • {d.phone}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button onClick={() => setSelectedDoctor(d)} style={actionBtn('#3b82f6')}>View</button>
+                    <button onClick={() => verifyDoctor(d._id, 'approved')} style={actionBtn('#10b981')}>✅ Approve</button>
+                    <button onClick={() => setShowRejectModal(d._id)} style={actionBtn('#ef4444')}>❌ Reject</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {allCenters.filter(c => c.verificationStatus === 'pending').map(c => (
+              <div key={c._id} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #059669' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <strong>🏨 {c.name}</strong>
+                    <p style={{ margin: '2px 0', color: '#64748b', fontSize: '0.85rem' }}>{c.type} • {c.address?.city} • {c.phone}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button onClick={() => verifyCenter(c._id, 'approved')} style={actionBtn('#10b981')}>✅ Approve</button>
+                    <button onClick={() => verifyCenter(c._id, 'rejected')} style={actionBtn('#ef4444')}>❌ Reject</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {allPharmacies.filter(p => p.verificationStatus === 'pending').map(p => (
+              <div key={p._id} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #dc2626' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <strong>💊 {p.businessName}</strong>
+                    <p style={{ margin: '2px 0', color: '#64748b', fontSize: '0.85rem' }}>License {p.drugLicenseNumber} • {p.address?.city} • {p.phone}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button onClick={() => verifyPharmacy(p._id, 'approved')} style={actionBtn('#10b981')}>✅ Approve</button>
+                    <button onClick={() => verifyPharmacy(p._id, 'rejected')} style={actionBtn('#ef4444')}>❌ Reject</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {stats.pendingDoctors + stats.pendingCenters + stats.pendingPharmacies === 0 && (
+              <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: 12 }}>
+                <div style={{ fontSize: '3rem' }}>✅</div>
+                <p style={{ color: '#64748b' }}>All caught up! No pending approvals.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ========== MODALS ========== */}
+
+      {/* DOCTOR DETAILS */}
+      {selectedDoctor && (
+        <div style={modalOverlay}>
+          <div style={modalContent}>
+            <div style={modalHeader}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>👨‍⚕️ Doctor Details</h3>
+              <button onClick={() => setSelectedDoctor(null)} style={modalClose}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div><strong>Name:</strong> {selectedDoctor.name}</div>
+              <div><strong>Specialty:</strong> {selectedDoctor.specialization}</div>
+              <div><strong>Phone:</strong> {selectedDoctor.phone}</div>
+              <div><strong>Email:</strong> {selectedDoctor.email}</div>
+              <div><strong>City:</strong> {selectedDoctor.address?.city}</div>
+              <div><strong>Fee:</strong> ₹{selectedDoctor.consultationFee}</div>
+              <div><strong>Experience:</strong> {selectedDoctor.experience} years</div>
+              <div><strong>Reg No:</strong> {selectedDoctor.registrationNumber}</div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {selectedDoctor.verificationStatus === 'pending' && (
+                <>
+                  <button onClick={() => verifyDoctor(selectedDoctor._id, 'approved')} style={modalBtn('#10b981')}>✅ Approve</button>
+                  <button onClick={() => setShowRejectModal(selectedDoctor._id)} style={modalBtn('#ef4444')}>❌ Reject</button>
+                </>
+              )}
+              <button onClick={() => setSelectedDoctor(null)} style={modalBtn('#e2e8f0', '#475569')}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CENTER DETAILS */}
+      {selectedCenter && (
+        <div style={modalOverlay}>
+          <div style={modalContent}>
+            <div style={modalHeader}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>🏨 Center Details</h3>
+              <button onClick={() => setSelectedCenter(null)} style={modalClose}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div><strong>Name:</strong> {selectedCenter.name}</div>
+              <div><strong>Type:</strong> {selectedCenter.type}</div>
+              <div><strong>Phone:</strong> {selectedCenter.phone}</div>
+              <div><strong>City:</strong> {selectedCenter.address?.city}</div>
+              <div><strong>Packages:</strong> {selectedCenter.packages?.length || 0}</div>
+              <div><strong>Rating:</strong> ⭐ {selectedCenter.rating || 'New'}</div>
+            </div>
+            {selectedCenter.packages?.length > 0 && (
+              <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: 8, marginBottom: '1rem' }}>
+                <h5 style={{ margin: '0 0 0.5rem', fontWeight: 700 }}>📦 Packages</h5>
+                {selectedCenter.packages.map((pkg, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: '1px solid #e2e8f0', fontSize: '0.85rem' }}>
+                    <span>{pkg.name}</span>
+                    <span>₹{pkg.discountPrice || pkg.price} • {pkg.duration}d</span>
+                    <span style={statusBadge(pkg.approvalStatus || 'pending')}>{pkg.approvalStatus || 'pending'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {selectedCenter.verificationStatus === 'pending' && (
+                <>
+                  <button onClick={() => verifyCenter(selectedCenter._id, 'approved')} style={modalBtn('#10b981')}>✅ Approve</button>
+                  <button onClick={() => verifyCenter(selectedCenter._id, 'rejected')} style={modalBtn('#ef4444')}>❌ Reject</button>
+                </>
+              )}
+              <button onClick={() => setSelectedCenter(null)} style={modalBtn('#e2e8f0', '#475569')}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PHARMACY DETAILS */}
+      {selectedPharmacy && (
+        <div style={modalOverlay}>
+          <div style={modalContent}>
+            <div style={modalHeader}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>💊 Pharmacy Details</h3>
+              <button onClick={() => setSelectedPharmacy(null)} style={modalClose}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div><strong>Business:</strong> {selectedPharmacy.businessName}</div>
+              <div><strong>License:</strong> {selectedPharmacy.drugLicenseNumber}</div>
+              <div><strong>GST:</strong> {selectedPharmacy.gstNumber || 'N/A'}</div>
+              <div><strong>Owner:</strong> {selectedPharmacy.ownerName || 'N/A'}</div>
+              <div><strong>Phone:</strong> {selectedPharmacy.phone}</div>
+              <div><strong>City:</strong> {selectedPharmacy.address?.city}</div>
+              <div><strong>Medicines:</strong> {selectedPharmacy.medicines?.length || 0}</div>
+              <div><strong>Pincodes:</strong> {selectedPharmacy.pincodesServed?.join(', ') || 'N/A'}</div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {selectedPharmacy.verificationStatus === 'pending' && (
+                <>
+                  <button onClick={() => verifyPharmacy(selectedPharmacy._id, 'approved')} style={modalBtn('#10b981')}>✅ Approve</button>
+                  <button onClick={() => verifyPharmacy(selectedPharmacy._id, 'rejected')} style={modalBtn('#ef4444')}>❌ Reject</button>
+                </>
+              )}
+              <button onClick={() => setSelectedPharmacy(null)} style={modalBtn('#e2e8f0', '#475569')}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BOOKING DETAILS */}
+      {selectedBooking && (
+        <div style={modalOverlay}>
+          <div style={{ ...modalContent, maxWidth: 500 }}>
+            <div style={modalHeader}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>📋 Booking Details</h3>
+              <button onClick={() => setSelectedBooking(null)} style={modalClose}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+              <div><strong>ID:</strong> {selectedBooking.bookingId}</div>
+              <div><strong>Type:</strong> {selectedBooking.type}</div>
+              <div><strong>Patient:</strong> {selectedBooking.patient?.name}</div>
+              <div><strong>Phone:</strong> {selectedBooking.patient?.phone}</div>
+              <div><strong>Provider:</strong> {selectedBooking.doctorName || selectedBooking.centerName || selectedBooking.pharmacyName}</div>
+              <div><strong>Amount:</strong> ₹{selectedBooking.finalAmount}</div>
+              <div><strong>Payment:</strong> {selectedBooking.paymentStatus}</div>
+              <div><strong>Status:</strong> {selectedBooking.status}</div>
+              <div><strong>Date:</strong> {new Date(selectedBooking.bookingDate || selectedBooking.createdAt).toLocaleDateString()}</div>
+              <div><strong>Commission:</strong> ₹{selectedBooking.platformCommission}</div>
+              <div><strong>Provider Earning:</strong> ₹{selectedBooking.providerEarning}</div>
+              <div><strong>OTP Verified:</strong> {selectedBooking.otpVerified ? '✅' : '❌'}</div>
+            </div>
+            <button onClick={() => setSelectedBooking(null)} style={{ width: '100%', padding: '0.6rem', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* REJECT MODAL */}
+      {showRejectModal && (
+        <div style={modalOverlay}>
+          <div style={{ ...modalContent, maxWidth: 400 }}>
+            <h3 style={{ margin: '0 0 1rem' }}>❌ Reject</h3>
+            <textarea value={rejectionReason} onChange={e => setRejectionReason(e.target.value)}
+              placeholder="Reason for rejection..." rows="3"
+              style={{ width: '100%', padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <button onClick={() => verifyDoctor(showRejectModal, 'rejected', rejectionReason)} style={modalBtn('#ef4444')}>Confirm Reject</button>
+              <button onClick={() => { setShowRejectModal(null); setRejectionReason(''); }} style={modalBtn('#e2e8f0', '#475569')}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REFUND MODAL */}
+      {showRefundModal && (
+        <div style={modalOverlay}>
+          <div style={{ ...modalContent, maxWidth: 400 }}>
+            <h3 style={{ margin: '0 0 1rem' }}>💰 Process Refund</h3>
+            <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Booking: {showRefundModal}</p>
+            <textarea value={refundReason} onChange={e => setRefundReason(e.target.value)}
+              placeholder="Reason for refund..." rows="3"
+              style={{ width: '100%', padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <button onClick={() => processRefund(showRefundModal)} style={modalBtn('#ef4444')}>Confirm Refund</button>
+              <button onClick={() => { setShowRefundModal(null); setRefundReason(''); }} style={modalBtn('#e2e8f0', '#475569')}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXPORT MODAL */}
+      {showExport && (
+        <div style={modalOverlay}>
+          <div style={{ ...modalContent, maxWidth: 400 }}>
+            <h3 style={{ margin: '0 0 1rem' }}>📥 Export Data</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <button onClick={() => { handleExport('doctors'); setShowExport(false); }} style={modalBtn('#7c3aed')}>👨‍⚕️ Export Doctors</button>
+              <button onClick={() => { handleExport('centers'); setShowExport(false); }} style={modalBtn('#059669')}>🏨 Export Centers</button>
+              <button onClick={() => { handleExport('pharmacies'); setShowExport(false); }} style={modalBtn('#dc2626')}>💊 Export Pharmacies</button>
+              <button onClick={() => { handleExport('bookings'); setShowExport(false); }} style={modalBtn('#3b82f6')}>📋 Export Bookings</button>
+              <button onClick={() => setShowExport(false)} style={modalBtn('#e2e8f0', '#475569')}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE COMMISSION RULE */}
+      {showCommissionModal && (
+        <div style={modalOverlay}>
+          <div style={{ ...modalContent, maxWidth: 560 }}>
+            <h3 style={{ margin: '0 0 1rem' }}>💰 Create Commission Rule</h3>
+            <form onSubmit={createCommissionRule} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <label style={labelStyle}>Scope Type *</label>
+              <select name="scopeType" required style={inputStyle}
+                value={commissionModalScopeType}
+                onChange={(e) => setCommissionModalScopeType(e.target.value)}>
+                <option value="provider">Provider</option>
+                <option value="city">City</option>
+                <option value="state">State</option>
+                <option value="global">Global</option>
+              </select>
+
+              {commissionModalScopeType === 'provider' && (
+                <>
+                  <label style={labelStyle}>Select Provider *</label>
+                  <select name="scopeValue" required style={inputStyle}>
+                    <option value="">— Select —</option>
+                    {allDoctors.map(d => <option key={d._id} value={d._id}>👨‍⚕️ Dr. {d.name}</option>)}
+                    {allCenters.map(c => <option key={c._id} value={c._id}>🏨 {c.name}</option>)}
+                    {allPharmacies.map(p => <option key={p._id} value={p._id}>💊 {p.businessName}</option>)}
+                  </select>
+                </>
+              )}
+              {commissionModalScopeType === 'city' && (
+                <>
+                  <label style={labelStyle}>City *</label>
+                  <input name="scopeValue" required style={inputStyle} />
+                  <label style={labelStyle}>State</label>
+                  <input name="scopeState" style={inputStyle} />
+                </>
+              )}
+              {commissionModalScopeType === 'state' && (
+                <>
+                  <label style={labelStyle}>State *</label>
+                  <input name="scopeValue" required style={inputStyle} />
+                </>
+              )}
+
+              <label style={labelStyle}>Service Type *</label>
+              <select name="serviceType" required style={inputStyle}>
+                <option value="homeopathy_consultation">Homeopathy Consultation</option>
+                <option value="homeopathy_medicine">Medicine Order</option>
+                <option value="naturopathy_center">Naturopathy Center</option>
+              </select>
+
+              <label style={labelStyle}>Commission Type *</label>
+              <select name="commissionType" required style={inputStyle}>
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed (₹)</option>
+              </select>
+
+              <label style={labelStyle}>Percentage Rate (%)</label>
+              <input name="percentageRate" type="number" min="0" max="50" step="0.1" style={inputStyle} />
+
+              <label style={labelStyle}>Fixed Amount (₹)</label>
+              <input name="fixedAmount" type="number" min="0" style={inputStyle} />
+
+              <label style={labelStyle}>Effective From</label>
+              <input name="effectiveFrom" type="date" style={inputStyle} defaultValue={new Date().toISOString().split('T')[0]} />
+
+              <label style={labelStyle}>Effective Until</label>
+              <input name="effectiveUntil" type="date" style={inputStyle} />
+
+              <label style={labelStyle}>Reason *</label>
+              <textarea name="changeReason" required rows="2" style={inputStyle} />
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="submit" disabled={commissionActionLoading} style={modalBtn('#7c3aed')}>
+                  {commissionActionLoading ? 'Saving...' : 'Create Rule'}
+                </button>
+                <button type="button" onClick={() => setShowCommissionModal(false)} style={modalBtn('#e2e8f0', '#475569')}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT COMMISSION RULE */}
+      {editingCommissionRule && (
+        <div style={modalOverlay}>
+          <div style={{ ...modalContent, maxWidth: 500 }}>
+            <h3 style={{ margin: '0 0 1rem' }}>✏️ Edit Rule</h3>
+            <form onSubmit={updateCommissionRule} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <label style={labelStyle}>Percentage Rate (%)</label>
+              <input name="percentageRate" type="number" min="0" max="50" step="0.1" defaultValue={editingCommissionRule.percentageRate || 0} style={inputStyle} />
+              <label style={labelStyle}>Fixed Amount (₹)</label>
+              <input name="fixedAmount" type="number" min="0" defaultValue={editingCommissionRule.fixedAmount || 0} style={inputStyle} />
+              <label style={labelStyle}>Priority</label>
+              <input name="priority" type="number" defaultValue={editingCommissionRule.priority || 0} style={inputStyle} />
+              <label style={labelStyle}>Effective Until</label>
+              <input name="effectiveUntil" type="date" defaultValue={editingCommissionRule.effectiveUntil ? new Date(editingCommissionRule.effectiveUntil).toISOString().split('T')[0] : ''} style={inputStyle} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                <input type="checkbox" name="isActive" defaultChecked={editingCommissionRule.isActive} />
+                Active
+              </label>
+              <label style={labelStyle}>Reason *</label>
+              <textarea name="changeReason" required rows="2" style={inputStyle} />
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="submit" disabled={commissionActionLoading} style={modalBtn('#7c3aed')}>
+                  {commissionActionLoading ? 'Saving...' : 'Save'}
+                </button>
+                <button type="button" onClick={() => setEditingCommissionRule(null)} style={modalBtn('#e2e8f0', '#475569')}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE DISCOUNT */}
+      {showDiscountModal && (
+        <div style={modalOverlay}>
+          <div style={{ ...modalContent, maxWidth: 500 }}>
+            <h3 style={{ margin: '0 0 1rem' }}>🏷️ Create Discount</h3>
+            <form onSubmit={createDiscount} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <input name="code" placeholder="Code (e.g., HOMEO20)" required style={inputStyle} />
+              <select name="discountType" required style={inputStyle}>
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed (₹)</option>
+              </select>
+              <input name="value" type="number" placeholder="Value" required style={inputStyle} />
+              <input name="maxDiscount" type="number" placeholder="Max Discount (optional)" style={inputStyle} />
+              <input name="validFrom" type="date" required style={inputStyle} />
+              <input name="validTill" type="date" required style={inputStyle} />
+
+              <div>
+                <label style={labelStyle}>Applies To *</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <input type="checkbox" name="applicableTags" value="homeopathy_consultation" defaultChecked />
+                    🌿 Doctor Consultation
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <input type="checkbox" name="applicableTags" value="homeopathy_medicine" />
+                    💊 Medicine Order
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <input type="checkbox" name="applicableTags" value="naturopathy_center" />
+                    🏨 Naturopathy Center
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
+                    <input type="checkbox" name="applicableTags" value="homeopathy_all" />
+                    ⭐ All Homeopathy Services
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="submit" style={modalBtn('#7c3aed')}>Create</button>
+                <button type="button" onClick={() => setShowDiscountModal(false)} style={modalBtn('#e2e8f0', '#475569')}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default HomeopathyAdminPanel;
+// ============================================
+// STYLE HELPERS
+// ============================================
+const headerBtn = (bg) => ({
+  padding: '0.5rem 1rem', background: bg, color: 'white', border: 'none',
+  borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+  display: 'flex', alignItems: 'center', gap: '0.4rem'
+});
 
+const actionBtn = (bg) => ({
+  padding: '0.3rem 0.6rem', background: bg, color: 'white', border: 'none',
+  borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', marginRight: '0.3rem'
+});
+
+const modalBtn = (bg, color = 'white') => ({
+  flex: 1, padding: '0.6rem', background: bg, color,
+  border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600
+});
+
+const statusBadge = (status) => ({
+  padding: '3px 10px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 700,
+  background: status === 'approved' ? '#e8f5e9' : status === 'pending' ? '#fff3e0' : status === 'suspended' || status === 'rejected' ? '#fee2e2' : '#f1f5f9',
+  color: status === 'approved' ? '#2E7D32' : status === 'pending' ? '#e65100' : status === 'suspended' || status === 'rejected' ? '#dc2626' : '#64748b'
+});
+
+const th = { padding: '0.75rem', textAlign: 'left', fontWeight: 700, color: '#1e293b', fontSize: '0.8rem' };
+const td = { padding: '0.75rem', color: '#475569' };
+const pageBtn = { padding: '0.4rem 0.8rem', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer' };
+const inputStyle = { padding: '0.6rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem', width: '100%', boxSizing: 'border-box' };
+const labelStyle = { fontSize: '0.85rem', fontWeight: 600 };
+const modalOverlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' };
+const modalContent = { background: 'white', borderRadius: 16, maxWidth: 600, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' };
+const modalHeader = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' };
+const modalClose = { background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' };
+
+export default HomeopathyAdminPanel;
