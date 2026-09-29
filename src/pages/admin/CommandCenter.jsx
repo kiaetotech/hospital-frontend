@@ -380,17 +380,17 @@ const CommandCenter = () => {
   });
 
   const fetchData = useCallback(async () => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) { navigate('/admin/login'); return; }
+  const token = localStorage.getItem('adminToken');
+  if (!token) { navigate('/admin/login'); return; }
 
-    setLoading(true);
-    const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
-const cfg = {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    'x-admin-key': ADMIN_KEY,
-  }
-};
+  setLoading(true);
+  const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
+  const cfg = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'x-admin-key': ADMIN_KEY,
+    }
+  };
 
     const metrics = {};
 
@@ -426,9 +426,9 @@ const cfg = {
     let ayurBookings = [];
     try {
       const [docRes, bookingsRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/ayurveda/doctors`, cfg).catch(() => ({ data: {} })),
-        axios.get(`${API_BASE}/api/ayurveda/bookings/admin/all`, cfg).catch(() => ({ data: {} })),
-      ]);
+  axios.get(`${API_BASE}/api/ayurveda/doctors`, cfg).catch(() => ({ data: {} })),
+  axios.get(`${API_BASE}/api/ayurveda/bookings/admin/all?limit=100`, cfg).catch(() => ({ data: {} })),
+]);
       ayurBookings = bookingsRes.data?.data || [];
       const total = (docRes.data?.data || []).length;
       const paidBookings = ayurBookings.filter(b => b.paymentStatus === 'paid');
