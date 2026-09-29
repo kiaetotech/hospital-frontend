@@ -391,7 +391,7 @@ const CommandCenter = () => {
       'x-admin-key': ADMIN_KEY,
     }
   };
-
+  let settlementsPending = 0;
     const metrics = {};
 
     // ──────────── 1. HOSPITALS ────────────
@@ -504,6 +504,18 @@ const CommandCenter = () => {
       usersTotal = res.data?.pagination?.totalUsers || 0;
     } catch {}
 
+    // ──────────── SETTLEMENTS PENDING ────────────
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/ayurveda/settlements/admin/pending`,
+        cfg
+      ).catch(() => ({ data: {} }));
+      const payouts = res.data?.data || [];
+      settlementsPending = payouts.reduce((sum, p) => sum + (p.amount || 0), 0);
+    } catch (e) {
+      console.warn('Settlements fetch failed:', e.message);
+    }
+
     // ──────────── COMPUTE TOTALS FROM AYURVEDA BOOKINGS ────────────
     const paidBookings = ayurBookings.filter(b => b.paymentStatus === 'paid');
     const totalRevenue = paidBookings.reduce((sum, b) => sum + (b.finalAmount || 0), 0);
@@ -540,7 +552,7 @@ const CommandCenter = () => {
       commission: totalCommission,
       earnings: totalEarnings,
       gst: gstTotal,
-      settlements: 0,
+      settlements: settlementsPending,
       refunds: 0,
     });
 
@@ -560,7 +572,7 @@ const CommandCenter = () => {
     { key: 'revenue',     label: 'Gross Revenue',       value: money(kpis.gmv),         sub: 'Paid bookings',   color: '#dc2626', real: kpis.gmv > 0 },
     { key: 'commission',  label: 'Platform Commission', value: money(kpis.commission),  sub: 'From rules',      color: '#8b5cf6', real: kpis.commission > 0 },
     { key: 'earnings',    label: 'Provider Earnings',   value: money(kpis.earnings),    sub: 'Pre-settlement',  color: '#10b981', real: kpis.earnings > 0 },
-    { key: 'settlements', label: 'Settlements Pending', value: money(kpis.settlements), sub: 'Awaiting payout', color: '#f59e0b', real: false },
+    { key: 'settlements', label: 'Settlements Pending', value: money(kpis.settlements), sub: 'Awaiting payout', color: '#f59e0b', real: kpis.settlements > 0 },
   ]), [kpis]);
 
   return (
