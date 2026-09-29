@@ -328,7 +328,6 @@ function App() {
           <Route path="/homeopathy/payment" element={<HomeopathyPayment />} />
           <Route path="/homeopathy/my-bookings" element={<HomeopathyMyBookings />} />
           <Route path="/homeopathy/booking/:bookingId" element={<HomeopathyBookingDetail />} />
-          <Route path="/homeopathy/checkout" element={<HomeopathyCheckout />} />
 
           {/* LEGAL PAGES */}
           <Route path="/terms" element={<TermsAndConditions />} />
