@@ -98,6 +98,8 @@ import BookNaturopathyPackage from './pages/homeopathy/BookNaturopathyPackage';
 import HomeopathyCheckout from './pages/homeopathy/HomeopathyCheckout';
 import HomeopathyCenterDashboard from './pages/homeopathy/HomeopathyCenterDashboard';
 import HomeopathyPharmacyDashboard from './pages/homeopathy/HomeopathyPharmacyDashboard';
+import CenterLogin from './pages/homeopathy/CenterLogin';
+import PharmacyLogin from './pages/homeopathy/PharmacyLogin';
 
 // ============================================
 // LEGAL PAGES
@@ -340,6 +342,8 @@ function App() {
 	  <Route path="/homeopathy/checkout" element={<HomeopathyCheckout />} />
           <Route path="/homeopathy/center/dashboard" element={<HomeopathyCenterDashboard />} />
 	  <Route path="/homeopathy/pharmacy/dashboard" element={<HomeopathyPharmacyDashboard />} />
+	  <Route path="/homeopathy/center/login" element={<CenterLogin />} />
+          <Route path="/homeopathy/pharmacy/login" element={<PharmacyLogin />} />
 
           {/* LEGAL PAGES */}
           <Route path="/terms" element={<TermsAndConditions />} />
