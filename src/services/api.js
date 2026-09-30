@@ -20,15 +20,30 @@ const getTokenForCurrentContext = () => {
   if (path.startsWith('/admin')) {
     return localStorage.getItem('adminToken');
   }
-  if (path.startsWith('/ayurveda/doctor/')) {
+    if (path.startsWith('/ayurveda/doctor/')) {
     return localStorage.getItem('doctorToken');
   }
-
   if (path.startsWith('/homeopathy/doctor/')) {
-  return localStorage.getItem('doctorToken');
- }
+    return localStorage.getItem('doctorToken');
+  }
+  if (path.startsWith('/homeopathy/center/dashboard')) {
+    return localStorage.getItem('centerToken');
+  }
+  if (path.startsWith('/homeopathy/pharmacy/dashboard')) {
+    return localStorage.getItem('pharmacyToken');
+  }
+  if (path.startsWith('/homeopathy/center/')) {
+    return localStorage.getItem('doctorToken') || localStorage.getItem('centerToken');
+  }
+  if (path.startsWith('/homeopathy/pharmacy/')) {
+    return localStorage.getItem('pharmacyToken');
+  }
 
-    // Center token ONLY for center-owner pages, NOT patient-facing booking pages
+    if (path.startsWith('/homeopathy-legacy/')) {
+    return localStorage.getItem('doctorToken') || localStorage.getItem('providerToken');
+  }
+
+  // Center token ONLY for center-owner pages, NOT patient-facing booking pages
   // Patient booking URL: /ayurveda/center/:centerId/book/:packageId  → must use patient token
   const isCenterOwnerPage =
     path === '/ayurveda/center/dashboard' ||
@@ -108,10 +123,18 @@ api.interceptors.response.use(
       localStorage.removeItem('doctorToken');
       localStorage.removeItem('doctor');
       window.location.href = '/ayurveda/doctor/login';
-    } else if (path.startsWith('/homeopathy/doctor/')) {
+        } else if (path.startsWith('/homeopathy/doctor/')) {
       localStorage.removeItem('doctorToken');
       localStorage.removeItem('doctor');
       window.location.href = '/homeopathy/doctor/login';
+    } else if (path.startsWith('/homeopathy/center/dashboard')) {
+      localStorage.removeItem('centerToken');
+      localStorage.removeItem('center');
+      window.location.href = '/homeopathy/center/login';
+    } else if (path.startsWith('/homeopathy/pharmacy/dashboard')) {
+      localStorage.removeItem('pharmacyToken');
+      localStorage.removeItem('pharmacy');
+      window.location.href = '/homeopathy/pharmacy/login';
     } else if (
       path === '/ayurveda/center/dashboard' ||
       path.startsWith('/ayurveda/center/dashboard/') ||
