@@ -23,6 +23,11 @@ const getTokenForCurrentContext = () => {
   if (path.startsWith('/ayurveda/doctor/')) {
     return localStorage.getItem('doctorToken');
   }
+
+  if (path.startsWith('/homeopathy/doctor/')) {
+  return localStorage.getItem('doctorToken');
+ }
+
     // Center token ONLY for center-owner pages, NOT patient-facing booking pages
   // Patient booking URL: /ayurveda/center/:centerId/book/:packageId  → must use patient token
   const isCenterOwnerPage =
@@ -99,10 +104,14 @@ api.interceptors.response.use(
     }
 
     // Clear only the CURRENT role's tokens, then redirect to its login
-    if (path.startsWith('/ayurveda/doctor/')) {
+        if (path.startsWith('/ayurveda/doctor/')) {
       localStorage.removeItem('doctorToken');
       localStorage.removeItem('doctor');
       window.location.href = '/ayurveda/doctor/login';
+    } else if (path.startsWith('/homeopathy/doctor/')) {
+      localStorage.removeItem('doctorToken');
+      localStorage.removeItem('doctor');
+      window.location.href = '/homeopathy/doctor/login';
     } else if (
       path === '/ayurveda/center/dashboard' ||
       path.startsWith('/ayurveda/center/dashboard/') ||
