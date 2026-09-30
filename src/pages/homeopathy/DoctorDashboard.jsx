@@ -51,22 +51,31 @@ const DoctorDashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const [docRes, bookingsRes, earningsRes, settlementsRes] = await Promise.all([
-        api.get(`/homeopathy/doctors/${doctorId}`),
-        api.get(`/homeopathy/bookings/doctor/${doctorId}`),
-        api.get(`/homeopathy/settlements/earnings/homeopathy_doctor/${doctorId}`),
-        api.get(`/homeopathy/settlements/history/homeopathy_doctor/${doctorId}`)
-      ]);
+      const [docRes, bookingsRes, earningsRes, settlementsRes] = await Promise.allSettled([
+  api.get(`/homeopathy/doctors/${doctorId}`),
+  api.get(`/homeopathy/bookings/doctor/${doctorId}`),
+  api.get(`/homeopathy/settlements/earnings/homeopathy_doctor/${doctorId}`),
+  api.get(`/homeopathy/settlements/history/homeopathy_doctor/${doctorId}`)
+]);
 
-      if (docRes.data?.success) {
-        const d = docRes.data.data;
-        setDoctor(prev => ({ ...prev, ...d, id: d._id }));
-        setOnlineStatus(d.currentStatus || 'offline');
-        setConsultationMode(d.currentConsultationMode || 'video');
-      }
-      if (bookingsRes.data?.success) setBookings(bookingsRes.data.data || []);
-      if (earningsRes.data?.success) setEarnings(earningsRes.data.data);
-      if (settlementsRes.data?.success) setSettlements(settlementsRes.data.data || []);
+if (docRes.status === 'fulfilled' && docRes.value.data?.success) {
+  const d = docRes.value.data.data;
+  setDoctor(prev => ({ ...prev, ...d, id: d._id }));
+  setOnlineStatus(d.currentStatus || 'offline');
+  setConsultationMode(d.currentConsultationMode || 'video');
+}
+if (bookingsRes.status === 'fulfilled' && bookingsRes.value.data?.success) {
+  setBookings(bookingsRes.value.data.data || []);
+}
+if (earningsRes.status === 'fulfilled' && earningsRes.value.data?.success) {
+  setEarnings(earningsRes.value.data.data);
+} else if (earningsRes.status === 'rejected') {
+  console.warn('Earnings fetch failed:', earningsRes.reason?.response?.status);
+  setEarnings({ totalEarnings: 0, totalCommission: 0, pendingPayout: 0, totalBookings: 0 });
+}
+if (settlementsRes.status === 'fulfilled' && settlementsRes.value.data?.success) {
+  setSettlements(settlementsRes.value.data.data || []);
+}
     } catch (err) {
       console.error('Dashboard load error:', err);
       setError('Failed to load dashboard data');
