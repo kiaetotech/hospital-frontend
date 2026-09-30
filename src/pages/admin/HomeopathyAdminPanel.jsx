@@ -71,6 +71,7 @@ const HomeopathyAdminPanel = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [pendingCentersList, setPendingCentersList] = useState([]);
   const [pendingPharmacies, setPendingPharmacies] = useState([]);
+  const [pendingPackages, setPendingPackages] = useState([]);
 
   // Commission rules (mirror Ayurveda structure)
   const [commissionRules, setCommissionRules] = useState([]);
@@ -108,12 +109,12 @@ const HomeopathyAdminPanel = () => {
     try {
       const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
 
-            const [
+        const [
         doctorsRes, centersRes, pharmaciesRes,
         pendingDocRes, pendingCenterRes, pendingPharmRes,
         bookingsRes, discountsRes, settlementsRes,
         reviewsRes, complaintsRes, commissionRulesRes,
-        allCentersRes, allPharmaciesRes
+        allCentersRes, allPharmaciesRes, pendingPackagesRes
       ] = await Promise.all([
         api.get('/homeopathy/doctors'),
         api.get('/homeopathy/centers').catch(() => ({ data: { data: [] } })),
@@ -128,9 +129,10 @@ const HomeopathyAdminPanel = () => {
         axios.get(`${API_BASE}/api/homeopathy/bookings/admin/complaints/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/commission-rules`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/all-centers`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+        axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
       ]);
-
+      
       const doctors = doctorsRes.data?.data || [];
       const centers = allCentersRes.data?.data || centersRes.data?.data || [];
       const pharmacies = pharmaciesRes.data?.data || [];
@@ -154,6 +156,7 @@ const HomeopathyAdminPanel = () => {
       setReviews(revs);
       setComplaints(comps);
       setCommissionRules(commissionRulesRes.data?.data || []);
+      setPendingPackages(pendingPackagesRes.data?.data || []);
 
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
@@ -655,6 +658,47 @@ const HomeopathyAdminPanel = () => {
     }
   };
 
+  // ============================================
+  // ADMIN: APPROVE / REJECT PACKAGE
+  // ============================================
+  const approvePackage = async (centerId, packageId) => {
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/homeopathy/admin/packages/${centerId}/${packageId}/approve`,
+        {},
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('✅ Package approved', 'success');
+        fetchAllData();
+      } else {
+        addNotification(res.data.error || 'Approve failed', 'error');
+      }
+    } catch (err) {
+      addNotification(err.response?.data?.error || 'Failed to approve', 'error');
+    }
+  };
+
+  const rejectPackage = async (centerId, packageId) => {
+    const reason = window.prompt('Reason for rejection (min 5 chars):');
+    if (!reason || reason.trim().length < 5) return;
+    try {
+      const res = await axios.put(
+        `${API_BASE}/api/homeopathy/admin/packages/${centerId}/${packageId}/reject`,
+        { reason: reason.trim() },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      if (res.data.success) {
+        addNotification('❌ Package rejected', 'success');
+        fetchAllData();
+      } else {
+        addNotification(res.data.error || 'Reject failed', 'error');
+      }
+    } catch (err) {
+      addNotification(err.response?.data?.error || 'Failed to reject', 'error');
+    }
+  };
+
   const approveSettlement = async (payoutId) => {
     try {
       const token = localStorage.getItem('adminToken');
@@ -989,7 +1033,7 @@ const HomeopathyAdminPanel = () => {
           { id: 'commission', label: `💰 Commission Rules (${commissionRules.length})`, icon: FaRupeeSign },
           { id: 'fee-config', label: '💵 Fee Config', icon: FaRupeeSign },
           { id: 'settlements', label: `💰 Settlements (${stats.pendingPayouts})`, icon: FaRupeeSign },
-          { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters + stats.pendingPharmacies})`, icon: FaExclamationTriangle },
+          { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters + stats.pendingPharmacies + pendingPackages.length})`, icon: FaExclamationTriangle },
           { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
           { id: 'complaints', label: '🚨 Complaints', icon: FaExclamationTriangle }
         ].map(t => (
@@ -2002,6 +2046,53 @@ const HomeopathyAdminPanel = () => {
         {tab === 'pending' && (
           <div>
             <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>⏳ Pending Approvals</h2>
+
+	                {/* PENDING PACKAGES */}
+            {pendingPackages.length > 0 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontWeight: 700, marginBottom: '0.75rem', color: '#7c3aed' }}>
+                  📦 Pending Packages ({pendingPackages.length})
+                </h3>
+                {pendingPackages.map(pkg => (
+                  <div key={`${pkg.centerId}_${pkg.packageId}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #7c3aed' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                      <div style={{ flex: 1, minWidth: 250 }}>
+                        <strong style={{ fontSize: '1rem' }}>📦 {pkg.name}</strong>
+                        <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                          🏨 {pkg.centerName} • {pkg.centerCity} • {pkg.centerPhone}
+                        </p>
+                        <p style={{ margin: '4px 0', fontSize: '0.9rem', color: '#059669', fontWeight: 600 }}>
+                          ₹{pkg.discountPrice || pkg.price} • {pkg.duration} days • Max {pkg.maxCapacity}
+                        </p>
+                        {pkg.shortDescription && (
+                          <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#475569' }}>{pkg.shortDescription}</p>
+                        )}
+                        {pkg.therapies?.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.5rem' }}>
+                            {pkg.therapies.map((t, i) => (
+                              <span key={i} style={{ fontSize: '0.7rem', background: '#f5f3ff', color: '#6d28d9', padding: '2px 8px', borderRadius: 12 }}>{t}</span>
+                            ))}
+                          </div>
+                        )}
+                        {pkg.inclusions?.length > 0 && (
+                          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#64748b' }}>
+                            <strong>Includes:</strong> {pkg.inclusions.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexDirection: 'column' }}>
+                        <button onClick={() => approvePackage(pkg.centerId, pkg.packageId)} style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                          ✅ Approve
+                        </button>
+                        <button onClick={() => rejectPackage(pkg.centerId, pkg.packageId)} style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                          ❌ Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {allDoctors.filter(d => d.verificationStatus === 'pending').map(d => (
               <div key={d._id} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #7c3aed' }}>
