@@ -108,14 +108,15 @@ const HomeopathyAdminPanel = () => {
     try {
       const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
 
-      const [
+            const [
         doctorsRes, centersRes, pharmaciesRes,
         pendingDocRes, pendingCenterRes, pendingPharmRes,
         bookingsRes, discountsRes, settlementsRes,
-        reviewsRes, complaintsRes
+        reviewsRes, complaintsRes, commissionRulesRes,
+        allCentersRes, allPharmaciesRes
       ] = await Promise.all([
         api.get('/homeopathy/doctors'),
-        api.get('/homeopathy/centers'),
+        api.get('/homeopathy/centers').catch(() => ({ data: { data: [] } })),
         api.get('/homeopathy/pharmacies').catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-centers`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
@@ -124,11 +125,14 @@ const HomeopathyAdminPanel = () => {
         axios.get(`${API_BASE}/api/homeopathy/bookings/admin/discounts`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/settlements/admin/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/bookings/admin/reviews/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${API_BASE}/api/homeopathy/bookings/admin/complaints/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+        axios.get(`${API_BASE}/api/homeopathy/bookings/admin/complaints/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/commission-rules`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/all-centers`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
       ]);
 
       const doctors = doctorsRes.data?.data || [];
-      const centers = centersRes.data?.data || [];
+      const centers = allCentersRes.data?.data || centersRes.data?.data || [];
       const pharmacies = pharmaciesRes.data?.data || [];
       const pendingDocs = pendingDocRes.data?.data || [];
       const pendingCents = pendingCenterRes.data?.data || [];
@@ -139,7 +143,7 @@ const HomeopathyAdminPanel = () => {
       const revs = reviewsRes.data?.data || [];
       const comps = complaintsRes.data?.data || [];
 
-      setAllDoctors([...doctors, ...pendingDocs]);
+            setAllDoctors([...doctors, ...pendingDocs]);
       setAllCenters([...centers, ...pendingCents]);
       setAllPharmacies([...pharmacies, ...pendingPharms]);
       setPendingCentersList(pendingCents);
@@ -149,6 +153,7 @@ const HomeopathyAdminPanel = () => {
       setSettlements(settles);
       setReviews(revs);
       setComplaints(comps);
+      setCommissionRules(commissionRulesRes.data?.data || []);
 
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
