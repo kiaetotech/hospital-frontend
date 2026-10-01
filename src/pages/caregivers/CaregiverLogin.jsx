@@ -190,6 +190,11 @@ const CaregiverLogin = () => {
           </div>
 
           {/* Submit Button */}
+          <div className="text-right">
+            <Link to="/forgot-password?type=caregiver" className="text-sm font-semibold no-underline text-cyan-600">
+              Forgot Password?
+            </Link>
+          </div>
           <button
             type="submit"
             disabled={loading}

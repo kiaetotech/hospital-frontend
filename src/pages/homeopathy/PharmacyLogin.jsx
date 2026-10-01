@@ -102,6 +102,11 @@ const PharmacyLogin = () => {
               </button>
             </div>
           </div>
+          <div className="text-right">
+            <Link to="/forgot-password?type=homeopathy_pharmacy" className="text-sm font-semibold no-underline text-red-600">
+              Forgot Password?
+            </Link>
+          </div>
 
           <button
             type="submit"

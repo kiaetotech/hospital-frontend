@@ -136,6 +136,11 @@ const DoctorLogin = () => {
               </div>
 
               {/* Submit */}
+          <div className="text-right">
+            <Link to="/forgot-password?type=ayurveda_doctor" className="text-sm font-semibold no-underline text-amber-600">
+              Forgot Password?
+            </Link>
+          </div>
               <button
                 type="submit"
                 disabled={loading}

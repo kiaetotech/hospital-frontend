@@ -78,6 +78,11 @@ const DiagnosticsLogin = () => {
               <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}><button type="button" onClick={handleSendOTP} disabled={otpCountdown > 0} style={{ padding: '12px 16px', background: otpCountdown > 0 ? '#ccc' : '#10b981', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: otpCountdown > 0 ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>{otpCountdown > 0 ? `Resend ${otpCountdown}s` : 'Send OTP'}</button>{otpSent && <input type="text" placeholder="6-digit OTP" value={form.otp} onChange={e => handleChange('otp', e.target.value.replace(/\D/g, '').slice(0, 6))} maxLength={6} style={{ ...is, flex: 1, letterSpacing: '6px', textAlign: 'center', fontSize: '18px' }} />}</div>
             </>
           )}
+          <div className="text-right">
+            <Link to="/forgot-password?type=diagnostics" className="text-sm font-semibold no-underline text-purple-600">
+              Forgot Password?
+            </Link>
+          </div>
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>{loading ? 'Logging in...' : 'Login'}</button>
         </form>
         <div style={{ textAlign: 'center', marginTop: '18px', paddingTop: '16px', borderTop: '1px solid #eee' }}>

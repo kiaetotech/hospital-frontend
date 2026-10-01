@@ -100,6 +100,11 @@ const EmployeeLogin = () => {
                 onChange={e => setForm({ ...form, phone: e.target.value })}
                 style={inputStyle} />
             </div>
+          <div className="text-right">
+            <Link to="/forgot-password?type=corporate_employee" className="text-sm font-semibold no-underline text-indigo-600">
+              Forgot Password?
+            </Link>
+          </div>
             <button type="submit" disabled={loading}
               style={{ width: '100%', padding: '14px', background: loading ? '#ccc' : '#1976d2', color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer' }}>
               {loading ? 'Sending OTP...' : 'Send OTP'}
@@ -119,6 +124,11 @@ const EmployeeLogin = () => {
                 onChange={e => setForm({ ...form, otp: e.target.value })}
                 style={{ ...inputStyle, textAlign: 'center', fontSize: '22px', letterSpacing: '8px', fontWeight: '700' }} />
             </div>
+          <div className="text-right">
+            <Link to="/forgot-password?type=corporate_employee" className="text-sm font-semibold no-underline text-indigo-600">
+              Forgot Password?
+            </Link>
+          </div>
             <button type="submit" disabled={loading}
               style={{ width: '100%', padding: '14px', background: loading ? '#ccc' : '#1976d2', color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', marginBottom: '12px' }}>
               {loading ? 'Verifying...' : 'Verify & Login'}

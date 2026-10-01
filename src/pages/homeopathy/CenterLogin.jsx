@@ -103,6 +103,11 @@ const CenterLogin = () => {
               </button>
             </div>
           </div>
+          <div className="text-right">
+            <Link to="/forgot-password?type=homeopathy_center" className="text-sm font-semibold no-underline text-purple-600">
+              Forgot Password?
+            </Link>
+          </div>
 
           <button
             type="submit"

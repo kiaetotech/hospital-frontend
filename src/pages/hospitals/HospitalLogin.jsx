@@ -368,6 +368,11 @@ const HospitalLogin = () => {
               </div>
 
               {/* Login Button */}
+          <div className="text-right">
+            <Link to="/forgot-password?type=hospital" className="text-sm font-semibold no-underline text-sky-600">
+              Forgot Password?
+            </Link>
+          </div>
               <button
                 type="submit"
                 disabled={loading}

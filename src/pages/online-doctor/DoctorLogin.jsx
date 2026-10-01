@@ -217,6 +217,11 @@ const DoctorLogin = () => {
                 </div>
 
                 {/* Login Button */}
+          <div className="text-right">
+            <Link to="/forgot-password?type=online_doctor" className="text-sm font-semibold no-underline text-blue-600">
+              Forgot Password?
+            </Link>
+          </div>
                 <button
                   type="submit"
                   disabled={loading}

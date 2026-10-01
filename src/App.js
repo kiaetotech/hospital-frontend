@@ -42,6 +42,7 @@ import ProviderTerms from './pages/ProviderTerms';
 import DataRetention from './pages/DataRetention';
 import PaymentTerms from './pages/PaymentTerms';
 import PatientDashboard from './pages/PatientDashboard';
+import ProviderForgotPassword from './pages/ProviderForgotPassword';
 
 
 // ============================================
@@ -257,6 +258,7 @@ function App() {
 	  <Route path="/data-retention" element={<DataRetention />} />
 	  <Route path="/payment-terms" element={<PaymentTerms />} />
 	  <Route path="/dashboard" element={<PatientDashboard />} />
+          <Route path="/forgot-password" element={<ProviderForgotPassword />} />
 
           {/* HOSPITALS TAG */}
           <Route path="/hospitals" element={<HospitalsList />} />
