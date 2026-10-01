@@ -409,9 +409,9 @@ function App() {
 
           {/* ADMIN PANEL */}
           <Route path="/admin/login" element={<AdminLogin />} />
-	  <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+	  <Route path="/admin" element={<Navigate to="/admin/command-center" replace />} />
 	  <Route path="/admin/reset-password" element={<AdminPasswordReset />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<Navigate to="/admin/command-center" replace />} />
 	  <Route path="/admin/command-center" element={<CommandCenter />} />
           <Route path="/admin/verify-lenders" element={<AdminVerifyLenders />} />
           <Route path="/admin/commission" element={<AdminCommission />} />

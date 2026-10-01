@@ -25,7 +25,7 @@ const response = await axios.post(`${API_URL}/api/admin/login`, {
       if (response.data.success) {
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('adminData', JSON.stringify(response.data.admin));
-        navigate('/admin/dashboard');
+        navigate('/admin/command-center', { replace: true });
       } else {
         setError(response.data.message || 'Invalid credentials');
       }
