@@ -45,7 +45,7 @@ const DoctorLogin = () => {
         specialization: res.data.doctor.specialization
       };
 
-      localStorage.setItem('doctorToken', res.data.token);
+      localStorage.setItem('homeopathyDoctorToken', res.data.token);
       localStorage.setItem('doctor', JSON.stringify(doctor));
       localStorage.setItem('providerType', 'homeopathy_doctor');
 

@@ -43,7 +43,7 @@ const CenterLogin = () => {
         type: res.data.center.type
       };
 
-      localStorage.setItem('centerToken', res.data.token);
+      localStorage.setItem('homeopathyCenterToken', res.data.token);
       localStorage.setItem('center', JSON.stringify(center));
       localStorage.setItem('providerType', 'naturopathy_center');
 

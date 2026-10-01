@@ -621,7 +621,7 @@ const HomeopathyCenterDashboard = () => {
               )}
               <button
                 onClick={() => {
-                  localStorage.removeItem('centerToken');
+                  localStorage.removeItem('homeopathyCenterToken');
                   localStorage.removeItem('center');
                   navigate('/homeopathy/center/login', { replace: true });
                 }}

@@ -23,24 +23,24 @@ const getTokenForCurrentContext = () => {
     if (path.startsWith('/ayurveda/doctor/')) {
     return localStorage.getItem('doctorToken');
   }
-  if (path.startsWith('/homeopathy/doctor/')) {
-    return localStorage.getItem('doctorToken');
+    if (path.startsWith('/homeopathy/doctor/')) {
+    return localStorage.getItem('homeopathyDoctorToken');
   }
   if (path.startsWith('/homeopathy/center/dashboard')) {
-    return localStorage.getItem('centerToken');
+    return localStorage.getItem('homeopathyCenterToken');
   }
   if (path.startsWith('/homeopathy/pharmacy/dashboard')) {
     return localStorage.getItem('pharmacyToken');
   }
   if (path.startsWith('/homeopathy/center/')) {
-    return localStorage.getItem('doctorToken') || localStorage.getItem('centerToken');
+    return localStorage.getItem('homeopathyCenterToken');
   }
   if (path.startsWith('/homeopathy/pharmacy/')) {
     return localStorage.getItem('pharmacyToken');
   }
 
-    if (path.startsWith('/homeopathy-legacy/')) {
-    return localStorage.getItem('doctorToken') || localStorage.getItem('providerToken');
+  if (path.startsWith('/homeopathy-legacy/')) {
+    return localStorage.getItem('homeopathyDoctorToken') || localStorage.getItem('providerToken');
   }
 
   // Center token ONLY for center-owner pages, NOT patient-facing booking pages
@@ -123,12 +123,12 @@ api.interceptors.response.use(
       localStorage.removeItem('doctorToken');
       localStorage.removeItem('doctor');
       window.location.href = '/ayurveda/doctor/login';
-        } else if (path.startsWith('/homeopathy/doctor/')) {
-      localStorage.removeItem('doctorToken');
+    } else if (path.startsWith('/homeopathy/doctor/')) {
+      localStorage.removeItem('homeopathyDoctorToken');
       localStorage.removeItem('doctor');
       window.location.href = '/homeopathy/doctor/login';
     } else if (path.startsWith('/homeopathy/center/dashboard')) {
-      localStorage.removeItem('centerToken');
+      localStorage.removeItem('homeopathyCenterToken');
       localStorage.removeItem('center');
       window.location.href = '/homeopathy/center/login';
     } else if (path.startsWith('/homeopathy/pharmacy/dashboard')) {
