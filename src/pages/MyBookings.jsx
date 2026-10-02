@@ -726,8 +726,44 @@ const MyBookings = () => {
                         )}
                       </p>
                       <p><strong>📞 Patient Contact:</strong> {booking.patientPhone}</p>
-                      {booking.paymentStatus && (
+                                            {booking.paymentStatus && (
                         <p><strong>💳 Payment:</strong> <span style={{ color: booking.paymentStatus === 'paid' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{booking.paymentStatus.toUpperCase()}</span></p>
+                      )}
+
+                      {/* 🆕 Consultation OTP (only while active and not yet verified) */}
+                      {booking.otp &&
+                       booking.paymentStatus === 'paid' &&
+                       !booking.otpVerified &&
+                       ['pending', 'confirmed', 'in_progress'].includes(booking.status) && (
+                        <div style={{
+                          marginTop: '10px',
+                          padding: '12px',
+                          backgroundColor: '#fef9c3',
+                          border: '2px dashed #f59e0b',
+                          borderRadius: '8px',
+                          textAlign: 'center'
+                        }}>
+                          <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
+                            🔐 CONSULTATION OTP
+                          </p>
+                          <p style={{
+                            margin: '4px 0',
+                            fontSize: '28px',
+                            letterSpacing: '8px',
+                            fontWeight: 'bold',
+                            color: '#92400e',
+                            fontFamily: 'monospace'
+                          }}>
+                            {booking.otp}
+                          </p>
+                          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#78350f' }}>
+                            Share this with your {booking.bookingType === 'ayurveda_consultation'
+                              ? 'Ayurveda doctor'
+                              : booking.bookingType === 'homeopathy_consult'
+                              ? 'Homeopathy doctor'
+                              : 'provider'} at the time of consultation
+                          </p>
+                        </div>
                       )}
 
                       {booking.review && (booking.review.rating || booking.review.comment) && (
