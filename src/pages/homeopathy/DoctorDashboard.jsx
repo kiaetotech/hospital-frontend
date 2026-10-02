@@ -1,3 +1,4 @@
+import DoctorAvailabilityEditor from '../../components/DoctorAvailabilityEditor';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -27,9 +28,7 @@ const DoctorDashboard = () => {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [respondingTo, setRespondingTo] = useState(null);
   const [responseText, setResponseText] = useState('');
-  const [availability, setAvailability] = useState([]);
-  const [savingAvailability, setSavingAvailability] = useState(false);
-
+ 
   useEffect(() => {
     const token = localStorage.getItem('doctorToken');
     const doctorData = JSON.parse(localStorage.getItem('doctor') || '{}');
@@ -42,43 +41,12 @@ const DoctorDashboard = () => {
 
     setDoctor({ ...doctorData, id: doctorId });
     fetchDashboardData(doctorId);
-    fetchAvailability(doctorId);
   }, [navigate]);
 
   useEffect(() => {
     if (activeTab === 'complaints') fetchComplaints();
     else if (activeTab === 'reviews') fetchReviews();
   }, [activeTab]);
-
-  const fetchAvailability = async (doctorId) => {
-    try {
-      const response = await api.get(`/homeopathy/doctor/${doctorId || doctor.id}/availability`);
-      if (response.data.success) {
-        setAvailability(response.data.data.availability || []);
-      }
-    } catch (err) {
-      console.error('Failed to load availability:', err.message);
-    }
-  };
-
-  const handleSaveAvailability = async () => {
-    setSavingAvailability(true);
-    try {
-      const response = await api.put('/homeopathy/doctor/availability', {
-        doctorId: doctor.id,
-        availability: availability.filter(a => a && a.day)
-      });
-      if (response.data.success) {
-        alert('Availability saved successfully!');
-      } else {
-        alert(response.data.error || 'Failed to save availability');
-      }
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to save availability');
-    } finally {
-      setSavingAvailability(false);
-    }
-  };
 
     const fetchDashboardData = async (doctorId) => {
     setLoading(true);
@@ -597,141 +565,9 @@ const DoctorDashboard = () => {
           </div>
         )}
 
-	        {/* Availability */}
+	 {/* Availability */}
         {activeTab === 'availability' && (
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Manage Availability</h2>
-
-            <div className="space-y-4">
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, dayIndex) => {
-                const dayData = availability.find(a => a.day === day);
-                const isActive = !!dayData;
-
-                return (
-                  <div key={day} className={`border rounded-lg p-4 ${isActive ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <button
-                        onClick={() => {
-                          if (isActive) {
-                            setAvailability(prev => prev.filter(a => a.day !== day));
-                          } else {
-                            setAvailability(prev => [...prev, { day, slots: [] }]);
-                          }
-                        }}
-                        className={`px-4 py-2 rounded-lg font-medium ${
-                          isActive ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'
-                        }`}
-                      >
-                        {day}
-                      </button>
-                      {isActive && (
-                        <button
-                          onClick={() => {
-                            setAvailability(prev =>
-                              prev.map(a =>
-                                a.day === day
-                                  ? { ...a, slots: [...a.slots, { startTime: '09:00 AM', endTime: '10:00 AM', maxBookings: 5, currentBookings: 0 }] }
-                                  : a
-                              )
-                            );
-                          }}
-                          className="text-green-600 hover:text-green-700 text-sm"
-                        >
-                          + Add Slot
-                        </button>
-                      )}
-                    </div>
-
-                    {isActive && dayData.slots.length > 0 && (
-                      <div className="space-y-2">
-                        {dayData.slots.map((slot, slotIndex) => (
-                          <div key={slotIndex} className="flex items-center gap-2 flex-wrap">
-                            <select
-                              value={slot.startTime || '09:00 AM'}
-                              onChange={(e) => {
-                                setAvailability(prev =>
-                                  prev.map(a => {
-                                    if (a.day !== day) return a;
-                                    const slots = [...a.slots];
-                                    slots[slotIndex] = { ...slots[slotIndex], startTime: e.target.value };
-                                    return { ...a, slots };
-                                  })
-                                );
-                              }}
-                              className="p-2 border rounded text-sm"
-                            >
-                              {['09:00 AM','10:00 AM','11:00 AM','12:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM','06:00 PM'].map(t => (
-                                <option key={t} value={t}>{t}</option>
-                              ))}
-                            </select>
-                            <span className="text-sm">to</span>
-                            <select
-                              value={slot.endTime || '10:00 AM'}
-                              onChange={(e) => {
-                                setAvailability(prev =>
-                                  prev.map(a => {
-                                    if (a.day !== day) return a;
-                                    const slots = [...a.slots];
-                                    slots[slotIndex] = { ...slots[slotIndex], endTime: e.target.value };
-                                    return { ...a, slots };
-                                  })
-                                );
-                              }}
-                              className="p-2 border rounded text-sm"
-                            >
-                              {['10:00 AM','11:00 AM','12:00 PM','01:00 PM','03:00 PM','04:00 PM','05:00 PM','06:00 PM','07:00 PM'].map(t => (
-                                <option key={t} value={t}>{t}</option>
-                              ))}
-                            <label className="flex items-center gap-1 text-xs text-gray-600">
-  				Max patients:
- 				 <input
-   				 type="number"
-   				 value={slot.maxBookings || 1}
-   				 onChange={(e) => {
-     				 const val = parseInt(e.target.value) || 1;
-      				setAvailability(prev =>
-      				  prev.map(a => {
-         			 if (a.day !== day) return a;
-          			const slots = [...a.slots];
-          			slots[slotIndex] = { ...slots[slotIndex], maxBookings: val };
-         			 return { ...a, slots };
-       				 })
-     				 );
-    				}}
-   				 min="1"
-   				 max="20"
-   				 className="p-1 border rounded w-16 text-sm"
-  				/>
- 				</label>
-                            <button
-                              onClick={() => {
-                                setAvailability(prev =>
-                                  prev.map(a =>
-                                    a.day === day ? { ...a, slots: a.slots.filter((_, i) => i !== slotIndex) } : a
-                                  )
-                                );
-                              }}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={handleSaveAvailability}
-              disabled={savingAvailability}
-              className="mt-6 w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400"
-            >
-              {savingAvailability ? 'Saving...' : 'Save Availability'}
-            </button>
-          </div>
+          <DoctorAvailabilityEditor doctorId={doctor.id} endpoint="homeopathy" />
         )}
 
 
