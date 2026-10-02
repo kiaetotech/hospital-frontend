@@ -78,7 +78,7 @@ const HomeopathyPayment = () => {
             });
 
             if (verifyRes.data?.success) {
-              setStep('otp');
+              setStep('success');
             } else {
               setError('Payment verification failed: ' + (verifyRes.data?.message || 'Unknown'));
             }
@@ -105,39 +105,8 @@ const HomeopathyPayment = () => {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length < 4) {
-      setOtpError('Enter the 4-digit OTP');
-      return;
-    }
-    setOtpLoading(true);
-    setOtpError('');
-    try {
-      const res = await api.post('/homeopathy/bookings/verify-otp', {
-        bookingId: bookingData.bookingId,
-        otp
-      });
-      if (res.data?.success) {
-        setStep('success');
-      } else {
-        setOtpError(res.data?.message || 'Invalid OTP');
-      }
-    } catch (err) {
-      setOtpError(err.response?.data?.message || 'Verification failed');
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    try {
-      await api.post('/homeopathy/bookings/resend-otp', { bookingId: bookingData.bookingId });
-      setResendCooldown(30);
-      setOtpError('');
-    } catch (err) {
-      setOtpError('Failed to resend OTP');
-    }
-  };
+    // OTP is verified by the DOCTOR at consultation time — the patient should not submit it.
+  // Patient just needs to have it available (SMS + My Bookings + confirmation page).
 
   if (!bookingData) return null;
 
