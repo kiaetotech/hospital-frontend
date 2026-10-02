@@ -123,7 +123,7 @@ const HomeopathyAdminPanel = () => {
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-centers`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/bookings/admin/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${API_BASE}/api/homeopathy/bookings/admin/discounts`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/discounts`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/settlements/admin/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/bookings/admin/reviews/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/bookings/admin/complaints/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
@@ -1863,6 +1863,65 @@ const HomeopathyAdminPanel = () => {
                 </>
               )}
             </div>
+          </div>
+        )}
+
+	         {tab === 'discounts' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>🏷️ Discounts ({discounts.length})</h2>
+              <button onClick={() => setShowDiscountModal(true)} style={{ padding: '0.5rem 1rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ Create Discount</button>
+            </div>
+            {discounts.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No discounts created</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                    <th style={{ padding: '0.6rem' }}>Code</th>
+                    <th style={{ padding: '0.6rem' }}>Value</th>
+                    <th style={{ padding: '0.6rem' }}>Used</th>
+                    <th style={{ padding: '0.6rem' }}>Valid From</th>
+                    <th style={{ padding: '0.6rem' }}>Valid Till</th>
+                    <th style={{ padding: '0.6rem' }}>Status</th>
+                    <th style={{ padding: '0.6rem' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {discounts.map(d => (
+                    <tr key={d._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '0.6rem', fontWeight: 600 }}>{d.code}</td>
+                      <td style={{ padding: '0.6rem' }}>{d.type === 'percentage' ? `${d.value}%` : `₹${d.value}`}</td>
+                      <td style={{ padding: '0.6rem' }}>{d.usedCount || 0}</td>
+                      <td style={{ padding: '0.6rem' }}>{d.validFrom ? new Date(d.validFrom).toLocaleDateString() : '-'}</td>
+                      <td style={{ padding: '0.6rem' }}>{d.validUntil ? new Date(d.validUntil).toLocaleDateString() : '-'}</td>
+                      <td style={{ padding: '0.6rem' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: d.isActive ? '#d1fae5' : '#fee2e2', color: d.isActive ? '#065f46' : '#991b1b' }}>
+                          {d.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.6rem', display: 'flex', gap: 6 }}>
+                        <button onClick={() => toggleDiscount(d._id, d.isActive)} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', background: d.isActive ? '#ef4444' : '#10b981', color: 'white', fontSize: 12, fontWeight: 600 }}>
+                          {d.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button onClick={() => setEditingDiscount(d)} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#3b82f6', color: 'white', fontSize: 12, fontWeight: 600 }}>Edit</button>
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm(`Delete ${d.code}?`)) return;
+                            try {
+                              await axios.delete(`${API_BASE}/api/homeopathy/discounts/${d._id}`, { headers: ADMIN_KEY_HEADER });
+                              alert('Discount deleted');
+                              setDiscounts(prev => prev.filter(x => x._id !== d._id));
+                            } catch (e) { alert('Delete failed'); }
+                          }}
+                          style={{ padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#dc2626', color: 'white', fontSize: 12, fontWeight: 600 }}
+                        >Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
