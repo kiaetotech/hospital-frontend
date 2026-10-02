@@ -142,12 +142,15 @@ const DoctorDashboard = () => {
     }
   };
 
-  const handleStartWithOtp = async (bookingId) => {
+    const handleStartWithOtp = async (bookingId) => {
     if (!otpInput || otpInput.length !== 4) {
       alert('Please enter the 4-digit OTP from patient');
       return;
     }
     try {
+      // Step 1: verify the OTP first
+      await api.post('/homeopathy/bookings/verify-otp', { bookingId, otp: otpInput });
+      // Step 2: then start the consultation
       const res = await api.put(`/homeopathy/bookings/${bookingId}/status`, { action: 'start' });
       if (res.data?.success) {
         setOtpInput('');

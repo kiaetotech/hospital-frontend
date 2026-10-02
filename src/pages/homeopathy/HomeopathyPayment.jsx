@@ -142,7 +142,7 @@ const HomeopathyPayment = () => {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={() => navigate('/homeopathy/my-bookings')}
+              onClick={() => navigate('/my-bookings')}
               className="flex-1 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
             >
               My Bookings

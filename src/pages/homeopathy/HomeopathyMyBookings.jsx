@@ -13,7 +13,7 @@ const HomeopathyMyBookings = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login?redirect=/homeopathy/my-bookings');
+      navigate('/login?redirect=/my-bookings');
       return;
     }
     fetchBookings();
