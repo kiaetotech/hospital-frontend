@@ -682,25 +682,27 @@ const DoctorDashboard = () => {
                               {['10:00 AM','11:00 AM','12:00 PM','01:00 PM','03:00 PM','04:00 PM','05:00 PM','06:00 PM','07:00 PM'].map(t => (
                                 <option key={t} value={t}>{t}</option>
                               ))}
-                            </select>
-                            <input
-                              type="number"
-                              value={slot.maxBookings || 1}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value) || 1;
-                                setAvailability(prev =>
-                                  prev.map(a => {
-                                    if (a.day !== day) return a;
-                                    const slots = [...a.slots];
-                                    slots[slotIndex] = { ...slots[slotIndex], maxBookings: val };
-                                    return { ...a, slots };
-                                  })
-                                );
-                              }}
-                              min="1"
-                              max="20"
-                              className="p-2 border rounded w-20 text-sm"
-                            />
+                            <label className="flex items-center gap-1 text-xs text-gray-600">
+  				Max patients:
+ 				 <input
+   				 type="number"
+   				 value={slot.maxBookings || 1}
+   				 onChange={(e) => {
+     				 const val = parseInt(e.target.value) || 1;
+      				setAvailability(prev =>
+      				  prev.map(a => {
+         			 if (a.day !== day) return a;
+          			const slots = [...a.slots];
+          			slots[slotIndex] = { ...slots[slotIndex], maxBookings: val };
+         			 return { ...a, slots };
+       				 })
+     				 );
+    				}}
+   				 min="1"
+   				 max="20"
+   				 className="p-1 border rounded w-16 text-sm"
+  				/>
+ 				</label>
                             <button
                               onClick={() => {
                                 setAvailability(prev =>
