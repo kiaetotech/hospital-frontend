@@ -174,9 +174,15 @@ const BookHomeopathyConsult = () => {
       });
   }, [doctor, couponApplied, doctorId]);
 
-  const handleApplyCoupon = async () => {
+    const handleApplyCoupon = async () => {
     setCouponError('');
     setCouponApplied(null);
+
+    const consultationFee = doctor?.consultationFee || 0;
+    if (!consultationFee) {
+      setCouponError('Doctor consultation fee missing');
+      return;
+    }
 
     if (!couponCode.trim()) {
       setCouponError('Please enter a coupon code');
