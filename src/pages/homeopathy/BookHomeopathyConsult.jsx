@@ -183,17 +183,52 @@ const BookHomeopathyConsult = () => {
       return;
     }
 
-    // Validate by attempting a preview with the code — actual validation happens on create
-    try {
-      // Create preview with discount — backend will validate during create anyway
-      // Here we just show the code will be applied
-      setCouponApplied({
-        code: couponCode.trim().toUpperCase(),
-        discountAmount: 0 // Will be resolved by server during create
+        try {
+      const token = localStorage.getItem('token');
+      const code = couponCode.trim().toUpperCase();
+
+      // 1. Validate + compute the discount on the server
+      const validateRes = await api.post('/discounts/validate', {
+        code,
+        bookingType: 'homeopathy_consult',
+        amount: consultationFee
       });
-      setCouponError('Code will be validated when you proceed');
+
+      if (!validateRes.data?.success) {
+        setCouponApplied(null);
+        setCouponError(validateRes.data?.message || 'Invalid coupon code');
+        return;
+      }
+
+      const discountAmount = validateRes.data.discountAmount || 0;
+      setCouponApplied({ code, discountAmount });
+      setCouponError('');
+
+      // 2. Refresh the fee summary with the discount applied
+      const previewRes = await api.post('/homeopathy/bookings/pricing-preview', {
+        bookingType: 'homeopathy_consult',
+        amount: consultationFee,
+        discountAmount,
+        providerId: doctor?._id || null,
+        providerModel: 'HomeopathyDoctor',
+        city: doctor?.address?.city || null,
+        state: doctor?.address?.state || null
+      });
+
+      if (previewRes.data?.success) {
+        const p = previewRes.data.data;
+        setFees({
+          consultationFee: p.baseAmount || consultationFee,
+          platformFee: p.platformFee || 0,
+          discountAmount: p.discountAmount || discountAmount,
+          discountedFee: p.discountedFee || (consultationFee - discountAmount),
+          gst: p.gstAmount || 0,
+          total: p.total || 0
+        });
+      }
     } catch (err) {
-      setCouponError('Unable to validate coupon');
+      setCouponApplied(null);
+      setCouponError(err.response?.data?.message || 'Unable to validate coupon');
     }
   };
 
@@ -760,7 +795,7 @@ const BookHomeopathyConsult = () => {
                   {couponError && <p className="text-yellow-600 text-sm mt-1">{couponError}</p>}
                   {couponApplied && (
                     <p className="text-green-600 text-sm mt-1">
-                      ✅ {couponApplied.code} — will be validated on payment
+                      ✅ {couponApplied.code} applied — Save ₹{couponApplied.discountAmount}
                     </p>
                   )}
                 </div>
