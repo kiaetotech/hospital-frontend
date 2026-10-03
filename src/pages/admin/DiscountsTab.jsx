@@ -114,13 +114,41 @@ const DiscountsTab = () => {
     }
   };
 
-  const ALL_AYURVEDA_TAGS = [
-    { id: 'ayurveda_consultation', label: '👨‍⚕️ Doctor Consultation' },
-    { id: 'ayurveda_wellness_program', label: '💪 Wellness Program (Doctor)' },
-    { id: 'ayurveda_panchakarma', label: '🧘 Panchakarma Package' },
-    { id: 'ayurveda_home_therapy', label: '🏠 Home Therapy' },
-    { id: 'ayurveda_all', label: '⭐ All Ayurveda Services' }
+    const ALL_TAGS = [
+    // ─── Homeopathy ───
+    { id: 'homeopathy_consultation', label: '🌿 Homeopathy Consultation', group: '🏥 Homeopathy' },
+    { id: 'homeopathy_medicine', label: '💊 Homeopathy Medicine', group: '🏥 Homeopathy' },
+    { id: 'naturopathy_center', label: '🧘 Naturopathy Center', group: '🏥 Homeopathy' },
+    { id: 'homeopathy_all', label: '⭐ All Homeopathy', group: '🏥 Homeopathy' },
+
+    // ─── Ayurveda ───
+    { id: 'ayurveda_consultation', label: '👨‍⚕️ Ayurveda Consultation', group: '🌿 Ayurveda' },
+    { id: 'ayurveda_wellness_program', label: '💪 Wellness Program', group: '🌿 Ayurveda' },
+    { id: 'ayurveda_panchakarma', label: '🧘 Panchakarma Package', group: '🌿 Ayurveda' },
+    { id: 'ayurveda_home_therapy', label: '🏠 Home Therapy', group: '🌿 Ayurveda' },
+    { id: 'ayurveda_wellness_center', label: '🏨 Wellness Center', group: '🌿 Ayurveda' },
+    { id: 'ayurveda_medicine', label: '💊 Ayurveda Medicine', group: '🌿 Ayurveda' },
+    { id: 'ayurveda_all', label: '⭐ All Ayurveda', group: '🌿 Ayurveda' },
+
+    // ─── Other Services ───
+    { id: 'online_consult', label: '🩺 Online Doctor', group: '🏥 Other Services' },
+    { id: 'mental_health', label: '🧠 Mental Health', group: '🏥 Other Services' },
+    { id: 'caregiver', label: '🏠 Caregiver', group: '🏥 Other Services' },
+    { id: 'ambulance', label: '🚑 Ambulance', group: '🏥 Other Services' },
+    { id: 'labtest', label: '🔬 Diagnostics / Lab', group: '🏥 Other Services' },
+    { id: 'opd', label: '🏥 Hospital OPD', group: '🏥 Other Services' },
+    { id: 'admission', label: '🛏️ Hospital Admission', group: '🏥 Other Services' },
+    { id: 'insurance', label: '🛡️ Insurance', group: '🏥 Other Services' },
+
+    // ─── Universal ───
+    { id: 'all', label: '🌐 All Services (Universal)', group: '🌐 Universal' }
   ];
+
+  // Group tags for display
+  const tagsByGroup = ALL_TAGS.reduce((acc, t) => {
+    (acc[t.group] = acc[t.group] || []).push(t);
+    return acc;
+  }, {});
 
   return (
     <div>
@@ -263,17 +291,28 @@ const DiscountsTab = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Applies To (select at least one) *</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {ALL_AYURVEDA_TAGS.map(opt => (
-                    <label key={opt.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-                      <input
-                        type="checkbox"
-                        name="applicableTags"
-                        value={opt.id}
-                        defaultChecked={editing ? (editing.applicableTags || []).includes(opt.id) : opt.id === 'ayurveda_consultation'}
-                      />
-                      {opt.label}
-                    </label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {Object.entries(tagsByGroup).map(([group, tags]) => (
+                    <div key={group}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {group}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingLeft: '0.5rem' }}>
+                        {tags.map(opt => (
+                          <label key={opt.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              name="applicableTags"
+                              value={opt.id}
+                              defaultChecked={editing
+                                ? (editing.applicableTags || []).includes(opt.id)
+                                : opt.id === 'homeopathy_consultation'}
+                            />
+                            {opt.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
