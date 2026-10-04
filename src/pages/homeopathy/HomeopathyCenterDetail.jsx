@@ -757,17 +757,45 @@ const HomeopathyCenterDetail = () => {
               <h3 className="font-semibold text-gray-800 mb-4">Quick Booking</h3>
               {packages.length > 0 ? (
                 <>
-                  <select
-                    value={selectedPackage?._id || ''}
-                    onChange={e => setSelectedPackage(packages.find(p => p._id === e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg mb-3 focus:ring-2 focus:ring-green-500"
-                  >
-                    {packages.map(p => (
-                      <option key={p._id} value={p._id}>
-                        {p.name} · {p.duration}d · ₹{(p.discountPrice || p.price).toLocaleString()}
-                      </option>
-                    ))}
-                  </select>
+                                    <div className="space-y-2 mb-3">
+                    {packages.map(p => {
+                      const isSelected = selectedPackage?._id === p._id;
+                      return (
+                        <button
+                          key={p._id}
+                          type="button"
+                          onClick={() => setSelectedPackage(p)}
+                          className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                            isSelected
+                              ? 'border-green-600 bg-green-50'
+                              : 'border-gray-200 hover:border-green-300 bg-white'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-800 text-sm">{p.name}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {p.duration} days · Max {p.maxCapacity || 10}
+                              </p>
+                            </div>
+                            <div className="text-right ml-2">
+                              <p className="font-bold text-green-600">
+                                ₹{(p.discountPrice || p.price).toLocaleString()}
+                              </p>
+                              {p.discountPrice && (
+                                <p className="text-xs text-gray-400 line-through">
+                                  ₹{p.price.toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <p className="text-xs text-green-600 font-semibold mt-2">✓ Selected</p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
 
                   {selectedPackage && (
                     <>
