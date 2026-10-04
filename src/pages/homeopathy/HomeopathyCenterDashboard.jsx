@@ -45,6 +45,7 @@ const HomeopathyCenterDashboard = () => {
   const [respondingTo, setRespondingTo] = useState(null);
   const [responseText, setResponseText] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const [otpInput, setOtpInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [saving, setSaving] = useState(false);
@@ -537,8 +538,29 @@ const HomeopathyCenterDashboard = () => {
         showToast(`Booking ${action}ed`);
         fetchDashboardData();
       }
-    } catch (err) {
+        } catch (err) {
       showToast(err.response?.data?.message || 'Failed to update', 'error');
+    }
+  };
+
+  // ============================================
+  // START WITH OTP (patient OTP verification)
+  // ============================================
+  const handleStartWithOtp = async (bookingId) => {
+    if (!otpInput || otpInput.length !== 4) {
+      showToast('Please enter the 4-digit OTP from patient', 'error');
+      return;
+    }
+    try {
+      await api.post('/homeopathy/bookings/verify-otp', { bookingId, otp: otpInput });
+      const res = await api.put(`/homeopathy/bookings/${bookingId}/status`, { action: 'start' });
+      if (res.data.success) {
+        setOtpInput('');
+        showToast('Consultation started');
+        fetchDashboardData();
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Invalid OTP', 'error');
     }
   };
 
@@ -825,7 +847,20 @@ const HomeopathyCenterDashboard = () => {
                       )}
                       {booking.status === 'confirmed' && (
                         <>
-                          <button onClick={() => handleStatusUpdate(booking.bookingId, 'start')} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Start</button>
+                          <input
+  				type="text"
+  				placeholder="OTP"
+  				maxLength={4}
+  				value={otpInput}
+  				onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+  				className="px-3 py-1.5 border rounded-lg text-sm w-24"
+				/>
+				<button
+ 				onClick={() => handleStartWithOtp(booking.bookingId)}
+  				className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
+				>
+  				Verify OTP & Start
+				</button>
                           <button onClick={() => handleStatusUpdate(booking.bookingId, 'no_show')} className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm">No-show</button>
                         </>
                       )}
