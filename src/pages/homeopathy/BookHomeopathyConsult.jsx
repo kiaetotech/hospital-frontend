@@ -646,11 +646,12 @@ const BookHomeopathyConsult = () => {
                   <div>
                     <label className="block text-sm font-medium mb-1">Gender</label>
                     <select
-                      value={formData.patientGender}
-                      onChange={(e) => setFormData({ ...formData, patientGender: e.target.value })}
-                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    >
-                      <option value="">Select</option>
+  			value={formData.patientGender}
+  			onChange={(e) => setFormData({ ...formData, patientGender: e.target.value })}
+  			className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500"
+  			required
+			>
+  			<option value="">Select</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
                       <option value="other">Other</option>
