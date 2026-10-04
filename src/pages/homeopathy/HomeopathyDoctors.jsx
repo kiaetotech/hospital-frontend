@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 
 const HomeopathyDoctors = () => {
-  const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({ city: '', specialization: '', minRating: '', maxFee: '', mode: 'all', sortBy: 'rating' });
+    const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [filters, setFilters] = useState({
+    city: searchParams.get('city') || '',
+    specialization: searchParams.get('specialization') || '',
+    minRating: searchParams.get('minRating') || '',
+    maxFee: searchParams.get('maxFee') || '',
+    mode: searchParams.get('mode') || 'all',
+    sortBy: 'rating'
+  });
   const [doctors, setDoctors] = useState([]);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const cities = ['Mumbai','Delhi','Bangalore','Hyderabad','Chennai','Kolkata','Pune','Ahmedabad','Jaipur','Lucknow','Kochi','Chandigarh','Indore','Bhopal','Nagpur','Surat','Patna','Guwahati','Dehradun','Goa','Rishikesh','Haridwar','Varanasi','Mysore','Coimbatore','Trivandrum'];
-  const specializations = ['Classical Homeopathy','Clinical Homeopathy','Naturopathy','Yoga & Naturopathy','Diet Therapy','Acupuncture','Biochemic Medicine','Bach Flower Therapy'];
+    // Derived from real doctors in the API — no hardcoded lists
+  const cities = [...new Set(doctors.map(d => (d.address?.city || d.city || '').trim()).filter(Boolean))].sort();
+  const specializations = [...new Set(doctors.map(d => d.specialization).filter(Boolean))].sort();
 
   useEffect(() => { fetchDoctors(); }, []);
 
