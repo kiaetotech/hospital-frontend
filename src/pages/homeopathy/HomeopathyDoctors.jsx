@@ -22,19 +22,23 @@ const HomeopathyDoctors = () => {
     // Derived from real doctors in the API — no hardcoded lists
   const cities = [...new Set(doctors.map(d => (d.address?.city || d.city || '').trim()).filter(Boolean))].sort();
   // Standard homeopathy specializations — static taxonomy (market standard)
-  const specializations = [
+    const specializations = [
     'Classical Homeopathy',
     'Clinical Homeopathy',
     'Pediatric Homeopathy',
-    'Women\'s Homeopathy',
+    "Women's Homeopathy",
     'Homeopathy for Skin',
     'Homeopathy for Hair',
     'Constitutional Homeopathy',
     'Acute Homeopathy',
     'Homeopathy for Allergies',
     'Homeopathy for Digestion',
+    'Homeopathy for Respiratory',
+    'Homeopathy for Joint & Arthritis',
     'Naturopathy',
     'Yoga & Naturopathy',
+    'Diet Therapy',
+    'Acupuncture',
   ];
 
   useEffect(() => { fetchDoctors(); }, []);
