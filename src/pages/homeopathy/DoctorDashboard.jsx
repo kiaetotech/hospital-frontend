@@ -266,9 +266,13 @@ const DoctorDashboard = () => {
     const pendingBookings = bookings.filter(b =>
       b.status === 'pending' && b.paymentStatus === 'paid'
     );
-    const paidBookings = bookings.filter(b => b.paymentStatus === 'paid');
-    const totalPaidAmount = paidBookings.reduce((sum, b) => sum + (b.finalAmount || 0), 0);
-    const pendingPayoutAmount = paidBookings
+        // Only count bookings where the doctor actually earned — exclude cancelled/refunded
+    const earnedBookings = bookings.filter(b =>
+      b.paymentStatus === 'paid' &&
+      ['completed', 'in_progress', 'no_show', 'confirmed'].includes(b.status)
+    );
+    const totalPaidAmount = earnedBookings.reduce((sum, b) => sum + (b.providerEarning || 0), 0);
+    const pendingPayoutAmount = earnedBookings
       .filter(b => b.commissionPayoutStatus === 'pending')
       .reduce((sum, b) => sum + (b.providerEarning || 0), 0);
 
