@@ -643,10 +643,10 @@ const HomeopathyCenterDashboard = () => {
       {/* STATS */}
       <div className="max-w-7xl mx-auto px-4 -mt-4">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
-                    {[
-            { label: 'Today', value: stats.todayCount, icon: FaCalendarAlt, color: 'bg-blue-500', tab: 'bookings' },
-            { label: 'Active', value: stats.activeCount, icon: FaClock, color: 'bg-yellow-500', tab: 'bookings' },
-            { label: 'Completed', value: stats.completedCount, icon: FaCheckCircle, color: 'bg-green-500', tab: 'bookings' },
+           {[
+            { label: 'Today', value: stats.todayCount, icon: FaCalendarAlt, color: 'bg-blue-500', tab: 'bookings', filter: 'all' },
+            { label: 'Active', value: stats.activeCount, icon: FaClock, color: 'bg-yellow-500', tab: 'bookings', filter: 'confirmed' },
+            { label: 'Completed', value: stats.completedCount, icon: FaCheckCircle, color: 'bg-green-500', tab: 'bookings', filter: 'completed' },
             { label: 'Packages', value: stats.packageCount, icon: FaBox, color: 'bg-purple-500', tab: 'packages' },
             { label: 'Rooms', value: stats.roomCount, icon: FaBed, color: 'bg-pink-500', tab: 'rooms' },
             { label: 'Complaints', value: complaints.length, icon: FaExclamationTriangle, color: 'bg-red-500', tab: 'complaints' },
@@ -656,7 +656,10 @@ const HomeopathyCenterDashboard = () => {
           ].map((stat, i) => (
             <button
               key={i}
-              onClick={() => setActiveTab(stat.tab)}
+              onClick={() => {
+                if (stat.filter) setFilter(stat.filter);
+                setActiveTab(stat.tab);
+              }}
               className="bg-white rounded-xl shadow-md p-4 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center text-white mb-2`}>
