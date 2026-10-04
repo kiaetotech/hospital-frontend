@@ -50,7 +50,13 @@ const HomeopathyDoctors = () => {
   useEffect(() => {
     let result = [...doctors];
     if (searchTerm) { const t = searchTerm.toLowerCase(); result = result.filter(d => (d.name||'').toLowerCase().includes(t) || (d.specialization||'').toLowerCase().includes(t) || (d.city||'').toLowerCase().includes(t)); }
-    if (filters.city) result = result.filter(d => (d.city||d.address?.city) === filters.city);
+    if (filters.city) {
+  const cityLower = filters.city.trim().toLowerCase();
+  result = result.filter(d => {
+    const docCity = (d.city || d.address?.city || '').trim().toLowerCase();
+    return docCity === cityLower;
+  });
+}
     if (filters.specialization) result = result.filter(d => d.specialization === filters.specialization);
     if (filters.minRating) result = result.filter(d => (d.rating||0) >= parseFloat(filters.minRating));
     if (filters.maxFee) result = result.filter(d => (d.fee||d.consultationFee||0) <= parseInt(filters.maxFee));
