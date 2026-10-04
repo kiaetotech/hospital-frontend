@@ -89,46 +89,26 @@ const HomeopathyHub = () => {
     { icon: <FaShieldAlt size={20} />, value: 'Verified', label: 'BHMS/MD', color: '#f59e0b' },
   ];
 
-    const userCity = (() => {
+      const userCity = (() => {
     try {
       const u = JSON.parse(localStorage.getItem('user') || '{}');
       return (u.patientAddress?.city || u.city || '').trim().toLowerCase();
     } catch { return ''; }
   })();
-  const userState = (() => {
-    try {
-      const u = JSON.parse(localStorage.getItem('user') || '{}');
-      return (u.patientAddress?.state || u.state || '').trim().toLowerCase();
-    } catch { return ''; }
-  })();
 
-  const prioritizeByLocation = (list) => {
-    if (!userCity && !userState) return list;
-    return [...list].sort((a, b) => {
-      const aCity = (a.address?.city || a.city || '').trim().toLowerCase();
-      const bCity = (b.address?.city || b.city || '').trim().toLowerCase();
-      const aState = (a.address?.state || a.state || '').trim().toLowerCase();
-      const bState = (b.address?.state || b.state || '').trim().toLowerCase();
+  const doctorsInCity = userCity
+    ? doctors.filter(d => (d.address?.city || d.city || '').trim().toLowerCase() === userCity)
+    : [];
+  const centersInCity = userCity
+    ? centers.filter(c => (c.address?.city || c.city || '').trim().toLowerCase() === userCity)
+    : [];
 
-      const score = (city, state) => {
-        if (userCity && city === userCity) return 0;
-        if (userState && state === userState) return 1;
-        return 2;
-      };
-
-      return score(aCity, aState) - score(bCity, bState);
-    });
-  };
-
-  const doctorsSorted = prioritizeByLocation(doctors);
-  const centersSorted = prioritizeByLocation(centers);
-
-  const doctorsSameCity = userCity
-    ? doctorsSorted.filter(d => (d.address?.city || d.city || '').trim().toLowerCase() === userCity).length
-    : 0;
-  const doctorsSubLabel = userCity && doctorsSameCity > 0
-    ? `${doctorsSameCity} doctor${doctorsSameCity > 1 ? 's' : ''} in your city • all verified BHMS/MD`
-    : 'Verified BHMS/MD practitioners';
+  const doctorsSubLabel = userCity
+    ? `${doctorsInCity.length} doctor${doctorsInCity.length !== 1 ? 's' : ''} in ${userCity.charAt(0).toUpperCase() + userCity.slice(1)}`
+    : 'Set your city to see nearby doctors';
+  const centersSubLabel = userCity
+    ? `${centersInCity.length} center${centersInCity.length !== 1 ? 's' : ''} in ${userCity.charAt(0).toUpperCase() + userCity.slice(1)}`
+    : 'Set your city to see nearby centers';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -273,9 +253,19 @@ const HomeopathyHub = () => {
                 <div key={i} style={{ background: 'white', borderRadius: '12px', padding: '16px', height: '140px', border: '1px solid #f1f5f9', opacity: 0.5 }} />
               ))}
             </div>
+                    ) : doctorsInCity.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 20px', background: 'white', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 12px' }}>
+                {userCity ? `No homeopaths in ${userCity.charAt(0).toUpperCase() + userCity.slice(1)} yet.` : 'Set your city to see homeopaths near you.'}
+              </p>
+              <button onClick={() => navigate('/homeopathy/doctors')}
+                style={{ padding: '10px 20px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                Browse all homeopaths →
+              </button>
+            </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
-              {doctorsSorted.map((doc, i) => (
+              {doctorsInCity.map((doc, i) => (
                 <motion.div key={doc._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                   onClick={() => navigate(`/homeopathy/doctor/${doc._id}`)}
                   style={{ background: 'white', borderRadius: '12px', padding: '16px', border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -328,7 +318,7 @@ const HomeopathyHub = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Naturopathy Centers</h2>
-              <p style={{ color: '#64748b', fontSize: '13px', margin: '2px 0 0' }}>Drugless natural healing programs{userCity && centers.length > 0 ? ' • nearest first' : ''}</p>
+               <p style={{ color: '#64748b', fontSize: '13px', margin: '2px 0 0' }}>{centersSubLabel}</p>>
             </div>
             <button onClick={() => navigate('/homeopathy/centers')}
               style={{ background: 'none', border: 'none', color: '#059669', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -340,6 +330,16 @@ const HomeopathyHub = () => {
               {[1, 2].map(i => (
                 <div key={i} style={{ background: 'white', borderRadius: '12px', padding: '16px', height: '120px', border: '1px solid #f1f5f9', opacity: 0.5 }} />
               ))}
+            </div>
+                    ) : centersInCity.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 20px', background: 'white', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 12px' }}>
+                {userCity ? `No naturopathy centers in ${userCity.charAt(0).toUpperCase() + userCity.slice(1)} yet.` : 'Set your city to see centers near you.'}
+              </p>
+              <button onClick={() => navigate('/homeopathy/centers')}
+                style={{ padding: '10px 20px', background: '#059669', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                Browse all centers →
+              </button>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
