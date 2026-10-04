@@ -373,18 +373,11 @@ const DoctorDashboard = () => {
   >
     <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center text-white mb-2`}>
       <stat.icon />
-    </div>
-    <p className="text-sm text-gray-500">{stat.label}</p>
-    <p className="text-xl font-bold">{stat.value}</p>
-  </button>
-))}
-              <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center text-white mb-2`}>
-                <stat.icon />
-              </div>
-              <p className="text-sm text-gray-500">{stat.label}</p>
-              <p className="text-xl font-bold">{stat.value}</p>
-            </button>
-          ))}
+    	</div>
+    	<p className="text-sm text-gray-500">{stat.label}</p>
+    	<p className="text-xl font-bold">{stat.value}</p>
+  	</button>
+	))}
         </div>
       </div>
 
