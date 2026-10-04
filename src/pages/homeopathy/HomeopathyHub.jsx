@@ -58,7 +58,8 @@ const HomeopathyHub = () => {
     { icon: '🏥', title: 'Naturopathy Centers', desc: 'Drugless natural healing', route: '/homeopathy/centers', color: '#059669', bg: '#ecfdf5' },
     { icon: '💊', title: 'Pharmacy', desc: 'Order remedies online', route: '/homeopathy/pharmacy', color: '#dc2626', bg: '#fef2f2' },
     { icon: '🤖', title: 'AI Remedy Matcher', desc: 'Smart remedy suggestion', route: '/homeopathy/remedy-matcher', color: '#f97316', bg: '#fff7ed', badge: 'AI' },
-    
+    ];
+
   const conditions = [
     { name: 'Acne & Pimples', slug: 'acne' },
     { name: 'Hair Fall', slug: 'hair-fall' },
