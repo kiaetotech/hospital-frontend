@@ -24,6 +24,12 @@ const TABS = [
 
 const HomeopathyCenterDashboard = () => {
   const navigate = useNavigate();
+  const centerIdFromStorage = (() => {
+    try {
+      const c = JSON.parse(localStorage.getItem('center') || '{}');
+      return c._id || c.id || '';
+    } catch { return ''; }
+  })();
   const [center, setCenter] = useState(null);
   const [fullCenter, setFullCenter] = useState(null);
   const [checklist, setChecklist] = useState(null);
@@ -113,7 +119,7 @@ const HomeopathyCenterDashboard = () => {
     try {
       const [meRes, bookingsRes, earningsRes, settlementsRes, packagesRes, roomsRes] = await Promise.allSettled([
         api.get('/homeopathy/center/me'),
-        api.get(`/homeopathy/bookings/center/${center?.id}`),
+        api.get(`/homeopathy/bookings/center/${centerIdFromStorage}`),
         api.get('/homeopathy/center/earnings'),
         api.get('/homeopathy/center/settlements'),
         api.get('/homeopathy/center/packages'),
