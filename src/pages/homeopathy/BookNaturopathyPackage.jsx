@@ -23,7 +23,10 @@ const BookNaturopathyPackage = () => {
     admissionDate: '', symptoms: '', medicalHistory: '', allergies: ''
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [discountCode, setDiscountCode] = useState('');
+    const [discountCode, setDiscountCode] = useState('');
+  const [couponApplied, setCouponApplied] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
   const [pricing, setPricing] = useState(null);
   const [pricingLoading, setPricingLoading] = useState(false);
 
@@ -87,7 +90,59 @@ const BookNaturopathyPackage = () => {
       .then(res => { if (res.data?.success) setPricing(res.data.data); })
       .catch(err => console.error('Pricing preview error:', err))
       .finally(() => setPricingLoading(false));
-  }, [pkg, center, centerId]);
+    }, [pkg, center, centerId]);
+
+  const handleApplyCoupon = async () => {
+    setCouponError('');
+    setCouponApplied(null);
+
+    if (!discountCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+    if (!pkg) return;
+
+    const amount = pkg.discountPrice || pkg.price;
+    setCouponLoading(true);
+
+    try {
+      // 1. Validate + compute discount
+      const validateRes = await api.post('/discounts/validate', {
+        code: discountCode.trim().toUpperCase(),
+        bookingType: 'naturopathy_center',
+        amount
+      });
+
+      if (!validateRes.data?.success) {
+        setCouponError(validateRes.data?.message || 'Invalid coupon code');
+        return;
+      }
+
+      const discountAmount = validateRes.data.discountAmount || 0;
+      setCouponApplied({ code: discountCode.trim().toUpperCase(), discountAmount });
+      setCouponError('');
+
+      // 2. Refresh pricing with discount applied
+      const previewRes = await api.post('/homeopathy/bookings/pricing-preview', {
+        bookingType: 'naturopathy_center',
+        amount,
+        discountAmount,
+        providerId: centerId,
+        providerModel: 'NaturopathyCenter',
+        city: center?.address?.city,
+        state: center?.address?.state
+      });
+
+      if (previewRes.data?.success) {
+        setPricing(previewRes.data.data);
+      }
+    } catch (err) {
+      setCouponApplied(null);
+      setCouponError(err.response?.data?.message || 'Unable to validate coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,7 +167,7 @@ const BookNaturopathyPackage = () => {
         patientEmail: form.email,
         patientAge: form.age,
         patientGender: form.gender,
-        discountCode: discountCode || undefined
+        discountCode: couponApplied?.code || undefined
       });
 
       if (res.data?.success) {
@@ -242,11 +297,29 @@ const BookNaturopathyPackage = () => {
               </div>
 
               <div className="border-t pt-4">
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Coupon Code (optional)</label>
-                <input value={discountCode} onChange={e => setDiscountCode(e.target.value.toUpperCase())}
-                  placeholder="Enter code"
-                  className="w-full p-2.5 border rounded-lg text-sm" />
-                <p className="text-xs text-gray-500 mt-1">Validated on payment</p>
+                               <label className="block text-xs font-semibold text-gray-600 mb-1">Coupon Code (optional)</label>
+                <div className="flex gap-2">
+                  <input
+                    value={discountCode}
+                    onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setCouponError(''); }}
+                    placeholder="Enter code"
+                    className="flex-1 p-2.5 border rounded-lg text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !discountCode.trim()}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold disabled:bg-gray-300"
+                  >
+                    {couponLoading ? '...' : 'Apply'}
+                  </button>
+                </div>
+                {couponError && <p className="text-xs text-red-600 mt-1">{couponError}</p>}
+                {couponApplied && (
+                  <p className="text-xs text-green-600 mt-1 font-semibold">
+                    ✅ {couponApplied.code} applied — Save ₹{couponApplied.discountAmount}
+                  </p>
+                )}
               </div>
 
               <div className="border-t pt-4">
