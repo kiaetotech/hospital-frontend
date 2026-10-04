@@ -32,6 +32,10 @@ const getTokenForCurrentContext = () => {
   if (path.startsWith('/homeopathy/pharmacy/dashboard')) {
     return localStorage.getItem('pharmacyToken');
   }
+    // Patient-facing booking URLs — use patient token, not center token
+  if (path.match(/^\/homeopathy\/center\/[^/]+\/book\//)) {
+    return localStorage.getItem('token');
+  }
   if (path.startsWith('/homeopathy/center/')) {
     return localStorage.getItem('homeopathyCenterToken');
   }
