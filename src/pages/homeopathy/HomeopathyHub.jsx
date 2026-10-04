@@ -58,9 +58,7 @@ const HomeopathyHub = () => {
     { icon: '🏥', title: 'Naturopathy Centers', desc: 'Drugless natural healing', route: '/homeopathy/centers', color: '#059669', bg: '#ecfdf5' },
     { icon: '💊', title: 'Pharmacy', desc: 'Order remedies online', route: '/homeopathy/pharmacy', color: '#dc2626', bg: '#fef2f2' },
     { icon: '🤖', title: 'AI Remedy Matcher', desc: 'Smart remedy suggestion', route: '/homeopathy/remedy-matcher', color: '#f97316', bg: '#fff7ed', badge: 'AI' },
-    { icon: '📋', title: 'My Bookings', desc: 'Track appointments & OTP', route: '/my-bookings', color: '#0891b2', bg: '#ecfeff' },
-  ];
-
+    
   const conditions = [
     { name: 'Acne & Pimples', slug: 'acne' },
     { name: 'Hair Fall', slug: 'hair-fall' },
@@ -89,6 +87,47 @@ const HomeopathyHub = () => {
     { icon: <FaVideo size={20} />, value: '24/7', label: 'Online', color: '#2563eb' },
     { icon: <FaShieldAlt size={20} />, value: 'Verified', label: 'BHMS/MD', color: '#f59e0b' },
   ];
+
+    const userCity = (() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return (u.patientAddress?.city || u.city || '').trim().toLowerCase();
+    } catch { return ''; }
+  })();
+  const userState = (() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return (u.patientAddress?.state || u.state || '').trim().toLowerCase();
+    } catch { return ''; }
+  })();
+
+  const prioritizeByLocation = (list) => {
+    if (!userCity && !userState) return list;
+    return [...list].sort((a, b) => {
+      const aCity = (a.address?.city || a.city || '').trim().toLowerCase();
+      const bCity = (b.address?.city || b.city || '').trim().toLowerCase();
+      const aState = (a.address?.state || a.state || '').trim().toLowerCase();
+      const bState = (b.address?.state || b.state || '').trim().toLowerCase();
+
+      const score = (city, state) => {
+        if (userCity && city === userCity) return 0;
+        if (userState && state === userState) return 1;
+        return 2;
+      };
+
+      return score(aCity, aState) - score(bCity, bState);
+    });
+  };
+
+  const doctorsSorted = prioritizeByLocation(doctors);
+  const centersSorted = prioritizeByLocation(centers);
+
+  const doctorsSameCity = userCity
+    ? doctorsSorted.filter(d => (d.address?.city || d.city || '').trim().toLowerCase() === userCity).length
+    : 0;
+  const doctorsSubLabel = userCity && doctorsSameCity > 0
+    ? `${doctorsSameCity} doctor${doctorsSameCity > 1 ? 's' : ''} in your city • all verified BHMS/MD`
+    : 'Verified BHMS/MD practitioners';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -220,7 +259,7 @@ const HomeopathyHub = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Our Homeopaths</h2>
-              <p style={{ color: '#64748b', fontSize: '13px', margin: '2px 0 0' }}>Verified BHMS/MD practitioners</p>
+              <p style={{ color: '#64748b', fontSize: '13px', margin: '2px 0 0' }}>{doctorsSubLabel}</p>
             </div>
             <button onClick={() => navigate('/homeopathy/doctors')}
               style={{ background: 'none', border: 'none', color: '#7c3aed', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -235,7 +274,7 @@ const HomeopathyHub = () => {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
-              {doctors.map((doc, i) => (
+              {doctorsSorted.map((doc, i) => (
                 <motion.div key={doc._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                   onClick={() => navigate(`/homeopathy/doctor/${doc._id}`)}
                   style={{ background: 'white', borderRadius: '12px', padding: '16px', border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -288,7 +327,7 @@ const HomeopathyHub = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Naturopathy Centers</h2>
-              <p style={{ color: '#64748b', fontSize: '13px', margin: '2px 0 0' }}>Drugless natural healing programs</p>
+              <p style={{ color: '#64748b', fontSize: '13px', margin: '2px 0 0' }}>Drugless natural healing programs{userCity && centers.length > 0 ? ' • nearest first' : ''}</p>
             </div>
             <button onClick={() => navigate('/homeopathy/centers')}
               style={{ background: 'none', border: 'none', color: '#059669', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -303,7 +342,7 @@ const HomeopathyHub = () => {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-              {centers.map((center, i) => (
+              {centersSorted.map((center, i) => (
                 <motion.div key={center._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                   onClick={() => navigate(`/homeopathy/center/${center._id}`)}
                   style={{ background: 'white', borderRadius: '12px', padding: '16px', border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s' }}
