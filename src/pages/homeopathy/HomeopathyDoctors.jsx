@@ -21,7 +21,21 @@ const HomeopathyDoctors = () => {
 
     // Derived from real doctors in the API — no hardcoded lists
   const cities = [...new Set(doctors.map(d => (d.address?.city || d.city || '').trim()).filter(Boolean))].sort();
-  const specializations = [...new Set(doctors.map(d => d.specialization).filter(Boolean))].sort();
+  // Standard homeopathy specializations — static taxonomy (market standard)
+  const specializations = [
+    'Classical Homeopathy',
+    'Clinical Homeopathy',
+    'Pediatric Homeopathy',
+    'Women\'s Homeopathy',
+    'Homeopathy for Skin',
+    'Homeopathy for Hair',
+    'Constitutional Homeopathy',
+    'Acute Homeopathy',
+    'Homeopathy for Allergies',
+    'Homeopathy for Digestion',
+    'Naturopathy',
+    'Yoga & Naturopathy',
+  ];
 
   useEffect(() => { fetchDoctors(); }, []);
 
@@ -87,8 +101,8 @@ const HomeopathyDoctors = () => {
         <input placeholder="🔍 Search doctor, city, specialization..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}
           style={{ width:'100%',padding:'10px 14px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'14px',marginBottom:'10px',outline:'none' }} />
         <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))',gap:'8px',alignItems:'end' }}>
-          <select value={filters.city} onChange={e=>setFilters({...filters,city:e.target.value})} style={s}><option value="">📍 All Cities</option>{cities.map(c=><option key={c}>{c}</option>)}</select>
-          <select value={filters.specialization} onChange={e=>setFilters({...filters,specialization:e.target.value})} style={s}><option value="">🏥 All Specializations</option>{specializations.map(sp=><option key={sp}>{sp}</option>)}</select>
+          <select value={filters.city} onChange={e=>setFilters({...filters,city:e.target.value})} style={s}><option value="">📍 All Cities</option>{cities.map(c=><option key={c} value={c}>{c}</option>)}</select>
+          <select value={filters.specialization} onChange={e=>setFilters({...filters,specialization:e.target.value})} style={s}><option value="">🥽 All Specializations</option>{specializations.map(sp=><option key={sp} value={sp}>{sp}</option>)}</select>
           <select value={filters.minRating} onChange={e=>setFilters({...filters,minRating:e.target.value})} style={s}><option value="">⭐ Any Rating</option><option value="4.5">4.5+</option><option value="4.0">4.0+</option></select>
           <select value={filters.maxFee} onChange={e=>setFilters({...filters,maxFee:e.target.value})} style={s}><option value="">💰 Any Fee</option><option value="300">Up to ₹300</option><option value="500">Up to ₹500</option><option value="700">Up to ₹700</option></select>
           <select value={filters.mode} onChange={e=>setFilters({...filters,mode:e.target.value})} style={s}><option value="all">📞 All Modes</option><option value="online">💻 Online</option><option value="clinic">🏥 Clinic</option></select>
