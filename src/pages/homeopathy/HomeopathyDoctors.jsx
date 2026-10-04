@@ -63,7 +63,14 @@ const HomeopathyDoctors = () => {
 
   useEffect(() => {
     let result = [...doctors];
-    if (searchTerm) { const t = searchTerm.toLowerCase(); result = result.filter(d => (d.name||'').toLowerCase().includes(t) || (d.specialization||'').toLowerCase().includes(t) || (d.city||'').toLowerCase().includes(t)); }
+        if (searchTerm) {
+      const t = searchTerm.trim().toLowerCase();
+      result = result.filter(d =>
+        (d.name || '').toLowerCase().includes(t) ||
+        (d.specialization || '').toLowerCase().includes(t) ||
+        (d.address?.city || d.city || '').toLowerCase().includes(t)
+      );
+    }
     if (filters.city) {
   const cityLower = filters.city.trim().toLowerCase();
   result = result.filter(d => {
