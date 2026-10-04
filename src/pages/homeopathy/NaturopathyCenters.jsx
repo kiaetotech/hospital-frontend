@@ -94,15 +94,22 @@ const NaturopathyCenters = () => {
                         ))}
                       </div>
                     )}
-                    {(center.packages||center.plans) && (
-                      <div style={{ display:'flex',gap:'8px',flexWrap:'wrap' }}>
-                        {(center.packages||center.plans).slice(0,2).map((pkg,j)=>(
-                          <div key={j} style={{ background:'#f8fafc',borderRadius:'8px',padding:'6px 10px',fontSize:'11px' }}>
+                                        {(center.packages||center.plans) && (center.packages||center.plans).length > 0 && (
+                      <div style={{ display:'flex',flexDirection:'column',gap:'6px',marginTop:'6px' }}>
+                        {(center.packages||center.plans).slice(0, 3).map((pkg,j)=>(
+                          <div key={j} style={{ background:'#f8fafc',borderRadius:'8px',padding:'6px 10px',fontSize:'11px',display:'flex',justifyContent:'space-between',alignItems:'center' }}>
                             <span style={{ fontWeight:'600',color:'#1e293b' }}>{pkg.name}</span>
-                            <span style={{ color:'#64748b',marginLeft:'6px' }}>📅 {pkg.duration||pkg.days}d</span>
-                            <span style={{ color:'#059669',fontWeight:'700',marginLeft:'6px' }}>₹{(pkg.price||0).toLocaleString()}</span>
+                            <span style={{ display:'flex',gap:'8px' }}>
+                              <span style={{ color:'#64748b' }}>📅 {pkg.duration||pkg.days}d</span>
+                              <span style={{ color:'#059669',fontWeight:'700' }}>₹{(pkg.discountPrice || pkg.price||0).toLocaleString()}</span>
+                            </span>
                           </div>
                         ))}
+                        {(center.packages||center.plans).length > 3 && (
+                          <p style={{ fontSize:'10px',color:'#7c3aed',fontWeight:600,margin:'2px 0 0' }}>
+                            +{(center.packages||center.plans).length - 3} more package{(center.packages||center.plans).length - 3 > 1 ? 's' : ''}
+                          </p>
+                        )}
                       </div>
                     )}
                     <button onClick={(e)=>{e.stopPropagation();navigate(`/homeopathy/center/${center._id}`,{state:{center}});}}
