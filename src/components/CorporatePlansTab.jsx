@@ -14,7 +14,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
   const [form, setForm] = useState({
     packageName: '', packageType: 'health_checkup', description: '',
     servicesIncluded: '', pricePerEmployee: '', discountedPricePerEmployee: '',
-    minEmployees: 10, validityDays: 365, availableCities: '', slaTerms: ''
+    minEmployees: '', validityDays: 365, availableCities: '', slaTerms: ''
   });
 
   const cfg = { headers: { Authorization: `Bearer ${token}` } };
@@ -60,12 +60,12 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
         availableCities: form.availableCities.split(',').map(s => s.trim()).filter(Boolean),
         pricePerEmployee: Number(form.pricePerEmployee),
         discountedPricePerEmployee: form.discountedPricePerEmployee ? Number(form.discountedPricePerEmployee) : undefined,
-        minEmployees: Number(form.minEmployees), validityDays: Number(form.validityDays)
+        minEmployees: form.minEmployees ? Number(form.minEmployees) : undefined, validityDays: Number(form.validityDays)
       };
       await axios.post(`${API_BASE}/api/${apiPath}/corporate/packages`, body, cfg);
       setMessage('✅ Package created');
       setShowForm(false);
-      setForm({ packageName:'', packageType:'health_checkup', description:'', servicesIncluded:'', pricePerEmployee:'', discountedPricePerEmployee:'', minEmployees:10, validityDays:365, availableCities:'', slaTerms:'' });
+            setForm({ packageName:'', packageType:'health_checkup', description:'', servicesIncluded:'', pricePerEmployee:'', discountedPricePerEmployee:'', minEmployees:'', validityDays:365, availableCities:'', slaTerms:'' });
       loadData();
     } catch (e) { setMessage('❌ ' + (e.response?.data?.message || 'Failed')); }
   };
@@ -141,7 +141,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
                     <div><label style={lbl}>Type</label><select value={form.packageType} onChange={e => setForm({...form, packageType: e.target.value})} style={S.input}><option value="health_checkup">Health Checkup</option><option value="opd_subscription">OPD Subscription</option><option value="teleconsult_package">Teleconsult</option><option value="wellness_program">Wellness Program</option><option value="diagnostic_package">Diagnostic</option><option value="custom">Custom</option></select></div>
                     <div><label style={lbl}>Price/Employee (₹) *</label><input type="number" value={form.pricePerEmployee} onChange={e => setForm({...form, pricePerEmployee: e.target.value})} style={S.input} /></div>
                     <div><label style={lbl}>Discounted Price (₹)</label><input type="number" value={form.discountedPricePerEmployee} onChange={e => setForm({...form, discountedPricePerEmployee: e.target.value})} style={S.input} /></div>
-                    <div><label style={lbl}>Min Employees</label><input type="number" value={form.minEmployees} onChange={e => setForm({...form, minEmployees: e.target.value})} style={S.input} /></div>
+                    <div><label style={lbl}>Min Employees (optional)</label><input type="number" min="1" placeholder="e.g. 5" value={form.minEmployees} onChange={e => setForm({...form, minEmployees: e.target.value})} style={S.input} /></div>
                     <div><label style={lbl}>Validity (Days)</label><input type="number" value={form.validityDays} onChange={e => setForm({...form, validityDays: e.target.value})} style={S.input} /></div>
                     <div><label style={lbl}>Cities (comma separated)</label><input value={form.availableCities} onChange={e => setForm({...form, availableCities: e.target.value})} style={S.input} placeholder="Mumbai, Delhi, Bangalore" /></div>
                     <div><label style={lbl}>Services Included (comma separated)</label><input value={form.servicesIncluded} onChange={e => setForm({...form, servicesIncluded: e.target.value})} style={S.input} placeholder="CBC, Lipid Profile, Doctor Consult" /></div>
