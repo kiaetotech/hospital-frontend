@@ -72,6 +72,8 @@ const HomeopathyAdminPanel = () => {
   const [pendingCentersList, setPendingCentersList] = useState([]);
   const [pendingPharmacies, setPendingPharmacies] = useState([]);
   const [pendingPackages, setPendingPackages] = useState([]);
+  const [corporatePackages, setCorporatePackages] = useState([]);
+  const [corporateLoading, setCorporateLoading] = useState(false);
 
   // Commission rules (mirror Ayurveda structure)
   const [commissionRules, setCommissionRules] = useState([]);

@@ -162,6 +162,21 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
                         <h4 style={{ fontWeight: 700 }}>{pkg.packageName || pkg.name}</h4>
                         <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 4 }}>{pkg.description}</div>
                         <div style={{ marginTop: 8, display: 'flex', gap: 16, fontSize: '0.85rem' }}>
+                        {pkg.approvalStatus && (
+                          <div style={{ marginTop: 6 }}>
+                            <span style={{
+                              padding: '3px 10px',
+                              borderRadius: 12,
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              background: pkg.approvalStatus === 'approved' ? '#dcfce7' : pkg.approvalStatus === 'rejected' ? '#fee2e2' : '#fef3c7',
+                              color: pkg.approvalStatus === 'approved' ? '#166534' : pkg.approvalStatus === 'rejected' ? '#dc2626' : '#92400e'
+                            }}>
+                              {pkg.approvalStatus === 'approved' ? '✅ Live' : pkg.approvalStatus === 'rejected' ? '❌ Rejected' : '⏳ Pending Approval'}
+                              {pkg.rejectionReason && pkg.approvalStatus === 'rejected' && ` — ${pkg.rejectionReason}`}
+                            </span>
+                          </div>
+                        )}
                           <span><strong>{fmt(pkg.pricePerEmployee)}</strong>/employee</span>
                           {pkg.discountedPricePerEmployee && <span style={{ color: '#059669' }}>Discounted: {fmt(pkg.discountedPricePerEmployee)}</span>}
                           <span>Min: {pkg.minEmployees} emp</span>
