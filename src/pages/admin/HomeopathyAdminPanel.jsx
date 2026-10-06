@@ -15,6 +15,7 @@ import {
 
 const API_BASE = 'https://hospital-backend-production-e2cf.up.railway.app';
 const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
+const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
 
 const HomeopathyAdminPanel = () => {
   const navigate = useNavigate();
@@ -109,7 +110,6 @@ const HomeopathyAdminPanel = () => {
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
 
         const [
         doctorsRes, centersRes, pharmaciesRes,
