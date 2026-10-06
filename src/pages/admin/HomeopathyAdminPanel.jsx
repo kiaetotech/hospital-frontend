@@ -544,6 +544,36 @@ const HomeopathyAdminPanel = () => {
     }
   };
 
+     const suspendCenter = async (id) => {
+    const reason = window.prompt('Reason for suspending this center?') || '';
+    if (!reason || reason.trim().length < 3) {
+      alert('A reason (at least 3 characters) is required.');
+      return;
+    }
+    try {
+      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/center/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      addNotification('Center suspended', 'success');
+      fetchAllData();
+    } catch (e) {
+      addNotification('Suspend failed: ' + (e.response?.data?.message || e.message), 'error');
+    }
+  };
+
+  const suspendPharmacy = async (id) => {
+    const reason = window.prompt('Reason for suspending this pharmacy?') || '';
+    if (!reason || reason.trim().length < 3) {
+      alert('A reason (at least 3 characters) is required.');
+      return;
+    }
+    try {
+      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/pharmacy/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      addNotification('Pharmacy suspended', 'success');
+      fetchAllData();
+    } catch (e) {
+      addNotification('Suspend failed: ' + (e.response?.data?.message || e.message), 'error');
+    }
+  };	
+
   // ============================================
   // BOOKING ADMIN ACTIONS
   // ============================================
@@ -1293,7 +1323,10 @@ const HomeopathyAdminPanel = () => {
                           <button onClick={() => verifyCenter(c._id, 'rejected')} style={actionBtn('#ef4444')}><FaTimes /></button>
                         </>
                       )}
-                    </td>
+                         {c.verificationStatus === 'approved' && (
+                        <button onClick={() => suspendCenter(c._id)} style={actionBtn('#f59e0b')} title="Suspend"><FaBan /></button>
+                      )}
+		    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1336,6 +1369,9 @@ const HomeopathyAdminPanel = () => {
                           <button onClick={() => verifyPharmacy(p._id, 'approved')} style={actionBtn('#10b981')}><FaCheck /></button>
                           <button onClick={() => verifyPharmacy(p._id, 'rejected')} style={actionBtn('#ef4444')}><FaTimes /></button>
                         </>
+                      )}
+                      {p.verificationStatus === 'approved' && (
+                        <button onClick={() => suspendPharmacy(p._id)} style={actionBtn('#f59e0b')} title="Suspend"><FaBan /></button>
                       )}
                     </td>
                   </tr>
