@@ -74,6 +74,7 @@ const HomeopathyAdminPanel = () => {
   const [pendingPharmacies, setPendingPharmacies] = useState([]);
   const [pendingPackages, setPendingPackages] = useState([]);
   const [corporatePackages, setCorporatePackages] = useState([]);
+  const [suspendedItems, setSuspendedItems] = useState([]);
   const [corporateLoading, setCorporateLoading] = useState(false);
 
   // Commission rules (mirror Ayurveda structure)
@@ -116,7 +117,7 @@ const HomeopathyAdminPanel = () => {
         pendingDocRes, pendingCenterRes, pendingPharmRes,
         bookingsRes, discountsRes, settlementsRes,
         reviewsRes, complaintsRes, commissionRulesRes,
-        allCentersRes, allPharmaciesRes, pendingPackagesRes, corporatePackagesRes
+        allCentersRes, allPharmaciesRes, pendingPackagesRes, corporatePackagesRes, suspendedRes
       ] = await Promise.all([
         api.get('/homeopathy/doctors'),
         api.get('/homeopathy/centers').catch(() => ({ data: { data: [] } })),
@@ -133,7 +134,8 @@ const HomeopathyAdminPanel = () => {
         axios.get(`${API_BASE}/api/homeopathy/admin/all-centers`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${API_BASE}/api/homeopathy/admin/corporate-packages/all?status=all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+        axios.get(`${API_BASE}/api/homeopathy/admin/corporate-packages/all?status=all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/suspended`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
       ]);
       
       const doctors = doctorsRes.data?.data || [];
@@ -161,6 +163,7 @@ const HomeopathyAdminPanel = () => {
       setCommissionRules(commissionRulesRes.data?.data || []);
       setPendingPackages(pendingPackagesRes.data?.data || []);
       setCorporatePackages(corporatePackagesRes?.data?.data || []);
+      setSuspendedItems(suspendedRes?.data?.data || []);
       
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
@@ -1038,6 +1041,7 @@ const HomeopathyAdminPanel = () => {
           { id: 'fee-config', label: '💵 Fee Config', icon: FaRupeeSign },
           { id: 'settlements', label: `💰 Settlements (${stats.pendingPayouts})`, icon: FaRupeeSign },
           { id: 'corporate-packages', label: `🏢 Corporate (${corporatePackages.length})`, icon: FaBuilding },
+          { id: 'suspended', label: `🚫 Suspended (${suspendedItems.length})`, icon: FaBan },
           { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters + stats.pendingPharmacies + pendingPackages.length})`, icon: FaExclamationTriangle },
           { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
           { id: 'complaints', label: '🚨 Complaints', icon: FaExclamationTriangle }
@@ -2105,6 +2109,61 @@ const HomeopathyAdminPanel = () => {
             )}
           </div>
         )}
+
+	                {tab === 'suspended' && (
+                  <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+                    <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>🚫 Suspended Providers ({suspendedItems.length})</h2>
+                    {suspendedItems.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                        <p style={{ fontSize: '3rem', margin: 0 }}>✅</p>
+                        <p style={{ marginTop: '0.5rem' }}>No suspended providers. All good!</p>
+                      </div>
+                    ) : (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                            <th style={th}>Type</th>
+                            <th style={th}>Name</th>
+                            <th style={th}>City</th>
+                            <th style={th}>Phone</th>
+                            <th style={th}>Suspended On</th>
+                            <th style={th}>Reason</th>
+                            <th style={th}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {suspendedItems.map(item => (
+                            <tr key={`${item.type}_${item._id}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={td}><span style={{ padding: '3px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700, background: '#fef3c7', color: '#92400e' }}>{item.type}</span></td>
+                              <td style={td}><strong>{item.name}</strong></td>
+                              <td style={td}>{item.city || '—'}</td>
+                              <td style={td}>{item.phone || '—'}</td>
+                              <td style={td}>{item.suspendedAt ? new Date(item.suspendedAt).toLocaleDateString('en-IN') : '—'}</td>
+                              <td style={td}>{item.suspendedReason || '—'}</td>
+                              <td style={td}>
+                                <button
+                                  onClick={async () => {
+                                    if (!window.confirm(`Unsuspend ${item.type} "${item.name}"?`)) return;
+                                    try {
+                                      await axios.put(`${API_BASE}/api/homeopathy/admin/unsuspend/${item.type}/${item._id}`, {}, { headers: { 'x-admin-key': ADMIN_KEY } });
+                                      addNotification(`Unsuspended: ${item.name}`, 'success');
+                                      fetchAllData();
+                                    } catch (e) {
+                                      addNotification('Unsuspend failed: ' + (e.response?.data?.message || e.message), 'error');
+                                    }
+                                  }}
+                                  style={{ padding: '0.4rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+                                >
+                                  ✅ Unsuspend
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                )}
 
 	        {/* CORPORATE PACKAGES TAB */}
                 {tab === 'corporate-packages' && (
