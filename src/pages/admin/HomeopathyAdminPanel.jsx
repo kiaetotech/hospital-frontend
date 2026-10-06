@@ -116,7 +116,7 @@ const HomeopathyAdminPanel = () => {
         pendingDocRes, pendingCenterRes, pendingPharmRes,
         bookingsRes, discountsRes, settlementsRes,
         reviewsRes, complaintsRes, commissionRulesRes,
-        allCentersRes, allPharmaciesRes, pendingPackagesRes
+        allCentersRes, allPharmaciesRes, pendingPackagesRes, corporatePackagesRes
       ] = await Promise.all([
         api.get('/homeopathy/doctors'),
         api.get('/homeopathy/centers').catch(() => ({ data: { data: [] } })),
@@ -132,7 +132,8 @@ const HomeopathyAdminPanel = () => {
         axios.get(`${API_BASE}/api/homeopathy/admin/commission-rules`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/all-centers`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${API_BASE}/api/homeopathy/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+        axios.get(`${API_BASE}/api/homeopathy/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/corporate-packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
       ]);
       
       const doctors = doctorsRes.data?.data || [];
@@ -159,7 +160,8 @@ const HomeopathyAdminPanel = () => {
       setComplaints(comps);
       setCommissionRules(commissionRulesRes.data?.data || []);
       setPendingPackages(pendingPackagesRes.data?.data || []);
-
+      setCorporatePackages(corporatePackagesRes?.data?.data || []);
+      
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
       const totalCommission = bookings.filter(b => b.paymentStatus === 'paid')
@@ -1035,6 +1037,7 @@ const HomeopathyAdminPanel = () => {
           { id: 'commission', label: `💰 Commission Rules (${commissionRules.length})`, icon: FaRupeeSign },
           { id: 'fee-config', label: '💵 Fee Config', icon: FaRupeeSign },
           { id: 'settlements', label: `💰 Settlements (${stats.pendingPayouts})`, icon: FaRupeeSign },
+          { id: 'corporate-packages', label: `🏢 Corporate (${corporatePackages.length})`, icon: FaBuilding },
           { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters + stats.pendingPharmacies + pendingPackages.length})`, icon: FaExclamationTriangle },
           { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
           { id: 'complaints', label: '🚨 Complaints', icon: FaExclamationTriangle }
@@ -2099,6 +2102,67 @@ const HomeopathyAdminPanel = () => {
                   })}
                 </tbody>
               </table>
+            )}
+          </div>
+        )}
+
+	        {/* CORPORATE PACKAGES TAB */}
+        {tab === 'corporate-packages' && (
+          <div>
+            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>🏢 Pending Corporate Packages</h2>
+
+            {corporatePackages.length === 0 ? (
+              <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                <p style={{ fontSize: '3rem', margin: 0 }}>✅</p>
+                <p style={{ marginTop: '0.5rem' }}>No pending corporate packages. All caught up!</p>
+              </div>
+            ) : (
+              corporatePackages.map(pkg => (
+                <div key={`${pkg.doctorId}_${pkg.packageId}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #7c3aed' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div style={{ flex: 1, minWidth: 250 }}>
+                      <strong style={{ fontSize: '1rem' }}>📦 {pkg.packageName}</strong>
+                      <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                        By <strong>{pkg.doctorName}</strong>{pkg.doctorCity && ` · ${pkg.doctorCity}`}{pkg.doctorPhone && ` · ${pkg.doctorPhone}`}
+                      </p>
+                      {pkg.description && <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>{pkg.description}</p>}
+                      <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                        <span><strong>₹{pkg.pricePerEmployee?.toLocaleString('en-IN')}</strong>/employee</span>
+                        <span>Min: {pkg.minEmployees} emp</span>
+                        {pkg.includes?.length > 0 && <span>Services: {pkg.includes.length}</span>}
+                      </div>
+                      <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#94a3b8' }}>
+                        Submitted: {new Date(pkg.createdAt).toLocaleDateString('en-IN')}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.put(`${API_BASE}/api/homeopathy/admin/corporate-packages/${pkg.doctorId}/${pkg.packageId}/approve`, {}, { headers: ADMIN_KEY_HEADER });
+                            setCorporatePackages(prev => prev.filter(p => String(p.packageId) !== String(pkg.packageId)));
+                          } catch (e) { alert('Approve failed: ' + (e.response?.data?.message || e.message)); }
+                        }}
+                        style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}
+                      >
+                        ✅ Approve
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const reason = prompt('Rejection reason (optional):') || '';
+                          try {
+                            await axios.put(`${API_BASE}/api/homeopathy/admin/corporate-packages/${pkg.doctorId}/${pkg.packageId}/reject`, { reason }, { headers: ADMIN_KEY_HEADER });
+                            setCorporatePackages(prev => prev.filter(p => String(p.packageId) !== String(pkg.packageId)));
+                          } catch (e) { alert('Reject failed: ' + (e.response?.data?.message || e.message)); }
+                        }}
+                        style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}
+                      >
+                        ❌ Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         )}
