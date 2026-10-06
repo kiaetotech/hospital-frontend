@@ -529,8 +529,19 @@ const HomeopathyAdminPanel = () => {
     }
   };
 
-  const suspendDoctor = async (id) => {
-    if (window.confirm('Suspend this doctor?')) verifyDoctor(id, 'suspended');
+    const suspendDoctor = async (id) => {
+    const reason = window.prompt('Reason for suspending this doctor?') || '';
+    if (!reason || reason.trim().length < 3) {
+      alert('A reason (at least 3 characters) is required.');
+      return;
+    }
+    try {
+      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/doctor/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      addNotification('Doctor suspended', 'success');
+      fetchAllData();
+    } catch (e) {
+      addNotification('Suspend failed: ' + (e.response?.data?.message || e.message), 'error');
+    }
   };
 
   // ============================================
