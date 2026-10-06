@@ -133,7 +133,7 @@ const HomeopathyAdminPanel = () => {
         axios.get(`${API_BASE}/api/homeopathy/admin/all-centers`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${API_BASE}/api/homeopathy/admin/corporate-packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+        axios.get(`${API_BASE}/api/homeopathy/admin/corporate-packages/all?status=all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
       ]);
       
       const doctors = doctorsRes.data?.data || [];
@@ -2107,62 +2107,95 @@ const HomeopathyAdminPanel = () => {
         )}
 
 	        {/* CORPORATE PACKAGES TAB */}
-        {tab === 'corporate-packages' && (
-          <div>
-            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>🏢 Pending Corporate Packages</h2>
+                {tab === 'corporate-packages' && (
+          <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>🏢 Corporate Packages ({corporatePackages.length})</h2>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                  style={{ padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }}>
+                  <option value="all">All Status</option>
+                  <option value="pending">⏳ Pending</option>
+                  <option value="approved">✅ Approved</option>
+                  <option value="rejected">❌ Rejected</option>
+                </select>
+              </div>
+            </div>
 
             {corporatePackages.length === 0 ? (
-              <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '3rem', textAlign: 'center', color: '#64748b' }}>
-                <p style={{ fontSize: '3rem', margin: 0 }}>✅</p>
-                <p style={{ marginTop: '0.5rem' }}>No pending corporate packages. All caught up!</p>
-              </div>
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No corporate packages yet.</p>
             ) : (
-              corporatePackages.map(pkg => (
-                <div key={`${pkg.doctorId}_${pkg.packageId}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #7c3aed' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <div style={{ flex: 1, minWidth: 250 }}>
-                      <strong style={{ fontSize: '1rem' }}>📦 {pkg.packageName}</strong>
-                      <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
-                        By <strong>{pkg.doctorName}</strong>{pkg.doctorCity && ` · ${pkg.doctorCity}`}{pkg.doctorPhone && ` · ${pkg.doctorPhone}`}
-                      </p>
-                      {pkg.description && <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>{pkg.description}</p>}
-                      <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                        <span><strong>₹{pkg.pricePerEmployee?.toLocaleString('en-IN')}</strong>/employee</span>
-                        <span>Min: {pkg.minEmployees} emp</span>
-                        {pkg.includes?.length > 0 && <span>Services: {pkg.includes.length}</span>}
-                      </div>
-                      <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#94a3b8' }}>
-                        Submitted: {new Date(pkg.createdAt).toLocaleDateString('en-IN')}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                      <button
-                        onClick={async () => {
-                          try {
-                            await axios.put(`${API_BASE}/api/homeopathy/admin/corporate-packages/${pkg.doctorId}/${pkg.packageId}/approve`, {}, { headers: ADMIN_KEY_HEADER });
-                            setCorporatePackages(prev => prev.filter(p => String(p.packageId) !== String(pkg.packageId)));
-                          } catch (e) { alert('Approve failed: ' + (e.response?.data?.message || e.message)); }
-                        }}
-                        style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}
-                      >
-                        ✅ Approve
-                      </button>
-                      <button
-                        onClick={async () => {
-                          const reason = prompt('Rejection reason (optional):') || '';
-                          try {
-                            await axios.put(`${API_BASE}/api/homeopathy/admin/corporate-packages/${pkg.doctorId}/${pkg.packageId}/reject`, { reason }, { headers: ADMIN_KEY_HEADER });
-                            setCorporatePackages(prev => prev.filter(p => String(p.packageId) !== String(pkg.packageId)));
-                          } catch (e) { alert('Reject failed: ' + (e.response?.data?.message || e.message)); }
-                        }}
-                        style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}
-                      >
-                        ❌ Reject
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={th}>Doctor</th>
+                    <th style={th}>City</th>
+                    <th style={th}>Package</th>
+                    <th style={th}>Price/Employee</th>
+                    <th style={th}>Min Emp</th>
+                    <th style={th}>Created</th>
+                    <th style={th}>Status</th>
+                    <th style={th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {corporatePackages
+                    .filter(p => statusFilter === 'all' || (p.approvalStatus || 'pending') === statusFilter)
+                    .map(pkg => {
+                      const st = pkg.approvalStatus || 'pending';
+                      const stColor = st === 'approved' ? { bg: '#e8f5e9', fg: '#2E7D32' }
+                                    : st === 'rejected' ? { bg: '#fee2e2', fg: '#dc2626' }
+                                    : { bg: '#fff3e0', fg: '#e65100' };
+                      return (
+                        <tr key={`${pkg.doctorId}_${pkg.packageId}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={td}><strong>{pkg.doctorName}</strong></td>
+                          <td style={td}>{pkg.doctorCity || '—'}</td>
+                          <td style={td}>{pkg.packageName}</td>
+                          <td style={td}>₹{pkg.pricePerEmployee?.toLocaleString('en-IN')}</td>
+                          <td style={td}>{pkg.minEmployees}</td>
+                          <td style={td}>{new Date(pkg.createdAt).toLocaleDateString('en-IN')}</td>
+                          <td style={td}>
+                            <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, background: stColor.bg, color: stColor.fg }}>
+                              {st}
+                            </span>
+                          </td>
+                          <td style={td}>
+                            {st === 'pending' && (
+                              <>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await axios.put(`${API_BASE}/api/homeopathy/admin/corporate-packages/${pkg.doctorId}/${pkg.packageId}/approve`, {}, { headers: ADMIN_KEY_HEADER });
+                                      addNotification(`Approved: ${pkg.packageName}`, 'success');
+                                      fetchAllData();
+                                    } catch (e) { addNotification('Approve failed: ' + (e.response?.data?.message || e.message), 'error'); }
+                                  }}
+                                  style={{ padding: '0.3rem 0.7rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, marginRight: 4 }}
+                                >
+                                  ✅ Approve
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    const reason = prompt('Rejection reason (optional):') || '';
+                                    try {
+                                      await axios.put(`${API_BASE}/api/homeopathy/admin/corporate-packages/${pkg.doctorId}/${pkg.packageId}/reject`, { reason }, { headers: ADMIN_KEY_HEADER });
+                                      addNotification(`Rejected: ${pkg.packageName}`, 'success');
+                                      fetchAllData();
+                                    } catch (e) { addNotification('Reject failed: ' + (e.response?.data?.message || e.message), 'error'); }
+                                  }}
+                                  style={{ padding: '0.3rem 0.7rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+                                >
+                                  ❌ Reject
+                                </button>
+                              </>
+                            )}
+                            {st !== 'pending' && <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
             )}
           </div>
         )}
