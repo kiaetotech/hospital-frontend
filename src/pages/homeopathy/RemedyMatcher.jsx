@@ -52,8 +52,18 @@ const RemedyMatcher = () => {
           </button>
         </div>
 
-        {result && (
+          {result && (
           <>
+            {result.warning && (
+              <div style={{ background:'#fef2f2',border:'2px solid #dc2626',borderRadius:'14px',padding:'16px',marginBottom:'16px' }}>
+                <p style={{ color:'#dc2626',fontWeight:'700',fontSize:'14px',margin:'0 0 6px',display:'flex',alignItems:'center',gap:'6px' }}>
+                  ⚠️ Important — Please Read
+                </p>
+                <p style={{ color:'#7f1d1d',fontSize:'13px',margin:0,lineHeight:'1.5' }}>
+                  {result.warning}
+                </p>
+              </div>
+            )}
             <div style={{ background:'white',borderRadius:'14px',padding:'20px',boxShadow:'0 1px 6px rgba(0,0,0,0.04)',marginBottom:'16px' }}>
               <h3 style={{ fontWeight:'700',fontSize:'15px',color:'#1e293b',marginBottom:'12px' }}>💊 Suggested Remedies</h3>
               <div style={{ display:'grid',gap:'10px' }}>
