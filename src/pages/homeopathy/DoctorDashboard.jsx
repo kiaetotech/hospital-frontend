@@ -30,7 +30,7 @@ const DoctorDashboard = () => {
   const [responseText, setResponseText] = useState('');
  
   useEffect(() => {
-    const token = localStorage.getItem('doctorToken');
+    const token = localStorage.getItem('homeopathyDoctorToken') || localStorage.getItem('doctorToken') || localStorage.getItem('providerToken');
     const doctorData = JSON.parse(localStorage.getItem('doctor') || '{}');
     const doctorId = doctorData.id || doctorData._id;
 
@@ -247,7 +247,10 @@ const DoctorDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('doctor');
+    localStorage.removeItem('homeopathyDoctorToken');
     localStorage.removeItem('doctorToken');
+    localStorage.removeItem('providerToken');
+    localStorage.removeItem('doctor');
     localStorage.removeItem('providerType');
     navigate('/homeopathy/doctor/login', { replace: true });
   };
@@ -376,12 +379,12 @@ const DoctorDashboard = () => {
     	</div>
     	<p className="text-sm text-gray-500">{stat.label}</p>
     	<p className="text-xl font-bold">{stat.value}</p>
-  	</button>
-	))}
+  	 </button>
+        ))}
         </div>
       </div>
 
-      {/* Main Content */}
+           {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
@@ -889,7 +892,7 @@ const DoctorDashboard = () => {
             <CorporatePlansTab
               providerType="homeopathy"
               providerId={doctor.id}
-              token={localStorage.getItem('doctorToken')}
+              token={localStorage.getItem('homeopathyDoctorToken') || localStorage.getItem('doctorToken') || localStorage.getItem('providerToken')}
             />
           </div>
         )}
