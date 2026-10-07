@@ -91,7 +91,6 @@ const KycUploadForm = ({ providerType, providerId, token, tokenKey }) => {
       }
     };
     if (providerId) load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [providerId]);
 
   const handleFileUpload = async (fieldKey, file) => {
