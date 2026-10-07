@@ -1208,23 +1208,27 @@ const HomeopathyAdminPanel = () => {
           <option value="cancelled">Cancelled</option>
           <option value="paid">Paid</option>
         </select>
-        <select value={cityFilter} onChange={e => { setCityFilter(e.target.value); setPage(1); }}
-          style={{ padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }}>
-          {availableCities.map(city => (
-            <option key={city} value={city}>{city === 'all' ? 'All Cities' : city}</option>
-          ))}
-        </select>
-        <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }}
-          title="From date"
-          style={{ padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }} />
-        <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }}
-          title="To date"
-          style={{ padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }} />
-        {(cityFilter !== 'all' || dateFrom || dateTo) && (
-          <button onClick={() => { setCityFilter('all'); setDateFrom(''); setDateTo(''); }}
-            style={{ padding: '0.5rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
-            Clear Filters
-          </button>
+                {['doctors', 'centers', 'pharmacies'].includes(tab) && (
+          <>
+            <select value={cityFilter} onChange={e => { setCityFilter(e.target.value); setPage(1); }}
+              style={{ padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }}>
+              {availableCities.map(city => (
+                <option key={city} value={city}>{city === 'all' ? 'All Cities' : city}</option>
+              ))}
+            </select>
+            <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+              title="From date"
+              style={{ padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }} />
+            <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }}
+              title="To date"
+              style={{ padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }} />
+            {(cityFilter !== 'all' || dateFrom || dateTo) && (
+              <button onClick={() => { setCityFilter('all'); setDateFrom(''); setDateTo(''); }}
+                style={{ padding: '0.5rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+                Clear Filters
+              </button>
+            )}
+          </>
         )}
         {bulkSelected.length > 0 && (
           <div style={{ position: 'sticky', top: 60, zIndex: 50, background: '#7c3aed', color: 'white', padding: '0.75rem 2rem', borderRadius: 8, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
