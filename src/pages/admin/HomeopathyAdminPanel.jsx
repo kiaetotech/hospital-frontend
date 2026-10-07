@@ -572,7 +572,36 @@ const HomeopathyAdminPanel = () => {
     } catch (e) {
       addNotification('Suspend failed: ' + (e.response?.data?.message || e.message), 'error');
     }
-  };	
+  };
+
+  const bulkAction = async (action, type = 'doctor') => {
+    if (!bulkSelected.length) {
+      alert('Select at least one item.');
+      return;
+    }
+    let reason = '';
+    if (action === 'suspend') {
+      reason = window.prompt('Reason for bulk suspend?') || '';
+      if (!reason || reason.trim().length < 3) {
+        alert('A reason (at least 3 characters) is required.');
+        return;
+      }
+    }
+    if (!window.confirm(`${action.toUpperCase()} ${bulkSelected.length} ${type}(s)?`)) return;
+    try {
+      const res = await axios.put(`${API_BASE}/api/homeopathy/admin/bulk-action`, {
+        type,
+        ids: bulkSelected,
+        action,
+        reason: reason || undefined
+      }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      addNotification(res.data.message || 'Bulk action complete', 'success');
+      setBulkSelected([]);
+      fetchAllData();
+    } catch (e) {
+      addNotification('Bulk failed: ' + (e.response?.data?.message || e.message), 'error');
+    }
+  };
 
   // ============================================
   // BOOKING ADMIN ACTIONS
@@ -1118,6 +1147,16 @@ const HomeopathyAdminPanel = () => {
           <option value="cancelled">Cancelled</option>
           <option value="paid">Paid</option>
         </select>
+        {bulkSelected.length > 0 && (
+          <div style={{ position: 'sticky', top: 60, zIndex: 50, background: '#7c3aed', color: 'white', padding: '0.75rem 2rem', borderRadius: 8, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <strong>{bulkSelected.length} selected</strong>
+            <button onClick={() => bulkAction('approve', tab === 'doctors' ? 'doctor' : tab === 'centers' ? 'center' : 'pharmacy')} style={{ padding: '0.4rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>✅ Approve All</button>
+            <button onClick={() => bulkAction('reject', tab === 'doctors' ? 'doctor' : tab === 'centers' ? 'center' : 'pharmacy')} style={{ padding: '0.4rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>❌ Reject All</button>
+            <button onClick={() => bulkAction('suspend', tab === 'doctors' ? 'doctor' : tab === 'centers' ? 'center' : 'pharmacy')} style={{ padding: '0.4rem 1rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>🚫 Suspend All</button>
+            <button onClick={() => setBulkSelected([])} style={{ padding: '0.4rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', marginLeft: 'auto' }}>Clear</button>
+          </div>
+        )}
+
         {tab === 'bookings' && (
           <>
             <input type="date" value={dateRange.from} onChange={e => setDateRange({...dateRange, from: e.target.value})}
@@ -1233,6 +1272,7 @@ const HomeopathyAdminPanel = () => {
                     if (e.target.checked) setBulkSelected(filteredDoctors.filter(d => d.verificationStatus === 'pending').map(d => d._id));
                     else setBulkSelected([]);
                   }} /></th>
+                  <th style={th}></th>
                   <th style={th}>Name</th>
                   <th style={th}>Specialty</th>
                   <th style={th}>Phone</th>
@@ -1297,6 +1337,7 @@ const HomeopathyAdminPanel = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}></th>
                   <th style={th}>Name</th>
                   <th style={th}>Type</th>
                   <th style={th}>City</th>
@@ -1309,6 +1350,12 @@ const HomeopathyAdminPanel = () => {
               <tbody>
                 {paginatedCenters.map(c => (
                   <tr key={c._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}>
+                      <input type="checkbox" checked={bulkSelected.includes(c._id)} onChange={e => {
+                        if (e.target.checked) setBulkSelected([...bulkSelected, c._id]);
+                        else setBulkSelected(bulkSelected.filter(x => x !== c._id));
+                      }} />
+                    </td>
                     <td style={td}><strong>{c.name}</strong></td>
                     <td style={td}>{c.type}</td>
                     <td style={td}>{c.address?.city}</td>
@@ -1344,6 +1391,7 @@ const HomeopathyAdminPanel = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={th}></th>
                   <th style={th}>Business Name</th>
                   <th style={th}>License</th>
                   <th style={th}>City</th>
@@ -1356,6 +1404,12 @@ const HomeopathyAdminPanel = () => {
               <tbody>
                 {paginatedPharmacies.map(p => (
                   <tr key={p._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={td}>
+                      <input type="checkbox" checked={bulkSelected.includes(p._id)} onChange={e => {
+                        if (e.target.checked) setBulkSelected([...bulkSelected, p._id]);
+                        else setBulkSelected(bulkSelected.filter(x => x !== p._id));
+                      }} />
+                    </td>
                     <td style={td}><strong>{p.businessName}</strong></td>
                     <td style={td}>{p.drugLicenseNumber}</td>
                     <td style={td}>{p.address?.city}</td>
