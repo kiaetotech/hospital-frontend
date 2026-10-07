@@ -6,7 +6,8 @@ import {
   FaSearch, FaFilter, FaDownload, FaSync, FaArrowLeft,
   FaUserMd, FaBuilding, FaCalendarAlt, FaTag, FaRupeeSign,
   FaEye, FaCheck, FaTimes, FaBan, FaChartBar, FaBell,
-  FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaStar
+  FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaStar,
+  FaIdCard
 } from 'react-icons/fa';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
