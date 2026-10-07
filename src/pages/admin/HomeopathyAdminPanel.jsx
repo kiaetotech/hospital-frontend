@@ -26,6 +26,9 @@ const HomeopathyAdminPanel = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [cityFilter, setCityFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [page, setPage] = useState(1);
   const [perPage] = useState(10);
@@ -922,6 +925,14 @@ const HomeopathyAdminPanel = () => {
   // ============================================
   // FILTERS
   // ============================================
+  const availableCities = useMemo(() => {
+    const set = new Set();
+    allDoctors.forEach(d => d.address?.city && set.add(d.address.city));
+    allCenters.forEach(c => c.address?.city && set.add(c.address.city));
+    allPharmacies.forEach(p => p.address?.city && set.add(p.address.city));
+    return ['all', ...Array.from(set).sort()];
+  }, [allDoctors, allCenters, allPharmacies]);
+
   const filteredDoctors = useMemo(() => {
     let result = allDoctors;
     if (searchQuery) {
@@ -935,26 +946,74 @@ const HomeopathyAdminPanel = () => {
     if (statusFilter !== 'all') {
       result = result.filter(d => d.verificationStatus === statusFilter);
     }
+    if (cityFilter !== 'all') {
+      result = result.filter(d => (d.address?.city || '').toLowerCase() === cityFilter.toLowerCase());
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      result = result.filter(d => new Date(d.createdAt) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      result = result.filter(d => new Date(d.createdAt) <= to);
+    }
     return result;
-  }, [allDoctors, searchQuery, statusFilter]);
+  }, [allDoctors, searchQuery, statusFilter, cityFilter, dateFrom, dateTo]);
 
-  const filteredCenters = useMemo(() => {
+    const filteredCenters = useMemo(() => {
     let result = allCenters;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(c => c.name?.toLowerCase().includes(q));
+      result = result.filter(c =>
+        c.name?.toLowerCase().includes(q) ||
+        c.phone?.includes(q)
+      );
+    }
+    if (statusFilter !== 'all') {
+      result = result.filter(c => c.verificationStatus === statusFilter);
+    }
+    if (cityFilter !== 'all') {
+      result = result.filter(c => (c.address?.city || '').toLowerCase() === cityFilter.toLowerCase());
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      result = result.filter(c => new Date(c.createdAt) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      result = result.filter(c => new Date(c.createdAt) <= to);
     }
     return result;
-  }, [allCenters, searchQuery]);
+  }, [allCenters, searchQuery, statusFilter, cityFilter, dateFrom, dateTo]);
 
-  const filteredPharmacies = useMemo(() => {
+    const filteredPharmacies = useMemo(() => {
     let result = allPharmacies;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(p => p.businessName?.toLowerCase().includes(q));
+      result = result.filter(p =>
+        p.businessName?.toLowerCase().includes(q) ||
+        p.phone?.includes(q)
+      );
+    }
+    if (statusFilter !== 'all') {
+      result = result.filter(p => p.verificationStatus === statusFilter);
+    }
+    if (cityFilter !== 'all') {
+      result = result.filter(p => (p.address?.city || '').toLowerCase() === cityFilter.toLowerCase());
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      result = result.filter(p => new Date(p.createdAt) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      result = result.filter(p => new Date(p.createdAt) <= to);
     }
     return result;
-  }, [allPharmacies, searchQuery]);
+  }, [allPharmacies, searchQuery, statusFilter, cityFilter, dateFrom, dateTo]);
 
   const filteredBookings = useMemo(() => {
     let result = allBookings;
@@ -1149,6 +1208,24 @@ const HomeopathyAdminPanel = () => {
           <option value="cancelled">Cancelled</option>
           <option value="paid">Paid</option>
         </select>
+        <select value={cityFilter} onChange={e => { setCityFilter(e.target.value); setPage(1); }}
+          style={{ padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }}>
+          {availableCities.map(city => (
+            <option key={city} value={city}>{city === 'all' ? 'All Cities' : city}</option>
+          ))}
+        </select>
+        <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+          title="From date"
+          style={{ padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }} />
+        <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }}
+          title="To date"
+          style={{ padding: '0.5rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }} />
+        {(cityFilter !== 'all' || dateFrom || dateTo) && (
+          <button onClick={() => { setCityFilter('all'); setDateFrom(''); setDateTo(''); }}
+            style={{ padding: '0.5rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+            Clear Filters
+          </button>
+        )}
         {bulkSelected.length > 0 && (
           <div style={{ position: 'sticky', top: 60, zIndex: 50, background: '#7c3aed', color: 'white', padding: '0.75rem 2rem', borderRadius: 8, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <strong>{bulkSelected.length} selected</strong>
