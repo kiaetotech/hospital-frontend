@@ -118,11 +118,16 @@ const KycUploadForm = ({ providerType, providerId, token, tokenKey }) => {
     }
   };
 
-  const handleSubmit = async () => {
+    const handleSubmit = async () => {
     setSubmitting(true);
     setMessage('');
     try {
-      const body = { [config.idField]: providerId, ...formData };
+      // Start with existing values, then override with changed fields
+      const mergedData = {};
+      config.fields.forEach(f => {
+        mergedData[f.key] = formData[f.key] ?? kyc?.[f.key] ?? '';
+      });
+      const body = { [config.idField]: providerId, ...mergedData };
       const res = await axios.post(`${API_BASE}${config.endpoint}`, body, {
         headers: authHeader()
       });
