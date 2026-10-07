@@ -2,6 +2,8 @@ import DoctorAvailabilityEditor from '../../components/DoctorAvailabilityEditor'
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import KycUploadForm from '../../components/KycUploadForm';
+import { FaIdCard } from 'react-icons/fa';
 import CorporatePlansTab from '../../components/CorporatePlansTab';
 import {
   FaCalendarAlt, FaStar, FaRupeeSign, FaUsers,
@@ -402,7 +404,8 @@ const DoctorDashboard = () => {
             { id: 'reviews', label: 'Reviews', icon: FaStar },
             { id: 'earnings', label: 'Earnings', icon: FaWallet },
             { id: 'settlements', label: 'Settlements', icon: FaHistory },
-            { id: 'corporate', label: 'Corporate Plans', icon: FaUsers }
+            { id: 'corporate', label: 'Corporate Plans', icon: FaUsers },
+            { id: 'kyc', label: 'KYC', icon: FaIdCard }
           ].map(tab => (
             <button
               key={tab.id}
@@ -880,6 +883,14 @@ const DoctorDashboard = () => {
               </div>
             )}
           </div>
+        )}
+ 
+	{activeTab === 'kyc' && (
+          <KycUploadForm
+            providerType="doctor"
+            providerId={doctor.id}
+            token={localStorage.getItem('homeopathyDoctorToken') || localStorage.getItem('doctorToken') || localStorage.getItem('providerToken')}
+          />
         )}
 
         {/* Corporate Plans */}
