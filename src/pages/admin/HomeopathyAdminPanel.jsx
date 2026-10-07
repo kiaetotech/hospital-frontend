@@ -119,7 +119,7 @@ const HomeopathyAdminPanel = () => {
         reviewsRes, complaintsRes, commissionRulesRes,
         allCentersRes, allPharmaciesRes, pendingPackagesRes, corporatePackagesRes, suspendedRes
       ] = await Promise.all([
-        api.get('/homeopathy/doctors'),
+        api.get('/homeopathy/doctors?status=all&admin=true'),
         api.get('/homeopathy/centers').catch(() => ({ data: { data: [] } })),
         api.get('/homeopathy/pharmacies').catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-doctors`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
@@ -1143,6 +1143,8 @@ const HomeopathyAdminPanel = () => {
           <option value="approved">Approved</option>
           <option value="pending">Pending</option>
           <option value="suspended">Suspended</option>
+          <option value="rejected">Rejected</option>
+          <option value="inactive">Inactive</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
           <option value="paid">Paid</option>
