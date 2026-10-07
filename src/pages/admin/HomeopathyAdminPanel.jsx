@@ -78,6 +78,8 @@ const HomeopathyAdminPanel = () => {
   const [pendingPackages, setPendingPackages] = useState([]);
   const [corporatePackages, setCorporatePackages] = useState([]);
   const [suspendedItems, setSuspendedItems] = useState([]);
+  const [pendingKyc, setPendingKyc] = useState({ doctor: [], center: [], pharmacy: [] });
+  const [kycTab, setKycTab] = useState('all');
   const [corporateLoading, setCorporateLoading] = useState(false);
 
   // Commission rules (mirror Ayurveda structure)
@@ -120,7 +122,8 @@ const HomeopathyAdminPanel = () => {
         pendingDocRes, pendingCenterRes, pendingPharmRes,
         bookingsRes, discountsRes, settlementsRes,
         reviewsRes, complaintsRes, commissionRulesRes,
-        allCentersRes, allPharmaciesRes, pendingPackagesRes, corporatePackagesRes, suspendedRes
+        allCentersRes, allPharmaciesRes, pendingPackagesRes, corporatePackagesRes, suspendedRes,
+        kycDoctorRes, kycCenterRes, kycPharmacyRes
       ] = await Promise.all([
         api.get('/homeopathy/doctors?status=all&admin=true'),
         api.get('/homeopathy/centers').catch(() => ({ data: { data: [] } })),
@@ -138,7 +141,10 @@ const HomeopathyAdminPanel = () => {
         axios.get(`${API_BASE}/api/homeopathy/admin/pending-pharmacies`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
         axios.get(`${API_BASE}/api/homeopathy/admin/corporate-packages/all?status=all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${API_BASE}/api/homeopathy/admin/suspended`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+        axios.get(`${API_BASE}/api/homeopathy/admin/suspended`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/kyc/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/kyc/centers/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE}/api/homeopathy/admin/kyc/pharmacies/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
       ]);
       
       const doctors = doctorsRes.data?.data || [];
@@ -167,6 +173,11 @@ const HomeopathyAdminPanel = () => {
       setPendingPackages(pendingPackagesRes.data?.data || []);
       setCorporatePackages(corporatePackagesRes?.data?.data || []);
       setSuspendedItems(suspendedRes?.data?.data || []);
+      setPendingKyc({
+        doctor: kycDoctorRes?.data?.data || [],
+        center: kycCenterRes?.data?.data || [],
+        pharmacy: kycPharmacyRes?.data?.data || []
+      });
       
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
@@ -1171,6 +1182,7 @@ const HomeopathyAdminPanel = () => {
           { id: 'settlements', label: `💰 Settlements (${stats.pendingPayouts})`, icon: FaRupeeSign },
           { id: 'corporate-packages', label: `🏢 Corporate (${corporatePackages.length})`, icon: FaBuilding },
           { id: 'suspended', label: `🚫 Suspended (${suspendedItems.length})`, icon: FaBan },
+          { id: 'kyc', label: `📋 KYC (${pendingKyc.doctor.length + pendingKyc.center.length + pendingKyc.pharmacy.length})`, icon: FaIdCard },
           { id: 'pending', label: `⏳ Pending (${stats.pendingDoctors + stats.pendingCenters + stats.pendingPharmacies + pendingPackages.length})`, icon: FaExclamationTriangle },
           { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
           { id: 'complaints', label: '🚨 Complaints', icon: FaExclamationTriangle }
@@ -2346,6 +2358,148 @@ const HomeopathyAdminPanel = () => {
                     )}
                   </div>
                 )}
+
+		        {tab === 'kyc' && (
+          <div>
+            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>📋 KYC Review</h2>
+
+            {/* Filter tabs */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              {[
+                { id: 'all', label: `All (${pendingKyc.doctor.length + pendingKyc.center.length + pendingKyc.pharmacy.length})` },
+                { id: 'doctor', label: `🩺 Doctors (${pendingKyc.doctor.length})` },
+                { id: 'center', label: `🏨 Centers (${pendingKyc.center.length})` },
+                { id: 'pharmacy', label: `💊 Pharmacies (${pendingKyc.pharmacy.length})` }
+              ].map(t => (
+                <button key={t.id} onClick={() => setKycTab(t.id)} style={{
+                  padding: '0.5rem 1rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+                  background: kycTab === t.id ? '#7c3aed' : '#f1f5f9',
+                  color: kycTab === t.id ? 'white' : '#475569',
+                  fontWeight: kycTab === t.id ? 700 : 500,
+                  fontSize: '0.85rem'
+                }}>{t.label}</button>
+              ))}
+            </div>
+
+            {/* Content */}
+            {(() => {
+              const allItems = [
+                ...pendingKyc.doctor.map(x => ({ ...x, entityType: 'doctor', displayName: x.name })),
+                ...pendingKyc.center.map(x => ({ ...x, entityType: 'center', displayName: x.name })),
+                ...pendingKyc.pharmacy.map(x => ({ ...x, entityType: 'pharmacy', displayName: x.businessName }))
+              ];
+              const filtered = kycTab === 'all' ? allItems : allItems.filter(x => x.entityType === kycTab);
+
+              if (filtered.length === 0) {
+                return (
+                  <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                    <p style={{ fontSize: '3rem', margin: 0 }}>✅</p>
+                    <p style={{ marginTop: '0.5rem' }}>No pending KYC submissions.</p>
+                  </div>
+                );
+              }
+
+              return filtered.map((item, i) => (
+                <div key={`${item.entityType}_${item._id}_${i}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #7c3aed' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ flex: 1, minWidth: 280 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700, background: '#ede9fe', color: '#7c3aed', textTransform: 'uppercase' }}>{item.entityType}</span>
+                        <strong style={{ fontSize: '1rem' }}>{item.displayName}</strong>
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                        📞 {item.phone || '—'} · 📍 {item.address?.city || '—'}
+                      </div>
+
+                      <table style={{ fontSize: '0.8rem', marginBottom: '0.75rem' }}>
+                        <tbody>
+                          {item.kyc?.panNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>PAN:</td><td><strong>{item.kyc.panNumber}</strong></td></tr>}
+                          {item.kyc?.aadhaarNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>Aadhaar:</td><td><strong>XXXX-XXXX-{item.kyc.aadhaarNumber}</strong></td></tr>}
+                          {item.kyc?.ownerAadhaarNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>Owner Aadhaar:</td><td><strong>XXXX-XXXX-{item.kyc.ownerAadhaarNumber}</strong></td></tr>}
+                          {item.kyc?.gstNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>GST:</td><td><strong>{item.kyc.gstNumber}</strong></td></tr>}
+                          {item.kyc?.drugLicenseNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>Drug License:</td><td><strong>{item.kyc.drugLicenseNumber}</strong></td></tr>}
+                          {item.kyc?.businessRegistrationNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>Biz Reg:</td><td><strong>{item.kyc.businessRegistrationNumber}</strong></td></tr>}
+                        </tbody>
+                      </table>
+
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                        {[
+                          { key: 'panImage', label: '📄 PAN Card' },
+                          { key: 'aadhaarImage', label: '📄 Aadhaar' },
+                          { key: 'ownerAadhaarImage', label: '📄 Owner Aadhaar' },
+                          { key: 'gstImage', label: '📄 GST' },
+                          { key: 'drugLicenseImage', label: '📄 Drug License' },
+                          { key: 'businessRegistrationImage', label: '📄 Biz Reg' },
+                          { key: 'degreeCertificate', label: '📄 Degree' },
+                          { key: 'registrationCertificate', label: '📄 Reg Cert' },
+                          { key: 'selfie', label: '📸 Selfie' },
+                          { key: 'premisesPhoto', label: '📸 Premises' },
+                          { key: 'shopPhoto', label: '📸 Shop' }
+                        ].filter(f => item.kyc?.[f.key]).map(f => (
+                          <a key={f.key} href={item.kyc[f.key]} target="_blank" rel="noopener noreferrer"
+                            style={{ padding: '4px 10px', background: '#f1f5f9', borderRadius: 6, fontSize: '0.75rem', color: '#3b82f6', textDecoration: 'none', border: '1px solid #e2e8f0' }}>
+                            {f.label} ↗
+                          </a>
+                        ))}
+                      </div>
+
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        Submitted: {item.kyc?.submittedAt ? new Date(item.kyc.submittedAt).toLocaleString('en-IN') : '—'}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 140 }}>
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm(`Verify KYC for "${item.displayName}"?`)) return;
+                          try {
+                            const endpointMap = {
+                              doctor: `/api/homeopathy/admin/kyc/${item._id}/verify`,
+                              center: `/api/homeopathy/admin/kyc/center/${item._id}/verify`,
+                              pharmacy: `/api/homeopathy/admin/kyc/pharmacy/${item._id}/verify`
+                            };
+                            await axios.put(`${API_BASE}${endpointMap[item.entityType]}`, {}, { headers: { 'x-admin-key': ADMIN_KEY } });
+                            addNotification(`KYC verified: ${item.displayName}`, 'success');
+                            fetchAllData();
+                          } catch (e) {
+                            addNotification('Verify failed: ' + (e.response?.data?.message || e.message), 'error');
+                          }
+                        }}
+                        style={{ padding: '0.6rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}
+                      >
+                        ✅ Verify KYC
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const reason = window.prompt(`Reject reason for "${item.displayName}"?`) || '';
+                          if (!reason || reason.trim().length < 3) {
+                            alert('Reason (min 3 characters) required');
+                            return;
+                          }
+                          try {
+                            const endpointMap = {
+                              doctor: `/api/homeopathy/admin/kyc/${item._id}/reject`,
+                              center: `/api/homeopathy/admin/kyc/center/${item._id}/reject`,
+                              pharmacy: `/api/homeopathy/admin/kyc/pharmacy/${item._id}/reject`
+                            };
+                            await axios.put(`${API_BASE}${endpointMap[item.entityType]}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+                            addNotification(`KYC rejected: ${item.displayName}`, 'success');
+                            fetchAllData();
+                          } catch (e) {
+                            addNotification('Reject failed: ' + (e.response?.data?.message || e.message), 'error');
+                          }
+                        }}
+                        style={{ padding: '0.6rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}
+                      >
+                        ❌ Reject KYC
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        )}
 
 	        {/* CORPORATE PACKAGES TAB */}
                 {tab === 'corporate-packages' && (
