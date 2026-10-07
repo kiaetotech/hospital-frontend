@@ -1285,14 +1285,12 @@ const HomeopathyAdminPanel = () => {
               <tbody>
                 {paginatedDoctors.map(d => (
                   <tr key={d._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={td}>
-                      {d.verificationStatus === 'pending' && (
-                        <input type="checkbox" checked={bulkSelected.includes(d._id)}
-                          onChange={e => {
-                            if (e.target.checked) setBulkSelected([...bulkSelected, d._id]);
-                            else setBulkSelected(bulkSelected.filter(id => id !== d._id));
-                          }} />
-                      )}
+                     <td style={td}>
+                      <input type="checkbox" checked={bulkSelected.includes(d._id)}
+                        onChange={e => {
+                          if (e.target.checked) setBulkSelected([...bulkSelected, d._id]);
+                          else setBulkSelected(bulkSelected.filter(id => id !== d._id));
+                        }} />
                     </td>
                     <td style={td}><strong>{d.name}</strong></td>
                     <td style={td}>{d.specialization}</td>
