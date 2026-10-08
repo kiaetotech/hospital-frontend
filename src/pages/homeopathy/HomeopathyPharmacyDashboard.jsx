@@ -284,10 +284,6 @@ const HomeopathyPharmacyDashboard = () => {
             )}
           </div>
         )}
-      </div>
-    </div>
-  );
-};
 
         {activeTab === 'kyc' && (
           <KycUploadForm
@@ -296,5 +292,9 @@ const HomeopathyPharmacyDashboard = () => {
             token={token}
           />
         )}
+      </div>
+    </div>
+  );
+};
 
 export default HomeopathyPharmacyDashboard;

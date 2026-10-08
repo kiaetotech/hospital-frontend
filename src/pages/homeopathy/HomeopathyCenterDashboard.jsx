@@ -1382,7 +1382,7 @@ const HomeopathyCenterDashboard = () => {
           </div>
         )}
 
-        {/* ========== SETTLEMENTS ========== */}
+                     {/* ========== SETTLEMENTS ========== */}
         {activeTab === 'settlements' && (
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-lg font-semibold mb-4">Settlement History</h2>
@@ -1418,9 +1418,9 @@ const HomeopathyCenterDashboard = () => {
             )}
           </div>
         )}
-      </div>
-	
-	        {activeTab === 'kyc' && (
+
+        {/* ========== KYC ========== */}
+        {activeTab === 'kyc' && (
           <KycUploadForm
             providerType="center"
             providerId={centerIdFromStorage}
@@ -1428,143 +1428,144 @@ const HomeopathyCenterDashboard = () => {
           />
         )}
 
-      {/* ========== PACKAGE MODAL ========== */}
-      {showPackageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">{editingPackage ? 'Edit Package' : 'Add New Package'}</h2>
-                <button onClick={() => setShowPackageModal(false)} className="text-gray-400 hover:text-gray-600">
-                  <FaTimes />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <input type="text" placeholder="Package name *" value={packageForm.name}
-                  onChange={e => setPackageForm({ ...packageForm, name: e.target.value })}
-                  className="w-full p-3 border rounded-lg" />
-
-                <input type="text" placeholder="Short description" value={packageForm.shortDescription}
-                  onChange={e => setPackageForm({ ...packageForm, shortDescription: e.target.value })}
-                  className="w-full p-3 border rounded-lg" />
-
-                <div className="grid grid-cols-3 gap-3">
-                  <input type="number" placeholder="Duration (days) *" value={packageForm.duration}
-                    onChange={e => setPackageForm({ ...packageForm, duration: e.target.value })}
-                    className="p-3 border rounded-lg" />
-                  <input type="number" placeholder="Price ₹ *" value={packageForm.price}
-                    onChange={e => setPackageForm({ ...packageForm, price: e.target.value })}
-                    className="p-3 border rounded-lg" />
-                  <input type="number" placeholder="Discount ₹" value={packageForm.discountPrice}
-                    onChange={e => setPackageForm({ ...packageForm, discountPrice: e.target.value })}
-                    className="p-3 border rounded-lg" />
+        {/* ========== PACKAGE MODAL ========== */}
+        {showPackageModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">{editingPackage ? 'Edit Package' : 'Add New Package'}</h2>
+                  <button onClick={() => setShowPackageModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <FaTimes />
+                  </button>
                 </div>
 
-                <input type="number" placeholder="Max capacity" value={packageForm.maxCapacity}
-                  onChange={e => setPackageForm({ ...packageForm, maxCapacity: e.target.value })}
-                  className="w-full p-3 border rounded-lg" />
+                <div className="space-y-4">
+                  <input type="text" placeholder="Package name *" value={packageForm.name}
+                    onChange={e => setPackageForm({ ...packageForm, name: e.target.value })}
+                    className="w-full p-3 border rounded-lg" />
 
-                <textarea placeholder="Description" value={packageForm.description}
-                  onChange={e => setPackageForm({ ...packageForm, description: e.target.value })}
-                  rows="3" className="w-full p-3 border rounded-lg" />
+                  <input type="text" placeholder="Short description" value={packageForm.shortDescription}
+                    onChange={e => setPackageForm({ ...packageForm, shortDescription: e.target.value })}
+                    className="w-full p-3 border rounded-lg" />
 
-                <input type="text" placeholder="Therapies (comma separated)"
-                  value={packageForm.therapies.join(', ')}
-                  onChange={e => setPackageForm({ ...packageForm, therapies: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                  className="w-full p-3 border rounded-lg" />
+                  <div className="grid grid-cols-3 gap-3">
+                    <input type="number" placeholder="Duration (days) *" value={packageForm.duration}
+                      onChange={e => setPackageForm({ ...packageForm, duration: e.target.value })}
+                      className="p-3 border rounded-lg" />
+                    <input type="number" placeholder="Price ₹ *" value={packageForm.price}
+                      onChange={e => setPackageForm({ ...packageForm, price: e.target.value })}
+                      className="p-3 border rounded-lg" />
+                    <input type="number" placeholder="Discount ₹" value={packageForm.discountPrice}
+                      onChange={e => setPackageForm({ ...packageForm, discountPrice: e.target.value })}
+                      className="p-3 border rounded-lg" />
+                  </div>
 
-                <input type="text" placeholder="Inclusions (comma separated)"
-                  value={packageForm.inclusions.join(', ')}
-                  onChange={e => setPackageForm({ ...packageForm, inclusions: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                  className="w-full p-3 border rounded-lg" />
+                  <input type="number" placeholder="Max capacity" value={packageForm.maxCapacity}
+                    onChange={e => setPackageForm({ ...packageForm, maxCapacity: e.target.value })}
+                    className="w-full p-3 border rounded-lg" />
 
-                <input type="text" placeholder="Exclusions (comma separated)"
-                  value={packageForm.exclusions.join(', ')}
-                  onChange={e => setPackageForm({ ...packageForm, exclusions: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                  className="w-full p-3 border rounded-lg" />
+                  <textarea placeholder="Description" value={packageForm.description}
+                    onChange={e => setPackageForm({ ...packageForm, description: e.target.value })}
+                    rows="3" className="w-full p-3 border rounded-lg" />
 
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={packageForm.isActive}
-                    onChange={e => setPackageForm({ ...packageForm, isActive: e.target.checked })} />
-                  <span className="text-sm">Active (visible to patients)</span>
-                </label>
+                  <input type="text" placeholder="Therapies (comma separated)"
+                    value={packageForm.therapies.join(', ')}
+                    onChange={e => setPackageForm({ ...packageForm, therapies: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                    className="w-full p-3 border rounded-lg" />
 
-                <div className="flex gap-3 pt-2">
-                  <button onClick={handleSavePackage} disabled={saving}
-                    className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400">
-                    {saving ? 'Saving...' : (editingPackage ? 'Update' : 'Add Package')}
-                  </button>
-                  <button onClick={() => setShowPackageModal(false)}
-                    className="flex-1 bg-gray-200 py-3 rounded-lg">Cancel</button>
+                  <input type="text" placeholder="Inclusions (comma separated)"
+                    value={packageForm.inclusions.join(', ')}
+                    onChange={e => setPackageForm({ ...packageForm, inclusions: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                    className="w-full p-3 border rounded-lg" />
+
+                  <input type="text" placeholder="Exclusions (comma separated)"
+                    value={packageForm.exclusions.join(', ')}
+                    onChange={e => setPackageForm({ ...packageForm, exclusions: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                    className="w-full p-3 border rounded-lg" />
+
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={packageForm.isActive}
+                      onChange={e => setPackageForm({ ...packageForm, isActive: e.target.checked })} />
+                    <span className="text-sm">Active (visible to patients)</span>
+                  </label>
+
+                  <div className="flex gap-3 pt-2">
+                    <button onClick={handleSavePackage} disabled={saving}
+                      className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400">
+                      {saving ? 'Saving...' : (editingPackage ? 'Update' : 'Add Package')}
+                    </button>
+                    <button onClick={() => setShowPackageModal(false)}
+                      className="flex-1 bg-gray-200 py-3 rounded-lg">Cancel</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ========== ROOM MODAL ========== */}
-      {showRoomModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">{editingRoom ? 'Edit Room' : 'Add Room Type'}</h2>
-                <button onClick={() => setShowRoomModal(false)} className="text-gray-400 hover:text-gray-600">
-                  <FaTimes />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <input type="text" placeholder="Room name (e.g., Deluxe Single) *" value={roomForm.name}
-                  onChange={e => setRoomForm({ ...roomForm, name: e.target.value })}
-                  className="w-full p-3 border rounded-lg" />
-
-                <select value={roomForm.type} onChange={e => setRoomForm({ ...roomForm, type: e.target.value })}
-                  className="w-full p-3 border rounded-lg">
-                  <option>Standard</option>
-                  <option>Deluxe</option>
-                  <option>Single</option>
-                  <option>Double</option>
-                  <option>Twin Sharing</option>
-                  <option>Suite</option>
-                </select>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <input type="number" placeholder="Price/night ₹ *" value={roomForm.price}
-                    onChange={e => setRoomForm({ ...roomForm, price: e.target.value })}
-                    className="p-3 border rounded-lg" />
-                  <input type="number" placeholder="Capacity" value={roomForm.maxOccupancy}
-                    onChange={e => setRoomForm({ ...roomForm, maxOccupancy: e.target.value })}
-                    className="p-3 border rounded-lg" />
-                  <input type="number" placeholder="Total rooms" value={roomForm.totalRooms}
-                    onChange={e => setRoomForm({ ...roomForm, totalRooms: e.target.value })}
-                    className="p-3 border rounded-lg" />
+        {/* ========== ROOM MODAL ========== */}
+        {showRoomModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-lg w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">{editingRoom ? 'Edit Room' : 'Add Room Type'}</h2>
+                  <button onClick={() => setShowRoomModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <FaTimes />
+                  </button>
                 </div>
 
-                <input type="text" placeholder="Amenities (comma separated)"
-                  value={roomForm.amenities.join(', ')}
-                  onChange={e => setRoomForm({ ...roomForm, amenities: e.target.value.split(',').map(a => a.trim()).filter(Boolean) })}
-                  className="w-full p-3 border rounded-lg" />
+                <div className="space-y-4">
+                  <input type="text" placeholder="Room name (e.g., Deluxe Single) *" value={roomForm.name}
+                    onChange={e => setRoomForm({ ...roomForm, name: e.target.value })}
+                    className="w-full p-3 border rounded-lg" />
 
-                <textarea placeholder="Description" value={roomForm.description}
-                  onChange={e => setRoomForm({ ...roomForm, description: e.target.value })}
-                  rows="2" className="w-full p-3 border rounded-lg" />
+                  <select value={roomForm.type} onChange={e => setRoomForm({ ...roomForm, type: e.target.value })}
+                    className="w-full p-3 border rounded-lg">
+                    <option>Standard</option>
+                    <option>Deluxe</option>
+                    <option>Single</option>
+                    <option>Double</option>
+                    <option>Twin Sharing</option>
+                    <option>Suite</option>
+                  </select>
 
-                <div className="flex gap-3 pt-2">
-                  <button onClick={handleSaveRoom} disabled={saving}
-                    className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400">
-                    {saving ? 'Saving...' : (editingRoom ? 'Update Room' : 'Add Room')}
-                  </button>
-                  <button onClick={() => setShowRoomModal(false)}
-                    className="flex-1 bg-gray-200 py-3 rounded-lg">Cancel</button>
+                  <div className="grid grid-cols-3 gap-3">
+                    <input type="number" placeholder="Price/night ₹ *" value={roomForm.price}
+                      onChange={e => setRoomForm({ ...roomForm, price: e.target.value })}
+                      className="p-3 border rounded-lg" />
+                    <input type="number" placeholder="Capacity" value={roomForm.maxOccupancy}
+                      onChange={e => setRoomForm({ ...roomForm, maxOccupancy: e.target.value })}
+                      className="p-3 border rounded-lg" />
+                    <input type="number" placeholder="Total rooms" value={roomForm.totalRooms}
+                      onChange={e => setRoomForm({ ...roomForm, totalRooms: e.target.value })}
+                      className="p-3 border rounded-lg" />
+                  </div>
+
+                  <input type="text" placeholder="Amenities (comma separated)"
+                    value={roomForm.amenities.join(', ')}
+                    onChange={e => setRoomForm({ ...roomForm, amenities: e.target.value.split(',').map(a => a.trim()).filter(Boolean) })}
+                    className="w-full p-3 border rounded-lg" />
+
+                  <textarea placeholder="Description" value={roomForm.description}
+                    onChange={e => setRoomForm({ ...roomForm, description: e.target.value })}
+                    rows="2" className="w-full p-3 border rounded-lg" />
+
+                  <div className="flex gap-3 pt-2">
+                    <button onClick={handleSaveRoom} disabled={saving}
+                      className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400">
+                      {saving ? 'Saving...' : (editingRoom ? 'Update Room' : 'Add Room')}
+                    </button>
+                    <button onClick={() => setShowRoomModal(false)}
+                      className="flex-1 bg-gray-200 py-3 rounded-lg">Cancel</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
