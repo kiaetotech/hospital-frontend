@@ -6,7 +6,7 @@ import {
   FaSearch, FaFilter, FaDownload, FaSync, FaArrowLeft,
   FaUserMd, FaBuilding, FaCalendarAlt, FaTag, FaRupeeSign,
   FaEye, FaCheck, FaTimes, FaBan, FaChartBar, FaBell,
-  FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaStar
+    FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaStar, FaIdCard
 } from 'react-icons/fa';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -72,6 +72,9 @@ const AyurvedaAdminPanel = () => {
   const [pendingCentersList, setPendingCentersList] = useState([]);
   const [pendingPackages, setPendingPackages] = useState([]);
   const [pendingPrograms, setPendingPrograms] = useState([]);
+  const [pendingKyc, setPendingKyc] = useState({ doctor: [], center: [] });
+  const [kycTab, setKycTab] = useState('all');
+
   // ─── PROGRAMS MODERATION (NEW) ───
   const [showProgramRejectModal, setShowProgramRejectModal] = useState(null); // { doctorId, programId }
   const [programRejectionReason, setProgramRejectionReason] = useState('');
@@ -103,11 +106,11 @@ const AyurvedaAdminPanel = () => {
     try {
                   const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
 
-      const [
+        const [
   doctorsRes, centersRes, pendingDocRes, pendingCenterRes,
   bookingsRes, discountsRes, settlementsRes, programsRes,
   productsRes, reviewsRes, complaintsRes,
-  pendingPackagesRes, pendingProgramsRes
+  pendingPackagesRes, pendingProgramsRes, kycDoctorRes, kycCenterRes
   ] = await Promise.all([
   api.get('/ayurveda/doctors'),
   api.get('/ayurveda-centers/admin/all'),
@@ -121,7 +124,9 @@ const AyurvedaAdminPanel = () => {
   axios.get(`${API_BASE}/api/ayurveda/bookings/admin/reviews/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
   axios.get(`${API_BASE}/api/ayurveda/bookings/admin/complaints/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
   axios.get(`${API_BASE}/api/ayurveda-centers/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-  axios.get(`${API_BASE}/api/ayurveda/admin/programs/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+  axios.get(`${API_BASE}/api/ayurveda/admin/programs/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+  axios.get(`${API_BASE}/api/ayurveda/admin/kyc/doctors/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+  axios.get(`${API_BASE}/api/ayurveda/admin/kyc/centers/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
 ]);
 
       const doctors = doctorsRes.data?.data || [];
@@ -150,8 +155,11 @@ const AyurvedaAdminPanel = () => {
       // Pending packages + programs
       const pendingPkgs = pendingPackagesRes.data?.data || [];
       const pendingProgs = pendingProgramsRes.data?.data || [];
+      const kycDocs = kycDoctorRes?.data?.data || [];
+      const kycCents = kycCenterRes?.data?.data || [];
       setPendingPackages(pendingPkgs);
       setPendingPrograms(pendingProgs);
+      setPendingKyc({ doctor: kycDocs, center: kycCents });
 
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
@@ -1012,7 +1020,8 @@ const handleExportSettlements = () => {
           { id: 'programs', label: '💪 Programs', icon: FaTag },
           { id: 'products', label: '🌿 Products', icon: FaTag },
           { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
-          { id: 'complaints', label: '🚨 Complaints', icon: FaExclamationTriangle },
+          { id: 'complaints', label: `🚨 Complaints`, icon: FaExclamationTriangle },
+          { id: 'kyc', label: `📋 KYC (${pendingKyc.doctor.length + pendingKyc.center.length})`, icon: FaIdCard },
         ].map(t => (
           <button key={t.id} onClick={() => { setTab(t.id); setPage(1); }}
             style={{
@@ -1184,6 +1193,7 @@ const handleExportSettlements = () => {
                   <th style={th}>City</th>
                   <th style={th}>Fee</th>
                   <th style={th}>Status</th>
+		  <th style={th}>KYC</th>
                   <th style={th}>Actions</th>
                 </tr>
               </thead>
@@ -1258,6 +1268,15 @@ const handleExportSettlements = () => {
                     <td style={td}>{c.address?.city}</td>
                     <td style={td}>{c.phone}</td>
                     <td style={td}><span style={statusBadge(c.verificationStatus)}>{c.verificationStatus}</span></td>
+		       <td style={td}>
+                      {(() => {
+                        const ks = c.documents?.kycStatus;
+                        if (ks === 'verified') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7', color: '#166534' }}>✅ Verified</span>;
+                        if (ks === 'submitted') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#fef3c7', color: '#92400e' }}>⏳ Pending</span>;
+                        if (ks === 'rejected') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#fee2e2', color: '#dc2626' }}>❌ Rejected</span>;
+                        return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#f1f5f9', color: '#64748b' }}>—</span>;
+                      })()}
+                    </td>
                     <td style={td}>
                       <button onClick={() => setSelectedCenter(c)} style={actionBtn('#3b82f6')}><FaEye /></button>
                       {c.verificationStatus === 'pending' && (
@@ -1290,6 +1309,7 @@ const handleExportSettlements = () => {
                   <th style={th}>Amount</th>
                   <th style={th}>Payment</th>
                   <th style={th}>Status</th>
+		  <th style={th}>KYC</th>
                   <th style={th}>Actions</th>
                 </tr>
               </thead>
@@ -2232,6 +2252,144 @@ const handleExportSettlements = () => {
                 </tbody>
               </table>
             )}
+                    </div>
+        )}
+
+        {/* KYC TAB */}
+        {tab === 'kyc' && (
+          <div>
+            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>📋 KYC Review</h2>
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              {[
+                { id: 'all', label: `All (${pendingKyc.doctor.length + pendingKyc.center.length})` },
+                { id: 'doctor', label: `🩺 Doctors (${pendingKyc.doctor.length})` },
+                { id: 'center', label: `🏨 Centers (${pendingKyc.center.length})` }
+              ].map(t => (
+                <button key={t.id} onClick={() => setKycTab(t.id)} style={{
+                  padding: '0.5rem 1rem', border: 'none', borderRadius: 8, cursor: 'pointer',
+                  background: kycTab === t.id ? '#059669' : '#f1f5f9',
+                  color: kycTab === t.id ? 'white' : '#475569',
+                  fontWeight: kycTab === t.id ? 700 : 500,
+                  fontSize: '0.85rem'
+                }}>{t.label}</button>
+              ))}
+            </div>
+
+            {(() => {
+              const allItems = [
+                ...pendingKyc.doctor.map(x => ({ ...x, entityType: 'doctor', displayName: x.name })),
+                ...pendingKyc.center.map(x => ({ ...x, entityType: 'center', displayName: x.name }))
+              ];
+              const filtered = kycTab === 'all' ? allItems : allItems.filter(x => x.entityType === kycTab);
+
+              if (filtered.length === 0) {
+                return (
+                  <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                    <p style={{ fontSize: '3rem', margin: 0 }}>✅</p>
+                    <p style={{ marginTop: '0.5rem' }}>No pending KYC submissions.</p>
+                  </div>
+                );
+              }
+
+              return filtered.map((item, i) => {
+                const kyc = item.documents || {};
+                return (
+                  <div key={`${item.entityType}_${item._id}_${i}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: '4px solid #059669' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                      <div style={{ flex: 1, minWidth: 280 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700, background: '#d1fae5', color: '#047857', textTransform: 'uppercase' }}>{item.entityType}</span>
+                          <strong style={{ fontSize: '1rem' }}>{item.displayName}</strong>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                          📞 {item.phone || '—'} · 📍 {item.address?.city || '—'}
+                        </div>
+
+                        <table style={{ fontSize: '0.8rem', marginBottom: '0.75rem' }}>
+                          <tbody>
+                            {kyc.panNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>PAN:</td><td><strong>{kyc.panNumber}</strong></td></tr>}
+                            {kyc.aadhaarNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>Aadhaar:</td><td><strong>XXXX-XXXX-{kyc.aadhaarNumber}</strong></td></tr>}
+                            {kyc.gstNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>GST:</td><td><strong>{kyc.gstNumber}</strong></td></tr>}
+                            {kyc.businessRegistrationNumber && <tr><td style={{ padding: '2px 8px 2px 0', color: '#64748b' }}>Biz Reg:</td><td><strong>{kyc.businessRegistrationNumber}</strong></td></tr>}
+                          </tbody>
+                        </table>
+
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                          {[
+                            { key: 'panCard', label: '📄 PAN' },
+                            { key: 'idProof', label: '📄 ID Proof' },
+                            { key: 'degreeCertificate', label: '📄 Degree' },
+                            { key: 'ayushCertificate', label: '📄 AYUSH' },
+                            { key: 'clinicLicense', label: '📄 Clinic License' },
+                            { key: 'photo', label: '📸 Photo' },
+                            { key: 'selfie', label: '📸 Selfie' },
+                            { key: 'license', label: '📄 License' },
+                            { key: 'registration', label: '📄 Registration' },
+                            { key: 'gstCertificate', label: '📄 GST' },
+                            { key: 'premisesPhoto', label: '📸 Premises' }
+                          ].filter(f => kyc[f.key]).map(f => (
+                            <a key={f.key} href={kyc[f.key]} target="_blank" rel="noopener noreferrer"
+                              style={{ padding: '4px 10px', background: '#f1f5f9', borderRadius: 6, fontSize: '0.75rem', color: '#059669', textDecoration: 'none', border: '1px solid #e2e8f0' }}>
+                              {f.label} ↗
+                            </a>
+                          ))}
+                        </div>
+
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          Submitted: {kyc.submittedAt ? new Date(kyc.submittedAt).toLocaleString('en-IN') : '—'}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 140 }}>
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm(`Verify KYC for "${item.displayName}"?`)) return;
+                            try {
+                              const endpointMap = {
+                                doctor: `/api/ayurveda/admin/kyc/doctor/${item._id}/verify`,
+                                center: `/api/ayurveda/admin/kyc/center/${item._id}/verify`
+                              };
+                              await axios.put(`${API_BASE}${endpointMap[item.entityType]}`, {}, { headers: { 'x-admin-key': ADMIN_KEY } });
+                              addNotification(`KYC verified: ${item.displayName}`, 'success');
+                              fetchAllData();
+                            } catch (e) {
+                              addNotification('Verify failed: ' + (e.response?.data?.message || e.message), 'error');
+                            }
+                          }}
+                          style={{ padding: '0.6rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}
+                        >
+                          ✅ Verify KYC
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const reason = window.prompt(`Reject reason for "${item.displayName}"?`) || '';
+                            if (!reason || reason.trim().length < 3) {
+                              alert('Reason (min 3 characters) required');
+                              return;
+                            }
+                            try {
+                              const endpointMap = {
+                                doctor: `/api/ayurveda/admin/kyc/doctor/${item._id}/reject`,
+                                center: `/api/ayurveda/admin/kyc/center/${item._id}/reject`
+                              };
+                              await axios.put(`${API_BASE}${endpointMap[item.entityType]}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+                              addNotification(`KYC rejected: ${item.displayName}`, 'success');
+                              fetchAllData();
+                            } catch (e) {
+                              addNotification('Reject failed: ' + (e.response?.data?.message || e.message), 'error');
+                            }
+                          }}
+                          style={{ padding: '0.6rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}
+                        >
+                          ❌ Reject KYC
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         )}
 
