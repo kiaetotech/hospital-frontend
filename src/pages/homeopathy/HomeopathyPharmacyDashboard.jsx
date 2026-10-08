@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import {
   FaBox, FaRupeeSign, FaCheckCircle, FaHistory,
-  FaWallet, FaExclamationTriangle, FaTruck
+  FaWallet, FaExclamationTriangle, FaTruck, FaIdCard
 } from 'react-icons/fa';
+import KycUploadForm from '../../components/KycUploadForm';
 
 const HomeopathyPharmacyDashboard = () => {
   const navigate = useNavigate();
@@ -136,10 +137,11 @@ const HomeopathyPharmacyDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-2 mb-6 bg-white rounded-lg p-2 shadow overflow-x-auto">
-          {[
+           {[
             { id: 'overview', label: 'Overview' },
             { id: 'orders', label: `Orders (${orders.length})` },
-            { id: 'settlements', label: 'Settlements' }
+            { id: 'settlements', label: 'Settlements' },
+            { id: 'kyc', label: 'KYC' }
           ].map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
               className={`px-4 py-2 rounded-lg whitespace-nowrap ${activeTab === t.id ? 'bg-red-600 text-white' : 'hover:bg-gray-100'}`}>
@@ -286,5 +288,13 @@ const HomeopathyPharmacyDashboard = () => {
     </div>
   );
 };
+
+        {activeTab === 'kyc' && (
+          <KycUploadForm
+            providerType="pharmacy"
+            providerId={pharmacyId}
+            token={token}
+          />
+        )}
 
 export default HomeopathyPharmacyDashboard;

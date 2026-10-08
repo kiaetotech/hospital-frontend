@@ -71,8 +71,7 @@ const KycUploadForm = ({ providerType, providerId, token, tokenKey }) => {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
-  const authHeader = () => {
-    if (tokenKey === 'center') return { 'x-center-token': token };
+    const authHeader = () => {
     return { Authorization: `Bearer ${token}` };
   };
 

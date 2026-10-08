@@ -6,8 +6,9 @@ import {
   FaBuilding, FaClock, FaCheckCircle,
   FaWallet, FaHistory, FaChartBar, FaBed, FaBox,
   FaPlus, FaEdit, FaTrash, FaSave, FaTimes,
-  FaShieldAlt, FaExclamationTriangle, FaEye
+  FaShieldAlt, FaExclamationTriangle, FaEye, FaIdCard
 } from 'react-icons/fa';
+import KycUploadForm from '../../components/KycUploadForm';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: FaChartBar },
@@ -19,7 +20,8 @@ const TABS = [
   { id: 'complaints', label: 'Complaints', icon: FaExclamationTriangle },
   { id: 'reviews', label: 'Reviews', icon: FaStar },
   { id: 'earnings', label: 'Earnings', icon: FaWallet },
-  { id: 'settlements', label: 'Settlements', icon: FaHistory }
+  { id: 'settlements', label: 'Settlements', icon: FaHistory },
+  { id: 'kyc', label: 'KYC', icon: FaIdCard }
 ];
 
 const HomeopathyCenterDashboard = () => {
@@ -1417,6 +1419,14 @@ const HomeopathyCenterDashboard = () => {
           </div>
         )}
       </div>
+	
+	        {activeTab === 'kyc' && (
+          <KycUploadForm
+            providerType="center"
+            providerId={centerIdFromStorage}
+            token={localStorage.getItem('homeopathyCenterToken')}
+          />
+        )}
 
       {/* ========== PACKAGE MODAL ========== */}
       {showPackageModal && (
