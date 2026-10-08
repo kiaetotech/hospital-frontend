@@ -1216,6 +1216,15 @@ const handleExportSettlements = () => {
                     <td style={td}>₹{d.consultationFee}</td>
                     <td style={td}><span style={statusBadge(d.verificationStatus)}>{d.verificationStatus}</span></td>
                     <td style={td}>
+                      {(() => {
+                        const ks = d.documents?.kycStatus;
+                        if (ks === 'verified') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7', color: '#166534' }}>✅ Verified</span>;
+                        if (ks === 'submitted') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#fef3c7', color: '#92400e' }}>⏳ Pending</span>;
+                        if (ks === 'rejected') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#fee2e2', color: '#dc2626' }}>❌ Rejected</span>;
+                        return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#f1f5f9', color: '#64748b' }}>—</span>;
+                      })()}
+                    </td>
+                    <td style={td}>
                       <button onClick={() => setSelectedDoctor(d)} style={actionBtn('#3b82f6')}><FaEye /></button>
                       {d.verificationStatus === 'pending' && (
                         <>
@@ -1257,6 +1266,7 @@ const handleExportSettlements = () => {
                   <th style={th}>City</th>
                   <th style={th}>Phone</th>
                   <th style={th}>Status</th>
+                  <th style={th}>KYC</th>
                   <th style={th}>Actions</th>
                 </tr>
               </thead>
@@ -1309,8 +1319,7 @@ const handleExportSettlements = () => {
                   <th style={th}>Amount</th>
                   <th style={th}>Payment</th>
                   <th style={th}>Status</th>
-		  <th style={th}>KYC</th>
-                  <th style={th}>Actions</th>
+		  <th style={th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
