@@ -1448,6 +1448,7 @@ const HomeopathyAdminPanel = () => {
                   <th style={th}>Phone</th>
                   <th style={th}>Packages</th>
                   <th style={th}>Status</th>
+		  <th style={th}>KYC</th>
                   <th style={th}>Actions</th>
                 </tr>
               </thead>
@@ -1466,6 +1467,15 @@ const HomeopathyAdminPanel = () => {
                     <td style={td}>{c.phone}</td>
                     <td style={td}>{c.packages?.length || 0}</td>
                     <td style={td}><span style={statusBadge(c.verificationStatus)}>{c.verificationStatus}</span></td>
+                    <td style={td}>
+                      {(() => {
+                        const ks = c.kyc?.kycStatus;
+                        if (ks === 'verified') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7', color: '#166534' }}>✅ Verified</span>;
+                        if (ks === 'submitted') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#fef3c7', color: '#92400e' }}>⏳ Pending</span>;
+                        if (ks === 'rejected') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#fee2e2', color: '#dc2626' }}>❌ Rejected</span>;
+                        return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#f1f5f9', color: '#64748b' }}>—</span>;
+                      })()}
+                    </td>
                     <td style={td}>
                       <button onClick={() => setSelectedCenter(c)} style={actionBtn('#3b82f6')}><FaEye /></button>
                       {c.verificationStatus === 'pending' && (
@@ -1502,6 +1512,7 @@ const HomeopathyAdminPanel = () => {
                   <th style={th}>Phone</th>
                   <th style={th}>Medicines</th>
                   <th style={th}>Status</th>
+		  <th style={th}>KYC</th>
                   <th style={th}>Actions</th>
                 </tr>
               </thead>
@@ -1520,6 +1531,15 @@ const HomeopathyAdminPanel = () => {
                     <td style={td}>{p.phone}</td>
                     <td style={td}>{p.medicines?.length || 0}</td>
                     <td style={td}><span style={statusBadge(p.verificationStatus)}>{p.verificationStatus}</span></td>
+                    <td style={td}>
+                      {(() => {
+                        const ks = p.kyc?.kycStatus;
+                        if (ks === 'verified') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7', color: '#166534' }}>✅ Verified</span>;
+                        if (ks === 'submitted') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#fef3c7', color: '#92400e' }}>⏳ Pending</span>;
+                        if (ks === 'rejected') return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#fee2e2', color: '#dc2626' }}>❌ Rejected</span>;
+                        return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: '#f1f5f9', color: '#64748b' }}>—</span>;
+                      })()}
+                    </td>
                     <td style={td}>
                       <button onClick={() => setSelectedPharmacy(p)} style={actionBtn('#3b82f6')}><FaEye /></button>
                       {p.verificationStatus === 'pending' && (
