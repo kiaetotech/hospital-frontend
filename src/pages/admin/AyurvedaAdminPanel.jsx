@@ -426,9 +426,33 @@ const handleExportSettlements = () => {
     }
   };
 
-  const suspendDoctor = async (id) => {
-    if (window.confirm('Suspend this doctor?')) {
-      await verifyDoctor(id, 'suspended');
+    const suspendDoctor = async (id) => {
+    const reason = window.prompt('Reason for suspending this doctor?') || '';
+    if (!reason || reason.trim().length < 3) {
+      alert('A reason (at least 3 characters) is required.');
+      return;
+    }
+    try {
+      await axios.put(`${API_BASE}/api/ayurveda/admin/suspend/doctor/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      addNotification('Doctor suspended', 'success');
+      fetchAllData();
+    } catch (e) {
+      addNotification('Suspend failed: ' + (e.response?.data?.message || e.message), 'error');
+    }
+  };
+
+  const suspendCenter = async (id) => {
+    const reason = window.prompt('Reason for suspending this center?') || '';
+    if (!reason || reason.trim().length < 3) {
+      alert('A reason (at least 3 characters) is required.');
+      return;
+    }
+    try {
+      await axios.put(`${API_BASE}/api/ayurveda/admin/suspend/center/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      addNotification('Center suspended', 'success');
+      fetchAllData();
+    } catch (e) {
+      addNotification('Suspend failed: ' + (e.response?.data?.message || e.message), 'error');
     }
   };
 
@@ -1293,11 +1317,14 @@ const handleExportSettlements = () => {
                     </td>
                     <td style={td}>
                       <button onClick={() => setSelectedCenter(c)} style={actionBtn('#3b82f6')}><FaEye /></button>
-                      {c.verificationStatus === 'pending' && (
+                                            {c.verificationStatus === 'pending' && (
                         <>
                           <button onClick={() => verifyCenter(c._id, 'approved')} style={actionBtn('#10b981')}><FaCheck /></button>
                           <button onClick={() => verifyCenter(c._id, 'rejected')} style={actionBtn('#ef4444')}><FaTimes /></button>
                         </>
+                      )}
+                      {c.verificationStatus === 'approved' && (
+                        <button onClick={() => suspendCenter(c._id)} style={actionBtn('#f59e0b')} title="Suspend"><FaBan /></button>
                       )}
                     </td>
                   </tr>
