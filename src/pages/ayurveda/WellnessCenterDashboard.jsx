@@ -15,8 +15,9 @@ import {
   FaWallet, FaHistory, FaChartBar, FaBed, FaBox,
   FaPlus, FaEdit, FaTrash, FaSave, FaTimes,
   FaPhone, FaEnvelope, FaMapMarkerAlt, FaShieldAlt,
-  FaSpa, FaUserMd, FaCheck, FaAward, FaExclamationTriangle
+  FaSpa, FaUserMd, FaCheck, FaAward, FaExclamationTriangle, FaIdCard
 } from 'react-icons/fa';
+import KycUploadForm from '../../components/KycUploadForm';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: FaChartBar },
@@ -28,7 +29,8 @@ const TABS = [
   { id: 'complaints', label: 'Complaints', icon: FaExclamationTriangle },
   { id: 'reviews', label: 'Reviews', icon: FaStar },
   { id: 'earnings', label: 'Earnings', icon: FaWallet },
-  { id: 'settlements', label: 'Settlements', icon: FaHistory }
+  { id: 'settlements', label: 'Settlements', icon: FaHistory },
+  { id: 'kyc', label: 'KYC', icon: FaIdCard }
 ];
 
 const WellnessCenterDashboard = () => {
@@ -1367,15 +1369,24 @@ const handleRespondToReview = async (bookingId) => {
                           s.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                         }`}>{s.status}</span>
                       </td>
-                      <td className="py-2">{new Date(s.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-      </div>
+                    <td className="py-2">{new Date(s.createdAt).toLocaleDateString()}</td>
+                  		  </tr>
+                  		))}
+                		</tbody>
+             		 </table>
+          		  )}
+        		  </div>
+       		 )}
+
+      		  {/* ========== KYC ========== */}
+      		  {activeTab === 'kyc' && (
+       		   <KycUploadForm
+           		 providerType="ayurveda_center"
+         		   providerId={center?.id}
+         		   token={getToken()}
+        		  />
+      		  )}
+     		 </div>
 
       {/* ========== PACKAGE MODAL ========== */}
       {showPackageModal && (
