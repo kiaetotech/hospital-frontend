@@ -107,7 +107,7 @@ const AyurvedaAdminPanel = () => {
     try {
                   const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
 
-        const [
+   const [
   doctorsRes, centersRes, pendingDocRes, pendingCenterRes,
   bookingsRes, discountsRes, settlementsRes, programsRes,
   productsRes, reviewsRes, complaintsRes,
@@ -126,9 +126,9 @@ const AyurvedaAdminPanel = () => {
   axios.get(`${API_BASE}/api/ayurveda/bookings/admin/complaints/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
   axios.get(`${API_BASE}/api/ayurveda-centers/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
   axios.get(`${API_BASE}/api/ayurveda/admin/programs/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-  axios.get(`${API_BASE}/api/ayurveda/admin/suspended`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
   axios.get(`${API_BASE}/api/ayurveda/admin/kyc/doctors/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
-  axios.get(`${API_BASE}/api/ayurveda/admin/kyc/centers/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
+  axios.get(`${API_BASE}/api/ayurveda/admin/kyc/centers/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+  axios.get(`${API_BASE}/api/ayurveda/admin/suspended`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
 ]);
 
       const doctors = doctorsRes.data?.data || [];
