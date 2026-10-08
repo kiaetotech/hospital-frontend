@@ -1,5 +1,6 @@
 import api from '../../services/api';
 import React, { useState, useEffect, useMemo } from 'react';
+import KycUploadForm from '../../components/KycUploadForm';
 import { useNavigate } from 'react-router-dom';
 import { 
   getDoctorBookings, 
@@ -13,7 +14,7 @@ import {
   FaVideo, FaBuilding, FaHome, FaClock, FaCheckCircle,
   FaTimesCircle, FaChevronDown, FaChevronUp, FaWallet,
   FaHistory, FaChartBar, FaUserMd, FaPhone, FaEnvelope,
-  FaExclamationTriangle
+  FaExclamationTriangle, FaIdCard
 } from 'react-icons/fa';
 
 const DoctorDashboard = () => {
@@ -491,7 +492,8 @@ const handleRespondToReview = async (bookingId) => {
   { id: 'complaints', label: 'Complaints', icon: FaExclamationTriangle },
   { id: 'reviews', label: 'Reviews', icon: FaStar },
   { id: 'earnings', label: 'Earnings', icon: FaWallet },
-  { id: 'settlements', label: 'Settlements', icon: FaHistory }
+  { id: 'settlements', label: 'Settlements', icon: FaHistory },
+  { id: 'kyc', label: 'KYC', icon: FaIdCard }
 ].map(tab => (
             <button
               key={tab.id}
@@ -1123,18 +1125,27 @@ const handleRespondToReview = async (bookingId) => {
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           s.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                         }`}>
-                          {s.status}
-                        </span>
-                      </td>
-                      <td className="py-2">{new Date(s.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-      </div>
+                      {s.status}
+                        	</span>
+                     	 </td>
+                     	 <td className="py-2">{new Date(s.createdAt).toLocaleDateString()}</td>
+                    	</tr>
+                 		 ))}
+                		</tbody>
+              		</table>
+           		 )}
+          		</div>
+        		)}
+
+       		 {/* KYC Tab */}
+        		{activeTab === 'kyc' && (
+         		 <KycUploadForm
+           		 providerType="ayurveda_doctor"
+           		 providerId={doctor?.id}
+           		 token={localStorage.getItem('doctorToken')}
+          		/>
+        	       )}
+      	    </div>
 
       {/* Program Modal */}
       {showProgramModal && (

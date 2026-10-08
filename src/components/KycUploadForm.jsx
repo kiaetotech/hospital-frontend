@@ -56,7 +56,45 @@ const FIELD_CONFIGS = {
       { key: 'ownerAadhaarImage', label: 'Owner Aadhaar Image', type: 'file', required: true },
       { key: 'drugLicenseNumber', label: 'Drug License Number', type: 'text', required: true },
       { key: 'drugLicenseImage', label: 'Drug License Image', type: 'file', required: true },
-      { key: 'shopPhoto', label: 'Shop Photo', type: 'file', required: true },
+            { key: 'shopPhoto', label: 'Shop Photo', type: 'file', required: true },
+      { key: 'selfie', label: 'Selfie', type: 'file', required: true }
+    ]
+  },
+  ayurveda_doctor: {
+    title: 'Ayurveda Doctor KYC',
+    uploadPath: '/api/ayurveda/kyc/upload',
+    endpoint: '/api/ayurveda/doctor/kyc/submit',
+    statusEndpoint: (id) => `/api/ayurveda/doctor/kyc/${id}`,
+    idField: 'doctorId',
+    fields: [
+      { key: 'panNumber', label: 'PAN Number', type: 'text', required: true, placeholder: 'ABCDE1234F' },
+      { key: 'panCard', label: 'PAN Card Image', type: 'file', required: true },
+      { key: 'aadhaarNumber', label: 'Aadhaar Number (last 4 digits)', type: 'text', required: true, placeholder: '9012' },
+      { key: 'idProof', label: 'Aadhaar / ID Proof Image', type: 'file', required: true },
+      { key: 'selfie', label: 'Selfie', type: 'file', required: true },
+      { key: 'degreeCertificate', label: 'Degree Certificate', type: 'file', required: true },
+      { key: 'ayushCertificate', label: 'AYUSH Certificate', type: 'file', required: true },
+      { key: 'clinicLicense', label: 'Clinic License', type: 'file', required: false },
+      { key: 'photo', label: 'Profile Photo', type: 'file', required: false }
+    ]
+  },
+  ayurveda_center: {
+    title: 'Wellness Center KYC',
+    uploadPath: '/api/ayurveda/kyc/upload',
+    endpoint: '/api/ayurveda/center/kyc/submit',
+    statusEndpoint: (id) => `/api/ayurveda/center/kyc/${id}`,
+    idField: 'centerId',
+    fields: [
+      { key: 'panNumber', label: 'PAN Number', type: 'text', required: true, placeholder: 'ABCDE1234F' },
+      { key: 'panCard', label: 'PAN Image', type: 'file', required: true },
+      { key: 'gstNumber', label: 'GST Number (optional)', type: 'text', required: false },
+      { key: 'gstCertificate', label: 'GST Certificate (optional)', type: 'file', required: false },
+      { key: 'ownerName', label: 'Owner Name', type: 'text', required: true },
+      { key: 'aadhaarNumber', label: 'Owner Aadhaar (last 4)', type: 'text', required: true, placeholder: '9012' },
+      { key: 'businessRegistrationNumber', label: 'Business Registration Number', type: 'text', required: true },
+      { key: 'license', label: 'Center License', type: 'file', required: true },
+      { key: 'registration', label: 'Business Registration', type: 'file', required: true },
+      { key: 'premisesPhoto', label: 'Premises Photo', type: 'file', required: true },
       { key: 'selfie', label: 'Selfie', type: 'file', required: true }
     ]
   }
@@ -100,7 +138,7 @@ const KycUploadForm = ({ providerType, providerId, token, tokenKey }) => {
       fd.append('type', fieldKey);
       fd.append('folder', 'kyc_documents');
 
-      const res = await axios.post(`${API_BASE}/api/homeopathy/kyc/upload`, fd, {
+      const res = await axios.post(`${API_BASE}${config.uploadPath || '/api/homeopathy/kyc/upload'}`, fd, {
         headers: { ...authHeader(), 'Content-Type': 'multipart/form-data' }
       });
 
