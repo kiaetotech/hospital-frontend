@@ -73,6 +73,7 @@ const AyurvedaAdminPanel = () => {
   const [pendingPackages, setPendingPackages] = useState([]);
   const [pendingPrograms, setPendingPrograms] = useState([]);
   const [pendingKyc, setPendingKyc] = useState({ doctor: [], center: [] });
+  const [suspendedItems, setSuspendedItems] = useState([]);
   const [kycTab, setKycTab] = useState('all');
 
   // ─── PROGRAMS MODERATION (NEW) ───
@@ -110,7 +111,7 @@ const AyurvedaAdminPanel = () => {
   doctorsRes, centersRes, pendingDocRes, pendingCenterRes,
   bookingsRes, discountsRes, settlementsRes, programsRes,
   productsRes, reviewsRes, complaintsRes,
-  pendingPackagesRes, pendingProgramsRes, kycDoctorRes, kycCenterRes
+  pendingPackagesRes, pendingProgramsRes, kycDoctorRes, kycCenterRes, suspendedRes
   ] = await Promise.all([
   api.get('/ayurveda/doctors'),
   api.get('/ayurveda-centers/admin/all'),
@@ -125,6 +126,7 @@ const AyurvedaAdminPanel = () => {
   axios.get(`${API_BASE}/api/ayurveda/bookings/admin/complaints/all`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
   axios.get(`${API_BASE}/api/ayurveda-centers/admin/packages/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
   axios.get(`${API_BASE}/api/ayurveda/admin/programs/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
+  axios.get(`${API_BASE}/api/ayurveda/admin/suspended`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
   axios.get(`${API_BASE}/api/ayurveda/admin/kyc/doctors/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } })),
   axios.get(`${API_BASE}/api/ayurveda/admin/kyc/centers/pending`, { headers: ADMIN_KEY_HEADER }).catch(() => ({ data: { data: [] } }))
 ]);
@@ -160,6 +162,7 @@ const AyurvedaAdminPanel = () => {
       setPendingPackages(pendingPkgs);
       setPendingPrograms(pendingProgs);
       setPendingKyc({ doctor: kycDocs, center: kycCents });
+      setSuspendedItems(suspendedRes?.data?.data || []);
 
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
@@ -1022,6 +1025,7 @@ const handleExportSettlements = () => {
           { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
           { id: 'complaints', label: `🚨 Complaints`, icon: FaExclamationTriangle },
           { id: 'kyc', label: `📋 KYC (${pendingKyc.doctor.length + pendingKyc.center.length})`, icon: FaIdCard },
+          { id: 'suspended', label: `🚫 Suspended (${suspendedItems.length})`, icon: FaBan },
         ].map(t => (
           <button key={t.id} onClick={() => { setTab(t.id); setPage(1); }}
             style={{
@@ -2398,7 +2402,68 @@ const handleExportSettlements = () => {
                   </div>
                 );
               });
-            })()}
+                        })()}
+          </div>
+        )}
+
+        {/* SUSPENDED TAB */}
+        {tab === 'suspended' && (
+          <div>
+            <h2 style={{ fontWeight: 700, marginBottom: '1rem' }}>🚫 Suspended Providers ({suspendedItems.length})</h2>
+
+            {suspendedItems.length === 0 ? (
+              <div style={{ backgroundColor: 'white', borderRadius: 12, padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                <p style={{ fontSize: '3rem', margin: 0 }}>✅</p>
+                <p style={{ marginTop: '0.5rem' }}>No suspended providers. All good!</p>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={th}>Type</th>
+                    <th style={th}>Name</th>
+                    <th style={th}>City</th>
+                    <th style={th}>Phone</th>
+                    <th style={th}>Suspended On</th>
+                    <th style={th}>Reason</th>
+                    <th style={th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {suspendedItems.map(item => (
+                    <tr key={`${item.type}_${item._id}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={td}>
+                        <span style={{ padding: '3px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700, background: '#fef3c7', color: '#92400e' }}>
+                          {item.type}
+                        </span>
+                      </td>
+                      <td style={td}><strong>{item.name}</strong></td>
+                      <td style={td}>{item.city || '—'}</td>
+                      <td style={td}>{item.phone || '—'}</td>
+                      <td style={td}>{item.suspendedAt ? new Date(item.suspendedAt).toLocaleDateString('en-IN') : '—'}</td>
+                      <td style={td}>{item.suspendedReason || '—'}</td>
+                      <td style={td}>
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm(`Unsuspend ${item.type} "${item.name}"?`)) return;
+                            try {
+                              await axios.put(`${API_BASE}/api/ayurveda/admin/unsuspend/${item.type}/${item._id}`, {}, { headers: { 'x-admin-key': ADMIN_KEY } });
+                              addNotification(`Unsuspended: ${item.name}`, 'success');
+                              fetchAllData();
+                            } catch (e) {
+                              addNotification('Unsuspend failed: ' + (e.response?.data?.message || e.message), 'error');
+                            }
+                          }}
+                          style={{ padding: '0.4rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+                        >
+                          ✅ Unsuspend
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
