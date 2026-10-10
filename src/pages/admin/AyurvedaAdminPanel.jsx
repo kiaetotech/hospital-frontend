@@ -426,14 +426,16 @@ const handleExportSettlements = () => {
     }
   };
 
-    const suspendDoctor = async (id) => {
+      const suspendDoctor = async (id) => {
     const reason = window.prompt('Reason for suspending this doctor?') || '';
     if (!reason || reason.trim().length < 3) {
       alert('A reason (at least 3 characters) is required.');
       return;
     }
+    const untilInput = window.prompt('Suspend until (YYYY-MM-DD)? Leave blank for indefinite:', '');
+    const until = untilInput && untilInput.trim() ? untilInput.trim() : undefined;
     try {
-      await axios.put(`${API_BASE}/api/ayurveda/admin/suspend/doctor/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      await axios.put(`${API_BASE}/api/ayurveda/admin/suspend/doctor/${id}`, { reason: reason.trim(), until }, { headers: { 'x-admin-key': ADMIN_KEY } });
       addNotification('Doctor suspended', 'success');
       fetchAllData();
     } catch (e) {
@@ -441,14 +443,16 @@ const handleExportSettlements = () => {
     }
   };
 
-  const suspendCenter = async (id) => {
+    const suspendCenter = async (id) => {
     const reason = window.prompt('Reason for suspending this center?') || '';
     if (!reason || reason.trim().length < 3) {
       alert('A reason (at least 3 characters) is required.');
       return;
     }
+    const untilInput = window.prompt('Suspend until (YYYY-MM-DD)? Leave blank for indefinite:', '');
+    const until = untilInput && untilInput.trim() ? untilInput.trim() : undefined;
     try {
-      await axios.put(`${API_BASE}/api/ayurveda/admin/suspend/center/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      await axios.put(`${API_BASE}/api/ayurveda/admin/suspend/center/${id}`, { reason: reason.trim(), until }, { headers: { 'x-admin-key': ADMIN_KEY } });
       addNotification('Center suspended', 'success');
       fetchAllData();
     } catch (e) {
@@ -2451,9 +2455,10 @@ const handleExportSettlements = () => {
                     <th style={th}>Name</th>
                     <th style={th}>City</th>
                     <th style={th}>Phone</th>
-                    <th style={th}>Suspended On</th>
-                    <th style={th}>Reason</th>
-                    <th style={th}>Actions</th>
+                               <th style={th}>Suspended On</th>
+                   				 <th style={th}>Until</th>
+                   				 <th style={th}>Reason</th>
+                    				 <th style={th}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2468,6 +2473,7 @@ const handleExportSettlements = () => {
                       <td style={td}>{item.city || '—'}</td>
                       <td style={td}>{item.phone || '—'}</td>
                       <td style={td}>{item.suspendedAt ? new Date(item.suspendedAt).toLocaleDateString('en-IN') : '—'}</td>
+                      <td style={td}>{item.suspendedUntil ? new Date(item.suspendedUntil).toLocaleDateString('en-IN') : 'Indefinite'}</td>
                       <td style={td}>{item.suspendedReason || '—'}</td>
                       <td style={td}>
                         <button
