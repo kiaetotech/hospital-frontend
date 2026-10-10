@@ -85,13 +85,14 @@ useEffect(() => {
   }
 }, [activeTab]);
 
-  const fetchDashboardData = async (doctorId) => {
+    const fetchDashboardData = async (doctorId) => {
     setLoading(true);
     try {
-      const [bookingsRes, earningsRes, settlementsRes] = await Promise.all([
+      const [bookingsRes, earningsRes, settlementsRes, doctorRes] = await Promise.all([
         getDoctorBookings(doctorId),
         getProviderEarnings('ayurveda_doctor', doctorId),
-        getSettlementHistory('ayurveda_doctor', doctorId)
+        getSettlementHistory('ayurveda_doctor', doctorId),
+        api.get(`/ayurveda/doctors/${doctorId}`).catch(() => ({ data: { data: null } }))
       ]);
 
       if (bookingsRes.data.success) {
@@ -102,6 +103,9 @@ useEffect(() => {
       }
       if (settlementsRes.data.success) {
         setSettlements(settlementsRes.data.data || []);
+      }
+      if (doctorRes.data?.data) {
+        setDoctor(prev => ({ ...prev, ...doctorRes.data.data }));
       }
     } catch (err) {
       setError('Failed to load dashboard data');
@@ -482,6 +486,33 @@ const handleRespondToReview = async (bookingId) => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Suspended Banner */}
+        {doctor?.verificationStatus === 'suspended' && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+            <h3 className="font-bold text-red-700">⚠️ Your account has been suspended</h3>
+            <p className="text-red-600 text-sm mt-1">
+              <strong>Reason:</strong> {doctor.suspendedReason || 'Not specified'}
+            </p>
+            <p className="text-red-600 text-sm">
+              <strong>Suspended on:</strong> {doctor.suspendedAt ? new Date(doctor.suspendedAt).toLocaleDateString() : '—'}
+            </p>
+            {doctor.suspendedUntil ? (
+              <p className="text-red-600 text-sm">
+                <strong>Will be lifted on:</strong> {new Date(doctor.suspendedUntil).toLocaleDateString()}
+              </p>
+            ) : (
+              <p className="text-red-600 text-sm">
+                <strong>Duration:</strong> Indefinite
+              </p>
+            )}
+            <p className="text-red-500 text-xs mt-2">
+              Contact support@hospitalhub.in to appeal.
+            </p>
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 bg-white rounded-lg p-2 shadow overflow-x-auto">
         {/* Tabs */}
         <div className="flex gap-2 mb-6 bg-white rounded-lg p-2 shadow overflow-x-auto">
           {[
