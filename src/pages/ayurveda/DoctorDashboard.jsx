@@ -511,9 +511,7 @@ const handleRespondToReview = async (bookingId) => {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 bg-white rounded-lg p-2 shadow overflow-x-auto">
-        {/* Tabs */}
+         {/* Tabs */}
         <div className="flex gap-2 mb-6 bg-white rounded-lg p-2 shadow overflow-x-auto">
           {[
   { id: 'overview', label: 'Overview', icon: FaChartBar },
