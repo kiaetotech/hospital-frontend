@@ -233,8 +233,8 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
                           {pkg.discountedPricePerEmployee && <span style={{ color: '#059669' }}>Discounted: {fmt(pkg.discountedPricePerEmployee)}</span>}
                           <span>Min: {pkg.minEmployees} emp</span>
                           <span>Valid: {pkg.validityDays ? `${pkg.validityDays}d` : 'not set'}</span>
-                          {pkg.duration && <span> · {pkg.duration}</span>}
-                          {pkg.durationDays && <span> · {pkg.durationDays} days</span>}
+			  {pkg.duration && <span> · Program: {pkg.duration}</span>}
+			  {pkg.durationDays && <span> · {pkg.durationDays}-day program</span>}
                         </div>
                         {pkg.servicesIncluded?.length > 0 && <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>{pkg.servicesIncluded.map((s,i) => <span key={i} style={{ background:'#f1f5f9', padding:'2px 8px', borderRadius:12, fontSize:'0.75rem' }}>{s}</span>)}</div>}
                       </div>
