@@ -2659,13 +2659,31 @@ const handleExportSettlements = () => {
                           <strong style={{ fontSize: '1rem' }}>📦 {pkg.packageName}</strong>
                           <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: '0.72rem', fontWeight: 700, background: badge.bg, color: badge.fg }}>{badge.txt}</span>
                         </div>
-                        <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                                                <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
                           👨‍⚕️ {pkg.doctorName} {pkg.doctorCity && `• 📍 ${pkg.doctorCity}`}
                         </p>
+                        {pkg.description && (
+                          <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#475569' }}>{pkg.description}</p>
+                        )}
                         <p style={{ margin: '4px 0', fontSize: '0.9rem', color: '#059669', fontWeight: 600 }}>
                           ₹{pkg.pricePerEmployee?.toLocaleString('en-IN')}/employee
-                          {pkg.minEmployees && ` • Min ${pkg.minEmployees} emp`}
+                          {pkg.discountedPricePerEmployee && ` (Disc: ₹${pkg.discountedPricePerEmployee?.toLocaleString('en-IN')})`}
                         </p>
+                        <p style={{ margin: '4px 0', fontSize: '0.82rem', color: '#64748b' }}>
+                          {pkg.minEmployees && <span>Min {pkg.minEmployees} emp</span>}
+                          {pkg.validityDays && <span> • Valid {pkg.validityDays}d</span>}
+                          {pkg.duration && <span> • {pkg.duration}</span>}
+                        </p>
+                        {pkg.servicesIncluded?.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                            {pkg.servicesIncluded.map((s, i) => (
+                              <span key={i} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: 12, fontSize: '0.72rem', color: '#475569' }}>{s}</span>
+                            ))}
+                          </div>
+                        )}
+                        {pkg.isActive === false && (
+                          <p style={{ margin: '4px 0', fontSize: '0.8rem', color: '#f59e0b' }}>⚠️ Package deactivated by doctor</p>
+                        )}
                         {st === 'rejected' && pkg.rejectionReason && (
                           <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#dc2626' }}>Reason: {pkg.rejectionReason}</p>
                         )}
