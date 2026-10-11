@@ -70,16 +70,24 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (pkgId) => {
+    const handleDelete = async (pkgId) => {
     if (!window.confirm('Delete this package permanently? This cannot be undone.')) return;
     try {
-      await axios.delete(`${API_BASE}/api/${apiPath}/corporate/packages/${pkgId}`, cfg);
+      const doctorKey = providerType === 'hospitals' ? 'hospitalId'
+                      : providerType === 'ambulance' ? 'ambulanceId'
+                      : providerType === 'diagnostics' ? 'providerId'
+                      : 'doctorId';
+      await axios.delete(
+        `${API_BASE}/api/${apiPath}/corporate/packages/${pkgId}?${doctorKey}=${providerId}`,
+        cfg
+      );
       setMessage('✅ Package deleted');
       loadData();
     } catch (e) {
+      console.error('Delete failed:', e.response?.data || e.message);
       setMessage('❌ Failed to delete package');
     }
-  };
+  };;
 
   const handleCancelEdit = () => {
     setEditingPkgId(null);
