@@ -16,6 +16,7 @@ import {
   FaHistory, FaChartBar, FaUserMd, FaPhone, FaEnvelope,
   FaExclamationTriangle, FaIdCard
 } from 'react-icons/fa';
+import CorporatePlansTab from '../../components/CorporatePlansTab';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -513,7 +514,7 @@ const handleRespondToReview = async (bookingId) => {
 
          {/* Tabs */}
         <div className="flex gap-2 mb-6 bg-white rounded-lg p-2 shadow overflow-x-auto">
-          {[
+        {[
   { id: 'overview', label: 'Overview', icon: FaChartBar },
   { id: 'bookings', label: 'Bookings', icon: FaCalendarAlt },
   { id: 'availability', label: 'Availability', icon: FaClock },
@@ -522,6 +523,7 @@ const handleRespondToReview = async (bookingId) => {
   { id: 'reviews', label: 'Reviews', icon: FaStar },
   { id: 'earnings', label: 'Earnings', icon: FaWallet },
   { id: 'settlements', label: 'Settlements', icon: FaHistory },
+  { id: 'corporate', label: 'Corporate Plans', icon: FaUsers },
   { id: 'kyc', label: 'KYC', icon: FaIdCard }
 ].map(tab => (
             <button
@@ -1165,6 +1167,20 @@ const handleRespondToReview = async (bookingId) => {
            		 )}
           		</div>
         		)}
+
+        {activeTab === 'corporate' && (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-lg font-semibold mb-2">🏢 Corporate Plans</h2>
+            <p className="text-gray-500 text-sm mb-4">
+              Offer corporate ayurveda wellness packages to companies.
+            </p>
+            <CorporatePlansTab
+              providerType="ayurveda"
+              providerId={doctor?.id}
+              token={localStorage.getItem('doctorToken')}
+            />
+          </div>
+        )}
 
        		 {/* KYC Tab */}
         		{activeTab === 'kyc' && (
