@@ -88,8 +88,9 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
     setForm({ packageName: '', packageType: 'health_checkup', description: '', servicesIncluded: '', pricePerEmployee: '', discountedPricePerEmployee: '', minEmployees: '', validityDays: '', duration: '', durationDays: '', availableCities: '', slaTerms: '' });
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('[DEBUG] form at submit:', JSON.stringify(form));
     if (!form.packageName || !form.pricePerEmployee) return setMessage('❌ Name and price required');
     try {
       const body = {
