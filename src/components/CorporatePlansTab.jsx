@@ -15,7 +15,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
   const [form, setForm] = useState({
     packageName: '', packageType: 'health_checkup', description: '',
     servicesIncluded: '', pricePerEmployee: '', discountedPricePerEmployee: '',
-    minEmployees: '', validityDays: '', duration: '', durationDays: '', availableCities: '', slaTerms: ''
+    minEmployees: '', validityDays: '', duration: '', availableCities: '', slaTerms: ''
   });
 
   const cfg = { headers: { Authorization: `Bearer ${token}` } };
@@ -62,7 +62,6 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
       minEmployees: pkg.minEmployees || '',
       validityDays: pkg.validityDays || '',
       duration: pkg.duration || '',
-      durationDays: pkg.durationDays || '',
       availableCities: '',
       slaTerms: ''
     });
@@ -85,7 +84,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
   const handleCancelEdit = () => {
     setEditingPkgId(null);
     setShowForm(false);
-    setForm({ packageName: '', packageType: 'health_checkup', description: '', servicesIncluded: '', pricePerEmployee: '', discountedPricePerEmployee: '', minEmployees: '', validityDays: '', duration: '', durationDays: '', availableCities: '', slaTerms: '' });
+    setForm({ packageName: '', packageType: 'health_checkup', description: '', servicesIncluded: '', pricePerEmployee: '', discountedPricePerEmployee: '', minEmployees: '', validityDays: '', duration: '', availableCities: '', slaTerms: '' });
   };
 
     const handleSubmit = async (e) => {
@@ -101,8 +100,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
         discountedPricePerEmployee: form.discountedPricePerEmployee ? Number(form.discountedPricePerEmployee) : undefined,
         minEmployees: form.minEmployees ? Number(form.minEmployees) : undefined,
         validityDays: form.validityDays ? Number(form.validityDays) : undefined,
-        duration: form.duration || undefined,
-        durationDays: form.durationDays ? Number(form.durationDays) : undefined
+      duration: form.duration || undefined
       };
 
       if (editingPkgId) {
@@ -115,7 +113,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
 
         setShowForm(false);
       setEditingPkgId(null);
-      setForm({ packageName:'', packageType:'health_checkup', description:'', servicesIncluded:'', pricePerEmployee:'', discountedPricePerEmployee:'', minEmployees:'', validityDays:'', duration:'', durationDays:'', availableCities:'', slaTerms:'' });
+            setForm({ packageName:'', packageType:'health_checkup', description:'', servicesIncluded:'', pricePerEmployee:'', discountedPricePerEmployee:'', minEmployees:'', validityDays:'', duration:'', availableCities:'', slaTerms:'' });
       loadData();
     } catch (e) { setMessage('❌ ' + (e.response?.data?.message || 'Failed')); }
   };
@@ -193,8 +191,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
                     <div><label style={lbl}>Discounted Price (₹)</label><input type="number" value={form.discountedPricePerEmployee} onChange={e => setForm({...form, discountedPricePerEmployee: e.target.value})} style={S.input} /></div>
                     <div><label style={lbl}>Min Employees (optional)</label><input type="number" min="1" placeholder="e.g. 5" value={form.minEmployees} onChange={e => setForm({...form, minEmployees: e.target.value})} style={S.input} /></div>
                     <div><label style={lbl}>Validity (Days)</label><input type="number" value={form.validityDays} onChange={e => setForm({...form, validityDays: e.target.value})} style={S.input} /></div>
-                    <div><label style={lbl}>Program Duration (text)</label><input type="text" placeholder="e.g. 4 days residential" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} style={S.input} /></div>
-                    <div><label style={lbl}>Duration (Days)</label><input type="number" value={form.durationDays} onChange={e => setForm({...form, durationDays: e.target.value})} style={S.input} /></div>
+                    <div><label style={lbl}>Program Duration</label><input type="text" placeholder="e.g. 4 days residential" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} style={S.input} /></div>
                     <div><label style={lbl}>Cities (comma separated)</label><input value={form.availableCities} onChange={e => setForm({...form, availableCities: e.target.value})} style={S.input} placeholder="Mumbai, Delhi, Bangalore" /></div>
                     <div><label style={lbl}>Services Included (comma separated)</label><input value={form.servicesIncluded} onChange={e => setForm({...form, servicesIncluded: e.target.value})} style={S.input} placeholder="CBC, Lipid Profile, Doctor Consult" /></div>
                     <div style={{ gridColumn: 'span 2' }}><label style={lbl}>Description</label><textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} style={{...S.input, height:60}} /></div>
@@ -233,8 +230,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
                           {pkg.discountedPricePerEmployee && <span style={{ color: '#059669' }}>Discounted: {fmt(pkg.discountedPricePerEmployee)}</span>}
                           <span>Min: {pkg.minEmployees} emp</span>
                           <span>Valid: {pkg.validityDays ? `${pkg.validityDays}d` : 'not set'}</span>
-			  {pkg.duration && <span> · Program: {pkg.duration}</span>}
-			  {pkg.durationDays && <span> · {pkg.durationDays}-day program</span>}
+			  {pkg.duration && <span> · {pkg.duration}</span>}
                         </div>
                         {pkg.servicesIncluded?.length > 0 && <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>{pkg.servicesIncluded.map((s,i) => <span key={i} style={{ background:'#f1f5f9', padding:'2px 8px', borderRadius:12, fontSize:'0.75rem' }}>{s}</span>)}</div>}
                       </div>
