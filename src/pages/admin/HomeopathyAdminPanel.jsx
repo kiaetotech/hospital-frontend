@@ -544,16 +544,23 @@ const HomeopathyAdminPanel = () => {
     }
   };
 
-    const suspendDoctor = async (id) => {
+        const suspendDoctor = async (id) => {
     const reason = window.prompt('Reason for suspending this doctor?') || '';
-    if (!reason || reason.trim().length < 3) {
+    if (reason.trim().length < 3) {
       alert('A reason (at least 3 characters) is required.');
       return;
     }
+    const untilInput = window.prompt('Suspend until (YYYY-MM-DD)? Leave blank for indefinite:', '');
+    let until;
+    if (untilInput && untilInput.trim()) {
+      const d = new Date(untilInput.trim());
+      if (isNaN(d.getTime())) { alert('Invalid date format'); return; }
+      until = d.toISOString();
+    }
     try {
-      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/doctor/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/doctor/${id}`, { reason: reason.trim(), until }, { headers: { 'x-admin-key': ADMIN_KEY } });
       addNotification('Doctor suspended', 'success');
-      fetchAllData();
+      // ... refresh
     } catch (e) {
       addNotification('Suspend failed: ' + (e.response?.data?.message || e.message), 'error');
     }
