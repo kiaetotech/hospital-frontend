@@ -29,6 +29,19 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
 
   useEffect(() => { loadData(); }, []);
 
+  // Auto-refresh when browser tab regains focus (e.g. after admin approves)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, []);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -186,9 +199,12 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
           {activeTab === 'packages' && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                <h3 style={{ fontWeight: 700 }}>My Corporate Packages ({packages.length})</h3>
-                    <button onClick={() => { if (showForm) handleCancelEdit(); else setShowForm(true); }} style={{ ...S.btn, background: '#2563eb', color: '#fff' }}>{showForm ? 'Cancel' : '+ New Package'}</button>
-              </div>
+                                    <h3 style={{ fontWeight: 700 }}>My Corporate Packages ({packages.length})</h3>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={loadData} style={{ ...S.btn, background: '#f1f5f9', color: '#475569' }}>🔄 Refresh</button>
+                      <button onClick={() => { if (showForm) handleCancelEdit(); else setShowForm(true); }} style={{ ...S.btn, background: '#2563eb', color: '#fff' }}>{showForm ? 'Cancel' : '+ New Package'}</button>
+                    </div>
+                  </div>
 
               {showForm && (
                 <form onSubmit={handleSubmit} style={{ ...S.card, marginBottom: 20 }}>
