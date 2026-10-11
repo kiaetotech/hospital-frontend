@@ -11,6 +11,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState('packages');
   const [message, setMessage] = useState('');
+  const [editingPkgId, setEditingPkgId] = useState(null);
   const [form, setForm] = useState({
     packageName: '', packageType: 'health_checkup', description: '',
     servicesIncluded: '', pricePerEmployee: '', discountedPricePerEmployee: '',
@@ -50,6 +51,43 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
     } catch (e) { setMessage('❌ Failed to toggle'); }
   };
 
+  const handleEdit = (pkg) => {
+    setForm({
+      packageName: pkg.packageName || '',
+      packageType: 'health_checkup',
+      description: pkg.description || '',
+      servicesIncluded: (pkg.servicesIncluded || []).join(', '),
+      pricePerEmployee: pkg.pricePerEmployee || '',
+      discountedPricePerEmployee: pkg.discountedPricePerEmployee || '',
+      minEmployees: pkg.minEmployees || '',
+      validityDays: pkg.validityDays || '',
+      duration: pkg.duration || '',
+      durationDays: pkg.durationDays || '',
+      availableCities: '',
+      slaTerms: ''
+    });
+    setEditingPkgId(pkg._id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (pkgId) => {
+    if (!window.confirm('Delete this package permanently? This cannot be undone.')) return;
+    try {
+      await axios.delete(`${API_BASE}/api/${apiPath}/corporate/packages/${pkgId}`, cfg);
+      setMessage('✅ Package deleted');
+      loadData();
+    } catch (e) {
+      setMessage('❌ Failed to delete package');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPkgId(null);
+    setShowForm(false);
+    setForm({ packageName: '', packageType: 'health_checkup', description: '', servicesIncluded: '', pricePerEmployee: '', discountedPricePerEmployee: '', minEmployees: '', validityDays: '', duration: '', durationDays: '', availableCities: '', slaTerms: '' });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.packageName || !form.pricePerEmployee) return setMessage('❌ Name and price required');
@@ -65,10 +103,18 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
         duration: form.duration || undefined,
         durationDays: form.durationDays ? Number(form.durationDays) : undefined
       };
-      await axios.post(`${API_BASE}/api/${apiPath}/corporate/packages`, body, cfg);
-      setMessage('✅ Package created');
-      setShowForm(false);
-                        setForm({ packageName:'', packageType:'health_checkup', description:'', servicesIncluded:'', pricePerEmployee:'', discountedPricePerEmployee:'', minEmployees:'', validityDays:'', duration:'', durationDays:'', availableCities:'', slaTerms:'' });
+
+      if (editingPkgId) {
+        await axios.put(`${API_BASE}/api/${apiPath}/corporate/packages/${editingPkgId}`, body, cfg);
+        setMessage('✅ Package updated — pending admin re-approval');
+      } else {
+        await axios.post(`${API_BASE}/api/${apiPath}/corporate/packages`, body, cfg);
+        setMessage('✅ Package created');
+      }
+
+        setShowForm(false);
+      setEditingPkgId(null);
+      setForm({ packageName:'', packageType:'health_checkup', description:'', servicesIncluded:'', pricePerEmployee:'', discountedPricePerEmployee:'', minEmployees:'', validityDays:'', duration:'', durationDays:'', availableCities:'', slaTerms:'' });
       loadData();
     } catch (e) { setMessage('❌ ' + (e.response?.data?.message || 'Failed')); }
   };
@@ -134,7 +180,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                 <h3 style={{ fontWeight: 700 }}>My Corporate Packages ({packages.length})</h3>
-                <button onClick={() => setShowForm(!showForm)} style={{ ...S.btn, background: '#2563eb', color: '#fff' }}>{showForm ? 'Cancel' : '+ New Package'}</button>
+                    <button onClick={() => { if (showForm) handleCancelEdit(); else setShowForm(true); }} style={{ ...S.btn, background: '#2563eb', color: '#fff' }}>{showForm ? 'Cancel' : '+ New Package'}</button>
               </div>
 
               {showForm && (
@@ -153,7 +199,7 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
                     <div style={{ gridColumn: 'span 2' }}><label style={lbl}>Description</label><textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} style={{...S.input, height:60}} /></div>
                     <div style={{ gridColumn: 'span 2' }}><label style={lbl}>SLA Terms</label><input value={form.slaTerms} onChange={e => setForm({...form, slaTerms: e.target.value})} style={S.input} placeholder="e.g. Reports delivered within 24 hours" /></div>
                   </div>
-                  <button type="submit" style={{...S.btn, background:'#10b981', color:'#fff', padding:'10px 28px', marginTop:12}}>Create Package</button>
+                   <button type="submit" style={{...S.btn, background:'#10b981', color:'#fff', padding:'10px 28px', marginTop:12}}>{editingPkgId ? 'Update Package' : 'Create Package'}</button>
                 </form>
               )}
 
@@ -191,9 +237,15 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
                         </div>
                         {pkg.servicesIncluded?.length > 0 && <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>{pkg.servicesIncluded.map((s,i) => <span key={i} style={{ background:'#f1f5f9', padding:'2px 8px', borderRadius:12, fontSize:'0.75rem' }}>{s}</span>)}</div>}
                       </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <button onClick={() => handleEdit(pkg)} style={{...S.btn, background: '#3b82f6', color: '#fff', fontSize: '0.75rem' }}>
+                          ✏️ Edit
+                        </button>
                         <button onClick={() => togglePackageStatus(pkg._id, pkg.isActive)} style={{...S.btn, background: pkg.isActive ? '#f59e0b' : '#10b981', color: '#fff', fontSize: '0.75rem' }}>
                           {pkg.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button onClick={() => handleDelete(pkg._id)} style={{...S.btn, background: '#dc2626', color: '#fff', fontSize: '0.75rem' }}>
+                          🗑️ Delete
                         </button>
                       </div>
                     </div>
