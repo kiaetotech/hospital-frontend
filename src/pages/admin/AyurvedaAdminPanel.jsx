@@ -75,6 +75,9 @@ const AyurvedaAdminPanel = () => {
   const [pendingKyc, setPendingKyc] = useState({ doctor: [], center: [] });
   const [suspendedItems, setSuspendedItems] = useState([]);
   const [kycTab, setKycTab] = useState('all');
+  const [corporatePackages, setCorporatePackages] = useState([]);
+  const [corporateLoading, setCorporateLoading] = useState(false);
+  const [corporateFilter, setCorporateFilter] = useState('all');
 
   // ─── PROGRAMS MODERATION (NEW) ───
   const [showProgramRejectModal, setShowProgramRejectModal] = useState(null); // { doctorId, programId }
@@ -348,7 +351,25 @@ const handleExportSettlements = () => {
   }, [commissionRuleFilter, commissionRuleSearch]);
 
     useEffect(() => {
-  if (tab === 'settlements') {
+  // ─── CORPORATE PACKAGES: fetch when tab opens ───
+  if (tab === 'corporate-packages') {
+    (async () => {
+      setCorporateLoading(true);
+      try {
+        const r = await axios.get(
+          `${API_BASE}/api/ayurveda/admin/corporate-packages/all?status=${corporateFilter}`,
+          { headers: { 'x-admin-key': ADMIN_KEY } }
+        );
+        setCorporatePackages(r.data?.data || []);
+      } catch (e) {
+        console.error('Corporate packages load failed:', e.response?.data || e.message);
+      } finally {
+        setCorporateLoading(false);
+      }
+    })();
+  }
+
+    if (tab === 'settlements') {
     if (settlementTab === 'all') fetchAllSettlements();
     else if (settlementTab === 'providers') fetchProviderGroups();
     else if (settlementTab === 'cities') fetchCityBreakdown();
@@ -362,7 +383,44 @@ const handleExportSettlements = () => {
   if (tab === 'commission') {
     fetchCommissionRules();
   }
-}, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange, fetchAllPrograms, fetchCommissionRules]);
+}, [tab, settlementTab, settlementPage, settlementFilter, dateGroupBy, dateRange, corporateFilter, fetchAllPrograms, fetchCommissionRules]);
+
+
+  const approveCorporatePkg = async (doctorId, pkgId) => {
+    if (!window.confirm('Approve this corporate package?')) return;
+    try {
+      await axios.put(
+        `${API_BASE}/api/ayurveda/admin/corporate-packages/${doctorId}/${pkgId}/approve`,
+        {},
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      const r = await axios.get(
+        `${API_BASE}/api/ayurveda/admin/corporate-packages/all?status=${corporateFilter}`,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      setCorporatePackages(r.data?.data || []);
+    } catch (e) {
+      alert('Approve failed: ' + (e.response?.data?.message || e.message));
+    }
+  };
+
+  const rejectCorporatePkg = async (doctorId, pkgId) => {
+    const reason = window.prompt('Rejection reason (optional):') || '';
+    try {
+      await axios.put(
+        `${API_BASE}/api/ayurveda/admin/corporate-packages/${doctorId}/${pkgId}/reject`,
+        { reason },
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      const r = await axios.get(
+        `${API_BASE}/api/ayurveda/admin/corporate-packages/all?status=${corporateFilter}`,
+        { headers: { 'x-admin-key': ADMIN_KEY } }
+      );
+      setCorporatePackages(r.data?.data || []);
+    } catch (e) {
+      alert('Reject failed: ' + (e.response?.data?.message || e.message));
+    }
+  };
 
     useEffect(() => {
     // Pause auto-refresh while any modal is open (so form inputs don't lose focus)
@@ -1053,8 +1111,9 @@ const handleExportSettlements = () => {
           { id: 'reviews', label: '⭐ Reviews', icon: FaStar },
           { id: 'complaints', label: `🚨 Complaints`, icon: FaExclamationTriangle },
           { id: 'kyc', label: `📋 KYC (${pendingKyc.doctor.length + pendingKyc.center.length})`, icon: FaIdCard },
-          { id: 'suspended', label: `🚫 Suspended (${suspendedItems.length})`, icon: FaBan },
-        ].map(t => (
+                    { id: 'suspended', label: `🚫 Suspended (${suspendedItems.length})`, icon: FaBan },
+          { id: 'corporate-packages', label: `🏢 Corporate (${corporatePackages.length})`, icon: FaBuilding },
+         ].map(t => (
           <button key={t.id} onClick={() => { setTab(t.id); setPage(1); }}
             style={{
               padding: '0.6rem 1.25rem', border: 'none', borderRadius: 8, cursor: 'pointer',
@@ -2562,6 +2621,74 @@ const handleExportSettlements = () => {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+                {/* CORPORATE PACKAGES TAB */}
+        {tab === 'corporate-packages' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <h2 style={{ fontWeight: 700, margin: 0 }}>🏢 Corporate Packages ({corporatePackages.length})</h2>
+              <select
+                value={corporateFilter}
+                onChange={e => setCorporateFilter(e.target.value)}
+                style={{ padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">⏳ Pending</option>
+                <option value="approved">✅ Approved</option>
+                <option value="rejected">❌ Rejected</option>
+              </select>
+            </div>
+
+            {corporateLoading ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>⏳ Loading...</p>
+            ) : corporatePackages.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No corporate packages found for this filter.</p>
+            ) : (
+              corporatePackages.map(pkg => {
+                const st = pkg.approvalStatus || 'pending';
+                const badge = st === 'approved' ? { bg: '#dcfce7', fg: '#166534', txt: '✅ Live' }
+                            : st === 'rejected' ? { bg: '#fee2e2', fg: '#dc2626', txt: '❌ Rejected' }
+                            : { bg: '#fef3c7', fg: '#92400e', txt: '⏳ Pending' };
+                return (
+                  <div key={`${pkg.doctorId}_${pkg.packageId}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: `4px solid ${badge.fg}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                      <div style={{ flex: 1, minWidth: 250 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: 4 }}>
+                          <strong style={{ fontSize: '1rem' }}>📦 {pkg.packageName}</strong>
+                          <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: '0.72rem', fontWeight: 700, background: badge.bg, color: badge.fg }}>{badge.txt}</span>
+                        </div>
+                        <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                          👨‍⚕️ {pkg.doctorName} {pkg.doctorCity && `• 📍 ${pkg.doctorCity}`}
+                        </p>
+                        <p style={{ margin: '4px 0', fontSize: '0.9rem', color: '#059669', fontWeight: 600 }}>
+                          ₹{pkg.pricePerEmployee?.toLocaleString('en-IN')}/employee
+                          {pkg.minEmployees && ` • Min ${pkg.minEmployees} emp`}
+                        </p>
+                        {st === 'rejected' && pkg.rejectionReason && (
+                          <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#dc2626' }}>Reason: {pkg.rejectionReason}</p>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexDirection: 'column' }}>
+                        {st === 'pending' && (
+                          <>
+                            <button onClick={() => approveCorporatePkg(pkg.doctorId, pkg.packageId)} style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>✅ Approve</button>
+                            <button onClick={() => rejectCorporatePkg(pkg.doctorId, pkg.packageId)} style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>❌ Reject</button>
+                          </>
+                        )}
+                        {st === 'approved' && (
+                          <button onClick={() => rejectCorporatePkg(pkg.doctorId, pkg.packageId)} style={{ padding: '0.5rem 1rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>Revoke</button>
+                        )}
+                        {st === 'rejected' && (
+                          <button onClick={() => approveCorporatePkg(pkg.doctorId, pkg.packageId)} style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>✅ Approve</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
 
