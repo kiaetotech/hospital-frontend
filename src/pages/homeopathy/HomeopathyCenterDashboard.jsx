@@ -1451,10 +1451,10 @@ const HomeopathyCenterDashboard = () => {
   <div className="bg-white rounded-xl shadow-md p-6">
     <h2 className="text-lg font-semibold mb-2">🏢 Corporate Plans</h2>
     <p className="text-gray-500 text-sm mb-4">Offer corporate wellness packages to companies.</p>
-    <CorporatePlansTab
+        <CorporatePlansTab
       providerType="naturopathy_center"
       providerId={centerIdFromStorage}
-      token={localStorage.getItem('centerToken') || localStorage.getItem('homeopathyCenterToken')}
+      token={localStorage.getItem('homeopathyCenterToken')}
     />
   </div>
 )}
