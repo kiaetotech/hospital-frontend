@@ -9,6 +9,7 @@ import {
   FaShieldAlt, FaExclamationTriangle, FaEye, FaIdCard
 } from 'react-icons/fa';
 import KycUploadForm from '../../components/KycUploadForm';
+import CorporatePlansTab from '../../components/CorporatePlansTab';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: FaChartBar },
