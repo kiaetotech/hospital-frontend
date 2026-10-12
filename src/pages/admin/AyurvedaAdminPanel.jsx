@@ -2659,9 +2659,9 @@ const handleExportSettlements = () => {
                           <strong style={{ fontSize: '1rem' }}>📦 {pkg.packageName}</strong>
                           <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: '0.72rem', fontWeight: 700, background: badge.bg, color: badge.fg }}>{badge.txt}</span>
                         </div>
-                                                <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
-                          👨‍⚕️ {pkg.doctorName} {pkg.doctorCity && `• 📍 ${pkg.doctorCity}`}
-                        </p>
+                            <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                         				 {pkg.providerType === 'center' ? '🏨' : '👨‍⚕️'} {pkg.doctorName} {pkg.doctorCity && `• 📍 ${pkg.doctorCity}`}
+                        				</p>
                         {pkg.description && (
                           <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#475569' }}>{pkg.description}</p>
                         )}
