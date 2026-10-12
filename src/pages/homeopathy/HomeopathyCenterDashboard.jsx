@@ -21,7 +21,8 @@ const TABS = [
   { id: 'reviews', label: 'Reviews', icon: FaStar },
   { id: 'earnings', label: 'Earnings', icon: FaWallet },
   { id: 'settlements', label: 'Settlements', icon: FaHistory },
-  { id: 'kyc', label: 'KYC', icon: FaIdCard }
+  { id: 'kyc', label: 'KYC', icon: FaIdCard },
+  { id: 'corporate', label: 'Corporate', icon: FaIdCard }
 ];
 
 const HomeopathyCenterDashboard = () => {
@@ -1444,14 +1445,18 @@ const HomeopathyCenterDashboard = () => {
           </div>
         )}
 
-        {/* ========== KYC ========== */}
-        {activeTab === 'kyc' && (
-          <KycUploadForm
-            providerType="center"
-            providerId={centerIdFromStorage}
-            token={localStorage.getItem('homeopathyCenterToken')}
-          />
-        )}
+        {/* ========== CORPORATE ========== */}
+{activeTab === 'corporate' && (
+  <div className="bg-white rounded-xl shadow-md p-6">
+    <h2 className="text-lg font-semibold mb-2">🏢 Corporate Plans</h2>
+    <p className="text-gray-500 text-sm mb-4">Offer corporate wellness packages to companies.</p>
+    <CorporatePlansTab
+      providerType="naturopathy_center"
+      providerId={centerIdFromStorage}
+      token={localStorage.getItem('centerToken') || localStorage.getItem('homeopathyCenterToken')}
+    />
+  </div>
+)}
 
         {/* ========== PACKAGE MODAL ========== */}
         {showPackageModal && (

@@ -18,6 +18,7 @@ import {
   FaSpa, FaUserMd, FaCheck, FaAward, FaExclamationTriangle, FaIdCard
 } from 'react-icons/fa';
 import KycUploadForm from '../../components/KycUploadForm';
+import CorporatePlansTab from '../../components/CorporatePlansTab';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: FaChartBar },
@@ -30,7 +31,8 @@ const TABS = [
   { id: 'reviews', label: 'Reviews', icon: FaStar },
   { id: 'earnings', label: 'Earnings', icon: FaWallet },
   { id: 'settlements', label: 'Settlements', icon: FaHistory },
-  { id: 'kyc', label: 'KYC', icon: FaIdCard }
+  { id: 'kyc', label: 'KYC', icon: FaIdCard },
+  { id: 'corporate', label: 'Corporate Plans', icon: FaBuilding }
 ];
 
 const WellnessCenterDashboard = () => {
@@ -1403,15 +1405,28 @@ const handleRespondToReview = async (bookingId) => {
         		  </div>
        		 )}
 
-      		  {/* ========== KYC ========== */}
-      		  {activeTab === 'kyc' && (
-       		   <KycUploadForm
-           		 providerType="ayurveda_center"
-         		   providerId={center?.id}
-         		   token={getToken()}
-        		  />
-      		  )}
-     		 </div>
+      		                      {/* ========== CORPORATE ========== */}
+                    {activeTab === 'corporate' && (
+                      <div className="bg-white rounded-xl shadow-md p-6">
+                        <h2 className="text-lg font-semibold mb-2">🏢 Corporate Plans</h2>
+                        <p className="text-gray-500 text-sm mb-4">Offer corporate wellness packages to companies.</p>
+                        <CorporatePlansTab
+                          providerType="wellness_center"
+                          providerId={center?.id || center?._id}
+                          token={getToken()}
+                        />
+                      </div>
+                    )}
+
+                    {/* ========== KYC ========== */}
+                     {activeTab === 'kyc' && (
+                      <KycUploadForm
+                        providerType="ayurveda_center"
+                        providerId={center?.id}
+                        token={getToken()}
+                       />
+                     )}
+                   </div>
 
       {/* ========== PACKAGE MODAL ========== */}
       {showPackageModal && (
