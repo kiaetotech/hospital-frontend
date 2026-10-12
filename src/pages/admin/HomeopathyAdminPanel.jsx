@@ -566,14 +566,21 @@ const HomeopathyAdminPanel = () => {
     }
   };
 
-     const suspendCenter = async (id) => {
+       const suspendCenter = async (id) => {
     const reason = window.prompt('Reason for suspending this center?') || '';
     if (!reason || reason.trim().length < 3) {
       alert('A reason (at least 3 characters) is required.');
       return;
     }
+    const untilInput = window.prompt('Suspend until (YYYY-MM-DD)? Leave blank for indefinite:', '');
+    let until;
+    if (untilInput && untilInput.trim()) {
+      const d = new Date(untilInput.trim());
+      if (isNaN(d.getTime())) { alert('Invalid date format'); return; }
+      until = d.toISOString();
+    }
     try {
-      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/center/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/center/${id}`, { reason: reason.trim(), until }, { headers: { 'x-admin-key': ADMIN_KEY } });
       addNotification('Center suspended', 'success');
       fetchAllData();
     } catch (e) {
@@ -581,14 +588,21 @@ const HomeopathyAdminPanel = () => {
     }
   };
 
-  const suspendPharmacy = async (id) => {
+    const suspendPharmacy = async (id) => {
     const reason = window.prompt('Reason for suspending this pharmacy?') || '';
     if (!reason || reason.trim().length < 3) {
       alert('A reason (at least 3 characters) is required.');
       return;
     }
+    const untilInput = window.prompt('Suspend until (YYYY-MM-DD)? Leave blank for indefinite:', '');
+    let until;
+    if (untilInput && untilInput.trim()) {
+      const d = new Date(untilInput.trim());
+      if (isNaN(d.getTime())) { alert('Invalid date format'); return; }
+      until = d.toISOString();
+    }
     try {
-      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/pharmacy/${id}`, { reason: reason.trim() }, { headers: { 'x-admin-key': ADMIN_KEY } });
+      await axios.put(`${API_BASE}/api/homeopathy/admin/suspend/pharmacy/${id}`, { reason: reason.trim(), until }, { headers: { 'x-admin-key': ADMIN_KEY } });
       addNotification('Pharmacy suspended', 'success');
       fetchAllData();
     } catch (e) {
