@@ -107,11 +107,11 @@ export function PlanDetail() {
           </div>
           <div className="flex flex-wrap gap-3 mt-6">
             <Link
-              to={`/insurance/quote/${plan._id}`}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2"
-            >
-              <FaCalculator /> Calculate Premium
-            </Link>
+  to={`/insurance/apply/${plan._id}`}
+  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2"
+>
+  <FaCalculator /> Proceed to Buy
+</Link>
             <Link
               to={`/insurance/search?category=${plan.planCategory || ''}`}
               className="border border-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 flex items-center gap-2"

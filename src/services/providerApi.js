@@ -2,6 +2,12 @@ import axios from 'axios';
 
 const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
 
+// JWT-based admin header for insurance. Falls back to ADMIN_KEY for backward compat.
+const insuranceAdminHeaders = () => {
+  const token = localStorage.getItem('adminToken');
+  return token ? { Authorization: `Bearer ${token}` } : { 'x-admin-key': ADMIN_KEY };
+};
+
 const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
 
 const providerApi = axios.create({
@@ -247,79 +253,79 @@ export const insuranceApi = {
   // ============================================
   // ADMIN — OVERVIEW (NEW)
   // ============================================
-  adminOverview: () => providerApi.get('/insurance/admin/overview', { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminOverview: () => providerApi.get('/insurance/admin/overview', { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — COMPANIES (NEW)
   // ============================================
-  adminGetCompanies: (params) => providerApi.get('/insurance/admin/companies', { params, headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminApproveCompany: (id) => providerApi.post(`/insurance/admin/companies/${id}/approve`, {}, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminRejectCompany: (id, data) => providerApi.post(`/insurance/admin/companies/${id}/reject`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminSuspendCompany: (id, data) => providerApi.post(`/insurance/admin/companies/${id}/suspend`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminUnsuspendCompany: (id) => providerApi.post(`/insurance/admin/companies/${id}/unsuspend`, {}, { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetCompanies: (params) => providerApi.get('/insurance/admin/companies', { params, headers: insuranceAdminHeaders() }),
+  adminApproveCompany: (id) => providerApi.post(`/insurance/admin/companies/${id}/approve`, {}, { headers: insuranceAdminHeaders() }),
+  adminRejectCompany: (id, data) => providerApi.post(`/insurance/admin/companies/${id}/reject`, data, { headers: insuranceAdminHeaders() }),
+  adminSuspendCompany: (id, data) => providerApi.post(`/insurance/admin/companies/${id}/suspend`, data, { headers: insuranceAdminHeaders() }),
+  adminUnsuspendCompany: (id) => providerApi.post(`/insurance/admin/companies/${id}/unsuspend`, {}, { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — PLANS (NEW)
   // ============================================
-  adminGetPlans: (params) => providerApi.get('/insurance/admin/plans', { params, headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminApprovePlan: (id) => providerApi.post(`/insurance/admin/plans/${id}/approve`, {}, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminRejectPlan: (id, data) => providerApi.post(`/insurance/admin/plans/${id}/reject`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminTogglePlan: (id) => providerApi.post(`/insurance/admin/plans/${id}/toggle`, {}, { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetPlans: (params) => providerApi.get('/insurance/admin/plans', { params, headers: insuranceAdminHeaders() }),
+  adminApprovePlan: (id) => providerApi.post(`/insurance/admin/plans/${id}/approve`, {}, { headers: insuranceAdminHeaders() }),
+  adminRejectPlan: (id, data) => providerApi.post(`/insurance/admin/plans/${id}/reject`, data, { headers: insuranceAdminHeaders() }),
+  adminTogglePlan: (id) => providerApi.post(`/insurance/admin/plans/${id}/toggle`, {}, { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — POLICIES (NEW)
   // ============================================
-  adminGetPolicies: (params) => providerApi.get('/insurance/admin/policies', { params, headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminForceCancelPolicy: (id, data) => providerApi.post(`/insurance/admin/policies/${id}/force-cancel`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetPolicies: (params) => providerApi.get('/insurance/admin/policies', { params, headers: insuranceAdminHeaders() }),
+  adminForceCancelPolicy: (id, data) => providerApi.post(`/insurance/admin/policies/${id}/force-cancel`, data, { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — CLAIMS (NEW)
   // ============================================
-  adminGetClaims: (params) => providerApi.get('/insurance/admin/claims', { params, headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetClaims: (params) => providerApi.get('/insurance/admin/claims', { params, headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — PENDING QUEUE (NEW)
   // ============================================
-  adminGetPending: () => providerApi.get('/insurance/admin/pending', { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetPending: () => providerApi.get('/insurance/admin/pending', { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — REVIEWS (NEW)
   // ============================================
-  adminGetReviews: (params) => providerApi.get('/insurance/admin/reviews', { params, headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminFlagReview: (policyId, data) => providerApi.post(`/insurance/admin/reviews/${policyId}/flag`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminHideReview: (policyId, data) => providerApi.post(`/insurance/admin/reviews/${policyId}/hide`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetReviews: (params) => providerApi.get('/insurance/admin/reviews', { params, headers: insuranceAdminHeaders() }),
+  adminFlagReview: (policyId, data) => providerApi.post(`/insurance/admin/reviews/${policyId}/flag`, data, { headers: insuranceAdminHeaders() }),
+  adminHideReview: (policyId, data) => providerApi.post(`/insurance/admin/reviews/${policyId}/hide`, data, { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — COMPLAINTS (NEW)
   // ============================================
-  adminGetComplaints: (params) => providerApi.get('/insurance/admin/complaints', { params, headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminEscalateComplaint: (id, data) => providerApi.post(`/insurance/admin/complaints/${id}/escalate`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetComplaints: (params) => providerApi.get('/insurance/admin/complaints', { params, headers: insuranceAdminHeaders() }),
+  adminEscalateComplaint: (id, data) => providerApi.post(`/insurance/admin/complaints/${id}/escalate`, data, { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — KYC (NEW)
   // ============================================
-  adminGetKycPending: () => providerApi.get('/insurance/admin/kyc/pending', { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminVerifyKyc: (companyId) => providerApi.post(`/insurance/admin/kyc/${companyId}/verify`, {}, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminRejectKyc: (companyId, data) => providerApi.post(`/insurance/admin/kyc/${companyId}/reject`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetKycPending: () => providerApi.get('/insurance/admin/kyc/pending', { headers: insuranceAdminHeaders() }),
+  adminVerifyKyc: (companyId) => providerApi.post(`/insurance/admin/kyc/${companyId}/verify`, {}, { headers: insuranceAdminHeaders() }),
+  adminRejectKyc: (companyId, data) => providerApi.post(`/insurance/admin/kyc/${companyId}/reject`, data, { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — SUSPENDED (NEW)
   // ============================================
-  adminGetSuspended: () => providerApi.get('/insurance/admin/suspended', { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetSuspended: () => providerApi.get('/insurance/admin/suspended', { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — CORPORATE (NEW)
   // ============================================
-  adminGetCorporatePending: () => providerApi.get('/insurance/admin/corporate/pending', { headers: { 'x-admin-key': ADMIN_KEY } }),
+  adminGetCorporatePending: () => providerApi.get('/insurance/admin/corporate/pending', { headers: insuranceAdminHeaders() }),
 
   // ============================================
   // ADMIN — ADVERTISING (NEW)
   // ============================================
-  adminGetAdCampaigns: (params) => providerApi.get('/insurance/admin/ads/campaigns', { params, headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminApproveAdCampaign: (id) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/approve`, {}, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminRejectAdCampaign: (id, data) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/reject`, data, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminPauseAdCampaign: (id) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/pause`, {}, { headers: { 'x-admin-key': ADMIN_KEY } }),
-  adminGetAdRevenue: (params) => providerApi.get('/insurance/admin/ads/revenue', { params, headers: { 'x-admin-key': ADMIN_KEY } })
+  adminGetAdCampaigns: (params) => providerApi.get('/insurance/admin/ads/campaigns', { params, headers: insuranceAdminHeaders() }),
+  adminApproveAdCampaign: (id) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/approve`, {}, { headers: insuranceAdminHeaders() }),
+  adminRejectAdCampaign: (id, data) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/reject`, data, { headers: insuranceAdminHeaders() }),
+  adminPauseAdCampaign: (id) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/pause`, {}, { headers: insuranceAdminHeaders() }),
+  adminGetAdRevenue: (params) => providerApi.get('/insurance/admin/ads/revenue', { params, headers: insuranceAdminHeaders() })
 };
 
 export const providerAuth = {

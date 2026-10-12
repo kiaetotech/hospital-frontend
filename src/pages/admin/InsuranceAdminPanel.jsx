@@ -21,7 +21,7 @@ import {
 } from 'recharts';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
-const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
+// Admin auth uses JWT from localStorage (adminToken). No hardcoded key.
 
 const TABS = [
   { id: 'overview', label: '📊 Overview' },
@@ -74,7 +74,10 @@ export default function InsuranceAdminPanel() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   // Helpers
-  const headers = useMemo(() => ({ 'x-admin-key': ADMIN_KEY }), []);
+  const headers = useMemo(() => {
+  const token = localStorage.getItem('adminToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}, []);
 
   const addNotification = useCallback((message, type = 'info') => {
     setNotifications(prev => [{ id: Date.now(), message, type, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));

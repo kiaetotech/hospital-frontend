@@ -164,6 +164,7 @@ import InsuranceCompanyDashboard from './pages/insurance/InsuranceCompanyDashboa
 // P2.1 — New marketplace UI (Option C grouped)
 import { Hub as InsuranceMarketplaceHub, Search as InsuranceMarketplaceSearch, Compare as InsuranceMarketplaceCompare } from './pages/insurance/InsuranceMarketplace';
 import { PlanDetail as InsurancePlanDetail, Quote as InsuranceQuote } from './pages/insurance/InsurancePlan';
+import { ApplyWizard as InsuranceApplyWizard, ApplySuccess as InsuranceApplySuccess } from './pages/insurance/InsuranceApply';
 
 // ============================================
 // CORPORATE MODULE IMPORTS
@@ -444,6 +445,8 @@ function App() {
 	  <Route path="/insurance/compare" element={<InsuranceMarketplaceCompare />} />
 	  <Route path="/insurance/plan/:id" element={<InsurancePlanDetail />} />
 	  <Route path="/insurance/quote/:planId" element={<InsuranceQuote />} />
+	  <Route path="/insurance/apply/:planId" element={<InsuranceApplyWizard />} />
+	  <Route path="/insurance/apply/success" element={<InsuranceApplySuccess />} />
 
 	  {/* Insurance — old pages still reachable */}
 	  <Route path="/insurance/list" element={<InsuranceList />} />

@@ -274,11 +274,11 @@ function PlanCard({ plan }) {
           View
         </Link>
         <Link
-          to={`/insurance/quote/${plan._id}`}
-          className="flex-1 text-center bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-        >
-          Buy Now
-        </Link>
+  to={`/insurance/apply/${plan._id}`}
+  className="flex-1 text-center bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+>
+  Buy Now
+</Link>
       </div>
     </div>
   );
