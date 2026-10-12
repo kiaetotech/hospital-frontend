@@ -1,233 +1,469 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+// D:\hospital-frontend\src\pages\insurance\InsurancePolicyDetail.jsx
+// ============================================
+// POLICY DETAIL — with Renewal + Servicing + Portability
+// ============================================
 
-const InsurancePolicyDetail = () => {
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  FaShieldAlt, FaCheck, FaTimes, FaDownload, FaFileAlt, FaUserEdit,
+  FaUserPlus, FaUserMinus, FaSync, FaRedo, FaExchangeAlt,
+} from 'react-icons/fa';
+
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+
+const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
+
+const patientHeaders = () => {
+  const t = localStorage.getItem('patientToken') || localStorage.getItem('token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
+
+export default function InsurancePolicyDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
+
   const [loading, setLoading] = useState(true);
   const [policy, setPolicy] = useState(null);
+  const [error, setError] = useState('');
+  const [tab, setTab] = useState('overview');
+
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [claim, setClaim] = useState({ amount: '', description: '', hospitalName: '', hospitalAddress: '', admissionDate: '' });
   const [claimSubmitting, setClaimSubmitting] = useState(false);
   const [claimMessage, setClaimMessage] = useState('');
 
-  useEffect(() => {
-    const fetchPolicy = async () => {
-      try {
-        const response = await axios.get(`/api/insurance/my-policies/${id}`);
-        if (response.data.success) {
-          setPolicy(response.data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching policy:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPolicy();
+  const [renewalQuote, setRenewalQuote] = useState(null);
+  const [renewalLoading, setRenewalLoading] = useState(false);
+  const [serviceAction, setServiceAction] = useState('');
+  const [servicePayload, setServicePayload] = useState({});
+  const [serviceMessage, setServiceMessage] = useState('');
+
+  const loadPolicy = useCallback(async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/insurance/my-policies/${id}`, { headers: patientHeaders() });
+      const data = await r.json();
+      if (data.success) setPolicy(data.data);
+      else setError(data.message || 'Failed to load policy');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => { loadPolicy(); }, [loadPolicy]);
+
+  const loadRenewalQuote = async () => {
+    setRenewalLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/api/insurance-policy-center/renewal-quote/${id}`, { headers: patientHeaders() });
+      const data = await r.json();
+      if (data.success) setRenewalQuote(data.data);
+      else setError(data.error?.message || 'Failed to load quote');
+    } catch (e) { setError(e.message); }
+    finally { setRenewalLoading(false); }
+  };
+
+  useEffect(() => {
+    if (tab === 'renewal' && !renewalQuote) loadRenewalQuote();
+  }, [tab]);
 
   const submitClaim = async (e) => {
     e.preventDefault();
     setClaimSubmitting(true); setClaimMessage('');
     try {
-      const token = localStorage.getItem('token');
-      if (!token) { navigate('/login'); return; }
-      const response = await axios.post('/api/insurance-claims/file', { policyId: policy._id, ...claim, amount: Number(claim.amount) }, { headers: { Authorization: `Bearer ${token}` } });
-      if (response.data?.success) { setClaimMessage('Claim submitted successfully.'); setShowClaimForm(false);
-        const refreshed = await axios.get(`/api/insurance/my-policies/${policy._id}`); if (refreshed.data?.success) setPolicy(refreshed.data.data); setClaim({ amount: '', description: '', hospitalName: '', hospitalAddress: '', admissionDate: '' }); }
-    } catch (error) { setClaimMessage(error.response?.data?.message || 'Unable to submit claim'); }
+      const r = await fetch(`${API_URL}/api/insurance/claims`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...patientHeaders() },
+        body: JSON.stringify({ policyId: policy._id, ...claim, amount: Number(claim.amount) }),
+      });
+      const data = await r.json();
+      if (data.success) {
+        setClaimMessage('✅ Claim submitted successfully.');
+        setShowClaimForm(false);
+        await loadPolicy();
+      } else {
+        setClaimMessage('❌ ' + (data.message || 'Failed'));
+      }
+    } catch (e) { setClaimMessage('❌ ' + e.message); }
     finally { setClaimSubmitting(false); }
   };
 
   const downloadPolicy = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/insurance/download-policy/${policy._id}`, { responseType: 'blob', headers: { Authorization: `Bearer ${token}` } });
-      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      const a = document.createElement('a'); a.href = url; a.download = `${policy.policyNumber}.pdf`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    } catch (error) { setClaimMessage(error.response?.data?.message || 'Unable to download policy document'); }
+      const r = await fetch(`${API_URL}/api/insurance/download-policy/${policy._id}`, { headers: patientHeaders() });
+      if (!r.ok) throw new Error('Failed');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${policy.policyNumber}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) { setClaimMessage('❌ Unable to download: ' + e.message); }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
+  const submitRenewal = async () => {
+    setRenewalLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/api/insurance-policy-center/renew/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...patientHeaders() },
+        body: JSON.stringify({}),
+      });
+      const data = await r.json();
+      if (data.success) {
+        setError('');
+        setPolicy(data.data.policy);
+        setRenewalQuote(null);
+        setTab('overview');
+        alert('✅ Policy renewed successfully. New validity: ' + new Date(data.data.policy.endDate).toLocaleDateString());
+      } else {
+        setError(data.error?.message || 'Renewal failed');
+      }
+    } catch (e) { setError(e.message); }
+    finally { setRenewalLoading(false); }
   };
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '2rem', textAlign: 'center' }}>
-        <p>Loading policy details...</p>
-      </div>
-    );
-  }
+  const submitService = async () => {
+    setServiceMessage('');
+    try {
+      const r = await fetch(`${API_URL}/api/insurance-policy-center/service/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...patientHeaders() },
+        body: JSON.stringify({ action: serviceAction, data: servicePayload }),
+      });
+      const data = await r.json();
+      if (data.success) {
+        setServiceMessage('✅ Done');
+        setServiceAction('');
+        setServicePayload({});
+        await loadPolicy();
+      } else {
+        setServiceMessage('❌ ' + (data.error?.message || 'Failed'));
+      }
+    } catch (e) { setServiceMessage('❌ ' + e.message); }
+  };
 
-  if (!policy) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Policy Not Found</h2>
-          <button
-            onClick={() => navigate('/my-bookings')}
-            style={{ marginTop: '1rem', padding: '0.5rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-          >
-            Back to My Bookings
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const freeLookCancel = async () => {
+    if (!window.confirm('Cancel this policy under free-look (within 15 days)? Full refund will be issued.')) return;
+    try {
+      const r = await fetch(`${API_URL}/api/insurance-policy-center/free-look-cancel/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...patientHeaders() },
+        body: JSON.stringify({ reason: 'Customer free-look' }),
+      });
+      const data = await r.json();
+      if (data.success) { alert('Policy cancelled. Refund: ' + inr(data.data.refundAmount)); await loadPolicy(); }
+      else setServiceMessage('❌ ' + (data.error?.message || 'Failed'));
+    } catch (e) { setServiceMessage('❌ ' + e.message); }
+  };
+
+  const requestPortability = async () => {
+    const reason = window.prompt('Reason for portability:');
+    if (!reason) return;
+    try {
+      const r = await fetch(`${API_URL}/api/insurance-policy-center/portability-request/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...patientHeaders() },
+        body: JSON.stringify({ reason }),
+      });
+      const data = await r.json();
+      if (data.success) setServiceMessage('✅ ' + data.data.message);
+      else setServiceMessage('❌ ' + (data.error?.message || 'Failed'));
+    } catch (e) { setServiceMessage('❌ ' + e.message); }
+  };
+
+  if (loading) return <div className="text-center py-20 text-slate-400">Loading policy…</div>;
+  if (!policy) return (
+    <div className="text-center py-20">
+      <p className="text-slate-500 mb-4">{error || 'Policy not found'}</p>
+      <button onClick={() => navigate('/insurance/my-policies')} className="bg-blue-600 text-white px-6 py-2 rounded-lg">← My Policies</button>
+    </div>
+  );
+
+  const daysToExpiry = policy.endDate ? Math.floor((new Date(policy.endDate) - Date.now()) / (24 * 60 * 60 * 1000)) : 0;
+  const daysSinceStart = policy.startDate ? Math.floor((Date.now() - new Date(policy.startDate)) / (24 * 60 * 60 * 1000)) : 999;
+  const withinFreeLook = daysSinceStart <= 15;
+
+  const TABS = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'members', label: 'Members' },
+    { id: 'claims', label: 'Claims' },
+    { id: 'documents', label: 'Documents' },
+    { id: 'renewal', label: 'Renewal' },
+    { id: 'servicing', label: 'Servicing' },
+  ];
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <button
-        onClick={() => navigate('/my-bookings')}
-        style={{ marginBottom: '1.5rem', padding: '8px 16px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-      >
-        ← Back to My Bookings
-      </button>
-
-      <h1 style={{ fontSize: '28px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        🛡️ Policy Details
-      </h1>
-
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginTop: '1rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Policy Number</div>
-            <div style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>{policy.policyNumber}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Status</div>
+    <div className="min-h-screen bg-slate-50">
+      <div className="bg-white border-b">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <button onClick={() => navigate('/insurance/my-policies')} className="text-sm text-slate-500 flex items-center gap-1 mb-3">← My Policies</button>
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <span style={{ 
-                padding: '0.25rem 0.75rem', 
-                borderRadius: '20px',
-                backgroundColor: policy.status === 'active' ? '#d1fae5' : '#fef3c7',
-                color: policy.status === 'active' ? '#065f46' : '#92400e',
-                fontWeight: 'bold',
-                fontSize: '0.875rem'
-              }}>
-                {policy.status?.toUpperCase() || 'PENDING'}
-              </span>
+              <div className="text-xs uppercase text-slate-400 font-semibold">{policy.companyId?.name}</div>
+              <h1 className="text-2xl font-bold text-slate-800">{policy.policyName}</h1>
+              <div className="text-sm text-slate-500">Policy No: {policy.policyNumber}</div>
             </div>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${policy.status === 'active' ? 'bg-green-100 text-green-700' : policy.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+              {String(policy.status || '').toUpperCase()}
+            </span>
           </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Plan Name</div>
-            <div style={{ fontWeight: 'bold' }}>{policy.policyName}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Company</div>
-            <div style={{ fontWeight: 'bold' }}>{policy.companyId?.name}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Sum Insured</div>
-            <div style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>{formatCurrency(policy.sumInsured)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Premium</div>
-            <div style={{ fontWeight: 'bold', fontSize: '1.125rem', color: '#2563eb' }}>{formatCurrency(policy.premiumAmount)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Valid From</div>
-            <div>{policy.startDate ? new Date(policy.startDate).toLocaleDateString() : 'N/A'}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Valid Till</div>
-            <div>{policy.endDate ? new Date(policy.endDate).toLocaleDateString() : 'N/A'}</div>
-          </div>
+          {daysToExpiry > 0 && daysToExpiry <= 30 && (
+            <div className="mt-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 text-sm">
+              ⏰ Policy expires in {daysToExpiry} days. <button onClick={() => setTab('renewal')} className="font-bold underline">Renew now</button>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Members */}
-        {policy.members && policy.members.length > 0 && (
-          <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '1.5rem', paddingTop: '1.5rem' }}>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>👨‍👩‍👧‍👦 Members Covered</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem' }}>
-              <div style={{ padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: '6px' }}>
-                <div style={{ fontWeight: 'bold' }}>{policy.primaryInsured?.name}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Primary (Age {policy.primaryInsured?.age})</div>
-              </div>
-              {policy.members.map((member, idx) => (
-                <div key={idx} style={{ padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: '6px' }}>
-                  <div style={{ fontWeight: 'bold' }}>{member.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{member.relation} (Age {member.age})</div>
-                </div>
-              ))}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 flex gap-1 overflow-x-auto">
+          {TABS.map((t) => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`px-5 py-3 font-semibold text-sm border-b-2 whitespace-nowrap ${tab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-6 text-sm">{error}</div>}
+
+        {/* OVERVIEW */}
+        {tab === 'overview' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Stat label="Sum Insured" value={inr(policy.sumInsured)} />
+              <Stat label="Premium Paid" value={inr(policy.premiumAmount)} />
+              <Stat label="Valid From" value={policy.startDate ? new Date(policy.startDate).toLocaleDateString() : '—'} />
+              <Stat label="Valid Till" value={policy.endDate ? new Date(policy.endDate).toLocaleDateString() : '—'} />
             </div>
+            {policy.nominee && (
+              <>
+                <h3 className="font-bold text-slate-800 mb-3">Nominee</h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <Row label="Name" value={policy.nominee.name} />
+                  <Row label="Relation" value={policy.nominee.relation} />
+                  <Row label="Contact" value={policy.nominee.contactNumber || '—'} />
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {/* Claims */}
-        {policy.claims && policy.claims.length > 0 && (
-          <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '1.5rem', paddingTop: '1.5rem' }}>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>📋 Claims History</h3>
-            {policy.claims.map((claim, idx) => (
-              <div key={idx} style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '6px', marginBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <strong>Claim ID:</strong> {claim.claimId}
-                  </div>
-                  <div>
-                    <span style={{ 
-                      padding: '0.25rem 0.5rem', 
-                      borderRadius: '12px',
-                      backgroundColor: claim.status === 'settled' ? '#d1fae5' : '#fef3c7',
-                      color: claim.status === 'settled' ? '#065f46' : '#92400e',
-                      fontSize: '0.75rem'
-                    }}>
-                      {claim.status?.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                  Amount: {formatCurrency(claim.amount)} • Date: {new Date(claim.date).toLocaleDateString()}
-                </div>
+        {/* MEMBERS */}
+        {tab === 'members' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="font-bold text-slate-800 mb-4">Members ({(policy.members || []).length})</h3>
+            {policy.primaryInsured?.name && (
+              <div className="border-b py-3">
+                <div className="font-semibold">{policy.primaryInsured.name} <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded ml-2">Primary</span></div>
+                <div className="text-sm text-slate-500">Age {policy.primaryInsured.age} · {policy.primaryInsured.gender}</div>
+              </div>
+            )}
+            {(policy.members || []).map((m, i) => (
+              <div key={i} className="border-b last:border-0 py-3">
+                <div className="font-semibold">{m.name}</div>
+                <div className="text-sm text-slate-500">{m.relation} · Age {m.age} · {m.gender}</div>
               </div>
             ))}
           </div>
         )}
 
-        {showClaimForm && (
-          <form onSubmit={submitClaim} style={{ borderTop: '1px solid #e5e7eb', marginTop: '1.5rem', paddingTop: '1.5rem' }}>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>File a Claim</h3>
-            <div style={{ display: 'grid', gap: '0.75rem' }}>
-              <input required type="number" min="1" max={policy.sumInsured} placeholder="Claim amount (₹)" value={claim.amount} onChange={e => setClaim({ ...claim, amount: e.target.value })} />
-              <input required placeholder="Hospital name" value={claim.hospitalName} onChange={e => setClaim({ ...claim, hospitalName: e.target.value })} />
-              <input placeholder="Hospital address" value={claim.hospitalAddress} onChange={e => setClaim({ ...claim, hospitalAddress: e.target.value })} />
-              <input required type="date" value={claim.admissionDate} onChange={e => setClaim({ ...claim, admissionDate: e.target.value })} />
-              <textarea required placeholder="Describe the claim" value={claim.description} onChange={e => setClaim({ ...claim, description: e.target.value })} />
-              <div style={{ display: 'flex', gap: '0.5rem' }}><button type="submit" disabled={claimSubmitting} style={{ padding: '0.5rem 1rem', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px' }}>{claimSubmitting ? 'Submitting...' : 'Submit Claim'}</button><button type="button" onClick={() => setShowClaimForm(false)} style={{ padding: '0.5rem 1rem' }}>Cancel</button></div>
-              {claimMessage && <div style={{ color: '#92400e' }}>{claimMessage}</div>}
+        {/* CLAIMS */}
+        {tab === 'claims' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-slate-800">Claims History</h3>
+              {policy.status === 'active' && <button onClick={() => setShowClaimForm(true)} className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">📋 File Claim</button>}
             </div>
-          </form>
+            {(!policy.claims || policy.claims.length === 0) && <p className="text-slate-500 text-sm">No claims yet.</p>}
+            {(policy.claims || []).map((c, i) => (
+              <div key={i} className="border-b py-3 last:border-0">
+                <div className="flex justify-between">
+                  <div><strong>{c.claimNumber || c.claimId}</strong></div>
+                  <span className={`text-xs px-2 py-0.5 rounded ${c.status === 'settled' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{String(c.status).toUpperCase()}</span>
+                </div>
+                <div className="text-sm text-slate-500">{inr(c.amount)} · {c.date ? new Date(c.date).toLocaleDateString() : ''}</div>
+              </div>
+            ))}
+
+            {showClaimForm && (
+              <form onSubmit={submitClaim} className="mt-6 border-t pt-6 space-y-3">
+                <h4 className="font-bold">File a Claim</h4>
+                <input required type="number" placeholder="Amount (₹)" value={claim.amount} onChange={(e) => setClaim({ ...claim, amount: e.target.value })} className="w-full border rounded px-3 py-2" />
+                <input required placeholder="Hospital name" value={claim.hospitalName} onChange={(e) => setClaim({ ...claim, hospitalName: e.target.value })} className="w-full border rounded px-3 py-2" />
+                <input placeholder="Hospital address" value={claim.hospitalAddress} onChange={(e) => setClaim({ ...claim, hospitalAddress: e.target.value })} className="w-full border rounded px-3 py-2" />
+                <input required type="date" value={claim.admissionDate} onChange={(e) => setClaim({ ...claim, admissionDate: e.target.value })} className="w-full border rounded px-3 py-2" />
+                <textarea required placeholder="Describe the claim" value={claim.description} onChange={(e) => setClaim({ ...claim, description: e.target.value })} rows={3} className="w-full border rounded px-3 py-2" />
+                <div className="flex gap-2">
+                  <button type="submit" disabled={claimSubmitting} className="bg-amber-500 text-white px-4 py-2 rounded">{claimSubmitting ? 'Submitting…' : 'Submit'}</button>
+                  <button type="button" onClick={() => setShowClaimForm(false)} className="px-4 py-2">Cancel</button>
+                </div>
+                {claimMessage && <div className="text-sm">{claimMessage}</div>}
+              </form>
+            )}
+          </div>
         )}
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
-          {policy.status === 'active' && (
-            <button
-              onClick={() => setShowClaimForm(true)}
-              style={{ padding: '0.5rem 1.5rem', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-            >
-              📋 File a Claim
+        {/* DOCUMENTS */}
+        {tab === 'documents' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="font-bold text-slate-800 mb-4">Documents</h3>
+            <button onClick={downloadPolicy} className="flex items-center gap-3 py-3 border-b w-full text-left hover:bg-slate-50">
+              <FaFileAlt className="text-blue-600" />
+              <span className="text-sm font-semibold">Policy Certificate</span>
+              <FaDownload className="ml-auto text-slate-400" />
             </button>
-          )}
-          <button
-            onClick={downloadPolicy}
-            style={{ padding: '0.5rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-          >
-            📄 Download Policy
-          </button>
-        </div>
+            <p className="text-xs text-slate-400 mt-4">More documents coming soon.</p>
+          </div>
+        )}
+
+        {/* RENEWAL */}
+        {tab === 'renewal' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="font-bold text-slate-800 mb-4">Renew Policy</h3>
+            {renewalLoading && <p className="text-slate-400">Loading quote…</p>}
+            {renewalQuote && (
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                  <Row label="Current Cover" value={inr(renewalQuote.currentCover)} />
+                  <Row label="Current Premium" value={inr(renewalQuote.currentPremium)} />
+                  <Row label="Renewal Premium" value={inr(renewalQuote.renewalPremium)} />
+                  <Row label="Expires On" value={new Date(renewalQuote.expiresAt).toLocaleDateString()} />
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-sm text-slate-700">
+                  Renewing extends the policy by 1 year from the current end date.
+                </div>
+                <button onClick={submitRenewal} disabled={renewalLoading} className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold">
+                  {renewalLoading ? 'Processing…' : '✅ Renew Policy'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* SERVICING */}
+        {tab === 'servicing' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="font-bold text-slate-800 mb-4">Policy Servicing</h3>
+            {serviceMessage && <div className="bg-slate-50 border rounded p-3 mb-4 text-sm">{serviceMessage}</div>}
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              {[
+                { id: 'change_nominee', label: 'Change Nominee', icon: <FaUserEdit /> },
+                { id: 'add_member', label: 'Add Member', icon: <FaUserPlus /> },
+                { id: 'remove_member', label: 'Remove Member', icon: <FaUserMinus /> },
+                { id: 'change_address', label: 'Change Address', icon: <FaSync /> },
+                { id: 'endorsement', label: 'Endorsement', icon: <FaFileAlt /> },
+              ].map((a) => (
+                <button key={a.id} onClick={() => { setServiceAction(a.id); setServicePayload({}); }}
+                  className={`p-4 rounded-lg border text-sm font-semibold flex flex-col items-center gap-2 ${serviceAction === a.id ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                  {a.icon} {a.label}
+                </button>
+              ))}
+            </div>
+
+            {serviceAction === 'change_nominee' && (
+              <div className="space-y-3 mb-4">
+                <input placeholder="Name" onChange={(e) => setServicePayload((p) => ({ ...p, name: e.target.value }))} className="w-full border rounded px-3 py-2" />
+                <select onChange={(e) => setServicePayload((p) => ({ ...p, relationship: e.target.value }))} className="w-full border rounded px-3 py-2">
+                  <option value="">Select relationship</option>
+                  <option value="spouse">Spouse</option><option value="child">Child</option>
+                  <option value="parent">Parent</option><option value="sibling">Sibling</option><option value="other">Other</option>
+                </select>
+                <input placeholder="Phone" onChange={(e) => setServicePayload((p) => ({ ...p, phone: e.target.value }))} className="w-full border rounded px-3 py-2" />
+              </div>
+            )}
+
+            {serviceAction === 'add_member' && (
+              <div className="space-y-3 mb-4">
+                <input placeholder="Name" onChange={(e) => setServicePayload((p) => ({ ...p, member: { ...p.member, name: e.target.value } }))} className="w-full border rounded px-3 py-2" />
+                <select onChange={(e) => setServicePayload((p) => ({ ...p, member: { ...p.member, relation: e.target.value } }))} className="w-full border rounded px-3 py-2">
+                  <option value="">Select relation</option>
+                  <option value="spouse">Spouse</option><option value="child">Child</option>
+                  <option value="parent">Parent</option><option value="parent_in_law">Parent-in-law</option>
+                </select>
+                <input type="number" placeholder="Age" onChange={(e) => setServicePayload((p) => ({ ...p, member: { ...p.member, age: parseInt(e.target.value) } }))} className="w-full border rounded px-3 py-2" />
+                <select onChange={(e) => setServicePayload((p) => ({ ...p, member: { ...p.member, gender: e.target.value } }))} className="w-full border rounded px-3 py-2">
+                  <option value="">Gender</option>
+                  <option value="male">Male</option><option value="female">Female</option><option value="other">Other</option>
+                </select>
+              </div>
+            )}
+
+            {serviceAction === 'remove_member' && (
+              <div className="space-y-2 mb-4">
+                {(policy.members || []).map((m) => (
+                  <label key={m._id} className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                    <input type="radio" name="member" onChange={() => setServicePayload({ memberId: m._id })} />
+                    <div><div className="font-semibold text-sm">{m.name}</div><div className="text-xs text-slate-500">{m.relation} · Age {m.age}</div></div>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {serviceAction === 'change_address' && (
+              <textarea placeholder="New address" onChange={(e) => setServicePayload({ address: e.target.value })} rows={3} className="w-full border rounded px-3 py-2 mb-4" />
+            )}
+
+            {serviceAction === 'endorsement' && (
+              <div className="space-y-3 mb-4">
+                <select onChange={(e) => setServicePayload((p) => ({ ...p, endorsementType: e.target.value }))} className="w-full border rounded px-3 py-2">
+                  <option value="">Select type</option>
+                  <option value="increase_cover">Increase cover</option>
+                  <option value="add_addon">Add add-on</option>
+                  <option value="other">Other</option>
+                </select>
+                <textarea placeholder="Notes" onChange={(e) => setServicePayload((p) => ({ ...p, notes: e.target.value }))} rows={3} className="w-full border rounded px-3 py-2" />
+              </div>
+            )}
+
+            {serviceAction && (
+              <button onClick={submitService} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold mb-6">Submit Request</button>
+            )}
+
+            {/* Free-look */}
+            {withinFreeLook && policy.status === 'active' && (
+              <div className="border-t pt-6 mt-6">
+                <h4 className="font-bold text-slate-800 mb-2">Free-look Cancellation</h4>
+                <p className="text-sm text-slate-500 mb-3">Within 15 days of purchase, cancel for a full refund.</p>
+                <button onClick={freeLookCancel} className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold">Cancel Policy</button>
+              </div>
+            )}
+
+            {/* Portability */}
+            {policy.status === 'active' && daysToExpiry >= 30 && (
+              <div className="border-t pt-6 mt-6">
+                <h4 className="font-bold text-slate-800 mb-2">Portability</h4>
+                <p className="text-sm text-slate-500 mb-3">Move to a different insurer at renewal (IRDAI right).</p>
+                <button onClick={requestPortability} className="bg-slate-700 text-white px-6 py-2 rounded-lg font-semibold">Request Portability</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
-};
+}
 
-export default InsurancePolicyDetail;
-
+function Stat({ label, value }) {
+  return (
+    <div className="border rounded-lg p-3">
+      <div className="text-xs text-slate-400">{label}</div>
+      <div className="font-bold text-slate-800 mt-1">{value}</div>
+    </div>
+  );
+}
+function Row({ label, value }) {
+  return (
+    <div className="flex justify-between border-b border-slate-100 py-2 last:border-0">
+      <span className="text-slate-500">{label}</span>
+      <span className="font-semibold text-slate-800">{value}</span>
+    </div>
+  );
+}

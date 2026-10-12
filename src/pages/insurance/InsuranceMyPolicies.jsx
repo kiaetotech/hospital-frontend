@@ -84,8 +84,8 @@ export default function InsuranceMyPolicies() {
               <Link to={`/insurance/claims?policyId=${p._id}`}
                 className="px-3 py-1 border rounded text-sm">File Claim</Link>
               {p.status === 'active' && (
-                <Link to={`/insurance/renewal/${p._id}`}
-                  className="px-3 py-1 border rounded text-sm">Renew</Link>
+                <Link to={`/insurance/my-policies/${p._id}`}
+  		className="px-3 py-1 border rounded text-sm">Renew</Link>
               )}
             </div>
           </div>
