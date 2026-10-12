@@ -2555,44 +2555,55 @@ const HomeopathyAdminPanel = () => {
               </div>
             </div>
 
-            {corporatePackages.length === 0 ? (
+                        {corporatePackages.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No corporate packages yet.</p>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={th}>Doctor</th>
-                    <th style={th}>City</th>
-                    <th style={th}>Package</th>
-                    <th style={th}>Price/Employee</th>
-                    <th style={th}>Min Emp</th>
-                    <th style={th}>Created</th>
-                    <th style={th}>Status</th>
-                    <th style={th}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {corporatePackages
-                    .filter(p => statusFilter === 'all' || (p.approvalStatus || 'pending') === statusFilter)
-                    .map(pkg => {
-                      const st = pkg.approvalStatus || 'pending';
-                      const stColor = st === 'approved' ? { bg: '#e8f5e9', fg: '#2E7D32' }
-                                    : st === 'rejected' ? { bg: '#fee2e2', fg: '#dc2626' }
-                                    : { bg: '#fff3e0', fg: '#e65100' };
-                      return (
-                        <tr key={`${pkg.doctorId}_${pkg.packageId}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={td}><strong>{pkg.doctorName}</strong></td>
-                          <td style={td}>{pkg.doctorCity || '—'}</td>
-                          <td style={td}>{pkg.packageName}</td>
-                          <td style={td}>₹{pkg.pricePerEmployee?.toLocaleString('en-IN')}</td>
-                          <td style={td}>{pkg.minEmployees}</td>
-                          <td style={td}>{new Date(pkg.createdAt).toLocaleDateString('en-IN')}</td>
-                          <td style={td}>
-                            <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, background: stColor.bg, color: stColor.fg }}>
-                              {st}
-                            </span>
-                          </td>
-                          <td style={td}>
+              <div>
+                {corporatePackages
+                  .filter(p => statusFilter === 'all' || (p.approvalStatus || 'pending') === statusFilter)
+                  .map(pkg => {
+                    const st = pkg.approvalStatus || 'pending';
+                    const badge = st === 'approved' ? { bg: '#dcfce7', fg: '#166534', txt: '✅ Live' }
+                                : st === 'rejected' ? { bg: '#fee2e2', fg: '#dc2626', txt: '❌ Rejected' }
+                                : { bg: '#fef3c7', fg: '#92400e', txt: '⏳ Pending' };
+                    return (
+                      <div key={`${pkg.doctorId}_${pkg.packageId}`} style={{ backgroundColor: 'white', borderRadius: 12, padding: '1.2rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', borderLeft: `4px solid ${badge.fg}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                          <div style={{ flex: 1, minWidth: 250 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: 4 }}>
+                              <strong style={{ fontSize: '1rem' }}>📦 {pkg.packageName}</strong>
+                              <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: '0.72rem', fontWeight: 700, background: badge.bg, color: badge.fg }}>{badge.txt}</span>
+                            </div>
+                            <p style={{ margin: '4px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                              👨‍⚕️ {pkg.doctorName} {pkg.doctorCity && `• 📍 ${pkg.doctorCity}`}
+                            </p>
+                            {pkg.description && (
+                              <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#475569' }}>{pkg.description}</p>
+                            )}
+                            <p style={{ margin: '4px 0', fontSize: '0.9rem', color: '#059669', fontWeight: 600 }}>
+                              ₹{pkg.pricePerEmployee?.toLocaleString('en-IN')}/employee
+                              {pkg.discountedPricePerEmployee && ` (Disc: ₹${pkg.discountedPricePerEmployee?.toLocaleString('en-IN')})`}
+                            </p>
+                            <p style={{ margin: '4px 0', fontSize: '0.82rem', color: '#64748b' }}>
+                              {pkg.minEmployees && <span>Min {pkg.minEmployees} emp</span>}
+                              {pkg.validityDays && <span> • Valid {pkg.validityDays}d</span>}
+                              {pkg.duration && <span> • {pkg.duration}</span>}
+                            </p>
+                            {pkg.servicesIncluded?.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                                {pkg.servicesIncluded.map((s, i) => (
+                                  <span key={i} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: 12, fontSize: '0.72rem', color: '#475569' }}>{s}</span>
+                                ))}
+                              </div>
+                            )}
+                            {pkg.isActive === false && (
+                              <p style={{ margin: '4px 0', fontSize: '0.8rem', color: '#f59e0b' }}>⚠️ Package deactivated by doctor</p>
+                            )}
+                            {st === 'rejected' && pkg.rejectionReason && (
+                              <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#dc2626' }}>Reason: {pkg.rejectionReason}</p>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.4rem', flexDirection: 'column' }}>
                             {st === 'pending' && (
                               <>
                                 <button
@@ -2603,7 +2614,7 @@ const HomeopathyAdminPanel = () => {
                                       fetchAllData();
                                     } catch (e) { addNotification('Approve failed: ' + (e.response?.data?.message || e.message), 'error'); }
                                   }}
-                                  style={{ padding: '0.3rem 0.7rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, marginRight: 4 }}
+                                  style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
                                 >
                                   ✅ Approve
                                 </button>
@@ -2616,21 +2627,49 @@ const HomeopathyAdminPanel = () => {
                                       fetchAllData();
                                     } catch (e) { addNotification('Reject failed: ' + (e.response?.data?.message || e.message), 'error'); }
                                   }}
-                                  style={{ padding: '0.3rem 0.7rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+                                  style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
                                 >
                                   ❌ Reject
                                 </button>
                               </>
                             )}
-                            {st !== 'pending' && <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>—</span>}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
+                            {st === 'approved' && (
+                              <button
+                                onClick={async () => {
+                                  const reason = prompt('Revoke reason (optional):') || '';
+                                  try {
+                                    await axios.put(`${API_BASE}/api/homeopathy/admin/corporate-packages/${pkg.doctorId}/${pkg.packageId}/reject`, { reason }, { headers: ADMIN_KEY_HEADER });
+                                    addNotification(`Revoked: ${pkg.packageName}`, 'success');
+                                    fetchAllData();
+                                  } catch (e) { addNotification('Revoke failed: ' + (e.response?.data?.message || e.message), 'error'); }
+                                }}
+                                style={{ padding: '0.5rem 1rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                              >
+                                Revoke
+                              </button>
+                            )}
+                            {st === 'rejected' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API_BASE}/api/homeopathy/admin/corporate-packages/${pkg.doctorId}/${pkg.packageId}/approve`, {}, { headers: ADMIN_KEY_HEADER });
+                                    addNotification(`Approved: ${pkg.packageName}`, 'success');
+                                    fetchAllData();
+                                  } catch (e) { addNotification('Approve failed: ' + (e.response?.data?.message || e.message), 'error'); }
+                                }}
+                                style={{ padding: '0.5rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+                              >
+                                ✅ Approve
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
             )}
-          </div>
+     </div>
         )}
 
         {/* PENDING TAB */}
