@@ -9,7 +9,7 @@ const WellnessCenterRegistration = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const [form, setForm] = useState({
+    const [form, setForm] = useState({
     name: '',
     phone: '',
     email: '',
@@ -23,7 +23,8 @@ const WellnessCenterRegistration = () => {
     panchakarmaRooms: '',
     doctorCount: '',
     facilities: [],
-    nearestAirport: ''
+    nearestAirport: '',
+    offersCorporateWellness: false
   });
 
   const handleChange = (e) => {
