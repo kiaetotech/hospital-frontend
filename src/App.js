@@ -161,6 +161,9 @@ import InsurancePolicyDetail from './pages/insurance/InsurancePolicyDetail';
 import InsuranceCompanyRegister from './pages/insurance/InsuranceCompanyRegister';
 import InsuranceCompanyLogin from './pages/insurance/InsuranceCompanyLogin';
 import InsuranceCompanyDashboard from './pages/insurance/InsuranceCompanyDashboard';
+// P2.1 — New marketplace UI (Option C grouped)
+import { Hub as InsuranceMarketplaceHub, Search as InsuranceMarketplaceSearch, Compare as InsuranceMarketplaceCompare } from './pages/insurance/InsuranceMarketplace';
+import { PlanDetail as InsurancePlanDetail, Quote as InsuranceQuote } from './pages/insurance/InsurancePlan';
 
 // ============================================
 // CORPORATE MODULE IMPORTS
@@ -435,17 +438,21 @@ function App() {
           <Route path="/admin/corporate" element={<AdminCorporate />} />
           <Route path="/admin/online-doctor" element={<AdminOnlineDoctor />} />
 	
-          {/* INSURANCE TAG */}
-          <Route path="/insurance" element={<InsuranceHub />} />
-          <Route path="/insurance/list" element={<InsuranceList />} />
-          <Route path="/insurance/compare" element={<InsuranceCompare />} />
-          <Route path="/insurance/plan/:id" element={<InsuranceDetail />} />
-          <Route path="/insurance/apply/:planId" element={<InsuranceApplication />} />
-          <Route path="/insurance/confirmation" element={<InsuranceConfirmation />} />
-          <Route path="/insurance/my-policies/:id" element={<InsurancePolicyDetail />} />
-          <Route path="/insurance/company/register" element={<InsuranceCompanyRegister />} />
-          <Route path="/insurance/company/login" element={<InsuranceCompanyLogin />} />
-          <Route path="/insurance/company/dashboard" element={<InsuranceCompanyDashboard />} />
+          {/* INSURANCE TAG — P2.1 Marketplace UI */}
+	  <Route path="/insurance" element={<InsuranceMarketplaceHub />} />
+	  <Route path="/insurance/search" element={<InsuranceMarketplaceSearch />} />
+	  <Route path="/insurance/compare" element={<InsuranceMarketplaceCompare />} />
+	  <Route path="/insurance/plan/:id" element={<InsurancePlanDetail />} />
+	  <Route path="/insurance/quote/:planId" element={<InsuranceQuote />} />
+
+	  {/* Insurance — old pages still reachable */}
+	  <Route path="/insurance/list" element={<InsuranceList />} />
+	  <Route path="/insurance/apply/:planId" element={<InsuranceApplication />} />
+	  <Route path="/insurance/confirmation" element={<InsuranceConfirmation />} />
+	  <Route path="/insurance/my-policies/:id" element={<InsurancePolicyDetail />} />
+	  <Route path="/insurance/company/register" element={<InsuranceCompanyRegister />} />
+	  <Route path="/insurance/company/login" element={<InsuranceCompanyLogin />} />
+	  <Route path="/insurance/company/dashboard" element={<InsuranceCompanyDashboard />} />
 
           {/* CORPORATE TAG */}
           <Route path="/corporate" element={<CorporateHub />} />
