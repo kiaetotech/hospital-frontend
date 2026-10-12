@@ -21,10 +21,12 @@ const CorporatePlansTab = ({ providerType, providerId, token }) => {
   const cfg = { headers: { Authorization: `Bearer ${token}` } };
 
   // API path per provider type
-  const apiPath = {
+    const apiPath = {
     hospitals: 'hospitals', onlineDoctors: 'online-doctor', diagnostics: 'diagnostics',
     mentalHealth: 'mentalhealth/therapist', ayurveda: 'ayurveda', homeopathy: 'homeopathy',
-    caregivers: 'caregivers', ambulance: 'ambulance'
+    caregivers: 'caregivers', ambulance: 'ambulance',
+    wellness_center: 'ayurveda-centers',
+    naturopathy_center: 'homeopathy/center'
   }[providerType] || providerType;
 
   useEffect(() => { loadData(); }, []);
