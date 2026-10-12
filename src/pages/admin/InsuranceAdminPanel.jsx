@@ -21,7 +21,7 @@ import {
 } from 'recharts';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
-const ADMIN_KEY = process.env.REACT_APP_ADMIN_KEY || '';
+const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
 
 const TABS = [
   { id: 'overview', label: '📊 Overview' },
