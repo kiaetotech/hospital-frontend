@@ -120,7 +120,7 @@ export default function InsuranceAdminPanel() {
           break;
         }
         case 'settlements': {
-          const res = await axios.get(`${API_BASE}/api/insurance-admin/settlements/pending`, { headers });
+          const res = await axios.get(`${API_BASE}/api/insurance/admin/settlements`, { headers });
           setSettlements(res.data?.data || []);
           break;
         }
