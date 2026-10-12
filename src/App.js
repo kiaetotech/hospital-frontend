@@ -144,6 +144,7 @@ import AdminDiagnostics from './pages/admin/AdminDiagnostics';
 import AdminFinancing from './pages/admin/AdminFinancing';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminInsuranceClaims from './pages/admin/AdminInsuranceClaims';
+import InsuranceAdminPanel from './pages/admin/InsuranceAdminPanel';
 import AdminOnlineDoctor from './pages/admin/AdminOnlineDoctor';
 import CommandCenter from './pages/admin/CommandCenter';
 
@@ -429,6 +430,7 @@ function App() {
           <Route path="/admin/financing" element={<AdminFinancing />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/insurance-claims" element={<AdminInsuranceClaims />} />
+	  <Route path="/admin/insurance" element={<InsuranceAdminPanel />} />
           <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
           <Route path="/admin/corporate" element={<AdminCorporate />} />
           <Route path="/admin/online-doctor" element={<AdminOnlineDoctor />} />

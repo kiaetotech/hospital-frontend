@@ -166,22 +166,158 @@ export const lenderApi = {
 };
 
 export const insuranceApi = {
+  // ============================================
+  // AUTH & PROFILE (existing)
+  // ============================================
   register: (data) => providerApi.post('/insurance/company/register', data),
   login: (data) => providerApi.post('/insurance/company/login', data),
   logout: () => providerApi.post('/insurance/company/logout'),
   verify: () => providerApi.get('/insurance/company/auth/verify'),
   getProfile: () => providerApi.get('/insurance/company/profile'),
   updateProfile: (data) => providerApi.put('/insurance/company/profile', data),
+
+  // ============================================
+  // PLANS (existing)
+  // ============================================
   getPlans: () => providerApi.get('/insurance/company/plans'),
   addPlan: (data) => providerApi.post('/insurance/company/plans', data),
   updatePlan: (id, data) => providerApi.put(`/insurance/company/plans/${id}`, data),
   deletePlan: (id) => providerApi.delete(`/insurance/company/plans/${id}`),
+
+  // ============================================
+  // POLICIES (existing)
+  // ============================================
   getPolicies: (params) => providerApi.get('/insurance/company/policies', { params }),
+
+  // ============================================
+  // CLAIMS (existing)
+  // ============================================
   getClaims: (params) => providerApi.get('/insurance/company/claims', { params }),
   updateClaimStatus: (id, data) => providerApi.put(`/insurance/company/claims/${id}`, data),
+
+  // ============================================
+  // SETTLEMENTS & REPORTS (existing)
+  // ============================================
   getSettlements: (params) => providerApi.get('/insurance/company/settlements', { params }),
   getReports: (params) => providerApi.get('/insurance/company/reports', { params }),
-  getStats: () => providerApi.get('/insurance/company/stats')
+  getStats: () => providerApi.get('/insurance/company/stats'),
+
+  // ============================================
+  // COMPLAINTS (NEW)
+  // ============================================
+  getCompanyComplaints: (params) => providerApi.get('/insurance/company/complaints', { params }),
+  getCompanyComplaint: (id) => providerApi.get(`/insurance/company/complaints/${id}`),
+  respondToComplaint: (id, data) => providerApi.post(`/insurance/company/complaints/${id}/respond`, data),
+  resolveComplaint: (id, data) => providerApi.post(`/insurance/company/complaints/${id}/resolve`, data),
+
+  // ============================================
+  // REVIEWS (NEW)
+  // ============================================
+  getCompanyReviews: (params) => providerApi.get('/insurance/company/reviews', { params }),
+  respondToReview: (policyId, data) => providerApi.post(`/insurance/company/reviews/${policyId}/respond`, data),
+
+  // ============================================
+  // CORPORATE (NEW)
+  // ============================================
+  toggleCorporate: (data) => providerApi.post('/insurance/company/corporate/toggle', data),
+  getCorporatePackages: () => providerApi.get('/insurance/company/corporate/packages'),
+  getCorporateEnquiries: () => providerApi.get('/insurance/company/corporate/enquiries'),
+
+  // ============================================
+  // KYC (NEW)
+  // ============================================
+  getKyc: () => providerApi.get('/insurance/company/kyc'),
+  submitKyc: (data) => providerApi.post('/insurance/company/kyc/submit', data),
+  getSuspendedStatus: () => providerApi.get('/insurance/company/suspended-status'),
+
+  // ============================================
+  // ADVERTISING (NEW — insurer)
+  // ============================================
+  getAdWallet: () => providerApi.get('/insurance/company/ads/wallet'),
+  topupAdWallet: (data) => providerApi.post('/insurance/company/ads/wallet/topup', data),
+  getAdCampaigns: (params) => providerApi.get('/insurance/company/ads/campaigns', { params }),
+  createAdCampaign: (data) => providerApi.post('/insurance/company/ads/campaigns', data),
+  pauseAdCampaign: (id) => providerApi.post(`/insurance/company/ads/campaigns/${id}/pause`),
+  resumeAdCampaign: (id) => providerApi.post(`/insurance/company/ads/campaigns/${id}/resume`),
+  deleteAdCampaign: (id) => providerApi.delete(`/insurance/company/ads/campaigns/${id}`),
+  getAdAnalytics: (params) => providerApi.get('/insurance/company/ads/analytics', { params }),
+
+  // ============================================
+  // ADMIN — OVERVIEW (NEW)
+  // ============================================
+  adminOverview: () => providerApi.get('/insurance/admin/overview', { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — COMPANIES (NEW)
+  // ============================================
+  adminGetCompanies: (params) => providerApi.get('/insurance/admin/companies', { params, headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminApproveCompany: (id) => providerApi.post(`/insurance/admin/companies/${id}/approve`, {}, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminRejectCompany: (id, data) => providerApi.post(`/insurance/admin/companies/${id}/reject`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminSuspendCompany: (id, data) => providerApi.post(`/insurance/admin/companies/${id}/suspend`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminUnsuspendCompany: (id) => providerApi.post(`/insurance/admin/companies/${id}/unsuspend`, {}, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — PLANS (NEW)
+  // ============================================
+  adminGetPlans: (params) => providerApi.get('/insurance/admin/plans', { params, headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminApprovePlan: (id) => providerApi.post(`/insurance/admin/plans/${id}/approve`, {}, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminRejectPlan: (id, data) => providerApi.post(`/insurance/admin/plans/${id}/reject`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminTogglePlan: (id) => providerApi.post(`/insurance/admin/plans/${id}/toggle`, {}, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — POLICIES (NEW)
+  // ============================================
+  adminGetPolicies: (params) => providerApi.get('/insurance/admin/policies', { params, headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminForceCancelPolicy: (id, data) => providerApi.post(`/insurance/admin/policies/${id}/force-cancel`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — CLAIMS (NEW)
+  // ============================================
+  adminGetClaims: (params) => providerApi.get('/insurance/admin/claims', { params, headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — PENDING QUEUE (NEW)
+  // ============================================
+  adminGetPending: () => providerApi.get('/insurance/admin/pending', { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — REVIEWS (NEW)
+  // ============================================
+  adminGetReviews: (params) => providerApi.get('/insurance/admin/reviews', { params, headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminFlagReview: (policyId, data) => providerApi.post(`/insurance/admin/reviews/${policyId}/flag`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminHideReview: (policyId, data) => providerApi.post(`/insurance/admin/reviews/${policyId}/hide`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — COMPLAINTS (NEW)
+  // ============================================
+  adminGetComplaints: (params) => providerApi.get('/insurance/admin/complaints', { params, headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminEscalateComplaint: (id, data) => providerApi.post(`/insurance/admin/complaints/${id}/escalate`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — KYC (NEW)
+  // ============================================
+  adminGetKycPending: () => providerApi.get('/insurance/admin/kyc/pending', { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminVerifyKyc: (companyId) => providerApi.post(`/insurance/admin/kyc/${companyId}/verify`, {}, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminRejectKyc: (companyId, data) => providerApi.post(`/insurance/admin/kyc/${companyId}/reject`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — SUSPENDED (NEW)
+  // ============================================
+  adminGetSuspended: () => providerApi.get('/insurance/admin/suspended', { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — CORPORATE (NEW)
+  // ============================================
+  adminGetCorporatePending: () => providerApi.get('/insurance/admin/corporate/pending', { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+
+  // ============================================
+  // ADMIN — ADVERTISING (NEW)
+  // ============================================
+  adminGetAdCampaigns: (params) => providerApi.get('/insurance/admin/ads/campaigns', { params, headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminApproveAdCampaign: (id) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/approve`, {}, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminRejectAdCampaign: (id, data) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/reject`, data, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminPauseAdCampaign: (id) => providerApi.post(`/insurance/admin/ads/campaigns/${id}/pause`, {}, { headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } }),
+  adminGetAdRevenue: (params) => providerApi.get('/insurance/admin/ads/revenue', { params, headers: { 'x-admin-key': process.env.REACT_APP_ADMIN_KEY || '' } })
 };
 
 export const providerAuth = {

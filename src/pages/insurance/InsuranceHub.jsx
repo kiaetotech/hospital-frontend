@@ -150,7 +150,7 @@ const InsuranceHub = () => {
     if (typeId === 'all') {
       navigate('/insurance/list');
     } else {
-      navigate(`/insurance/list?type=${typeId}`);
+      navigate(`/insurance/list?planType=${typeId}`);
     }
   };
 

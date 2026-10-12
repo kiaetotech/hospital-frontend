@@ -17,7 +17,7 @@ const InsuranceList = () => {
   
   // Filter states
   const [filters, setFilters] = useState({
-    planType: searchParams.get('type') || 'all',
+    planType: searchParams.get('type') || searchParams.get('planType') || 'all',
     minSumInsured: '',
     maxSumInsured: '',
     minPremium: '',
