@@ -102,7 +102,7 @@ export default function InsurancePolicyDetail() {
     finally { setClaimSubmitting(false); }
   };
 
-  const downloadPolicy = async () => {
+    const downloadPolicy = async () => {
     try {
       const r = await fetch(`${API_URL}/api/insurance/download-policy/${policy._id}`, { headers: patientHeaders() });
       if (!r.ok) throw new Error('Failed');
@@ -116,7 +116,35 @@ export default function InsurancePolicyDetail() {
     } catch (e) { setClaimMessage('❌ Unable to download: ' + e.message); }
   };
 
-    const submitRenewal = async () => {
+  const downloadReceipt = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/insurance/download-receipt/${policy._id}`, { headers: patientHeaders() });
+      if (!r.ok) throw new Error('Failed');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `receipt-${policy.policyNumber}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) { setClaimMessage('❌ Unable to download receipt: ' + e.message); }
+  };
+
+  const downloadMemberCard = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/insurance/download-member-card/${policy._id}`, { headers: patientHeaders() });
+      if (!r.ok) throw new Error('Failed');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `card-${policy.policyNumber}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) { setClaimMessage('❌ Unable to download member card: ' + e.message); }
+  };
+
+  const submitRenewal = async () => {
     setRenewalLoading(true);
     try {
       if (typeof window.Razorpay !== 'function') {
@@ -375,7 +403,7 @@ export default function InsurancePolicyDetail() {
         )}
 
         {/* DOCUMENTS */}
-        {tab === 'documents' && (
+                {tab === 'documents' && (
           <div className="bg-white rounded-xl shadow p-6">
             <h3 className="font-bold text-slate-800 mb-4">Documents</h3>
             <button onClick={downloadPolicy} className="flex items-center gap-3 py-3 border-b w-full text-left hover:bg-slate-50">
@@ -383,7 +411,17 @@ export default function InsurancePolicyDetail() {
               <span className="text-sm font-semibold">Policy Certificate</span>
               <FaDownload className="ml-auto text-slate-400" />
             </button>
-            <p className="text-xs text-slate-400 mt-4">More documents coming soon.</p>
+            <button onClick={downloadReceipt} className="flex items-center gap-3 py-3 border-b w-full text-left hover:bg-slate-50">
+              <FaFileAlt className="text-green-600" />
+              <span className="text-sm font-semibold">Premium Receipt</span>
+              <FaDownload className="ml-auto text-slate-400" />
+            </button>
+            <button onClick={downloadMemberCard} className="flex items-center gap-3 py-3 border-b w-full text-left hover:bg-slate-50">
+              <FaFileAlt className="text-purple-600" />
+              <span className="text-sm font-semibold">Member Cards</span>
+              <FaDownload className="ml-auto text-slate-400" />
+            </button>
+            <p className="text-xs text-slate-400 mt-4">More documents (schedule, T&C) coming soon.</p>
           </div>
         )}
 
