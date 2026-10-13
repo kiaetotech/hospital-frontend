@@ -200,7 +200,15 @@ const MyBookings = () => {
         paymentStatus: b.paymentStatus,
         status: b.status
       }));
-    } catch (e) { console.log('No caregiver bookings'); }
+        } catch (e) { console.log('No caregiver bookings'); }
+
+    // Insurance Policies
+    let insurancePoliciesData = [];
+    try {
+      const r = await axios.get(`${API}/insurance/my-policies`, { headers });
+      insurancePoliciesData = r.data?.data || [];
+    } catch (e) { console.log('No insurance policies'); }
+    setInsurancePolicies(insurancePoliciesData);
 
     setBookings([
       ...ambulanceBookings, ...ayurvedaBookings, ...homeopathyBookings,
