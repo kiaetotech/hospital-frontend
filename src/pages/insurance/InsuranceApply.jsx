@@ -6,29 +6,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-// ============================================
-// Razorpay SDK lazy-loader
-// Loads checkout.js once, resolves when ready
-// ============================================
-let razorpayLoadingPromise = null;
-function loadRazorpaySDK() {
-  if (window.Razorpay) return Promise.resolve(window.Razorpay);
-  if (razorpayLoadingPromise) return razorpayLoadingPromise;
-
-  razorpayLoadingPromise = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => {
-      if (window.Razorpay) resolve(window.Razorpay);
-      else reject(new Error('Razorpay SDK loaded but window.Razorpay missing'));
-    };
-    script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
-    document.body.appendChild(script);
-  });
-
-  return razorpayLoadingPromise;
-}
 import {
   FaCheck, FaArrowLeft, FaArrowRight, FaPlus, FaTrash,
   FaTimes, FaCheckCircle, FaShieldAlt,
@@ -148,6 +125,18 @@ export function ApplyWizard() {
   });
   const [review, setReview] = useState(null);
 
+  // Load Razorpay SDK on page mount
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      try { document.body.removeChild(script); } catch (e) {}
+    };
+  }, []);
+
+  // Load plan + create proposal
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -231,11 +220,15 @@ export function ApplyWizard() {
     if (step === 5 && proposal) loadReview();
   }, [step, proposal, loadReview]);
 
-    const submitPayment = async () => {
+  const submitPayment = async () => {
     setSaving(true); setError('');
     try {
       const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
       const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+
+      if (typeof window.Razorpay !== 'function') {
+        throw new Error('Razorpay SDK not loaded. Please refresh the page.');
+      }
 
       // 1) Create Razorpay order
       const orderRes = await fetch(`${API}/api/insurance-marketplace/apply/${proposal._id}/create-order`, {
@@ -247,10 +240,6 @@ export function ApplyWizard() {
 
       const { orderId, amount, razorpayKey } = orderData.data;
       if (!razorpayKey) throw new Error('Razorpay is not configured');
-
-      // Load Razorpay SDK if not already present
-      await loadRazorpaySDK();
-      if (typeof window.Razorpay !== 'function') throw new Error('Razorpay SDK failed to load');
 
       // 2) Open Razorpay Checkout
       const options = {
@@ -592,4 +581,7 @@ function PaymentStep({ review, onPay, onBack, saving }) {
   );
 }
 
-export default { ApplyWizard, ApplySuccess };
+// ============================================
+// DEFAULT EXPORT (both components)
+// ============================================
+export default ApplyWizard;
