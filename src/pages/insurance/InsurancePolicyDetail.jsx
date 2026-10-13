@@ -104,26 +104,78 @@ export default function InsurancePolicyDetail() {
     } catch (e) { setClaimMessage('❌ Unable to download: ' + e.message); }
   };
 
-  const submitRenewal = async () => {
+    const submitRenewal = async () => {
     setRenewalLoading(true);
     try {
-      const r = await fetch(`${API_URL}/api/insurance-policy-center/renew/${id}`, {
+      if (typeof window.Razorpay !== 'function') {
+        throw new Error('Razorpay SDK not loaded. Please refresh.');
+      }
+
+      // 1) Create order
+      const orderRes = await fetch(`${API_URL}/api/insurance-policy-center/renewal/create-order/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...patientHeaders() },
-        body: JSON.stringify({}),
       });
-      const data = await r.json();
-      if (data.success) {
-        setError('');
-        setPolicy(data.data.policy);
-        setRenewalQuote(null);
-        setTab('overview');
-        alert('✅ Policy renewed successfully. New validity: ' + new Date(data.data.policy.endDate).toLocaleDateString());
-      } else {
-        setError(data.error?.message || 'Renewal failed');
-      }
-    } catch (e) { setError(e.message); }
-    finally { setRenewalLoading(false); }
+      const orderData = await orderRes.json();
+      if (!orderData.success) throw new Error(orderData.error?.message || 'Order creation failed');
+
+      const { orderId, amount, razorpayKey } = orderData.data;
+      if (!razorpayKey) throw new Error('Razorpay not configured');
+
+      // 2) Open Razorpay
+      const options = {
+        key: razorpayKey,
+        amount: Math.round(amount * 100),
+        currency: 'INR',
+        name: 'HospitalHub Insurance',
+        description: 'Policy Renewal — ' + policy.policyName,
+        order_id: orderId,
+        theme: { color: '#16a34a' },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch(`${API_URL}/api/insurance-policy-center/renewal/verify-payment/${id}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...patientHeaders() },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (!verifyData.success) {
+              setError(verifyData.error?.message || 'Verification failed');
+              setRenewalLoading(false);
+              return;
+            }
+            setPolicy(verifyData.data.policy);
+            setRenewalQuote(null);
+            setTab('overview');
+            alert('✅ Policy renewed. New validity: ' + new Date(verifyData.data.policy.endDate).toLocaleDateString());
+          } catch (e) {
+            setError('Renewal verification failed: ' + e.message);
+          } finally {
+            setRenewalLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setRenewalLoading(false);
+            setError('Renewal cancelled');
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        setError('Payment failed: ' + (resp.error?.description || 'Unknown'));
+        setRenewalLoading(false);
+      });
+      rzp.open();
+    } catch (e) {
+      setError(e.message);
+      setRenewalLoading(false);
+    }
   };
 
   const submitService = async () => {
