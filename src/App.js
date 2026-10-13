@@ -445,12 +445,13 @@ function App() {
 	  <Route path="/insurance/compare" element={<InsuranceMarketplaceCompare />} />
 	  <Route path="/insurance/plan/:id" element={<InsurancePlanDetail />} />
 	  <Route path="/insurance/quote/:planId" element={<InsuranceQuote />} />
-	  <Route path="/insurance/apply/:planId" element={<InsuranceApplyWizard />} />
+
+	  {/* success MUST come before :planId — otherwise "success" is treated as a planId */}
 	  <Route path="/insurance/apply/success" element={<InsuranceApplySuccess />} />
+	  <Route path="/insurance/apply/:planId" element={<InsuranceApplyWizard />} />
 
 	  {/* Insurance — old pages still reachable */}
 	  <Route path="/insurance/list" element={<InsuranceList />} />
-	  <Route path="/insurance/apply/:planId" element={<InsuranceApplication />} />
 	  <Route path="/insurance/confirmation" element={<InsuranceConfirmation />} />
 	  <Route path="/insurance/my-policies/:id" element={<InsurancePolicyDetail />} />
 	  <Route path="/insurance/company/register" element={<InsuranceCompanyRegister />} />
