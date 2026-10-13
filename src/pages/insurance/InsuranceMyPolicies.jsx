@@ -81,8 +81,8 @@ export default function InsuranceMyPolicies() {
             <div className="flex flex-wrap gap-2 mt-3">
               <Link to={`/insurance/my-policies/${p._id}`}
                 className="px-3 py-1 border rounded text-sm">View</Link>
-              <Link to={`/insurance/claims?policyId=${p._id}`}
-                className="px-3 py-1 border rounded text-sm">File Claim</Link>
+              <Link to={`/insurance/my-policies/${p._id}`}
+  		className="px-3 py-1 border rounded text-sm">File Claim</Link>
               {p.status === 'active' && (
                 <Link to={`/insurance/my-policies/${p._id}`}
   		className="px-3 py-1 border rounded text-sm">Renew</Link>
