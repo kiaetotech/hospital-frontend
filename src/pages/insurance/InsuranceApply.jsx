@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fa';
 import {
   getPlanDetail, startApply, savePersonal, saveMembers, saveMedical,
-  saveNominee, getReview, confirmApply,
+  saveNominee, getReview,
 } from '../../services/insuranceMarketplaceApi';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
@@ -208,16 +208,80 @@ export function ApplyWizard() {
     if (step === 5 && proposal) loadReview();
   }, [step, proposal, loadReview]);
 
-  const submitPayment = async () => {
+    const submitPayment = async () => {
     setSaving(true); setError('');
     try {
-      const res = await confirmApply(proposal._id);
-      const policy = res?.data?.policy;
-      if (!policy) throw new Error('Policy creation failed');
-      localStorage.removeItem('insuranceDraft');
-      navigate(`/insurance/apply/success?policyId=${policy._id}`);
-    } catch (e) { setError(e.response?.data?.error?.message || e.message); }
-    finally { setSaving(false); }
+      const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+      const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
+
+      // 1) Create Razorpay order
+      const orderRes = await fetch(`${API}/api/insurance-marketplace/apply/${proposal._id}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const orderData = await orderRes.json();
+      if (!orderData.success) throw new Error(orderData.error?.message || 'Order creation failed');
+
+      const { orderId, amount, razorpayKey } = orderData.data;
+      if (!razorpayKey) throw new Error('Razorpay is not configured');
+      if (typeof window.Razorpay !== 'function') throw new Error('Razorpay SDK not loaded');
+
+      // 2) Open Razorpay Checkout
+      const options = {
+        key: razorpayKey,
+        amount: Math.round(amount * 100),
+        currency: 'INR',
+        name: 'HospitalHub Insurance',
+        description: plan.planName,
+        order_id: orderId,
+        prefill: {
+          name: personal.fullName || '',
+          email: personal.email || '',
+          contact: personal.mobile || '',
+        },
+        theme: { color: '#2563eb' },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch(`${API}/api/insurance-marketplace/apply/${proposal._id}/verify-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (!verifyData.success) {
+              setError(verifyData.error?.message || 'Payment verification failed');
+              setSaving(false);
+              return;
+            }
+            localStorage.removeItem('insuranceDraft');
+            navigate(`/insurance/apply/success?policyId=${verifyData.data.policy._id}`);
+          } catch (e) {
+            setError('Payment verification failed: ' + e.message);
+            setSaving(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setSaving(false);
+            setError('Payment cancelled');
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        setError('Payment failed: ' + (resp.error?.description || 'Unknown error'));
+        setSaving(false);
+      });
+      rzp.open();
+    } catch (e) {
+      setError(e.message);
+      setSaving(false);
+    }
   };
 
   if (loading) return <div className="text-center py-20 text-slate-400">Loading…</div>;
