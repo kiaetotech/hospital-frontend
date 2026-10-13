@@ -6,6 +6,29 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+// ============================================
+// Razorpay SDK lazy-loader
+// Loads checkout.js once, resolves when ready
+// ============================================
+let razorpayLoadingPromise = null;
+function loadRazorpaySDK() {
+  if (window.Razorpay) return Promise.resolve(window.Razorpay);
+  if (razorpayLoadingPromise) return razorpayLoadingPromise;
+
+  razorpayLoadingPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.Razorpay) resolve(window.Razorpay);
+      else reject(new Error('Razorpay SDK loaded but window.Razorpay missing'));
+    };
+    script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+    document.body.appendChild(script);
+  });
+
+  return razorpayLoadingPromise;
+}
 import {
   FaCheck, FaArrowLeft, FaArrowRight, FaPlus, FaTrash,
   FaTimes, FaCheckCircle, FaShieldAlt,
@@ -224,7 +247,10 @@ export function ApplyWizard() {
 
       const { orderId, amount, razorpayKey } = orderData.data;
       if (!razorpayKey) throw new Error('Razorpay is not configured');
-      if (typeof window.Razorpay !== 'function') throw new Error('Razorpay SDK not loaded');
+
+      // Load Razorpay SDK if not already present
+      await loadRazorpaySDK();
+      if (typeof window.Razorpay !== 'function') throw new Error('Razorpay SDK failed to load');
 
       // 2) Open Razorpay Checkout
       const options = {
