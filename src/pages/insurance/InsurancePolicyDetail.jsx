@@ -52,6 +52,18 @@ export default function InsurancePolicyDetail() {
     }
   }, [id]);
 
+  // Load Razorpay SDK on mount
+  useEffect(() => {
+    if (window.Razorpay) return;
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      try { document.body.removeChild(script); } catch (e) {}
+    };
+  }, []);
+
   useEffect(() => { loadPolicy(); }, [loadPolicy]);
 
   const loadRenewalQuote = async () => {
