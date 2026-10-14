@@ -366,22 +366,27 @@ export default function InsurancePolicyDetail() {
           </div>
         )}
 
-        {/* CLAIMS */}
+                {/* CLAIMS */}
         {tab === 'claims' && (
           <div className="bg-white rounded-xl shadow p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-slate-800">Claims History</h3>
-              {policy.status === 'active' && <button onClick={() => setShowClaimForm(true)} className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">📋 File Claim</button>}
+              {policy.status === 'active' && (
+                <button onClick={() => setShowClaimForm(true)} className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+                  📋 File Claim
+                </button>
+              )}
             </div>
-            {(!policy.claims || policy.claims.length === 0) && <p className="text-slate-500 text-sm">No claims yet.</p>}
+            {(!policy.claims || policy.claims.length === 0) && (
+              <p className="text-slate-500 text-sm">No claims yet.</p>
+            )}
             {(policy.claims || []).map((c, i) => (
-              <div key={i} className="border-b py-3 last:border-0">
-                <div className="flex justify-between">
-                  <div><strong>{c.claimNumber || c.claimId}</strong></div>
-                  <span className={`text-xs px-2 py-0.5 rounded ${c.status === 'settled' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{String(c.status).toUpperCase()}</span>
-                </div>
-                <div className="text-sm text-slate-500">{inr(c.amount)} · {c.date ? new Date(c.date).toLocaleDateString() : ''}</div>
-              </div>
+              <ClaimCard
+                key={i}
+                claim={c}
+                policyId={policy._id}
+                onRefresh={loadPolicy}
+              />
             ))}
 
             {showClaimForm && (
@@ -566,6 +571,178 @@ function Row({ label, value }) {
     <div className="flex justify-between border-b border-slate-100 py-2 last:border-0">
       <span className="text-slate-500">{label}</span>
       <span className="font-semibold text-slate-800">{value}</span>
+    </div>
+  );
+}
+
+// ============================================
+// CLAIM CARD — SLA + Dispute + Receipt
+// ============================================
+function ClaimCard({ claim, policyId, onRefresh }) {
+  const [sla, setSla] = React.useState(null);
+  const [showDispute, setShowDispute] = React.useState(false);
+  const [disputeReason, setDisputeReason] = React.useState('');
+  const [disputing, setDisputing] = React.useState(false);
+  const [msg, setMsg] = React.useState('');
+
+  const claimId = claim._id;
+  const claimNumber = claim.claimNumber || claim.claimId;
+  const status = String(claim.status || '').toLowerCase();
+
+  React.useEffect(() => {
+    if (!claimId) return;
+    fetch(`${API_URL}/api/insurance-claims/${claimId}/sla`, { headers: patientHeaders() })
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setSla(d.data); })
+      .catch(() => {});
+  }, [claimId]);
+
+  const submitDispute = async () => {
+    if (disputeReason.trim().length < 10) {
+      setMsg('Please write at least 10 characters.');
+      return;
+    }
+    setDisputing(true);
+    setMsg('');
+    try {
+      const r = await fetch(`${API_URL}/api/insurance-claims/${claimId}/dispute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...patientHeaders() },
+        body: JSON.stringify({ reason: disputeReason }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setMsg('✅ ' + d.message);
+        setShowDispute(false);
+        setDisputeReason('');
+        if (onRefresh) await onRefresh();
+      } else {
+        setMsg('❌ ' + (d.message || 'Failed'));
+      }
+    } catch (e) {
+      setMsg('❌ ' + e.message);
+    } finally {
+      setDisputing(false);
+    }
+  };
+
+  const downloadReceipt = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/insurance-claims/${claimId}/settlement-receipt`, { headers: patientHeaders() });
+      if (!r.ok) throw new Error('Failed');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `settlement-${claimNumber}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setMsg('❌ Unable to download receipt: ' + e.message);
+    }
+  };
+
+  const statusColor = {
+    settled: 'bg-green-100 text-green-700',
+    approved: 'bg-blue-100 text-blue-700',
+    partially_settled: 'bg-amber-100 text-amber-700',
+    rejected: 'bg-red-100 text-red-700',
+    cancelled: 'bg-slate-100 text-slate-600',
+    under_review: 'bg-blue-100 text-blue-700',
+    submitted: 'bg-amber-100 text-amber-700',
+    document_uploaded: 'bg-amber-100 text-amber-700',
+    pending_verification: 'bg-amber-100 text-amber-700',
+  }[status] || 'bg-slate-100 text-slate-600';
+
+  return (
+    <div className="border-b py-4 last:border-0">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <div className="font-semibold text-slate-800">{claimNumber}</div>
+          <div className="text-xs text-slate-500 mt-0.5">
+            {claim.hospitalName} · {claim.admissionDate ? new Date(claim.admissionDate).toLocaleDateString() : ''}
+          </div>
+        </div>
+        <span className={`text-xs px-2 py-1 rounded font-bold ${statusColor}`}>
+          {status.replace(/_/g, ' ').toUpperCase()}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-sm mt-3 py-3 border-y border-slate-100">
+        <div>
+          <div className="text-xs text-slate-400">Claimed</div>
+          <div className="font-bold text-slate-800">₹{Number(claim.amount || 0).toLocaleString('en-IN')}</div>
+        </div>
+        {claim.approvedAmount > 0 && (
+          <div>
+            <div className="text-xs text-slate-400">Approved</div>
+            <div className="font-bold text-green-600">₹{Number(claim.approvedAmount).toLocaleString('en-IN')}</div>
+          </div>
+        )}
+      </div>
+
+      {sla && sla.isActive && (
+        <div className={`mt-3 p-3 rounded-lg text-sm ${sla.isOverdue ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-blue-50 border border-blue-200 text-blue-700'}`}>
+          <div className="font-semibold mb-1">
+            {sla.isOverdue ? '⚠️ IRDAI SLA Breached' : '⏱️ IRDAI SLA Countdown'}
+          </div>
+          <div className="text-xs">{sla.message}</div>
+          <div className="mt-2 bg-white rounded-full h-2 overflow-hidden">
+            <div
+              className={`h-full ${sla.isOverdue ? 'bg-red-500' : 'bg-blue-500'}`}
+              style={{ width: `${Math.min(100, (sla.daysSinceFiled / sla.slaDays) * 100)}%` }}
+            />
+          </div>
+          <div className="text-xs mt-1">Filed {sla.daysSinceFiled} days ago · SLA 30 days</div>
+        </div>
+      )}
+
+      {claim.isGrievance && (
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+          🚨 Dispute raised on {claim.grievanceRaisedAt ? new Date(claim.grievanceRaisedAt).toLocaleDateString() : '—'} — awaiting insurer response
+        </div>
+      )}
+
+      {msg && <div className="text-xs mt-2">{msg}</div>}
+
+      <div className="flex flex-wrap gap-2 mt-3">
+        {['rejected', 'partially_settled'].includes(status) && !claim.isGrievance && (
+          <button
+            onClick={() => setShowDispute(true)}
+            className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg font-semibold"
+          >
+            Dispute This Claim
+          </button>
+        )}
+        {['settled', 'partially_settled'].includes(status) && (
+          <button
+            onClick={downloadReceipt}
+            className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg font-semibold"
+          >
+            Download Settlement Receipt
+          </button>
+        )}
+      </div>
+
+      {showDispute && (
+        <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+          <div className="text-sm font-semibold text-slate-800 mb-2">Raise a dispute</div>
+          <p className="text-xs text-slate-500 mb-2">Explain why you disagree. Insurer will respond within 15 days.</p>
+          <textarea
+            value={disputeReason}
+            onChange={(e) => setDisputeReason(e.target.value)}
+            rows={3}
+            placeholder="I disagree because..."
+            className="w-full border rounded-lg px-3 py-2 text-sm mb-2"
+          />
+          <div className="flex gap-2">
+            <button onClick={submitDispute} disabled={disputing} className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+              {disputing ? 'Submitting…' : 'Submit Dispute'}
+            </button>
+            <button onClick={() => setShowDispute(false)} className="px-4 py-2 text-sm">Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
