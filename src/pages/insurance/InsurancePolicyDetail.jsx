@@ -585,17 +585,18 @@ function ClaimCard({ claim, policyId, onRefresh }) {
   const [disputing, setDisputing] = React.useState(false);
   const [msg, setMsg] = React.useState('');
 
-  const claimId = claim._id;
+    const claimId = claim._id;
   const claimNumber = claim.claimNumber || claim.claimId;
   const status = String(claim.status || '').toLowerCase();
+  const lookupId = claimNumber || claimId;
 
   React.useEffect(() => {
-    if (!claimId) return;
-    fetch(`${API_URL}/api/insurance-claims/${claimId}/sla`, { headers: patientHeaders() })
+    if (!lookupId) return;
+    fetch(`${API_URL}/api/insurance-claims/${lookupId}/sla`, { headers: patientHeaders() })
       .then((r) => r.json())
       .then((d) => { if (d.success) setSla(d.data); })
       .catch(() => {});
-  }, [claimId]);
+  }, [lookupId]);
 
   const submitDispute = async () => {
     if (disputeReason.trim().length < 10) {
@@ -605,7 +606,7 @@ function ClaimCard({ claim, policyId, onRefresh }) {
     setDisputing(true);
     setMsg('');
     try {
-      const r = await fetch(`${API_URL}/api/insurance-claims/${claimId}/dispute`, {
+      const r = await fetch(`${API_URL}/api/insurance-claims/${lookupId}/dispute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...patientHeaders() },
         body: JSON.stringify({ reason: disputeReason }),
@@ -628,7 +629,7 @@ function ClaimCard({ claim, policyId, onRefresh }) {
 
   const downloadReceipt = async () => {
     try {
-      const r = await fetch(`${API_URL}/api/insurance-claims/${claimId}/settlement-receipt`, { headers: patientHeaders() });
+      const r = await fetch(`${API_URL}/api/insurance-claims/${lookupId}/settlement-receipt`, { headers: patientHeaders() });
       if (!r.ok) throw new Error('Failed');
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
