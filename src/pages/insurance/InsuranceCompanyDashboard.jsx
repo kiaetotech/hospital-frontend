@@ -5,6 +5,7 @@ import ProviderStatsCards from '../../components/ProviderStatsCards';
 import ProviderTable from '../../components/ProviderTable';
 import { insuranceApi } from '../../services/providerApi';
 import ProviderAuth from '../../components/ProviderAuth';
+import PlanBuilder from './PlanBuilder';
 
 const InsuranceCompanyDashboard = () => {
   const navigate = useNavigate();
@@ -425,113 +426,33 @@ const InsuranceCompanyDashboard = () => {
       >
         {renderContent()}
         
-        {/* Add Plan Modal */}
-        {showAddPlan && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '1rem',
-              padding: '2rem',
-              maxWidth: '600px',
-              width: '95%',
-              maxHeight: '90vh',
-              overflowY: 'auto'
-            }}>
-              <h2 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>➕ Add New Insurance Plan</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <input
-                  type="text"
-                  placeholder="Plan Name *"
-                  value={newPlan.planName}
-                  onChange={(e) => setNewPlan({ ...newPlan, planName: e.target.value })}
-                  style={inputStyle}
-                />
-                <select
-                  value={newPlan.planType}
-                  onChange={(e) => setNewPlan({ ...newPlan, planType: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="individual">Individual</option>
-                  <option value="family_floater">Family Floater</option>
-                  <option value="critical_illness">Critical Illness</option>
-                  <option value="senior_citizen">Senior Citizen</option>
-                  <option value="maternity">Maternity</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Sum Insured (₹) *"
-                  value={newPlan.sumInsured}
-                  onChange={(e) => setNewPlan({ ...newPlan, sumInsured: parseInt(e.target.value) })}
-                  style={inputStyle}
-                />
-                <input
-                  type="number"
-                  placeholder="Base Premium (₹) *"
-                  value={newPlan.basePremium}
-                  onChange={(e) => setNewPlan({ ...newPlan, basePremium: parseInt(e.target.value) })}
-                  style={inputStyle}
-                />
-                <input
-                  type="text"
-                  placeholder="Features (comma separated)"
-                  onChange={(e) => setNewPlan({ ...newPlan, features: e.target.value.split(',').map(s => s.trim()) })}
-                  style={inputStyle}
-                />
-                <input
-                  type="text"
-                  placeholder="Inclusions (comma separated)"
-                  onChange={(e) => setNewPlan({ ...newPlan, inclusions: e.target.value.split(',').map(s => s.trim()) })}
-                  style={inputStyle}
-                />
-                <input
-                  type="text"
-                  placeholder="Exclusions (comma separated)"
-                  onChange={(e) => setNewPlan({ ...newPlan, exclusions: e.target.value.split(',').map(s => s.trim()) })}
-                  style={inputStyle}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
-                <button
-                  onClick={handleAddPlan}
-                  style={{ padding: '0.75rem 2rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', cursor: 'pointer', flex: 1 }}
-                >
-                  ✅ Add Plan
-                </button>
-                <button
-                  onClick={() => setShowAddPlan(false)}
-                  style={{ padding: '0.75rem 2rem', backgroundColor: '#e5e7eb', color: '#1e293b', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </ProviderDashboardLayout>
+        {/* Add / Edit Plan Modal — multi-step */}
+{showAddPlan && (
+  <PlanBuilder
+  initialPlan={editingPlanId ? newPlan : null}
+  submitting={loading}
+  onSubmit={async (planPayload) => {
+    try {
+      if (editingPlanId) await insuranceApi.updatePlan(editingPlanId, planPayload);
+      else await insuranceApi.addPlan(planPayload);
+      alert(editingPlanId ? 'Plan updated successfully!' : 'Plan added successfully!');
+      setShowAddPlan(false);
+      setEditingPlanId(null);
+      setNewPlan(null);
+      loadData();
+    } catch (error) {
+      alert('Failed to save plan: ' + (error.response?.data?.message || error.message));
+    }
+  }}
+  onCancel={() => {
+    setShowAddPlan(false);
+    setEditingPlanId(null);
+  }}
+/>
+)}
+</ProviderDashboardLayout>
     </ProviderAuth>
   );
 };
 
-const inputStyle = {
-  width: '100%',
-  padding: '0.6rem',
-  borderRadius: '0.5rem',
-  border: '1px solid #e5e7eb',
-  fontSize: '0.9rem',
-  backgroundColor: 'white',
-  outline: 'none'
-};
-
 export default InsuranceCompanyDashboard;
-
