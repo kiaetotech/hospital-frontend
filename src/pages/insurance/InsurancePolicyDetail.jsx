@@ -533,6 +533,19 @@ export default function InsurancePolicyDetail() {
             {serviceAction && (
               <button onClick={submitService} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold mb-6">Submit Request</button>
             )}
+            {/* Cashless Pre-Auth */}
+            {policy.status === 'active' && (
+              <div className="border-t pt-6 mt-6">
+                <h4 className="font-bold text-slate-800 mb-2">Cashless Pre-Authorization</h4>
+                <p className="text-sm text-slate-500 mb-3">Request pre-authorization before hospital admission for cashless treatment.</p>
+                <button
+                  onClick={() => navigate(`/insurance/preauth/${id}`)}
+                  className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold"
+                >
+                  Manage Pre-Auth Requests
+                </button>
+              </div>
+            )}
 
             {/* Free-look */}
             {withinFreeLook && policy.status === 'active' && (

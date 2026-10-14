@@ -166,6 +166,7 @@ import InsuranceCompanyDashboard from './pages/insurance/InsuranceCompanyDashboa
 import { Hub as InsuranceMarketplaceHub, Search as InsuranceMarketplaceSearch, Compare as InsuranceMarketplaceCompare } from './pages/insurance/InsuranceMarketplace';
 import { PlanDetail as InsurancePlanDetail, Quote as InsuranceQuote } from './pages/insurance/InsurancePlan';
 import { ApplyWizard as InsuranceApplyWizard, ApplySuccess as InsuranceApplySuccess } from './pages/insurance/InsuranceApply';
+import InsurancePreAuth from './pages/insurance/InsurancePreAuth';
 
 // ============================================
 // CORPORATE MODULE IMPORTS
@@ -450,6 +451,7 @@ function App() {
 	  {/* success MUST come before :planId — otherwise "success" is treated as a planId */}
 	  <Route path="/insurance/apply/success" element={<InsuranceApplySuccess />} />
 	  <Route path="/insurance/apply/:planId" element={<InsuranceApplyWizard />} />
+	  <Route path="/insurance/preauth/:policyId" element={<InsurancePreAuth />} />
 
 	  {/* Insurance — old pages still reachable */}
 	  <Route path="/insurance/list" element={<InsuranceList />} />
