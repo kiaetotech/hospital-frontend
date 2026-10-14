@@ -6,6 +6,13 @@ import ProviderTable from '../../components/ProviderTable';
 import { insuranceApi } from '../../services/providerApi';
 import ProviderAuth from '../../components/ProviderAuth';
 import PlanBuilder from './PlanBuilder';
+import {
+  RenewalsTab,
+  ComplaintsTab,
+  ReviewsTab,
+  NetworkHospitalsTab,
+  KycTab,
+} from './InsurerExtendedTabs';
 
 const InsuranceCompanyDashboard = () => {
   const navigate = useNavigate();
@@ -31,14 +38,19 @@ const InsuranceCompanyDashboard = () => {
     isActive: true
   });
 
-  const sidebarItems = [
+    const sidebarItems = [
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
     { id: 'profile', label: '🏢 Company Profile', icon: '🏢' },
     { id: 'plans', label: '📋 Plans', icon: '📋' },
     { id: 'policies', label: '📄 Policies', icon: '📄' },
     { id: 'claims', label: '📋 Claims', icon: '📋' },
+    { id: 'renewals', label: '🔄 Renewals', icon: '🔄' },
+    { id: 'complaints', label: '🚨 Complaints', icon: '🚨' },
+    { id: 'reviews', label: '⭐ Reviews', icon: '⭐' },
+    { id: 'network', label: '🏥 Network Hospitals', icon: '🏥' },
     { id: 'settlements', label: '💰 Settlements', icon: '💰' },
     { id: 'reports', label: '📊 Reports', icon: '📊' },
+    { id: 'kyc', label: '📋 KYC', icon: '📋' },
     { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
   ];
 
@@ -389,6 +401,21 @@ const InsuranceCompanyDashboard = () => {
             )}
           </div>
         );
+
+      case 'renewals':
+        return <RenewalsTab />;
+
+      case 'complaints':
+        return <ComplaintsTab />;
+
+      case 'reviews':
+        return <ReviewsTab />;
+
+      case 'network':
+        return <NetworkHospitalsTab />;
+
+      case 'kyc':
+        return <KycTab />;
 
       case 'reports':
         return (
