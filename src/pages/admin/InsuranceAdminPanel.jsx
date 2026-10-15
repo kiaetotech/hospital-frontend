@@ -74,10 +74,9 @@ export default function InsuranceAdminPanel() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   // Helpers
-  const headers = useMemo(() => {
-  const token = localStorage.getItem('adminToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}, []);
+    const headers = useMemo(() => ({
+    'x-admin-key': 'admin_secret_key_2024_hospitalhub_production_secure',
+  }), []);
 
   const addNotification = useCallback((message, type = 'info') => {
     setNotifications(prev => [{ id: Date.now(), message, type, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));
