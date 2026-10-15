@@ -1,6 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * ProviderDashboardLayout
+ * -----------------------
+ * Backwards-compatible dashboard shell used by ALL provider portals.
+ *
+ * Existing props (unchanged):
+ *   title, icon, children, sidebarItems, activeTab, onTabChange,
+ *   userName, userRole, logout
+ *
+ * NEW optional props (opt-in — old usage behaves identically):
+ *   - headerActions: ReactNode            -> slot next to Refresh button
+ *   - statusPills: Array<{label,color}>   -> pills under title (like Ayurveda)
+ *   - notifications: Array<{id,text,time,read}> -> bell + dropdown
+ *   - onNotificationsRead: () => void     -> fires when user opens bell
+ */
 const ProviderDashboardLayout = ({
   title,
   icon,
@@ -10,10 +25,45 @@ const ProviderDashboardLayout = ({
   onTabChange,
   userName,
   userRole,
-  logout
+  logout,
+
+  // NEW (all optional)
+  headerActions,
+  statusPills,
+  notifications,
+  onNotificationsRead,
 }) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef(null);
+
+  const unreadCount = (notifications || []).filter(n => !n.read).length;
+
+  // Close notifications dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const toggleNotifications = () => {
+    const next = !showNotifications;
+    setShowNotifications(next);
+    if (next && onNotificationsRead) onNotificationsRead();
+  };
+
+  const colorMap = {
+    green: { bg: '#dcfce7', color: '#166534' },
+    blue: { bg: '#dbeafe', color: '#1e40af' },
+    grey: { bg: '#e5e7eb', color: '#4b5563' },
+    amber: { bg: '#fef3c7', color: '#92400e' },
+    red: { bg: '#fee2e2', color: '#b91c1c' },
+  };
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex' }}>
@@ -145,10 +195,121 @@ const ProviderDashboardLayout = ({
           flexWrap: 'wrap',
           gap: '1rem'
         }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-            {sidebarItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
-          </h1>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+              {sidebarItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
+            </h1>
+            {/* Status pills (Ayurveda-style) */}
+            {statusPills && statusPills.length > 0 && (
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                {statusPills.map((pill, i) => {
+                  const c = colorMap[pill.color] || colorMap.grey;
+                  return (
+                    <span key={i} style={{
+                      padding: '0.25rem 0.75rem',
+                      backgroundColor: c.bg,
+                      color: c.color,
+                      borderRadius: '999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                    }}>
+                      {pill.label}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {/* Header actions slot (auto-refresh, export, etc.) */}
+            {headerActions}
+
+            {/* Notifications bell */}
+            {notifications && (
+              <div ref={notifRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={toggleNotifications}
+                  style={{
+                    padding: '0.5rem',
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    fontSize: '1.1rem',
+                  }}
+                  title="Notifications"
+                >
+                  🔔
+                  {unreadCount > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      minWidth: '18px',
+                      height: '18px',
+                      padding: '0 4px',
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      borderRadius: '999px',
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    width: '320px',
+                    maxHeight: '400px',
+                    overflowY: 'auto',
+                    background: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.75rem',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+                    zIndex: 200,
+                  }}>
+                    <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid #e5e7eb', fontWeight: 700, fontSize: '0.9rem' }}>
+                      Notifications
+                    </div>
+                    {notifications.length === 0 ? (
+                      <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem' }}>
+                        No notifications
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          style={{
+                            padding: '0.75rem 1rem',
+                            borderBottom: '1px solid #f3f4f6',
+                            background: n.read ? 'white' : '#eff6ff',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          <div style={{ color: '#1e293b' }}>{n.text}</div>
+                          {n.time && (
+                            <div style={{ color: '#9ca3af', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                              {n.time}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               style={{
@@ -184,4 +345,3 @@ const ProviderDashboardLayout = ({
 };
 
 export default ProviderDashboardLayout;
-
