@@ -434,29 +434,36 @@ export function NetworkHospitalsTab() {
 // KYC TAB
 // ============================================
 export function KycTab() {
-  const [kyc, setKyc] = useState(null);
+  const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
   const [form, setForm] = useState({
-    irdaCertificate: '', gstCertificate: '', panCard: '', bankProof: '',
-    registrationCertificate: '', panNumber: '', gstNumber: '',
+    irdaCertificate: '',
+    gstCertificate: '',
+    panCard: '',
+    bankProof: '',
+    registrationCertificate: '',
+    panNumber: '',
+    gstNumber: '',
   });
 
   const load = async () => {
     setLoading(true);
     try {
-      const r = await fetch(`${API}/api/insurance/company/kyc`, { headers: insurerHeaders() });
+      const r = await fetch(`${API}/api/insurance/company/profile`, { headers: insurerHeaders() });
       const d = await r.json();
-      if (d.success) {
-        setKyc(d.data);
+      if (d.success && d.data) {
+        setCompany(d.data);
+        const docs = d.data.documents || {};
         setForm({
-          irdaCertificate: d.data.documents?.irdaCertificate || '',
-          gstCertificate: d.data.documents?.gstCertificate || '',
-          panCard: d.data.documents?.panCard || '',
-          bankProof: d.data.documents?.bankProof || '',
-          registrationCertificate: d.data.documents?.registrationCertificate || '',
-          panNumber: d.data.documents?.panNumber || '',
-          gstNumber: d.data.documents?.gstNumber || '',
+          irdaCertificate: docs.irdaCertificate || '',
+          gstCertificate: docs.gstCertificate || '',
+          panCard: docs.panCard || '',
+          bankProof: docs.bankProof || '',
+          registrationCertificate: docs.registrationCertificate || '',
+          panNumber: docs.panNumber || '',
+          gstNumber: docs.gstNumber || '',
         });
       }
     } catch (e) { console.error(e); }
@@ -465,8 +472,12 @@ export function KycTab() {
 
   useEffect(() => { load(); }, []);
 
-  const save = async () => {
-    setSaving(true);
+  const submit = async () => {
+    if (!form.irdaCertificate || !form.gstCertificate || !form.panCard) {
+      setMessage('❌ IRDAI Certificate, GST Certificate, and PAN Card are required.');
+      return;
+    }
+    setSaving(true); setMessage('');
     try {
       const r = await fetch(`${API}/api/insurance/company/kyc/update`, {
         method: 'POST',
@@ -474,65 +485,162 @@ export function KycTab() {
         body: JSON.stringify(form),
       });
       const d = await r.json();
-      if (d.success) { alert('KYC updated. Admin will verify.'); load(); }
-      else alert(d.message || 'Failed');
-    } catch (e) { alert(e.message); }
-    finally { setSaving(false); }
+      if (d.success) {
+        setMessage('✅ KYC submitted. Admin will verify within 24 hours.');
+        await load();
+      } else {
+        setMessage('❌ ' + (d.message || 'Failed'));
+      }
+    } catch (e) {
+      setMessage('❌ ' + e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <p className="text-gray-400">Loading…</p>;
+
+  const status = company?.verificationStatus || company?.status || 'pending';
+  const kycStatus = company?.documents?.kycStatus || 'not_submitted';
+  const statusStyles = {
+    approved: 'bg-green-100 text-green-700',
+    verified: 'bg-green-100 text-green-700',
+    active: 'bg-green-100 text-green-700',
+    pending: 'bg-amber-100 text-amber-700',
+    pending_verification: 'bg-amber-100 text-amber-700',
+    submitted: 'bg-blue-100 text-blue-700',
+    rejected: 'bg-red-100 text-red-700',
+    suspended: 'bg-red-100 text-red-700',
+  }[status] || 'bg-slate-100 text-slate-700';
+
+  const kycStatusStyles = {
+    verified: 'bg-green-100 text-green-700',
+    submitted: 'bg-blue-100 text-blue-700',
+    rejected: 'bg-red-100 text-red-700',
+    not_submitted: 'bg-slate-100 text-slate-600',
+  }[kycStatus] || 'bg-slate-100 text-slate-600';
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">📋 KYC Documents</h2>
-        {kyc?.verificationStatus && (
-          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-            kyc.verificationStatus === 'approved' || kyc.verificationStatus === 'verified'
-              ? 'bg-green-100 text-green-700'
-              : kyc.verificationStatus === 'rejected'
-                ? 'bg-red-100 text-red-700'
-                : 'bg-amber-100 text-amber-700'
-          }`}>
-            {kyc.verificationStatus.toUpperCase()}
+        <div className="flex gap-2">
+          <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusStyles}`}>
+            Account: {status.replace(/_/g, ' ').toUpperCase()}
           </span>
-        )}
+          <span className={`px-3 py-1 rounded-full text-xs font-bold ${kycStatusStyles}`}>
+            KYC: {kycStatus.replace(/_/g, ' ').toUpperCase()}
+          </span>
+        </div>
       </div>
 
+      {message && (
+        <div className={`p-3 rounded-lg mb-4 text-sm ${message.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          {message}
+        </div>
+      )}
+
+      {company?.documents?.rejectionReason && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-sm text-red-700">
+          <strong>Previous submission rejected:</strong> {company.documents.rejectionReason}
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-sm text-gray-500 mb-4">
-          Update your company's KYC documents. After submission, admin will re-verify your account.
+        <p className="text-sm text-gray-500 mb-5">
+          Upload required documents. Admin will verify your submission within 24 hours.
         </p>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="IRDAI Certificate URL">
-            <input value={form.irdaCertificate} onChange={(e) => setForm({ ...form, irdaCertificate: e.target.value })} className="w-full border rounded px-3 py-2 text-sm" placeholder="https://..." />
-          </Field>
-          <Field label="GST Certificate URL">
-            <input value={form.gstCertificate} onChange={(e) => setForm({ ...form, gstCertificate: e.target.value })} className="w-full border rounded px-3 py-2 text-sm" />
-          </Field>
-          <Field label="PAN Card URL">
-            <input value={form.panCard} onChange={(e) => setForm({ ...form, panCard: e.target.value })} className="w-full border rounded px-3 py-2 text-sm" />
-          </Field>
-          <Field label="Bank Proof URL">
-            <input value={form.bankProof} onChange={(e) => setForm({ ...form, bankProof: e.target.value })} className="w-full border rounded px-3 py-2 text-sm" />
-          </Field>
-          <Field label="Registration Certificate URL">
-            <input value={form.registrationCertificate} onChange={(e) => setForm({ ...form, registrationCertificate: e.target.value })} className="w-full border rounded px-3 py-2 text-sm" />
-          </Field>
-          <Field label="PAN Number">
-            <input value={form.panNumber} onChange={(e) => setForm({ ...form, panNumber: e.target.value })} className="w-full border rounded px-3 py-2 text-sm" />
-          </Field>
-          <Field label="GST Number">
-            <input value={form.gstNumber} onChange={(e) => setForm({ ...form, gstNumber: e.target.value })} className="w-full border rounded px-3 py-2 text-sm" />
-          </Field>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <KycField
+            label="IRDAI Certificate URL *"
+            hint="Upload to Cloudinary and paste URL"
+            value={form.irdaCertificate}
+            onChange={(v) => setForm({ ...form, irdaCertificate: v })}
+          />
+          <KycField
+            label="GST Certificate URL *"
+            value={form.gstCertificate}
+            onChange={(v) => setForm({ ...form, gstCertificate: v })}
+          />
+          <KycField
+            label="PAN Card URL *"
+            value={form.panCard}
+            onChange={(v) => setForm({ ...form, panCard: v })}
+          />
+          <KycField
+            label="Bank Proof URL"
+            hint="Cancelled cheque or bank statement"
+            value={form.bankProof}
+            onChange={(v) => setForm({ ...form, bankProof: v })}
+          />
+          <KycField
+            label="Registration Certificate URL"
+            value={form.registrationCertificate}
+            onChange={(v) => setForm({ ...form, registrationCertificate: v })}
+          />
+          <KycField
+            label="PAN Number"
+            value={form.panNumber}
+            onChange={(v) => setForm({ ...form, panNumber: v.toUpperCase() })}
+          />
+          <KycField
+            label="GST Number"
+            value={form.gstNumber}
+            onChange={(v) => setForm({ ...form, gstNumber: v })}
+          />
         </div>
 
-        <button onClick={save} disabled={saving} className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold disabled:opacity-50">
-          {saving ? 'Saving…' : 'Submit for Verification'}
+        {(form.irdaCertificate || form.gstCertificate || form.panCard || form.bankProof || form.registrationCertificate) && (
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="font-bold text-slate-800 mb-3 text-sm">📎 Current Documents</h3>
+            <div className="flex flex-wrap gap-3">
+              {form.irdaCertificate && <DocLink label="IRDAI Certificate" url={form.irdaCertificate} />}
+              {form.gstCertificate && <DocLink label="GST Certificate" url={form.gstCertificate} />}
+              {form.panCard && <DocLink label="PAN Card" url={form.panCard} />}
+              {form.bankProof && <DocLink label="Bank Proof" url={form.bankProof} />}
+              {form.registrationCertificate && <DocLink label="Registration Certificate" url={form.registrationCertificate} />}
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={submit}
+          disabled={saving}
+          className="mt-6 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold disabled:opacity-50 hover:bg-blue-700"
+        >
+          {saving ? 'Submitting…' : 'Submit for Verification'}
         </button>
       </div>
     </div>
+  );
+}
+
+function KycField({ label, value, onChange, hint }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="https://..."
+      />
+      {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function DocLink({ label, url }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700"
+    >
+      📄 {label} ↗
+    </a>
   );
 }
 

@@ -4,6 +4,7 @@ import ProviderDashboardLayout from '../../components/ProviderDashboardLayout';
 import ProviderStatsCards from '../../components/ProviderStatsCards';
 import ProviderTable from '../../components/ProviderTable';
 import { insuranceApi } from '../../services/providerApi';
+import axios from 'axios';
 import ProviderAuth from '../../components/ProviderAuth';
 import PlanBuilder from './PlanBuilder';
 import {
@@ -27,16 +28,8 @@ const InsuranceCompanyDashboard = () => {
   const [claimStatus, setClaimStatus] = useState('all');
   const [showAddPlan, setShowAddPlan] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState(null);
-  const [newPlan, setNewPlan] = useState({
-    planName: '',
-    planType: 'individual',
-    sumInsured: { min: 100000, max: 10000000, default: 500000, options: [300000,500000,1000000,2500000,5000000,10000000] },
-    basePremium: 10000,
-    features: [],
-    inclusions: [],
-    exclusions: [],
-    isActive: true
-  });
+  const [suspendedStatus, setSuspendedStatus] = useState(null);
+  const [newPlan, setNewPlan] = useState(null);
 
     const sidebarItems = [
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
@@ -66,6 +59,16 @@ const InsuranceCompanyDashboard = () => {
         navigate('/insurance/company/login');
         return;
       }
+
+      // Fetch suspended status
+      try {
+        const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+        const suspRes = await axios.get(`${API_BASE}/api/insurance/company/suspended-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (suspRes.data?.success) setSuspendedStatus(suspRes.data.data);
+      } catch (e) { /* ignore */ }
+
 
       if (activeTab === 'dashboard') {
         const statsRes = await insuranceApi.getStats();
@@ -133,52 +136,7 @@ const InsuranceCompanyDashboard = () => {
     navigate('/insurance/company/login');
   };
 
-  const handleAddPlan = async () => {
-    try {
-      if (editingPlanId) await insuranceApi.updatePlan(editingPlanId, newPlan);
-      else await insuranceApi.addPlan(newPlan);
-      alert(editingPlanId ? 'Plan updated successfully!' : 'Plan added successfully!');
-      setShowAddPlan(false);
-      setEditingPlanId(null);
-      setNewPlan({
-        planName: '',
-        planType: 'individual',
-        sumInsured: { min: 100000, max: 10000000, default: 500000, options: [300000,500000,1000000,2500000,5000000,10000000] },
-        basePremium: 10000,
-        features: [],
-        inclusions: [],
-        exclusions: [],
-        isActive: true
-      });
-      loadData();
-    } catch (error) {
-      alert('Failed to add plan: ' + error.message);
-    }
-  };
-
-  const handleDeletePlan = async (id) => {
-    if (window.confirm('Are you sure you want to delete this plan?')) {
-      try {
-        await insuranceApi.deletePlan(id);
-        alert('Plan deleted!');
-        loadData();
-      } catch (error) {
-        alert('Failed to delete plan: ' + error.message);
-      }
-    }
-  };
-
-  const handleTogglePlanStatus = async (id, isActive) => {
-    try {
-      await insuranceApi.updatePlan(id, { isActive: !isActive });
-      alert(`Plan ${!isActive ? 'activated' : 'deactivated'}!`);
-      loadData();
-    } catch (error) {
-      alert('Failed to update plan: ' + error.message);
-    }
-  };
-
-  const renderContent = () => {
+    const renderContent = () => {
     switch(activeTab) {
       case 'dashboard':
         return (
@@ -276,7 +234,7 @@ const InsuranceCompanyDashboard = () => {
               ]}
               data={plans}
               loading={loading}
-              onEdit={(row) => { setNewPlan({ ...row, sumInsured: row.sumInsured || { min: 100000, max: 10000000, default: 500000 } }); setEditingPlanId(row._id); setShowAddPlan(true); }}
+              onEdit={(row) => { setNewPlan(row); setEditingPlanId(row._id); setShowAddPlan(true); }}
               onDelete={(row) => handleDeletePlan(row._id)}
               onView={(row) => navigate(`/insurance/plan/${row._id}`)}
             />
@@ -451,6 +409,32 @@ const InsuranceCompanyDashboard = () => {
         userRole="Insurer"
         logout={handleLogout}
       >
+                {suspendedStatus?.isSuspended && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+            <h3 className="font-bold text-red-700">⚠️ Your account is suspended</h3>
+            <p className="text-red-600 text-sm mt-1">
+              <strong>Reason:</strong> {suspendedStatus.reason || 'Not specified'}
+            </p>
+            {suspendedStatus.suspendedAt && (
+              <p className="text-red-600 text-sm">
+                <strong>Suspended on:</strong> {new Date(suspendedStatus.suspendedAt).toLocaleDateString()}
+              </p>
+            )}
+            {suspendedStatus.suspendedUntil ? (
+              <p className="text-red-600 text-sm">
+                <strong>Will be lifted on:</strong> {new Date(suspendedStatus.suspendedUntil).toLocaleDateString()}
+              </p>
+            ) : (
+              <p className="text-red-600 text-sm">
+                <strong>Duration:</strong> Indefinite
+              </p>
+            )}
+            <p className="text-red-500 text-xs mt-2">
+              Contact support@hospitalhub.in to appeal.
+            </p>
+          </div>
+        )}
+
         {renderContent()}
         
         {/* Add / Edit Plan Modal — multi-step */}
