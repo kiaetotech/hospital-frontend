@@ -518,16 +518,16 @@ function CompaniesTab({ companies, onApprove, onReject, onSuspend, onUnsuspend }
               <Td>{c.phone || '—'}</Td>
               <Td><StatusBadge status={c.verificationStatus || c.status} /></Td>
               <Td>
-                {(c.verificationStatus === 'pending' || c.verificationStatus === 'pending_verification') && (
+                {((c.verificationStatus || c.status) === 'pending' || (c.verificationStatus || c.status) === 'pending_verification') && (
                   <>
                     <button onClick={() => onApprove(c._id)} style={styles.okBtn}><FaCheck /></button>
                     <button onClick={() => onReject(c._id)} style={styles.errBtn}><FaTimes /></button>
                   </>
                 )}
-                {c.verificationStatus === 'approved' && (
+                {(c.verificationStatus || c.status) === 'approved' && (
                   <button onClick={() => onSuspend(c._id)} style={styles.warnBtn}><FaBan /></button>
                 )}
-                {c.verificationStatus === 'suspended' && (
+                {(c.verificationStatus || c.status) === 'suspended' && (
                   <button onClick={() => onUnsuspend(c._id)} style={styles.okBtn}>Unsuspend</button>
                 )}
               </Td>
