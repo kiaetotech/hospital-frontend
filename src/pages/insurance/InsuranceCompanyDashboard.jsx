@@ -17,6 +17,7 @@ import {
 import { PolicyDetailModal, ClaimDetailModal } from './InsurerDetailModals';
 import InsurerAnalytics from './InsurerAnalytics';
 import InsurerFinancials from './InsurerFinancials';
+import InsurerAdvertising from './InsurerAdvertising';
 
 // ============================================
 // TOAST — inline, no external dependency
@@ -173,6 +174,7 @@ const InsuranceCompanyDashboardInner = () => {
     { id: 'dashboard',   label: '📊 Dashboard',       icon: '📊' },
     { id: 'analytics',   label: '📈 Analytics',       icon: '📈' },
     { id: 'financials',  label: '💰 Financials',      icon: '💰' },
+    { id: 'advertising', label: '📢 Advertising',     icon: '📢' },
     { id: 'profile',     label: '🏢 Company Profile', icon: '🏢' },
     { id: 'plans',       label: '📋 Plans',           icon: '📋' },
     { id: 'policies',    label: '📄 Policies',        icon: '📄' },
@@ -757,6 +759,7 @@ const InsuranceCompanyDashboardInner = () => {
 
       case 'analytics':  return <InsurerAnalytics />;
       case 'financials': return <InsurerFinancials />;
+      case 'advertising': return <InsurerAdvertising />;
 
       case 'renewals':   return <RenewalsTab />;
       case 'complaints': return <ComplaintsTab />;
