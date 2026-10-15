@@ -398,7 +398,7 @@ const InsuranceCompanyDashboard = () => {
   };
 
   return (
-    <ProviderAuth providerType="insurance">
+    <ProviderAuth providerType="insurance_company">
       <ProviderDashboardLayout
         title="Insurance Company Dashboard"
         icon="🛡️"

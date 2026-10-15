@@ -208,7 +208,7 @@ export const insuranceApi = {
   // ============================================
   getSettlements: (params) => providerApi.get('/insurance/company/settlements', { params }),
   getReports: (params) => providerApi.get('/insurance/company/reports', { params }),
-  getStats: () => providerApi.get('/insurance/company/stats'),
+  getStats: () => providerApi.get('/insurance/company/dashboard'),
 
   // ============================================
   // COMPLAINTS (NEW)
