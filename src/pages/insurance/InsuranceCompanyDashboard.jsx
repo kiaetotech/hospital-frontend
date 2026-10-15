@@ -14,6 +14,7 @@ import {
   NetworkHospitalsTab,
   KycTab,
 } from './InsurerExtendedTabs';
+import { PolicyDetailModal, ClaimDetailModal } from './InsurerDetailModals';
 
 // ============================================
 // TOAST — inline, no external dependency
@@ -131,6 +132,8 @@ const InsuranceCompanyDashboardInner = () => {
   const [editingPlanId, setEditingPlanId] = useState(null);
   const [suspendedStatus, setSuspendedStatus] = useState(null);
   const [newPlan, setNewPlan] = useState(null);
+  const [policyModalRow, setPolicyModalRow] = useState(null);
+  const [claimModalRow, setClaimModalRow] = useState(null);
 
   // Auto-refresh
   const [autoRefreshMin, setAutoRefreshMin] = useState(0); // 0 = off
@@ -623,7 +626,7 @@ const InsuranceCompanyDashboardInner = () => {
               onPageChange={setPolPage}
               totalFromServer={polTotal}
               onExport={exportPolicies}
-              onView={(row) => navigate(`/insurance/my-policies/${row._id}`)}
+              onView={(row) => setPolicyModalRow(row)}
             />
           </div>
         );
@@ -669,7 +672,7 @@ const InsuranceCompanyDashboardInner = () => {
               onExport={exportClaims}
               enableRowSelect
               onSelectionChange={setSelectedClaims}
-              onView={(row) => updateClaimStatus(row._id, 'under_review', 'Reviewed by insurer')}
+              onView={(row) => setClaimModalRow(row)}
             />
           </div>
         );
@@ -826,13 +829,35 @@ const InsuranceCompanyDashboardInner = () => {
                 setEditingPlanId(null);
                 setNewPlan(null);
                 loadData();
-              } catch (error) {
+                            } catch (error) {
                 toast.error('Failed to save plan: ' + (error.response?.data?.message || error.message));
               }
             }}
             onCancel={() => {
               setShowAddPlan(false);
               setEditingPlanId(null);
+            }}
+          />
+        )}
+
+        {/* ═══ POLICY DETAIL MODAL ═══ */}
+        {policyModalRow && (
+          <PolicyDetailModal
+            open={!!policyModalRow}
+            onClose={() => setPolicyModalRow(null)}
+            policy={policyModalRow}
+          />
+        )}
+
+        {/* ═══ CLAIM DETAIL MODAL ═══ */}
+        {claimModalRow && (
+          <ClaimDetailModal
+            open={!!claimModalRow}
+            onClose={() => setClaimModalRow(null)}
+            claim={claimModalRow}
+            onStatusChange={() => {
+              setClaimModalRow(null);
+              loadData();
             }}
           />
         )}
