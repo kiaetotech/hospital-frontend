@@ -20,6 +20,7 @@ import InsurerFinancials from './InsurerFinancials';
 import InsurerAdvertising from './InsurerAdvertising';
 import InsurerCorporate from './InsurerCorporate';
 import InsurerPreAuthQueue from './InsurerPreAuthQueue';
+import InsurerClaimTriage from './InsurerClaimTriage';
 
 // ============================================
 // TOAST — inline, no external dependency
@@ -179,6 +180,7 @@ const InsuranceCompanyDashboardInner = () => {
     { id: 'advertising', label: '📢 Advertising',     icon: '📢' },
     { id: 'corporate',   label: '🏢 Corporate',       icon: '🏢' },
     { id: 'preauth',     label: '🩺 Pre-Auth',        icon: '🩺' },
+    { id: 'triage',      label: '🤖 AI Triage',       icon: '🤖' },
     { id: 'profile',     label: '🏢 Company Profile', icon: '🏢' },
     { id: 'plans',       label: '📋 Plans',           icon: '📋' },
     { id: 'policies',    label: '📄 Policies',        icon: '📄' },
@@ -766,6 +768,7 @@ const InsuranceCompanyDashboardInner = () => {
       case 'advertising': return <InsurerAdvertising />;
       case 'corporate':   return <InsurerCorporate />;
       case 'preauth':     return <InsurerPreAuthQueue />;
+      case 'triage':      return <InsurerClaimTriage />;
 
       case 'renewals':   return <RenewalsTab />;
       case 'complaints': return <ComplaintsTab />;
