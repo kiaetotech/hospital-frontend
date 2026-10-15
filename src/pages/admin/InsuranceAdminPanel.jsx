@@ -518,7 +518,7 @@ function CompaniesTab({ companies, onApprove, onReject, onSuspend, onUnsuspend }
               <Td>{c.phone || '—'}</Td>
               <Td><StatusBadge status={c.verificationStatus || c.status} /></Td>
               <Td>
-                {c.verificationStatus === 'pending' && (
+                {(c.verificationStatus === 'pending' || c.verificationStatus === 'pending_verification') && (
                   <>
                     <button onClick={() => onApprove(c._id)} style={styles.okBtn}><FaCheck /></button>
                     <button onClick={() => onReject(c._id)} style={styles.errBtn}><FaTimes /></button>
