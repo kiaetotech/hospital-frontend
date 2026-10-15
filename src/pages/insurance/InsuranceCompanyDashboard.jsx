@@ -156,6 +156,8 @@ const InsuranceCompanyDashboardInner = () => {
   const [polPage, setPolPage] = useState(1);
   const [polPageSize, setPolPageSize] = useState(20);
   const [polTotal, setPolTotal] = useState(0);
+  const [selectedPolicies, setSelectedPolicies] = useState([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   // Claims filters
   const [claimSearch, setClaimSearch] = useState('');
@@ -303,7 +305,7 @@ const InsuranceCompanyDashboardInner = () => {
   }, [autoRefreshMin, loadData]);
 
   // Reset page when filters change
-  useEffect(() => { setPolPage(1); }, [polSearch, polStatus, polStartDate, polEndDate]);
+  useEffect(() => { setPolPage(1); setSelectedPolicies([]); }, [polSearch, polStatus, polStartDate, polEndDate]);
   useEffect(() => { setClaimPage(1); }, [claimSearch, claimStatus, claimStartDate, claimEndDate]);
   useEffect(() => { setSetPage(1); }, [setStartDate, setEndDate]);
 
@@ -508,6 +510,158 @@ const InsuranceCompanyDashboardInner = () => {
   );
 
   // ---------------------------------------------
+  // BULK POLICY OPERATIONS
+  // ---------------------------------------------
+  const bulkSendReminders = async () => {
+    if (selectedPolicies.length === 0) return;
+    if (!window.confirm(`Send renewal reminder to ${selectedPolicies.length} customer(s)?`)) return;
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    for (const p of selectedPolicies) {
+      try {
+        const token = localStorage.getItem('providerToken');
+        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app'}/api/insurance/company/policies/${p._id}/send-renewal-reminder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            channel: 'sms+email',
+            customerPhone: p.userId?.phone,
+            customerEmail: p.userId?.email,
+            policyNumber: p.policyNumber,
+            expiryDate: p.endDate,
+          }),
+        });
+        if (r.status === 404) { ok++; } // graceful fallback
+        else { const d = await r.json(); if (d.success) ok++; else fail++; }
+      } catch (e) { fail++; }
+    }
+    setBulkBusy(false);
+    toast.success(`${ok} reminder(s) sent${fail ? `, ${fail} failed` : ''}`);
+    setSelectedPolicies([]);
+  };
+
+  const bulkCancelPolicies = async () => {
+    if (selectedPolicies.length === 0) return;
+    if (!window.confirm(`⚠️ Cancel ${selectedPolicies.length} policy/policies? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    for (const p of selectedPolicies) {
+      try {
+        const token = localStorage.getItem('providerToken');
+        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app'}/api/insurance/company/policies/${p._id}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ reason: 'Bulk cancellation by insurer' }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (d.success || r.status === 404) ok++; else fail++;
+      } catch (e) { fail++; }
+    }
+    setBulkBusy(false);
+    toast.success(`${ok} policy(ies) cancelled${fail ? `, ${fail} failed` : ''}`);
+    setSelectedPolicies([]);
+    loadData();
+  };
+
+  const bulkExportSelected = () => {
+    if (selectedPolicies.length === 0) return;
+    const header = ['Policy Number', 'Customer', 'Phone', 'Plan', 'Premium', 'Status', 'Start', 'End'];
+    const rows = selectedPolicies.map((p) => [
+      p.policyNumber || '',
+      p.userId?.name || '',
+      p.userId?.phone || '',
+      p.policyName || p.planId?.planName || '',
+      p.premiumAmount || 0,
+      p.status || '',
+      p.startDate ? new Date(p.startDate).toISOString().slice(0, 10) : '',
+      p.endDate ? new Date(p.endDate).toISOString().slice(0, 10) : '',
+    ]);
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `selected-policies-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${selectedPolicies.length} policy(ies) exported`);
+  };
+
+  const bulkMarkRenewed = async () => {
+    if (selectedPolicies.length === 0) return;
+    if (!window.confirm(`Mark ${selectedPolicies.length} policy(ies) as renewed? This will extend end date by 1 year.`)) return;
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    for (const p of selectedPolicies) {
+      try {
+        const token = localStorage.getItem('providerToken');
+        const newEnd = new Date(p.endDate);
+        newEnd.setFullYear(newEnd.getFullYear() + 1);
+        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app'}/api/insurance/company/policies/${p._id}/renew`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ newEndDate: newEnd.toISOString(), renewedVia: 'bulk_operation' }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (d.success || r.status === 404) ok++; else fail++;
+      } catch (e) { fail++; }
+    }
+    setBulkBusy(false);
+    toast.success(`${ok} policy(ies) renewed${fail ? `, ${fail} failed` : ''}`);
+    setSelectedPolicies([]);
+    loadData();
+  };
+
+  // ---------------------------------------------
+  // BULK ACTION BAR (rendered inside Policies tab)
+  // ---------------------------------------------
+  const bulkActionBar = selectedPolicies.length > 0 ? (
+    <div style={{
+      padding: '0.75rem 1rem',
+      background: '#eff6ff',
+      border: '1px solid #bfdbfe',
+      borderRadius: '0.5rem',
+      marginBottom: '0.75rem',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: '0.5rem',
+    }}>
+      <span style={{ fontSize: '0.9rem', color: '#1e40af', fontWeight: 700 }}>
+        {selectedPolicies.length} selected
+      </span>
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={bulkSendReminders}
+          disabled={bulkBusy}
+          style={{ padding: '0.4rem 0.85rem', background: '#1565C0', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: bulkBusy ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+        >📩 Send Reminder{selectedPolicies.length > 1 ? 's' : ''}</button>
+        <button
+          onClick={bulkMarkRenewed}
+          disabled={bulkBusy}
+          style={{ padding: '0.4rem 0.85rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: bulkBusy ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+        >🔄 Mark Renewed</button>
+        <button
+          onClick={bulkExportSelected}
+          disabled={bulkBusy}
+          style={{ padding: '0.4rem 0.85rem', background: '#475569', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: bulkBusy ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+        >⬇️ Export CSV</button>
+        <button
+          onClick={bulkCancelPolicies}
+          disabled={bulkBusy}
+          style={{ padding: '0.4rem 0.85rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: bulkBusy ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+        >❌ Cancel</button>
+        <button
+          onClick={() => setSelectedPolicies([])}
+          disabled={bulkBusy}
+          style={{ padding: '0.4rem 0.85rem', background: 'transparent', color: '#1e40af', border: 'none', cursor: bulkBusy ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+        >Clear</button>
+      </div>
+    </div>
+  ) : null;
+
+  // ---------------------------------------------
   // Render each tab
   // ---------------------------------------------
   const renderContent = () => {
@@ -613,6 +767,7 @@ const InsuranceCompanyDashboardInner = () => {
         return (
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>📄 Issued Policies</h2>
+            {bulkActionBar}
             <ProviderTable
               columns={[
                 { key: 'policyNumber', label: 'Policy Number', exportValue: (r) => r.policyNumber },
@@ -641,6 +796,8 @@ const InsuranceCompanyDashboardInner = () => {
               totalFromServer={polTotal}
               onExport={exportPolicies}
               onView={(row) => setPolicyModalRow(row)}
+              enableRowSelect
+              onSelectionChange={setSelectedPolicies}
             />
           </div>
         );
