@@ -15,6 +15,7 @@ import {
   KycTab,
 } from './InsurerExtendedTabs';
 import { PolicyDetailModal, ClaimDetailModal } from './InsurerDetailModals';
+import InsurerAnalytics from './InsurerAnalytics';
 
 // ============================================
 // TOAST — inline, no external dependency
@@ -169,6 +170,7 @@ const InsuranceCompanyDashboardInner = () => {
 
   const sidebarItems = [
     { id: 'dashboard',   label: '📊 Dashboard',       icon: '📊' },
+    { id: 'analytics',   label: '📈 Analytics',       icon: '📈' },
     { id: 'profile',     label: '🏢 Company Profile', icon: '🏢' },
     { id: 'plans',       label: '📋 Plans',           icon: '📋' },
     { id: 'policies',    label: '📄 Policies',        icon: '📄' },
@@ -750,6 +752,8 @@ const InsuranceCompanyDashboardInner = () => {
             ) : <p>Loading...</p>}
           </div>
         );
+
+      case 'analytics':  return <InsurerAnalytics />;
 
       case 'renewals':   return <RenewalsTab />;
       case 'complaints': return <ComplaintsTab />;
