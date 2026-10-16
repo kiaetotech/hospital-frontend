@@ -23,6 +23,7 @@ import InsurerPreAuthQueue from './InsurerPreAuthQueue';
 import InsurerClaimTriage from './InsurerClaimTriage';
 import InsurerAutoRenewal from './InsurerAutoRenewal';
 import InsurerAdSlots from './InsurerAdSlots';
+import InsurerReportBuilder from './InsurerReportBuilder';
 
 // ============================================
 // TOAST — inline, no external dependency
@@ -197,6 +198,7 @@ const InsuranceCompanyDashboardInner = () => {
     { id: 'network',     label: '🏥 Network Hospitals', icon: '🏥' },
     { id: 'settlements', label: '💰 Settlements',     icon: '💰' },
     { id: 'reports',     label: '📊 Reports',         icon: '📊' },
+    { id: 'reportbuilder', label: '🛠️ Report Builder', icon: '🛠️' },
     { id: 'kyc',         label: '📋 KYC',             icon: '📋' },
     { id: 'settings',    label: '⚙️ Settings',        icon: '⚙️' },
   ];
@@ -938,6 +940,9 @@ const InsuranceCompanyDashboardInner = () => {
       case 'reviews':    return <ReviewsTab />;
       case 'network':    return <NetworkHospitalsTab />;
       case 'kyc':        return <KycTab />;
+
+      case 'reportbuilder': return <InsurerReportBuilder />;
+
 
       case 'reports':
         return (
