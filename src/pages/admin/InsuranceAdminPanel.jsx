@@ -76,9 +76,10 @@ export default function InsuranceAdminPanel() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   // Helpers
-    const headers = useMemo(() => ({
-    'x-admin-key': 'admin_secret_key_2024_hospitalhub_production_secure',
-  }), []);
+    const headers = useMemo(() => {
+  const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}, []);
 
   const addNotification = useCallback((message, type = 'info') => {
     setNotifications(prev => [{ id: Date.now(), message, type, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));
@@ -526,9 +527,9 @@ function CompaniesTab({ companies, onApprove, onReject, onSuspend, onUnsuspend }
                     <button onClick={() => onReject(c._id)} style={styles.errBtn}><FaTimes /></button>
                   </>
                 )}
-                {(c.verificationStatus || c.status) === 'approved' && (
-                  <button onClick={() => onSuspend(c._id)} style={styles.warnBtn}><FaBan /></button>
-                )}
+                {((c.verificationStatus || c.status) === 'verified' || (c.verificationStatus || c.status) === 'active') && (
+  		<button onClick={() => onSuspend(c._id)} style={styles.warnBtn}><FaBan /></button>
+		)}
                 {(c.verificationStatus || c.status) === 'suspended' && (
                   <button onClick={() => onUnsuspend(c._id)} style={styles.okBtn}>Unsuspend</button>
                 )}
