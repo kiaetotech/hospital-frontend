@@ -9,7 +9,7 @@ import {
   FaExclamationTriangle, FaStar, FaHospital, FaIdCard, FaSync, FaTrash, FaPlus,
 } from 'react-icons/fa';
 
-const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
 
 const insurerHeaders = () => {
   const t = localStorage.getItem('providerToken');

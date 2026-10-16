@@ -89,7 +89,7 @@ export default function InsurerCorporate() {
   const handleCreatePkg = async (payload) => {
     try {
       // Reuse the corporate packages endpoint via a simple POST
-      const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+      const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
       const token = localStorage.getItem('providerToken');
       const r = await fetch(`${API_BASE}/api/insurance/company/corporate/packages`, {
         method: 'POST',
@@ -111,7 +111,7 @@ export default function InsurerCorporate() {
 
   const handleUpdatePkg = async (pkgId, payload) => {
     try {
-      const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+      const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
       const token = localStorage.getItem('providerToken');
       const r = await fetch(`${API_BASE}/api/insurance/company/corporate/packages/${pkgId}`, {
         method: 'PUT',
@@ -134,7 +134,7 @@ export default function InsurerCorporate() {
   const handleDeletePkg = async (pkgId) => {
     if (!window.confirm('Delete this corporate package?')) return;
     try {
-      const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+      const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
       const token = localStorage.getItem('providerToken');
       const r = await fetch(`${API_BASE}/api/insurance/company/corporate/packages/${pkgId}`, {
         method: 'DELETE',
@@ -154,7 +154,7 @@ export default function InsurerCorporate() {
 
   const handleUpdateEnquiryStage = async (enquiryId, stage) => {
     try {
-      const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+      const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
       const token = localStorage.getItem('providerToken');
       const r = await fetch(`${API_BASE}/api/insurance/company/corporate/enquiries/${enquiryId}`, {
         method: 'PUT',

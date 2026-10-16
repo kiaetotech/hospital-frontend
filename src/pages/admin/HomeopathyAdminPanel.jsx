@@ -14,7 +14,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer
 } from 'recharts';
 
-const API_BASE = 'https://hospital-backend-production-e2cf.up.railway.app';
+const API_BASE = 'https://hospital-backend-production-e2d5.up.railway.app';
 const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
 const ADMIN_KEY_HEADER = { 'x-admin-key': ADMIN_KEY };
 

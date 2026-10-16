@@ -217,7 +217,7 @@ const InsuranceCompanyDashboardInner = () => {
 
       // Suspended status — fetch once per tab change (cheap endpoint)
       try {
-        const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+        const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
         const suspRes = await axios.get(`${API_BASE}/api/insurance/company/suspended-status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -524,7 +524,7 @@ const InsuranceCompanyDashboardInner = () => {
     for (const p of selectedPolicies) {
       try {
         const token = localStorage.getItem('providerToken');
-        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app'}/api/insurance/company/policies/${p._id}/send-renewal-reminder`, {
+        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app'}/api/insurance/company/policies/${p._id}/send-renewal-reminder`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({
@@ -552,7 +552,7 @@ const InsuranceCompanyDashboardInner = () => {
     for (const p of selectedPolicies) {
       try {
         const token = localStorage.getItem('providerToken');
-        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app'}/api/insurance/company/policies/${p._id}/cancel`, {
+        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app'}/api/insurance/company/policies/${p._id}/cancel`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ reason: 'Bulk cancellation by insurer' }),
@@ -601,7 +601,7 @@ const InsuranceCompanyDashboardInner = () => {
         const token = localStorage.getItem('providerToken');
         const newEnd = new Date(p.endDate);
         newEnd.setFullYear(newEnd.getFullYear() + 1);
-        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app'}/api/insurance/company/policies/${p._id}/renew`, {
+        const r = await fetch(`${process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app'}/api/insurance/company/policies/${p._id}/renew`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ newEndDate: newEnd.toISOString(), renewedVia: 'bulk_operation' }),

@@ -8,7 +8,7 @@ const insuranceAdminHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : { 'x-admin-key': ADMIN_KEY };
 };
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
 
 const providerApi = axios.create({
   baseURL: `${API_URL}/api`,
