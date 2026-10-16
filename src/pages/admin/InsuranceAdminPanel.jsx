@@ -10,6 +10,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+// Use a fresh axios instance so no global interceptors hijack our requests
+const adminAxios = axios.create();
 import {
   FaSync, FaArrowLeft, FaEye, FaCheck, FaTimes, FaBan,
   FaChartBar, FaBell, FaExclamationTriangle, FaStar, FaIdCard,
