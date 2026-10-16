@@ -520,19 +520,30 @@ function CompaniesTab({ companies, onApprove, onReject, onSuspend, onUnsuspend }
               <Td>{c.email || '—'}</Td>
               <Td>{c.phone || '—'}</Td>
               <Td><StatusBadge status={c.verificationStatus || c.status} /></Td>
-              <Td>
-                {((c.verificationStatus || c.status) === 'pending' || (c.verificationStatus || c.status) === 'pending_verification') && (
-                  <>
-                    <button onClick={() => onApprove(c._id)} style={styles.okBtn}><FaCheck /></button>
-                    <button onClick={() => onReject(c._id)} style={styles.errBtn}><FaTimes /></button>
-                  </>
-                )}
-                {((c.verificationStatus || c.status) === 'verified' || (c.verificationStatus || c.status) === 'active') && (
-  		<button onClick={() => onSuspend(c._id)} style={styles.warnBtn}><FaBan /></button>
-		)}
-                {(c.verificationStatus || c.status) === 'suspended' && (
-                  <button onClick={() => onUnsuspend(c._id)} style={styles.okBtn}>Unsuspend</button>
-                )}
+                            <Td>
+                {(() => {
+                  const s = c.verificationStatus || c.status || '';
+                  const isPending = ['pending', 'pending_verification'].includes(s);
+                  const isVerified = ['verified', 'active', 'approved'].includes(s);
+                  const isSuspended = s === 'suspended';
+
+                  return (
+                    <>
+                      {isPending && (
+                        <>
+                          <button onClick={() => onApprove(c._id)} style={styles.okBtn} title="Approve"><FaCheck /></button>
+                          <button onClick={() => onReject(c._id)} style={styles.errBtn} title="Reject"><FaTimes /></button>
+                        </>
+                      )}
+                      {isVerified && (
+                        <button onClick={() => onSuspend(c._id)} style={styles.warnBtn} title="Suspend"><FaBan /></button>
+                      )}
+                      {isSuspended && (
+                        <button onClick={() => onUnsuspend(c._id)} style={styles.okBtn}>Unsuspend</button>
+                      )}
+                    </>
+                  );
+                })()}
               </Td>
             </tr>
           ))}
