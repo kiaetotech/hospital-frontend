@@ -8,8 +8,36 @@
 
 import React, { useEffect, useState } from 'react';
 
-const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
+// ============================================
+// PDF download helper — fetches with auth and triggers browser download
+// ============================================
+const downloadPdf = async (url, filename) => {
+  try {
+    const token = localStorage.getItem('providerToken');
+    const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2cf.up.railway.app';
+    const r = await fetch(`${API}${url}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      alert(err.message || 'Failed to download PDF');
+      return;
+    }
+    const blob = await r.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch (e) {
+    alert('Download failed: ' + e.message);
+  }
+};
 
+const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
 const fmtDate = (d) => (d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
 const fmtDateOnly = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
 
@@ -271,8 +299,12 @@ export function PolicyDetailModal({ open, onClose, policy, insurerHeaders }) {
             const a = document.createElement('a'); a.href = url; a.download = `${p.policyNumber || 'policy'}.csv`; a.click();
             URL.revokeObjectURL(url);
           }}
-          style={{ padding: '0.55rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                    style={{ padding: '0.55rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
         >⬇️ Export CSV</button>
+        <button
+          onClick={() => downloadPdf(`/api/insurance/company/policies/${p._id}/pdf`, `${p.policyNumber || 'policy'}.pdf`)}
+          style={{ padding: '0.55rem 1rem', background: '#1565C0', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+        >📄 Download PDF</button>
         <button
           onClick={onClose}
           style={{ padding: '0.55rem 1rem', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
@@ -501,7 +533,11 @@ export function ClaimDetailModal({ open, onClose, claim, onStatusChange }) {
         )}
       </Body>
 
-      <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: '#f8fafc' }}>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: '#f8fafc' }}>
+        <button
+          onClick={() => downloadPdf(`/api/insurance/company/claims/${c._id}/settlement-receipt`, `settlement-${c.claimNumber || c._id}.pdf`)}
+          style={{ padding: '0.55rem 1rem', background: '#1565C0', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+        >📄 Settlement PDF</button>
         <button
           onClick={onClose}
           style={{ padding: '0.55rem 1rem', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
