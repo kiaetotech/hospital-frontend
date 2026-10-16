@@ -94,62 +94,62 @@ export default function InsuranceAdminPanel() {
     try {
       switch (tab) {
         case 'overview': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/overview`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/overview`, { headers });
           setOverview(res.data?.data || null);
           break;
         }
         case 'companies': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/companies`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/companies`, { headers });
           setCompanies(res.data?.data || []);
           break;
         }
         case 'plans': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/plans`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/plans`, { headers });
           setPlans(res.data?.data || []);
           break;
         }
         case 'policies': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/policies`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/policies`, { headers });
           setPolicies(res.data?.data || []);
           break;
         }
         case 'claims': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/claims`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/claims`, { headers });
           setClaims(res.data?.data || []);
           break;
         }
         case 'pending': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/pending`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/pending`, { headers });
           setPending(res.data?.data || null);
           break;
         }
         case 'settlements': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/settlements`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/settlements`, { headers });
           setSettlements(res.data?.data || []);
           break;
         }
         case 'reviews': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/reviews`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/reviews`, { headers });
           setReviews(res.data?.data || []);
           break;
         }
         case 'complaints': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/complaints`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/complaints`, { headers });
           setComplaints(res.data?.data || []);
           break;
         }
         case 'kyc': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/kyc/pending`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/kyc/pending`, { headers });
           setKycPending(res.data?.data || []);
           break;
         }
         case 'suspended': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/suspended`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/suspended`, { headers });
           setSuspended(res.data?.data || []);
           break;
         }
         case 'corporate': {
-          const res = await axios.get(`${API_BASE}/api/insurance/admin/corporate/pending`, { headers });
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/corporate/pending`, { headers });
           setCorporatePending(res.data?.data || []);
           break;
         }
