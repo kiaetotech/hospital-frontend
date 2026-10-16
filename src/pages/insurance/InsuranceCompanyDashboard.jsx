@@ -22,6 +22,7 @@ import InsurerCorporate from './InsurerCorporate';
 import InsurerPreAuthQueue from './InsurerPreAuthQueue';
 import InsurerClaimTriage from './InsurerClaimTriage';
 import InsurerAutoRenewal from './InsurerAutoRenewal';
+import InsurerAdSlots from './InsurerAdSlots';
 
 // ============================================
 // TOAST — inline, no external dependency
@@ -185,6 +186,7 @@ const InsuranceCompanyDashboardInner = () => {
     { id: 'preauth',     label: '🩺 Pre-Auth',        icon: '🩺' },
     { id: 'triage',      label: '🤖 AI Triage',       icon: '🤖' },
     { id: 'autorenewal', label: '🔄 Auto-Renewal',    icon: '🔄' },
+    { id: 'adslots',     label: '🎨 Ad Slots',        icon: '🎨' },
     { id: 'profile',     label: '🏢 Company Profile', icon: '🏢' },
     { id: 'plans',       label: '📋 Plans',           icon: '📋' },
     { id: 'policies',    label: '📄 Policies',        icon: '📄' },
@@ -929,6 +931,7 @@ const InsuranceCompanyDashboardInner = () => {
       case 'preauth':     return <InsurerPreAuthQueue />;
       case 'triage':      return <InsurerClaimTriage />;
       case 'autorenewal': return <InsurerAutoRenewal />;
+      case 'adslots':     return <InsurerAdSlots />;
 
       case 'renewals':   return <RenewalsTab />;
       case 'complaints': return <ComplaintsTab />;

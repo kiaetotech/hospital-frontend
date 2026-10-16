@@ -12,6 +12,7 @@ import {
   FaApple, FaGooglePlay, FaMapMarkerAlt
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdSlot from '../components/AdSlot';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -407,6 +408,15 @@ const HomePage = () => {
           </motion.div>
         </div>
       </section>
+
+
+      {/* ================================================================
+          SPONSORED INSURANCE BANNER (Ad Slot)
+      ================================================================ */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px 20px 0' }}>
+        <AdSlot placement="homepage_banner" providerType="insurance" limit={2} variant="banner" />
+      </section>
+
 
       {/* ================================================================
           11 SERVICE CARDS
