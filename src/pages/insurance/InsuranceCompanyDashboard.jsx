@@ -217,20 +217,26 @@ const InsuranceCompanyDashboardInner = () => {
         return;
       }
 
-            // Suspended status + appeal history
+                  // Suspension + appeals — production endpoints (no checkInsurer dependency)
       try {
         const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
-        const [suspRes, appealsRes] = await Promise.all([
-          axios.get(`${API_BASE}/api/insurance/company/suspended-status`, {
+        const [suspRes, appealsRes] = await Promise.allSettled([
+          axios.get(`${API_BASE}/api/insurance/company/my-suspension`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
           axios.get(`${API_BASE}/api/insurance/company/my-appeals`, {
             headers: { Authorization: `Bearer ${token}` },
-          }).catch(() => ({ data: { data: [] } })),
+          }),
         ]);
-        if (suspRes.data?.success) setSuspendedStatus(suspRes.data.data);
-        setMyAppeals(appealsRes.data?.data || []);
-      } catch (e) { /* ignore */ }
+        if (suspRes.status === 'fulfilled' && suspRes.value.data?.success) {
+          setSuspendedStatus(suspRes.value.data.data);
+        }
+        if (appealsRes.status === 'fulfilled') {
+          setMyAppeals(appealsRes.value.data?.data || []);
+        }
+      } catch (e) {
+        console.warn('[loadData] suspension fetch failed:', e.message);
+      }
 
       if (activeTab === 'dashboard') {
         const [statsRes, policiesRes, claimsRes] = await Promise.all([
@@ -291,13 +297,31 @@ const InsuranceCompanyDashboardInner = () => {
         setProfile(profileRes.data?.data || null);
       }
 
-    } catch (error) {
-      console.error('Error loading data:', error);
-      if (error.response?.status === 401) {
+        } catch (error) {
+      const status = error.response?.status;
+      const data = error.response?.data;
+
+      // 401 — session expired
+      if (status === 401) {
         navigate('/insurance/company/login');
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to load data');
+        return;
       }
+
+      // 403 with `suspended: true` — expected behavior, not a bug
+      if (status === 403 && data?.suspended) {
+        toast.info('Your account is suspended. View-only access is enabled. Submit an appeal to restore access.');
+        return;
+      }
+
+      // Other 403 — permission denied
+      if (status === 403) {
+        console.warn('Access denied:', data?.message);
+        return;
+      }
+
+      // Real errors — log + user-facing message
+      console.error('Error loading data:', error);
+      toast.error(data?.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
