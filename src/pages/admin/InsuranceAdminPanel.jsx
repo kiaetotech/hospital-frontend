@@ -211,14 +211,15 @@ export default function InsuranceAdminPanel() {
   // ============================================
 
   const action = useCallback(async (fn, successMsg) => {
-    try {
-      await fn();
-      addNotification(successMsg || 'Done', 'success');
-      loadData();
-    } catch (e) {
-      addNotification(e.response?.data?.error?.message || e.message || 'Failed', 'error');
-    }
-  }, [addNotification, loadData]);
+  try {
+    await fn();
+    addNotification(successMsg || 'Done', 'success');
+    loadData();
+    fetchTabCounts();
+  } catch (e) {
+    addNotification(e.response?.data?.error?.message || e.message || 'Failed', 'error');
+  }
+}, [addNotification, loadData, fetchTabCounts]);
 
   const approveCompany = (id) => action(
     () => axios.post(`${API_BASE}/api/insurance/admin/companies/${id}/approve`, {}, { headers }),
@@ -244,6 +245,7 @@ export default function InsuranceAdminPanel() {
     setSuspendModal(null);
     // Force reload both the current tab and the suspended tab data
     await loadData();
+    fetchTabCounts();
   } catch (e) {
     addNotification(e.response?.data?.message || e.message || 'Suspend failed', 'error');
   }
@@ -260,6 +262,7 @@ export default function InsuranceAdminPanel() {
       await axios.post(`${API_BASE}/api/insurance/admin/appeals/${appealId}/approve`, {}, { headers });
       addNotification('Appeal approved — company unsuspended', 'success');
       loadData();
+      fetchTabCounts();
     } catch (e) {
       addNotification(e.response?.data?.message || 'Failed to approve appeal', 'error');
     }
@@ -272,6 +275,7 @@ export default function InsuranceAdminPanel() {
       await axios.post(`${API_BASE}/api/insurance/admin/appeals/${appealId}/reject`, { reason: reason.trim() }, { headers });
       addNotification('Appeal rejected — suspension upheld', 'success');
       loadData();
+      fetchTabCounts();
     } catch (e) {
       addNotification(e.response?.data?.message || 'Failed to reject appeal', 'error');
     }
