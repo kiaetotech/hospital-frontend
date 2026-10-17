@@ -71,6 +71,7 @@ export default function InsuranceAdminPanel() {
   const [appeals, setAppeals] = useState([]);
   const [adCampaigns, setAdCampaigns] = useState([]);
   const [adRevenue, setAdRevenue] = useState(null);
+  const [tabCounts, setTabCounts] = useState({ kyc: 0, suspended: 0, appeals: 0, pending: 0, complaints: 0 });
 
   // Modals
   const [rejectModal, setRejectModal] = useState(null); // { type, id, label }
@@ -82,6 +83,27 @@ export default function InsuranceAdminPanel() {
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }, []);
+
+  // Fetch pending counts for KYC, Suspended, Appeals — runs on mount
+  const fetchTabCounts = useCallback(async () => {
+    try {
+      const [kycRes, suspRes, appealsRes] = await Promise.allSettled([
+        adminAxios.get(`${API_BASE}/api/insurance/admin/kyc/pending`, { headers }),
+        adminAxios.get(`${API_BASE}/api/insurance/admin/suspended`, { headers }),
+        adminAxios.get(`${API_BASE}/api/insurance/admin/appeals?status=pending`, { headers }),
+      ]);
+
+      setTabCounts({
+        kyc: kycRes.status === 'fulfilled' ? (kycRes.value.data?.data?.length || 0) : 0,
+        suspended: suspRes.status === 'fulfilled' ? (suspRes.value.data?.data?.length || 0) : 0,
+        appeals: appealsRes.status === 'fulfilled' ? (appealsRes.value.data?.data?.length || 0) : 0,
+        pending: 0,
+        complaints: 0,
+      });
+    } catch (e) {
+      console.warn('[fetchTabCounts]', e.message);
+    }
+  }, [headers]);
 
   const addNotification = useCallback((message, type = 'info') => {
     setNotifications(prev => [{ id: Date.now(), message, type, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));
@@ -182,6 +204,7 @@ export default function InsuranceAdminPanel() {
   }, [tab, headers]);
 
   useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { fetchTabCounts(); }, [fetchTabCounts]);
 
   // ============================================
   // ACTIONS
@@ -408,7 +431,7 @@ export default function InsuranceAdminPanel() {
         {error && <p style={styles.error}>⚠️ {error}</p>}
         {!loading && !error && (
           <>
-            {tab === 'overview' && <OverviewTab data={overview} />}
+            {tab === 'overview' && <OverviewTab data={overview} tabCounts={tabCounts} setTab={setTab} />}
             {tab === 'companies' && (
               <CompaniesTab
                 companies={companies}
@@ -492,7 +515,7 @@ export default function InsuranceAdminPanel() {
 // TAB COMPONENTS
 // ============================================
 
-function OverviewTab({ data }) {
+function OverviewTab({ data, tabCounts, setTab }) {
   if (!data) return <p>No data yet.</p>;
 
   const { companies, plans, policies, claims, revenue, trend } = data;
@@ -512,6 +535,61 @@ function OverviewTab({ data }) {
 
   return (
     <div>
+	      {/* 🚨 Pending Actions — shows on load if any tab has queued items */}
+      {((tabCounts?.kyc || 0) + (tabCounts?.suspended || 0) + (tabCounts?.appeals || 0)) > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #fef3c7, #fed7aa)',
+          border: '2px solid #f59e0b',
+          borderRadius: 12,
+          padding: '1rem 1.25rem',
+          marginBottom: '1.25rem',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          alignItems: 'center',
+          boxShadow: '0 4px 12px rgba(245, 158, 11, 0.15)',
+        }}>
+          <div style={{ fontSize: '2rem', lineHeight: 1 }}>🚨</div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <h3 style={{ margin: 0, fontWeight: 800, color: '#92400e', fontSize: '1.05rem' }}>
+              Pending Actions
+            </h3>
+            <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: '#78350f' }}>
+              {[
+                tabCounts?.kyc > 0 && `${tabCounts.kyc} KYC review${tabCounts.kyc > 1 ? 's' : ''}`,
+                tabCounts?.suspended > 0 && `${tabCounts.suspended} suspended`,
+                tabCounts?.appeals > 0 && `${tabCounts.appeals} appeal${tabCounts.appeals > 1 ? 's' : ''}`
+              ].filter(Boolean).join(' • ')}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {tabCounts?.kyc > 0 && (
+              <button
+                onClick={() => setTab('kyc')}
+                style={{ padding: '0.55rem 1rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                Review KYC ({tabCounts.kyc})
+              </button>
+            )}
+            {tabCounts?.appeals > 0 && (
+              <button
+                onClick={() => setTab('appeals')}
+                style={{ padding: '0.55rem 1rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                Review Appeals ({tabCounts.appeals})
+              </button>
+            )}
+            {tabCounts?.suspended > 0 && (
+              <button
+                onClick={() => setTab('suspended')}
+                style={{ padding: '0.55rem 1rem', background: '#64748b', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                View Suspended ({tabCounts.suspended})
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       {/* Top stat cards */}
       <div style={styles.statsGrid}>
         <StatCard label="Companies" value={companies?.total || 0} sub={`${companies?.active || 0} active • ${companies?.pending || 0} pending`} color="#3b82f6" />
