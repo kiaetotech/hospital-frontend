@@ -204,12 +204,20 @@ export default function InsuranceAdminPanel() {
   };
 
   const suspendCompany = async (id, reason, until) => {
-    await action(
-      () => axios.post(`${API_BASE}/api/insurance/admin/companies/${id}/suspend`, { reason, until }, { headers }),
-      'Company suspended'
+  try {
+    await axios.post(
+      `${API_BASE}/api/insurance/admin/companies/${id}/suspend`,
+      { reason, until },
+      { headers }
     );
+    addNotification('Company suspended', 'success');
     setSuspendModal(null);
-  };
+    // Force reload both the current tab and the suspended tab data
+    await loadData();
+  } catch (e) {
+    addNotification(e.response?.data?.message || e.message || 'Suspend failed', 'error');
+  }
+};
 
   const unsuspendCompany = (id) => action(
     () => axios.post(`${API_BASE}/api/insurance/admin/companies/${id}/unsuspend`, {}, { headers }),
@@ -513,40 +521,40 @@ function CompaniesTab({ companies, onApprove, onReject, onSuspend, onUnsuspend }
           </tr>
         </thead>
         <tbody>
-          {companies.map(c => (
-            <tr key={c._id} style={styles.tr}>
-              <Td><strong>{c.companyName}</strong></Td>
-              <Td>{c.irdaRegistration || '—'}</Td>
-              <Td>{c.email || '—'}</Td>
-              <Td>{c.phone || '—'}</Td>
-              <Td><StatusBadge status={c.verificationStatus || c.status} /></Td>
-                            <Td>
-                {(() => {
-                  const s = c.verificationStatus || c.status || '';
-                  const isPending = ['pending', 'pending_verification'].includes(s);
-                  const isVerified = ['verified', 'active', 'approved'].includes(s);
-                  const isSuspended = s === 'suspended';
+          {companies.map(c => {
+            const s = c.verificationStatus || c.status || '';
+            const isPending = ['pending', 'pending_verification', 'pending_approval'].includes(s);
+            const isVerified = ['verified', 'active', 'approved'].includes(s);
+            const isSuspended = s === 'suspended';
+            const isInactive = s === 'inactive' || s === 'rejected';
 
-                  return (
+            return (
+              <tr key={c._id} style={styles.tr}>
+                <Td><strong>{c.companyName}</strong></Td>
+                <Td>{c.irdaRegistration || '—'}</Td>
+                <Td>{c.email || '—'}</Td>
+                <Td>{c.phone || '—'}</Td>
+                <Td><StatusBadge status={s} /></Td>
+                <Td>
+                  {isPending && (
                     <>
-                      {isPending && (
-                        <>
-                          <button onClick={() => onApprove(c._id)} style={styles.okBtn} title="Approve"><FaCheck /></button>
-                          <button onClick={() => onReject(c._id)} style={styles.errBtn} title="Reject"><FaTimes /></button>
-                        </>
-                      )}
-                      {isVerified && (
-                        <button onClick={() => onSuspend(c._id)} style={styles.warnBtn} title="Suspend"><FaBan /></button>
-                      )}
-                      {isSuspended && (
-                        <button onClick={() => onUnsuspend(c._id)} style={styles.okBtn}>Unsuspend</button>
-                      )}
+                      <button onClick={() => onApprove(c._id)} style={styles.okBtn} title="Approve"><FaCheck /> Approve</button>
+                      <button onClick={() => onReject(c._id)} style={styles.errBtn} title="Reject"><FaTimes /> Reject</button>
                     </>
-                  );
-                })()}
-              </Td>
-            </tr>
-          ))}
+                  )}
+                  {isVerified && (
+                    <button onClick={() => onSuspend(c._id)} style={styles.warnBtn} title="Suspend"><FaBan /> Suspend</button>
+                  )}
+                  {isSuspended && (
+                    <button onClick={() => onUnsuspend(c._id)} style={styles.okBtn} title="Unsuspend">✓ Unsuspend</button>
+                  )}
+                  {isInactive && (
+                    <button onClick={() => onApprove(c._id)} style={styles.okBtn} title="Reactivate"><FaCheck /> Activate</button>
+                  )}
+                </Td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -1004,11 +1012,10 @@ function StatusBadge({ status }) {
   const s = String(status || '').toLowerCase();
   let bg = '#f1f5f9', color = '#475569';
   if (['active', 'approved', 'verified', 'visible', 'settled'].includes(s)) { bg = '#dcfce7'; color = '#166534'; }
-  else if (['pending', 'pending_approval', 'submitted', 'under_review', 'flagged'].includes(s)) { bg = '#fef3c7'; color = '#92400e'; }
-  else if (['rejected', 'suspended', 'failed', 'hidden', 'cancelled'].includes(s)) { bg = '#fee2e2'; color = '#dc2626'; }
-  return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: bg, color }}>{s}</span>;
+  else if (['pending', 'pending_approval', 'pending_verification', 'submitted', 'under_review', 'flagged'].includes(s)) { bg = '#fef3c7'; color = '#92400e'; }
+  else if (['rejected', 'suspended', 'failed', 'hidden', 'cancelled', 'inactive'].includes(s)) { bg = '#fee2e2'; color = '#dc2626'; }
+  return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: bg, color }}>{s.replace(/_/g, ' ')}</span>;
 }
-
 function Th({ children }) {
   return <th style={styles.th}>{children}</th>;
 }
