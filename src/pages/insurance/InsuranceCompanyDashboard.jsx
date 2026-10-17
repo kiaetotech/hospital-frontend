@@ -143,6 +143,8 @@ const InsuranceCompanyDashboardInner = () => {
   const [newPlan, setNewPlan] = useState(null);
   const [policyModalRow, setPolicyModalRow] = useState(null);
   const [claimModalRow, setClaimModalRow] = useState(null);
+  const [showAppealModal, setShowAppealModal] = useState(false);
+  const [myAppeals, setMyAppeals] = useState([]);
 
   // Auto-refresh
   const [autoRefreshMin, setAutoRefreshMin] = useState(0); // 0 = off
@@ -215,13 +217,19 @@ const InsuranceCompanyDashboardInner = () => {
         return;
       }
 
-      // Suspended status — fetch once per tab change (cheap endpoint)
+            // Suspended status + appeal history
       try {
         const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
-        const suspRes = await axios.get(`${API_BASE}/api/insurance/company/suspended-status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const [suspRes, appealsRes] = await Promise.all([
+          axios.get(`${API_BASE}/api/insurance/company/suspended-status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${API_BASE}/api/insurance/company/my-appeals`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => ({ data: { data: [] } })),
+        ]);
         if (suspRes.data?.success) setSuspendedStatus(suspRes.data.data);
+        setMyAppeals(appealsRes.data?.data || []);
       } catch (e) { /* ignore */ }
 
       if (activeTab === 'dashboard') {
@@ -979,25 +987,74 @@ const InsuranceCompanyDashboardInner = () => {
         logout={handleLogout}
         headerActions={headerActions}
       >
-        {suspendedStatus?.isSuspended && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
-            <h3 className="font-bold text-red-700">⚠️ Your account is suspended</h3>
-            <p className="text-red-600 text-sm mt-1">
-              <strong>Reason:</strong> {suspendedStatus.reason || 'Not specified'}
-            </p>
-            {suspendedStatus.suspendedAt && (
-              <p className="text-red-600 text-sm">
-                <strong>Suspended on:</strong> {new Date(suspendedStatus.suspendedAt).toLocaleDateString()}
+                {suspendedStatus?.isSuspended && (
+          <div style={{
+            background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+            color: 'white',
+            padding: '1.25rem 1.5rem',
+            marginBottom: '1.5rem',
+            borderRadius: '0.75rem',
+            boxShadow: '0 4px 12px rgba(220,38,38,0.25)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem',
+          }}>
+            <div style={{ flex: 1, minWidth: 250 }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                🚫 Account Suspended
+              </h3>
+              <p style={{ margin: '6px 0 0', fontSize: '0.9rem', opacity: 0.95 }}>
+                <strong>Reason:</strong> {suspendedStatus.reason || 'Not specified'}
               </p>
-            )}
-            {suspendedStatus.suspendedUntil ? (
-              <p className="text-red-600 text-sm">
-                <strong>Will be lifted on:</strong> {new Date(suspendedStatus.suspendedUntil).toLocaleDateString()}
-              </p>
-            ) : (
-              <p className="text-red-600 text-sm"><strong>Duration:</strong> Indefinite</p>
-            )}
-            <p className="text-red-500 text-xs mt-2">Contact support@hospitalhub.in to appeal.</p>
+              {suspendedStatus.suspendedAt && (
+                <p style={{ margin: '2px 0 0', fontSize: '0.82rem', opacity: 0.85 }}>
+                  Suspended on: {new Date(suspendedStatus.suspendedAt).toLocaleDateString('en-IN')}
+                  {suspendedStatus.suspendedUntil ? (
+                    <> • Until: {new Date(suspendedStatus.suspendedUntil).toLocaleDateString('en-IN')}</>
+                  ) : (
+                    <> • Duration: Indefinite</>
+                  )}
+                </p>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {(() => {
+                const pending = myAppeals.find(a => a.status === 'pending' || a.status === 'under_review');
+                const lastRejected = myAppeals.find(a => a.status === 'rejected');
+                if (pending) {
+                  return (
+                    <span style={{
+                      padding: '0.6rem 1rem',
+                      background: 'rgba(255,255,255,0.2)',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                    }}>
+                      ⏳ Appeal pending review
+                    </span>
+                  );
+                }
+                return (
+                  <button
+                    onClick={() => setShowAppealModal(true)}
+                    style={{
+                      padding: '0.6rem 1.25rem',
+                      background: 'white',
+                      color: '#dc2626',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    {lastRejected ? '🔄 Re-appeal' : '✍️ Appeal Suspension'}
+                  </button>
+                );
+              })()}
+            </div>
           </div>
         )}
 
@@ -1036,7 +1093,7 @@ const InsuranceCompanyDashboardInner = () => {
           />
         )}
 
-        {/* ═══ CLAIM DETAIL MODAL ═══ */}
+                {/* ═══ CLAIM DETAIL MODAL ═══ */}
         {claimModalRow && (
           <ClaimDetailModal
             open={!!claimModalRow}
@@ -1048,10 +1105,153 @@ const InsuranceCompanyDashboardInner = () => {
             }}
           />
         )}
+
+        {/* ═══ APPEAL MODAL ═══ */}
+        {showAppealModal && (
+          <AppealModal
+            suspendedStatus={suspendedStatus}
+            myAppeals={myAppeals}
+            onClose={() => setShowAppealModal(false)}
+            onSubmit={async (formData) => {
+              try {
+                const token = localStorage.getItem('providerToken');
+                const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+                await axios.post(
+                  `${API_BASE}/api/insurance/company/appeals`,
+                  formData,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setShowAppealModal(false);
+                toast.success('Appeal submitted — admin will review');
+                loadData();
+              } catch (e) {
+                toast.error(e.response?.data?.message || 'Failed to submit appeal');
+              }
+            }}
+          />
+        )}
       </ProviderDashboardLayout>
     </ProviderAuth>
   );
 };
+
+// ============================================
+// APPEAL MODAL COMPONENT
+// ============================================
+function AppealModal({ suspendedStatus, myAppeals, onClose, onSubmit }) {
+  const [appealReason, setAppealReason] = useState('');
+  const [lapseExplanation, setLapseExplanation] = useState('');
+  const [correctiveActions, setCorrectiveActions] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const lastRejected = myAppeals.find(a => a.status === 'rejected');
+  const isValid = appealReason.trim().length >= 20;
+
+  const handleSubmit = async () => {
+    if (!isValid) return;
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        appealReason: appealReason.trim(),
+        lapseExplanation: lapseExplanation.trim(),
+        correctiveActions: correctiveActions.trim(),
+        documents: [],
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1000, padding: '1rem',
+    }}>
+      <div style={{
+        background: 'white', borderRadius: 16, maxWidth: 600, width: '100%',
+        maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem',
+      }}>
+        <h2 style={{ margin: '0 0 1rem', fontSize: '1.35rem', fontWeight: 800 }}>
+          ✍️ Appeal Suspension
+        </h2>
+
+        <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: 8, marginBottom: '1rem', fontSize: '0.85rem' }}>
+          <p style={{ margin: 0 }}><strong>Your suspension reason:</strong></p>
+          <p style={{ margin: '4px 0 0', color: '#991b1b' }}>
+            {suspendedStatus?.reason || 'Not specified'}
+          </p>
+        </div>
+
+        {lastRejected && (
+          <div style={{ background: '#fef3c7', padding: '0.75rem', borderRadius: 8, marginBottom: '1rem', fontSize: '0.85rem' }}>
+            <p style={{ margin: 0 }}><strong>Previous appeal was rejected:</strong></p>
+            <p style={{ margin: '4px 0 0', color: '#92400e' }}>
+              {lastRejected.rejectionReason || 'No reason given'}
+            </p>
+          </div>
+        )}
+
+        <label style={{ display: 'block', fontWeight: 700, marginBottom: 4, fontSize: '0.85rem' }}>
+          Why should the suspension be revoked? * (min 20 chars)
+        </label>
+        <textarea
+          value={appealReason}
+          onChange={e => setAppealReason(e.target.value)}
+          rows={4}
+          placeholder="Explain why the suspension should be lifted..."
+          style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', marginBottom: '1rem' }}
+        />
+
+        <label style={{ display: 'block', fontWeight: 700, marginBottom: 4, fontSize: '0.85rem' }}>
+          Explain the lapse (optional)
+        </label>
+        <textarea
+          value={lapseExplanation}
+          onChange={e => setLapseExplanation(e.target.value)}
+          rows={3}
+          placeholder="What caused the lapse?"
+          style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', marginBottom: '1rem' }}
+        />
+
+        <label style={{ display: 'block', fontWeight: 700, marginBottom: 4, fontSize: '0.85rem' }}>
+          Corrective actions taken (optional)
+        </label>
+        <textarea
+          value={correctiveActions}
+          onChange={e => setCorrectiveActions(e.target.value)}
+          rows={3}
+          placeholder="What have you changed to prevent recurrence?"
+          style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', marginBottom: '1rem' }}
+        />
+
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || !isValid}
+            style={{
+              flex: 1, padding: '0.75rem', background: '#dc2626', color: 'white',
+              border: 'none', borderRadius: 8,
+              cursor: (!isValid || submitting) ? 'not-allowed' : 'pointer',
+              fontWeight: 700, opacity: (!isValid || submitting) ? 0.5 : 1,
+            }}
+          >
+            {submitting ? 'Submitting...' : 'Submit Appeal'}
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1, padding: '0.75rem', background: '#e2e8f0',
+              border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600,
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Wrap in ToastProvider so useToast works
 const InsuranceCompanyDashboard = () => (
