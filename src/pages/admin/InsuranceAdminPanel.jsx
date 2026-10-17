@@ -370,17 +370,37 @@ export default function InsuranceAdminPanel() {
       )}
 
       {/* Tabs */}
-      <div style={styles.tabBar}>
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{ ...styles.tabBtn, ...(tab === t.id ? styles.tabBtnActive : {}) }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+            <div style={styles.tabBar}>
+  {TABS.map(t => {
+    const counts = {
+      companies: companies.length,
+      plans: plans.length,
+      policies: policies.length,
+      claims: claims.length,
+      pending: pending?.totalPending || 0,
+      settlements: settlements.length,
+      reviews: reviews.length,
+      complaints: complaints.length,
+      kyc: kycPending.length,
+      suspended: suspended.length,
+      appeals: appeals.length,
+      corporate: corporatePending.length,
+      advertising: adCampaigns.length
+    };
+    const count = counts[t.id];
+    const label = typeof count === 'number' && count > 0 ? `${t.label} (${count})` : t.label;
+
+    return (
+      <button
+        key={t.id}
+        onClick={() => setTab(t.id)}
+        style={{ ...styles.tabBtn, ...(tab === t.id ? styles.tabBtnActive : {}) }}
+      >
+        {label}
+      </button>
+    );
+  })}
+</div>
 
       {/* Content */}
       <div style={styles.content}>
