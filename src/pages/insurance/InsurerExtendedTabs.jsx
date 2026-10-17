@@ -438,15 +438,15 @@ export function KycTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [form, setForm] = useState({
-    irdaCertificate: '',
-    gstCertificate: '',
-    panCard: '',
-    bankProof: '',
-    registrationCertificate: '',
-    panNumber: '',
-    gstNumber: '',
+  const [files, setFiles] = useState({
+    irdaCertificate: null,
+    gstCertificate: null,
+    panCard: null,
+    bankProof: null,
+    registrationCertificate: null
   });
+  const [panNumber, setPanNumber] = useState('');
+  const [gstNumber, setGstNumber] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -455,20 +455,8 @@ export function KycTab() {
       const d = await r.json();
       if (d.success && d.data) {
         setKyc(d.data);
-        const docsArray = d.data.documents || [];
-        const docByType = {};
-        docsArray.forEach(doc => {
-          if (doc.type && doc.url) docByType[doc.type] = doc.url;
-        });
-        setForm({
-          irdaCertificate: docByType.irda_certificate || '',
-          gstCertificate: docByType.gst_certificate || '',
-          panCard: docByType.pan_card || '',
-          bankProof: docByType.bank_proof || '',
-          registrationCertificate: docByType.registration_certificate || '',
-          panNumber: d.data.panNumber || '',
-          gstNumber: d.data.gstNumber || '',
-        });
+        setPanNumber(d.data.panNumber || '');
+        setGstNumber(d.data.gstNumber || '');
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -476,21 +464,50 @@ export function KycTab() {
 
   useEffect(() => { load(); }, []);
 
+  const handleFileChange = (field, file) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage('❌ File too large. Max 10 MB.');
+      return;
+    }
+    setFiles(prev => ({ ...prev, [field]: file }));
+    setMessage('');
+  };
+
   const submit = async () => {
-    if (!form.irdaCertificate || !form.gstCertificate || !form.panCard) {
+    // Require at least 3 core docs (IRDAI, GST, PAN) — or existing docs already on file
+    const existingUrls = (kyc?.documents || []).reduce((acc, d) => {
+      if (d.type) acc[d.type] = d.url;
+      return acc;
+    }, {});
+
+    const hasIrda = files.irdaCertificate || existingUrls.irda_certificate;
+    const hasGst = files.gstCertificate || existingUrls.gst_certificate;
+    const hasPan = files.panCard || existingUrls.pan_card;
+
+    if (!hasIrda || !hasGst || !hasPan) {
       setMessage('❌ IRDAI Certificate, GST Certificate, and PAN Card are required.');
       return;
     }
+
     setSaving(true); setMessage('');
     try {
+      const fd = new FormData();
+      Object.entries(files).forEach(([key, file]) => {
+        if (file) fd.append(key, file);
+      });
+      if (panNumber) fd.append('panNumber', panNumber);
+      if (gstNumber) fd.append('gstNumber', gstNumber);
+
       const r = await fetch(`${API}/api/insurance/company/kyc/update`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...insurerHeaders() },
-        body: JSON.stringify(form),
+        headers: insurerHeaders(),   // NOTE: do NOT set Content-Type; browser sets multipart boundary
+        body: fd
       });
       const d = await r.json();
       if (d.success) {
-        setMessage('✅ KYC submitted. Admin will verify within 24 hours.');
+        setMessage('✅ KYC uploaded. Admin will verify within 24 hours.');
+        setFiles({ irdaCertificate: null, gstCertificate: null, panCard: null, bankProof: null, registrationCertificate: null });
         await load();
       } else {
         setMessage('❌ ' + (d.message || 'Failed'));
@@ -518,6 +535,12 @@ export function KycTab() {
     not_submitted: 'bg-slate-100 text-slate-600',
   }[kycStatus] || 'bg-slate-100 text-slate-600';
 
+  const existingDocs = kyc?.documents || [];
+  const existingByType = existingDocs.reduce((acc, d) => {
+    if (d.type) acc[d.type] = d;
+    return acc;
+  }, {});
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
@@ -532,7 +555,6 @@ export function KycTab() {
           <p className="font-bold text-green-700">✅ KYC Verified</p>
           <p className="text-sm text-green-600 mt-1">
             Verified on {kyc.kycVerifiedAt ? new Date(kyc.kycVerifiedAt).toLocaleDateString('en-IN') : 'recently'}.
-            All documents are approved.
           </p>
         </div>
       )}
@@ -551,11 +573,9 @@ export function KycTab() {
         <div className="mb-4 p-4 rounded-lg bg-red-50 border-l-4 border-red-500">
           <p className="font-bold text-red-700">❌ KYC Rejected</p>
           {kyc.kycNotes && (
-            <p className="text-sm text-red-600 mt-1">
-              <strong>Reason:</strong> {kyc.kycNotes}
-            </p>
+            <p className="text-sm text-red-600 mt-1"><strong>Reason:</strong> {kyc.kycNotes}</p>
           )}
-          <p className="text-sm text-red-500 mt-2">Please re-submit with corrected documents below.</p>
+          <p className="text-sm text-red-500 mt-2">Please re-upload corrected documents below.</p>
         </div>
       )}
 
@@ -563,8 +583,7 @@ export function KycTab() {
         <div className="mb-4 p-4 rounded-lg bg-amber-50 border-l-4 border-amber-500">
           <p className="font-bold text-amber-700">📝 KYC Required</p>
           <p className="text-sm text-amber-600 mt-1">
-            Please submit your KYC documents to start issuing policies.
-            {kyc?.missingDocs?.length > 0 && ` ${kyc.missingDocs.length} document(s) missing.`}
+            Upload your KYC documents to start issuing policies.
           </p>
         </div>
       )}
@@ -577,76 +596,75 @@ export function KycTab() {
 
       <div className="bg-white rounded-lg shadow p-6">
         <p className="text-sm text-gray-500 mb-5">
-          Upload required documents. Admin will verify your submission within 24 hours.
+          Upload PDF or image files (max 10 MB each). Admin will verify within 24 hours.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <KycField
-            label="IRDAI Certificate URL *"
-            hint="Upload to Cloudinary and paste URL"
-            value={form.irdaCertificate}
-            onChange={(v) => setForm({ ...form, irdaCertificate: v })}
+          <FileUploadField
+            label="IRDAI Certificate *"
+            existingUrl={existingByType.irda_certificate?.url}
+            file={files.irdaCertificate}
+            onChange={f => handleFileChange('irdaCertificate', f)}
           />
-          <KycField
-            label="GST Certificate URL *"
-            value={form.gstCertificate}
-            onChange={(v) => setForm({ ...form, gstCertificate: v })}
+          <FileUploadField
+            label="GST Certificate *"
+            existingUrl={existingByType.gst_certificate?.url}
+            file={files.gstCertificate}
+            onChange={f => handleFileChange('gstCertificate', f)}
           />
-          <KycField
-            label="PAN Card URL *"
-            value={form.panCard}
-            onChange={(v) => setForm({ ...form, panCard: v })}
+          <FileUploadField
+            label="PAN Card *"
+            existingUrl={existingByType.pan_card?.url}
+            file={files.panCard}
+            onChange={f => handleFileChange('panCard', f)}
           />
-          <KycField
-            label="Bank Proof URL"
+          <FileUploadField
+            label="Bank Proof"
             hint="Cancelled cheque or bank statement"
-            value={form.bankProof}
-            onChange={(v) => setForm({ ...form, bankProof: v })}
+            existingUrl={existingByType.bank_proof?.url}
+            file={files.bankProof}
+            onChange={f => handleFileChange('bankProof', f)}
           />
-          <KycField
-            label="Registration Certificate URL"
-            value={form.registrationCertificate}
-            onChange={(v) => setForm({ ...form, registrationCertificate: v })}
-          />
-          <KycField
-            label="PAN Number"
-            value={form.panNumber}
-            onChange={(v) => setForm({ ...form, panNumber: v.toUpperCase() })}
-          />
-          <KycField
-            label="GST Number"
-            value={form.gstNumber}
-            onChange={(v) => setForm({ ...form, gstNumber: v })}
+          <FileUploadField
+            label="Registration Certificate"
+            existingUrl={existingByType.registration_certificate?.url}
+            file={files.registrationCertificate}
+            onChange={f => handleFileChange('registrationCertificate', f)}
           />
         </div>
 
-        {kyc?.documents?.length > 0 && (
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="font-bold text-slate-800 mb-3 text-sm">📎 Current Documents</h3>
-            <div className="flex flex-wrap gap-3">
-              {kyc.documents.map((doc, i) => (
-                <DocLink
-                  key={i}
-                  label={`${doc.type?.replace(/_/g, ' ').toUpperCase() || 'Document'}${doc.verified ? ' ✓' : ''}`}
-                  url={doc.url}
-                />
-              ))}
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">PAN Number</label>
+            <input
+              value={panNumber}
+              onChange={e => setPanNumber(e.target.value.toUpperCase())}
+              placeholder="ABCIN1234A"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            />
           </div>
-        )}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">GST Number</label>
+            <input
+              value={gstNumber}
+              onChange={e => setGstNumber(e.target.value)}
+              placeholder="27ABCIN1234A1Z5"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
 
         <button
           onClick={submit}
           disabled={saving}
           className="mt-6 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold disabled:opacity-50 hover:bg-blue-700"
         >
-          {saving ? 'Submitting…' : isSubmitted || isVerified ? 'Update KYC' : 'Submit for Verification'}
+          {saving ? 'Uploading…' : isSubmitted || isVerified ? 'Update KYC' : 'Submit for Verification'}
         </button>
       </div>
     </div>
   );
 }
-
 function KycField({ label, value, onChange, hint }) {
   return (
     <div>
@@ -672,6 +690,35 @@ function DocLink({ label, url }) {
     >
       📄 {label} ↗
     </a>
+  );
+}
+
+function FileUploadField({ label, file, onChange, existingUrl, hint }) {
+  const inputId = `file-${label.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`;
+  return (
+    <div>
+      <label htmlFor={inputId} className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
+      <input
+        id={inputId}
+        type="file"
+        accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
+        onChange={e => onChange(e.target.files?.[0] || null)}
+        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+      />
+      {file && (
+        <p className="text-xs text-slate-600 mt-1">
+          📎 {file.name} ({Math.round(file.size / 1024)} KB)
+        </p>
+      )}
+      {!file && existingUrl && (
+        <p className="text-xs mt-1">
+          <a href={existingUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            📎 View current file ↗
+          </a>
+        </p>
+      )}
+      {hint && !file && !existingUrl && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
+    </div>
   );
 }
 
