@@ -37,6 +37,7 @@ const TABS = [
   { id: 'complaints', label: '🚨 Complaints' },
   { id: 'kyc', label: '📋 KYC' },
   { id: 'suspended', label: '🚫 Suspended' },
+  { id: 'appeals', label: '📩 Appeals' },
   { id: 'corporate', label: '🏢 Corporate' },
   { id: 'advertising', label: '📢 Advertising' }
 ];
@@ -67,6 +68,7 @@ export default function InsuranceAdminPanel() {
   const [kycPending, setKycPending] = useState([]);
   const [suspended, setSuspended] = useState([]);
   const [corporatePending, setCorporatePending] = useState([]);
+  const [appeals, setAppeals] = useState([]);
   const [adCampaigns, setAdCampaigns] = useState([]);
   const [adRevenue, setAdRevenue] = useState(null);
 
@@ -149,6 +151,11 @@ export default function InsuranceAdminPanel() {
           setSuspended(res.data?.data || []);
           break;
         }
+	case 'appeals': {                                          // ← NEW
+          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/appeals?status=pending`, { headers });
+          setAppeals(res.data?.data || []);
+          break;
+        }
         case 'corporate': {
           const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/corporate/pending`, { headers });
           setCorporatePending(res.data?.data || []);
@@ -223,6 +230,29 @@ export default function InsuranceAdminPanel() {
     () => axios.post(`${API_BASE}/api/insurance/admin/companies/${id}/unsuspend`, {}, { headers }),
     'Company unsuspended'
   );
+
+  const approveAppeal = async (appealId) => {
+    if (!window.confirm('Approve this appeal and revoke the suspension?')) return;
+    try {
+      await axios.post(`${API_BASE}/api/insurance/admin/appeals/${appealId}/approve`, {}, { headers });
+      addNotification('Appeal approved — company unsuspended', 'success');
+      loadData();
+    } catch (e) {
+      addNotification(e.response?.data?.message || 'Failed to approve appeal', 'error');
+    }
+  };
+
+  const rejectAppeal = async (appealId) => {
+    const reason = window.prompt('Rejection reason (required):');
+    if (!reason || !reason.trim()) return;
+    try {
+      await axios.post(`${API_BASE}/api/insurance/admin/appeals/${appealId}/reject`, { reason: reason.trim() }, { headers });
+      addNotification('Appeal rejected — suspension upheld', 'success');
+      loadData();
+    } catch (e) {
+      addNotification(e.response?.data?.message || 'Failed to reject appeal', 'error');
+    }
+  };
 
   const approvePlan = (id) => action(
     () => axios.post(`${API_BASE}/api/insurance/admin/plans/${id}/approve`, {}, { headers }),
@@ -393,6 +423,13 @@ export default function InsuranceAdminPanel() {
             )}
             {tab === 'suspended' && (
               <SuspendedTab companies={suspended} onUnsuspend={unsuspendCompany} />
+            )}
+	      {tab === 'appeals' && (
+              <AppealsTab
+                appeals={appeals}
+                onApprove={approveAppeal}
+                onReject={rejectAppeal}
+              />
             )}
             {tab === 'corporate' && <CorporateTab plans={corporatePending} onApprove={approvePlan} />}
             {tab === 'advertising' && (
@@ -990,6 +1027,109 @@ function AdvertisingTab({ campaigns, revenue, onApprove, onReject, onPause }) {
           </tbody>
         </table>
       )}
+    </div>
+  );
+}
+
+// ============================================
+// APPEALS TAB — Admin review of suspension appeals
+// ============================================
+function AppealsTab({ appeals, onApprove, onReject }) {
+  if (!appeals?.length) return <p style={styles.empty}>✅ No pending appeals.</p>;
+
+  return (
+    <div>
+      <h2 style={styles.tabTitle}>📩 Pending Appeals ({appeals.length})</h2>
+      {appeals.map(appeal => (
+        <div key={appeal._id} style={{
+          background: 'white',
+          borderRadius: 12,
+          padding: '1.25rem',
+          marginBottom: '0.75rem',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
+                {appeal.companyId?.companyName || 'Unknown Company'}
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                📧 {appeal.companyId?.email || '—'} • 📞 {appeal.companyId?.phone || '—'}
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
+                Submitted {new Date(appeal.createdAt).toLocaleString('en-IN')}
+              </p>
+            </div>
+            <span style={{
+              padding: '4px 12px',
+              borderRadius: 20,
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              background: '#fef3c7',
+              color: '#92400e',
+              textTransform: 'uppercase'
+            }}>
+              {appeal.status}
+            </span>
+          </div>
+
+          <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: 8, marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+            <p style={{ margin: 0 }}><strong>Suspension reason:</strong> {appeal.suspensionReason || '—'}</p>
+            {appeal.suspendedAt && (
+              <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                Suspended on: {new Date(appeal.suspendedAt).toLocaleDateString('en-IN')}
+                {appeal.suspendedUntil && ` • Until: ${new Date(appeal.suspendedUntil).toLocaleDateString('en-IN')}`}
+              </p>
+            )}
+          </div>
+
+          <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: 8, marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+            <p style={{ margin: '0 0 4px' }}><strong>Appeal reason:</strong></p>
+            <p style={{ margin: 0, color: '#1e293b' }}>{appeal.appealReason || '—'}</p>
+
+            {appeal.lapseExplanation && (
+              <>
+                <p style={{ margin: '8px 0 4px' }}><strong>Lapse explanation:</strong></p>
+                <p style={{ margin: 0, color: '#1e293b' }}>{appeal.lapseExplanation}</p>
+              </>
+            )}
+
+            {appeal.correctiveActions && (
+              <>
+                <p style={{ margin: '8px 0 4px' }}><strong>Corrective actions:</strong></p>
+                <p style={{ margin: 0, color: '#1e293b' }}>{appeal.correctiveActions}</p>
+              </>
+            )}
+
+            {appeal.documents?.length > 0 && (
+              <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {appeal.documents.map((doc, i) => (
+                  <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer"
+                    style={{ padding: '4px 10px', background: '#eff6ff', color: '#1e40af', borderRadius: 6, fontSize: '0.75rem', textDecoration: 'none' }}>
+                    📎 {doc.type || 'Document'} {i + 1}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => onApprove(appeal._id)}
+              style={{ ...styles.okBtn, padding: '0.6rem 1.25rem', fontSize: '0.9rem' }}
+            >
+              ✅ Approve & Unsuspend
+            </button>
+            <button
+              onClick={() => onReject(appeal._id)}
+              style={{ ...styles.errBtn, padding: '0.6rem 1.25rem', fontSize: '0.9rem' }}
+            >
+              ❌ Reject
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
