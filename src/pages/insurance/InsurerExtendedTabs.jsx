@@ -434,7 +434,7 @@ export function NetworkHospitalsTab() {
 // KYC TAB
 // ============================================
 export function KycTab() {
-  const [company, setCompany] = useState(null);
+  const [kyc, setKyc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -451,19 +451,23 @@ export function KycTab() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await fetch(`${API}/api/insurance/company/profile`, { headers: insurerHeaders() });
+      const r = await fetch(`${API}/api/insurance/company/my-kyc`, { headers: insurerHeaders() });
       const d = await r.json();
       if (d.success && d.data) {
-        setCompany(d.data);
-        const docs = d.data.documents || {};
+        setKyc(d.data);
+        const docsArray = d.data.documents || [];
+        const docByType = {};
+        docsArray.forEach(doc => {
+          if (doc.type && doc.url) docByType[doc.type] = doc.url;
+        });
         setForm({
-          irdaCertificate: docs.irdaCertificate || '',
-          gstCertificate: docs.gstCertificate || '',
-          panCard: docs.panCard || '',
-          bankProof: docs.bankProof || '',
-          registrationCertificate: docs.registrationCertificate || '',
-          panNumber: docs.panNumber || '',
-          gstNumber: docs.gstNumber || '',
+          irdaCertificate: docByType.irda_certificate || '',
+          gstCertificate: docByType.gst_certificate || '',
+          panCard: docByType.pan_card || '',
+          bankProof: docByType.bank_proof || '',
+          registrationCertificate: docByType.registration_certificate || '',
+          panNumber: d.data.panNumber || '',
+          gstNumber: d.data.gstNumber || '',
         });
       }
     } catch (e) { console.error(e); }
@@ -500,49 +504,74 @@ export function KycTab() {
 
   if (loading) return <p className="text-gray-400">Loading…</p>;
 
-  const status = company?.verificationStatus || company?.status || 'pending';
-  const kycStatus = company?.documents?.kycStatus || 'not_submitted';
-  const statusStyles = {
-    approved: 'bg-green-100 text-green-700',
-    verified: 'bg-green-100 text-green-700',
-    active: 'bg-green-100 text-green-700',
-    pending: 'bg-amber-100 text-amber-700',
-    pending_verification: 'bg-amber-100 text-amber-700',
-    submitted: 'bg-blue-100 text-blue-700',
-    rejected: 'bg-red-100 text-red-700',
-    suspended: 'bg-red-100 text-red-700',
-  }[status] || 'bg-slate-100 text-slate-700';
+  const kycStatus = kyc?.kycStatus || 'not_submitted';
+  const isVerified = kycStatus === 'verified';
+  const isSubmitted = kycStatus === 'submitted' || kycStatus === 'pending';
+  const isRejected = kycStatus === 'rejected';
+  const isNotSubmitted = kycStatus === 'not_submitted';
 
   const kycStatusStyles = {
     verified: 'bg-green-100 text-green-700',
     submitted: 'bg-blue-100 text-blue-700',
+    pending: 'bg-amber-100 text-amber-700',
     rejected: 'bg-red-100 text-red-700',
     not_submitted: 'bg-slate-100 text-slate-600',
   }[kycStatus] || 'bg-slate-100 text-slate-600';
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
         <h2 className="text-xl font-bold">📋 KYC Documents</h2>
-        <div className="flex gap-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusStyles}`}>
-            Account: {status.replace(/_/g, ' ').toUpperCase()}
-          </span>
-          <span className={`px-3 py-1 rounded-full text-xs font-bold ${kycStatusStyles}`}>
-            KYC: {kycStatus.replace(/_/g, ' ').toUpperCase()}
-          </span>
-        </div>
+        <span className={`px-3 py-1 rounded-full text-xs font-bold ${kycStatusStyles}`}>
+          KYC: {kycStatus.replace(/_/g, ' ').toUpperCase()}
+        </span>
       </div>
+
+      {isVerified && (
+        <div className="mb-4 p-4 rounded-lg bg-green-50 border-l-4 border-green-500">
+          <p className="font-bold text-green-700">✅ KYC Verified</p>
+          <p className="text-sm text-green-600 mt-1">
+            Verified on {kyc.kycVerifiedAt ? new Date(kyc.kycVerifiedAt).toLocaleDateString('en-IN') : 'recently'}.
+            All documents are approved.
+          </p>
+        </div>
+      )}
+
+      {isSubmitted && (
+        <div className="mb-4 p-4 rounded-lg bg-blue-50 border-l-4 border-blue-500">
+          <p className="font-bold text-blue-700">⏳ KYC Under Review</p>
+          <p className="text-sm text-blue-600 mt-1">
+            Submitted on {kyc.submittedAt ? new Date(kyc.submittedAt).toLocaleDateString('en-IN') : 'recently'}.
+            Admin will review within 24 hours.
+          </p>
+        </div>
+      )}
+
+      {isRejected && (
+        <div className="mb-4 p-4 rounded-lg bg-red-50 border-l-4 border-red-500">
+          <p className="font-bold text-red-700">❌ KYC Rejected</p>
+          {kyc.kycNotes && (
+            <p className="text-sm text-red-600 mt-1">
+              <strong>Reason:</strong> {kyc.kycNotes}
+            </p>
+          )}
+          <p className="text-sm text-red-500 mt-2">Please re-submit with corrected documents below.</p>
+        </div>
+      )}
+
+      {isNotSubmitted && (
+        <div className="mb-4 p-4 rounded-lg bg-amber-50 border-l-4 border-amber-500">
+          <p className="font-bold text-amber-700">📝 KYC Required</p>
+          <p className="text-sm text-amber-600 mt-1">
+            Please submit your KYC documents to start issuing policies.
+            {kyc?.missingDocs?.length > 0 && ` ${kyc.missingDocs.length} document(s) missing.`}
+          </p>
+        </div>
+      )}
 
       {message && (
         <div className={`p-3 rounded-lg mb-4 text-sm ${message.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
           {message}
-        </div>
-      )}
-
-      {company?.documents?.rejectionReason && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-sm text-red-700">
-          <strong>Previous submission rejected:</strong> {company.documents.rejectionReason}
         </div>
       )}
 
@@ -591,15 +620,17 @@ export function KycTab() {
           />
         </div>
 
-        {(form.irdaCertificate || form.gstCertificate || form.panCard || form.bankProof || form.registrationCertificate) && (
+        {kyc?.documents?.length > 0 && (
           <div className="mt-6 pt-6 border-t">
             <h3 className="font-bold text-slate-800 mb-3 text-sm">📎 Current Documents</h3>
             <div className="flex flex-wrap gap-3">
-              {form.irdaCertificate && <DocLink label="IRDAI Certificate" url={form.irdaCertificate} />}
-              {form.gstCertificate && <DocLink label="GST Certificate" url={form.gstCertificate} />}
-              {form.panCard && <DocLink label="PAN Card" url={form.panCard} />}
-              {form.bankProof && <DocLink label="Bank Proof" url={form.bankProof} />}
-              {form.registrationCertificate && <DocLink label="Registration Certificate" url={form.registrationCertificate} />}
+              {kyc.documents.map((doc, i) => (
+                <DocLink
+                  key={i}
+                  label={`${doc.type?.replace(/_/g, ' ').toUpperCase() || 'Document'}${doc.verified ? ' ✓' : ''}`}
+                  url={doc.url}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -609,7 +640,7 @@ export function KycTab() {
           disabled={saving}
           className="mt-6 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold disabled:opacity-50 hover:bg-blue-700"
         >
-          {saving ? 'Submitting…' : 'Submit for Verification'}
+          {saving ? 'Submitting…' : isSubmitted || isVerified ? 'Update KYC' : 'Submit for Verification'}
         </button>
       </div>
     </div>
