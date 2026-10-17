@@ -896,28 +896,47 @@ function KycTab({ companies, onVerify, onReject }) {
   return (
     <div>
       <h2 style={styles.tabTitle}>📋 Pending KYC ({companies.length})</h2>
-      {companies.map(c => (
-        <div key={c._id} style={styles.kycCard}>
-          <div style={styles.kycHeader}>
-            <strong>{c.companyName}</strong>
-            <span>📧 {c.email} • 📞 {c.phone}</span>
-          </div>
-          <div style={styles.kycBody}>
-            <div><strong>PAN:</strong> {c.documents?.panNumber || '—'}</div>
-            <div><strong>GST:</strong> {c.documents?.gstNumber || '—'}</div>
-            <div style={styles.kycDocs}>
-              {c.documents?.irdaCertificate && <a href={c.documents.irdaCertificate} target="_blank" rel="noreferrer">📄 IRDAI</a>}
-              {c.documents?.gstCertificate && <a href={c.documents.gstCertificate} target="_blank" rel="noreferrer">📄 GST</a>}
-              {c.documents?.panCard && <a href={c.documents.panCard} target="_blank" rel="noreferrer">📄 PAN</a>}
-              {c.documents?.bankProof && <a href={c.documents.bankProof} target="_blank" rel="noreferrer">📄 Bank</a>}
+      {companies.map(c => {
+        const docs = c.documents || [];
+        const panDoc = docs.find(d => d.type === 'pan_card');
+        const gstDoc = docs.find(d => d.type === 'gst_certificate');
+        const irdaDoc = docs.find(d => d.type === 'irda_certificate');
+        const bankDoc = docs.find(d => d.type === 'bank_proof');
+        const regDoc = docs.find(d => d.type === 'registration_certificate');
+
+        return (
+          <div key={c._id} style={styles.kycCard}>
+            <div style={styles.kycHeader}>
+              <strong>{c.companyName}</strong>
+              <span>📧 {c.email} • 📞 {c.phone}</span>
+              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
+                Status: <strong>{c.kycStatus || 'pending'}</strong>
+              </span>
+            </div>
+            <div style={styles.kycBody}>
+              <div><strong>PAN Number:</strong> {c.panNumber || '—'}</div>
+              <div><strong>GST Number:</strong> {c.gstNumber || '—'}</div>
+              <div><strong>IRDAI Reg:</strong> {c.irdaRegistration || '—'}</div>
+              <div style={styles.kycDocs}>
+                {irdaDoc && <a href={irdaDoc.url} target="_blank" rel="noreferrer">📄 IRDAI</a>}
+                {gstDoc && <a href={gstDoc.url} target="_blank" rel="noreferrer">📄 GST</a>}
+                {panDoc && <a href={panDoc.url} target="_blank" rel="noreferrer">📄 PAN</a>}
+                {bankDoc && <a href={bankDoc.url} target="_blank" rel="noreferrer">📄 Bank</a>}
+                {regDoc && <a href={regDoc.url} target="_blank" rel="noreferrer">📄 Registration</a>}
+              </div>
+              {c.kycNotes && (
+                <div style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: 4 }}>
+                  <strong>Previous rejection:</strong> {c.kycNotes}
+                </div>
+              )}
+            </div>
+            <div style={styles.kycActions}>
+              <button onClick={() => onVerify(c._id)} style={styles.okBtn}><FaCheck /> Verify</button>
+              <button onClick={() => onReject(c._id)} style={styles.errBtn}><FaTimes /> Reject</button>
             </div>
           </div>
-          <div style={styles.kycActions}>
-            <button onClick={() => onVerify(c._id)} style={styles.okBtn}><FaCheck /> Verify</button>
-            <button onClick={() => onReject(c._id)} style={styles.errBtn}><FaTimes /> Reject</button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
