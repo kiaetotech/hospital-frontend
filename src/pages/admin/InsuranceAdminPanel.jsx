@@ -139,10 +139,11 @@ export default function InsuranceAdminPanel() {
           break;
         }
         case 'claims': {
-          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/claims`, { headers });
-          setClaims(res.data?.data || []);
-          break;
-        }
+  	const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/claims`, { headers });
+  	// Endpoint returns { data: { claims: [...], summary, pagination } }
+  	setClaims(res.data?.data?.claims || []);
+  	break;
+	}
         case 'pending': {
           const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/pending`, { headers });
           setPending(res.data?.data || null);
