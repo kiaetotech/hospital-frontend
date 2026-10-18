@@ -150,10 +150,10 @@ export default function InsuranceAdminPanel() {
           break;
         }
         case 'settlements': {
-          const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/settlements`, { headers });
-          setSettlements(res.data?.data || []);
-          break;
-        }
+  	  const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/settlements/pending`, { headers });
+  	  setSettlements(res.data?.data || []);
+  	  break;
+	}
         case 'reviews': {
           const res = await adminAxios.get(`${API_BASE}/api/insurance/admin/reviews`, { headers });
           setReviews(res.data?.data || []);
