@@ -459,7 +459,32 @@ export default function InsuranceAdminPanel() {
             )}
             {tab === 'claims' && <ClaimsTab claims={claims} />}
             {tab === 'pending' && <PendingTab data={pending} />}
-            {tab === 'settlements' && <SettlementsTab settlements={settlements} />}
+            {tab === 'settlements' && (
+  <SettlementsTab
+    settlements={settlements}
+    onProcess={async (transactionIds) => {
+      try {
+        const res = await axios.post(
+          `${API_BASE}/api/insurance/admin/settlements/process`,
+          { transactionIds },
+          { headers }
+        );
+        const results = res.data?.data || [];
+        const success = results.filter((r) => r.status === 'success').length;
+        const failed = results.filter((r) => r.status === 'failed').length;
+        addNotification(
+          `Processed ${success} settlement(s)${failed > 0 ? `, ${failed} failed` : ''}`,
+          failed > 0 ? 'error' : 'success'
+        );
+        loadData();
+        fetchTabCounts();
+      } catch (e) {
+        addNotification(e.response?.data?.message || 'Failed to process settlements', 'error');
+        throw e;
+      }
+    }}
+  />
+)}
             {tab === 'reviews' && (
               <ReviewsTab reviews={reviews} onFlag={flagReview} onHide={hideReview} />
             )}
@@ -876,15 +901,74 @@ function PendingTab({ data }) {
   );
 }
 
-function SettlementsTab({ settlements }) {
-  if (!settlements?.length) return <p style={styles.empty}>No pending settlements.</p>;
+function SettlementsTab({ settlements, onProcess }) {
+  const [selected, setSelected] = React.useState([]);
+  const [busy, setBusy] = React.useState(false);
+
+  if (!settlements?.length) return <p style={styles.empty}>✅ No pending settlements.</p>;
+
+  const toggleSelect = (id) => {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const toggleAll = () => {
+    setSelected((prev) => (prev.length === settlements.length ? [] : settlements.map((s) => s._id)));
+  };
+
+  const handleProcess = async () => {
+    if (selected.length === 0) {
+      alert('Select at least one settlement to process.');
+      return;
+    }
+    const total = settlements
+      .filter((s) => selected.includes(s._id))
+      .reduce((sum, s) => sum + Number(s.insurancePayoutToCompany || s.premiumAmount || 0), 0);
+
+    if (!window.confirm(`Process ${selected.length} settlement(s)?\n\nTotal: ₹${total.toLocaleString('en-IN')}`)) return;
+
+    setBusy(true);
+    try {
+      await onProcess(selected);
+      setSelected([]);
+    } catch (e) {
+      // handled by parent
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div>
-      <h2 style={styles.tabTitle}>💰 Pending Settlements ({settlements.length})</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <h2 style={styles.tabTitle}>💰 Pending Settlements ({settlements.length})</h2>
+        <button
+          onClick={handleProcess}
+          disabled={busy || selected.length === 0}
+          style={{
+            padding: '0.55rem 1rem',
+            background: selected.length === 0 ? '#cbd5e1' : '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: 8,
+            cursor: selected.length === 0 ? 'not-allowed' : 'pointer',
+            fontWeight: 700,
+            fontSize: '0.85rem'
+          }}
+        >
+          {busy ? '⏳ Processing…' : `✅ Process Selected (${selected.length})`}
+        </button>
+      </div>
+
       <table style={styles.table}>
         <thead>
           <tr>
+            <Th>
+              <input
+                type="checkbox"
+                checked={selected.length === settlements.length && settlements.length > 0}
+                onChange={toggleAll}
+              />
+            </Th>
             <Th>Txn ID</Th>
             <Th>Company</Th>
             <Th>Amount</Th>
@@ -894,14 +978,17 @@ function SettlementsTab({ settlements }) {
           </tr>
         </thead>
         <tbody>
-          {settlements.map(s => (
-            <tr key={s._id} style={styles.tr}>
+          {settlements.map((s) => (
+            <tr key={s._id} style={{ ...styles.tr, background: selected.includes(s._id) ? '#eff6ff' : 'transparent' }}>
+              <Td>
+                <input type="checkbox" checked={selected.includes(s._id)} onChange={() => toggleSelect(s._id)} />
+              </Td>
               <Td>{s.transactionId?.slice(0, 12)}…</Td>
-              <Td>{s.providerId?.companyName || s.providerId?.name || '—'}</Td>
+              <Td>{s.lenderId?.companyName || s.providerId?.companyName || '—'}</Td>
               <Td>₹{(s.premiumAmount || 0).toLocaleString('en-IN')}</Td>
               <Td>₹{(s.insurancePlatformCommission || 0).toLocaleString('en-IN')}</Td>
               <Td><strong>₹{(s.insurancePayoutToCompany || 0).toLocaleString('en-IN')}</strong></Td>
-              <Td>{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '—'}</Td>
+              <Td>{s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : '—'}</Td>
             </tr>
           ))}
         </tbody>
