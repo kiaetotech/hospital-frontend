@@ -10,7 +10,7 @@ import {
   FaSearch, FaShieldAlt, FaCalculator, FaFileAlt, FaBalanceScale,
   FaStar, FaCheck, FaTimes, FaMapMarkerAlt, FaArrowRight, FaFilter,
 } from 'react-icons/fa';
-import { getPlans, comparePlans } from '../../services/insuranceMarketplaceApi';
+import { getPlans, comparePlans, getQuoteAll } from '../../services/insuranceMarketplaceApi';
 
 // ============================================
 // SHARED HELPERS
@@ -320,6 +320,20 @@ export function Search() {
     sort: 'recommended',
   });
 
+  // Live quote inputs
+  const [quoteInputs, setQuoteInputs] = useState({
+    age: 30,
+    sumInsured: 500000,
+    zone: 'tier1',
+    habits: { smoker: false, alcohol: false, tobacco: false },
+    bmi: 0,
+    pedConditions: [],
+    showPanel: true,
+  });
+  const [liveQuotes, setLiveQuotes] = useState({});       // planId → premium object
+  const [quoting, setQuoting] = useState(false);
+  const [quoteError, setQuoteError] = useState(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -352,6 +366,33 @@ export function Search() {
   }, [filters, page]);
 
   useEffect(() => { load(); }, [load]);
+
+  const fetchLiveQuotes = async () => {
+    setQuoting(true);
+    setQuoteError(null);
+    try {
+      const res = await getQuoteAll({
+        age: Number(quoteInputs.age),
+        sumInsured: Number(quoteInputs.sumInsured),
+        zone: quoteInputs.zone,
+        habits: quoteInputs.habits,
+        bmi: Number(quoteInputs.bmi) || 0,
+        pedConditions: quoteInputs.pedConditions,
+        category: filters.category || undefined,
+        sort: filters.sort,
+        page: 1,
+        limit: 100,
+      });
+      const map = {};
+      (res?.data || []).forEach((q) => { map[q.planId] = q; });
+      setLiveQuotes(map);
+    } catch (e) {
+      setQuoteError(e.response?.data?.message || e.message || 'Failed to get quotes');
+      setLiveQuotes({});
+    } finally {
+      setQuoting(false);
+    }
+  };
 
   const toggleCompare = (id) => {
     setCompareIds((prev) => {

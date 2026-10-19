@@ -40,6 +40,9 @@ export const getAddons = () =>
 export const getQuote = (payload) =>
   api.post('/quote', payload).then((r) => r.data);
 
+export const getQuoteAll = (payload) =>
+  api.post('/quote-all', payload).then((r) => r.data);
+
 // ============================================
 // APPLY (patient auth required)
 // ============================================
@@ -72,7 +75,7 @@ export const confirmApply = (id) =>
   api.post(`/apply/${id}/confirm`).then((r) => r.data);
 
 export default {
-  getPlans, getPlanDetail, comparePlans, getAddons, getQuote,
+  getPlans, getPlanDetail, comparePlans, getAddons, getQuote, getQuoteAll,
   startApply, getApply, savePersonal, saveMembers, saveMedical,
   saveNominee, saveAddons, getReview, confirmApply,
 };

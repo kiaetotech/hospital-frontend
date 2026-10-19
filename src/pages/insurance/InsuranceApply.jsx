@@ -3,7 +3,7 @@
 // INSURANCE APPLY — 6-step wizard + success view
 // Exports: ApplyWizard, ApplySuccess
 // ============================================
-
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
@@ -99,6 +99,21 @@ export function ApplySuccess() {
 // APPLY WIZARD
 // ============================================
 export function ApplyWizard() {
+export function ApplyWizard() {
+  // ---- Auth guard: redirect if not logged in ----
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const planIdFromUrl = params.get('planId') || window.location.pathname.split('/').pop();
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+    if (!token) {
+      alert('Please log in to continue with your application.');
+      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`, { replace: true });
+    }
+  }, [navigate]);
+
+  // ... rest of your existing component
   const { planId } = useParams();
   const navigate = useNavigate();
 
