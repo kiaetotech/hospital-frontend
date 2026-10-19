@@ -505,8 +505,10 @@ export function Search() {
               Reset Filters
             </button>
           </div>
-        </aside>
+         </aside>
 
+        {/* RESULTS */}
+        <main className="md:col-span-3">
           {/* Live Quote Panel */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
             <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
@@ -580,8 +582,6 @@ export function Search() {
             )}
           </div>
 
-        {/* RESULTS */}
-        <main className="md:col-span-3">
           {compareIds.length > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 flex items-center justify-between">
               <div className="text-sm text-slate-700">
