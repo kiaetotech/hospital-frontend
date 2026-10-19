@@ -95,12 +95,20 @@ export default function InsuranceClaims() {
                 {c.status?.replace(/_/g, ' ')}
               </span>
             </div>
-            <div className="flex gap-2 mt-3">
-              <Link to={`/insurance/claims/${c._id}`}
-                className="px-3 py-1 border rounded text-sm">View</Link>
+                        <div className="flex gap-2 mt-3">
+              <Link
+                to={`/insurance/claims/${c.policyId?._id || c.policyId}/${c._id}`}
+                className="px-3 py-1 border rounded text-sm"
+              >
+                View
+              </Link>
               {c.status === 'rejected' && (
-                <Link to={`/insurance/claims/${c._id}/appeal`}
-                  className="px-3 py-1 border rounded text-sm text-blue-600">Appeal</Link>
+                <Link
+                  to={`/insurance/claims/${c.policyId?._id || c.policyId}/${c._id}/appeal`}
+                  className="px-3 py-1 border rounded text-sm text-blue-600"
+                >
+                  Appeal
+                </Link>
               )}
             </div>
           </div>

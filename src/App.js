@@ -160,6 +160,7 @@ import InsuranceConfirmation from './pages/insurance/InsuranceConfirmation';
 import InsurancePolicyDetail from './pages/insurance/InsurancePolicyDetail';
 import InsuranceMyPolicies from './pages/insurance/InsuranceMyPolicies';
 import InsuranceClaims from './pages/insurance/InsuranceClaims';
+import InsuranceClaimDetail from './pages/insurance/InsuranceClaimDetail';
 import InsuranceCompanyRegister from './pages/insurance/InsuranceCompanyRegister';
 import InsuranceCompanyLogin from './pages/insurance/InsuranceCompanyLogin';
 import InsuranceCompanyDashboard from './pages/insurance/InsuranceCompanyDashboard';
@@ -460,6 +461,7 @@ function App() {
 	  <Route path="/insurance/my-policies" element={<InsuranceMyPolicies />} />
 	  <Route path="/insurance/my-policies/:id" element={<InsurancePolicyDetail />} />
 	  <Route path="/insurance/claims" element={<InsuranceClaims />} />
+	  <Route path="/insurance/claims/:policyId/:claimId" element={<InsuranceClaimDetail />} />
 	  <Route path="/insurance/company/register" element={<InsuranceCompanyRegister />} />
 	  <Route path="/insurance/company/login" element={<InsuranceCompanyLogin />} />
 	  <Route path="/insurance/company/dashboard" element={<InsuranceCompanyDashboard />} />
