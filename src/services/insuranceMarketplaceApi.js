@@ -41,7 +41,9 @@ export const getQuote = (payload) =>
   api.post('/quote', payload).then((r) => r.data);
 
 export const getQuoteAll = (payload) =>
-  api.post('/quote-all', payload).then((r) => r.data);
+  axios
+    .post(`${API_URL}/api/insurance/quote-all`, payload)
+    .then((r) => r.data);
 
 // ============================================
 // APPLY (patient auth required)
