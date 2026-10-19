@@ -507,6 +507,79 @@ export function Search() {
           </div>
         </aside>
 
+          {/* Live Quote Panel */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+            <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+              <h3 className="font-bold text-blue-900 text-sm">💰 Get Your Live Premium</h3>
+              <button
+                onClick={() => setQuoteInputs({ ...quoteInputs, showPanel: !quoteInputs.showPanel })}
+                className="text-xs text-blue-600 font-semibold"
+              >
+                {quoteInputs.showPanel ? '▲ Hide' : '▼ Show'}
+              </button>
+            </div>
+
+            {quoteInputs.showPanel && (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Your Age</label>
+                    <input
+                      type="number"
+                      value={quoteInputs.age}
+                      onChange={(e) => setQuoteInputs({ ...quoteInputs, age: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Sum Insured (₹)</label>
+                    <select
+                      value={quoteInputs.sumInsured}
+                      onChange={(e) => setQuoteInputs({ ...quoteInputs, sumInsured: Number(e.target.value) })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    >
+                      {[300000, 500000, 1000000, 2500000, 5000000, 10000000].map((si) => (
+                        <option key={si} value={si}>₹{si.toLocaleString('en-IN')}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Zone</label>
+                    <select
+                      value={quoteInputs.zone}
+                      onChange={(e) => setQuoteInputs({ ...quoteInputs, zone: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    >
+                      <option value="metro">Metro</option>
+                      <option value="tier1">Tier 1</option>
+                      <option value="tier2">Tier 2</option>
+                      <option value="tier3">Tier 3</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      onClick={fetchLiveQuotes}
+                      disabled={quoting}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm disabled:opacity-50"
+                    >
+                      {quoting ? '🔄 Calculating…' : '💰 Get Live Premium'}
+                    </button>
+                  </div>
+                </div>
+
+                {quoteError && (
+                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded mb-2">{quoteError}</div>
+                )}
+
+                {Object.keys(liveQuotes).length > 0 && (
+                  <div className="text-xs text-green-700">
+                    ✅ {Object.keys(liveQuotes).length} plans quoted for age {quoteInputs.age}, SI ₹{Number(quoteInputs.sumInsured).toLocaleString('en-IN')}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
         {/* RESULTS */}
         <main className="md:col-span-3">
           {compareIds.length > 0 && (
@@ -538,9 +611,10 @@ export function Search() {
           {!loading && plans.length > 0 && (
             <div className="space-y-4">
               {plans.map((p) => (
-                <SearchResultCard
+                  <SearchResultCard
                   key={p._id}
                   plan={p}
+                  quote={liveQuotes[p._id]}
                   selected={compareIds.includes(p._id)}
                   onToggleCompare={() => toggleCompare(p._id)}
                 />
@@ -591,7 +665,7 @@ function Check({ label, on, onChange }) {
   );
 }
 
-function SearchResultCard({ plan, selected, onToggleCompare }) {
+function SearchResultCard({ plan, quote, selected, onToggleCompare }) {
   const cover = coverOf(plan);
   return (
     <div className={`bg-white rounded-xl shadow p-5 grid grid-cols-1 md:grid-cols-12 gap-4 ${selected ? 'ring-2 ring-blue-500' : ''}`}>
@@ -628,10 +702,20 @@ function SearchResultCard({ plan, selected, onToggleCompare }) {
       </div>
 
       <div className="md:col-span-3 flex flex-col items-end justify-between">
-        <div className="text-right mb-3">
-          <div className="text-xs text-slate-400">Premium from</div>
-          <div className="text-2xl font-bold text-blue-600">{inr(plan.basePremium)}</div>
-          <div className="text-xs text-slate-400">/year</div>
+                <div className="text-right mb-3">
+          {quote && quote.totalPremium > 0 ? (
+            <>
+              <div className="text-xs text-emerald-600 font-semibold">Your premium</div>
+              <div className="text-2xl font-bold text-emerald-600">{inr(quote.totalPremium)}</div>
+              <div className="text-xs text-slate-400">/year · or {inr(quote.monthlyPremium)}/mo</div>
+            </>
+          ) : (
+            <>
+              <div className="text-xs text-slate-400">Premium from</div>
+              <div className="text-2xl font-bold text-blue-600">{inr(plan.basePremium)}</div>
+              <div className="text-xs text-slate-400">/year</div>
+            </>
+          )}
         </div>
         <div className="flex gap-2 w-full">
           <button
