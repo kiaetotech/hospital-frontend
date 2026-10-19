@@ -40,9 +40,9 @@ export default function InsuranceClaims() {
 
       {summary && (
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <Stat label="Total Claims" value={summary.totalClaims} />
-          <Stat label="Pending" value={summary.pendingCount} />
-          <Stat label="Settled" value={summary.settledCount} />
+          <Stat label="Total Claims" value={summary.total ?? 0} />
+          <Stat label="Pending" value={summary.pending ?? 0} />
+          <Stat label="Settled" value={summary.settled ?? 0} />
         </div>
       )}
 
