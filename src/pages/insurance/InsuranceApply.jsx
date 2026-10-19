@@ -99,24 +99,24 @@ export function ApplySuccess() {
 // APPLY WIZARD
 // ============================================
 export function ApplyWizard() {
-export function ApplyWizard() {
-  // ---- Auth guard: redirect if not logged in ----
+  // ---- Hooks (declare once) ----
   const navigate = useNavigate();
+  const { planId } = useParams();
   const [params] = useSearchParams();
-  const planIdFromUrl = params.get('planId') || window.location.pathname.split('/').pop();
 
+  // ---- Auth guard ----
   React.useEffect(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+    const token =
+      localStorage.getItem('patientToken') ||
+      localStorage.getItem('token') ||
+      localStorage.getItem('adminToken');
     if (!token) {
       alert('Please log in to continue with your application.');
       navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`, { replace: true });
     }
   }, [navigate]);
 
-  // ... rest of your existing component
-  const { planId } = useParams();
-  const navigate = useNavigate();
-
+  // ---- State ----
   const [step, setStep] = useState(1);
   const [plan, setPlan] = useState(null);
   const [proposal, setProposal] = useState(null);
@@ -128,16 +128,20 @@ export function ApplyWizard() {
     fullName: '', dob: '', gender: 'male', mobile: '', email: '',
     address: '', city: '', state: '', pincode: '', panNumber: '',
   });
+
   const [members, setMembers] = useState([
     { relation: 'self', name: '', dob: '', age: 30, gender: 'male', smoker: false, preExisting: [] },
   ]);
+
   const [medical, setMedical] = useState({
     conditions: [], otherCondition: '', hospitalizedLast4Years: false,
     hospitalizationDetails: '', currentMedications: false, medicationDetails: '', consentGiven: false,
   });
+
   const [nominee, setNominee] = useState({
     name: '', relationship: 'spouse', dob: '', share: 100, phone: '',
   });
+
   const [review, setReview] = useState(null);
 
   // Load Razorpay SDK on page mount
