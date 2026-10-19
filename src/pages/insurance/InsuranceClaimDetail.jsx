@@ -58,8 +58,7 @@ export default function InsuranceClaimDetail() {
 
   useEffect(() => {
     if (policyId && claimId) load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [policyId, claimId]);
+    }, [policyId, claimId]);
 
   const cancelClaim = async () => {
     if (!window.confirm('Are you sure you want to cancel this claim? This cannot be undone.')) return;
