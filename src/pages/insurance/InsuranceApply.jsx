@@ -545,7 +545,14 @@ function NomineeStep({ data, setData, onNext, onBack, saving }) {
 }
 
 function ReviewStep({ plan, proposal, review, onNext, onBack }) {
-  const p = review?.premium || proposal?.premium || {};
+  const rawP = review?.premium || proposal?.premium || {};
+const p = {
+  base: rawP.breakdown?.basePremium || rawP.base || 0,
+  gst: rawP.gstAmount || rawP.gst || 0,
+  total: rawP.totalPremium || rawP.total || 0,
+  addons: rawP.breakdown?.ridersCost || rawP.addons || 0,
+  discount: rawP.breakdown?.tenureDiscount || rawP.discount || 0,
+};
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow p-6">
