@@ -545,14 +545,23 @@ function NomineeStep({ data, setData, onNext, onBack, saving }) {
 }
 
 function ReviewStep({ plan, proposal, review, onNext, onBack }) {
-  const rawP = review?.premium || proposal?.premium || {};
-const p = {
-  base: rawP.breakdown?.basePremium || rawP.base || 0,
-  gst: rawP.gstAmount || rawP.gst || 0,
-  total: rawP.totalPremium || rawP.total || 0,
-  addons: rawP.breakdown?.ridersCost || rawP.addons || 0,
-  discount: rawP.breakdown?.tenureDiscount || rawP.discount || 0,
-};
+  // Premium engine returns { base, gst, addons, discount, total } — read those first,
+  // then fall back to the nested shape in case backend switches formats.
+  const rawP =
+    (review?.premium && (review.premium.total || review.premium.totalPremium))
+      ? review.premium
+      : (proposal?.premium && (proposal.premium.total || proposal.premium.totalPremium))
+      ? proposal.premium
+      : (review?.premium || proposal?.premium || {});
+ console.log('DEBUG ReviewStep:', { review, proposal, rawP });
+  const p = {
+    base: rawP.base || rawP.breakdown?.basePremium || 0,
+    gst: rawP.gst || rawP.gstAmount || 0,
+    total: rawP.total || rawP.totalPremium || 0,
+    addons: rawP.addons || rawP.breakdown?.ridersCost || 0,
+    discount: rawP.discount || rawP.breakdown?.tenureDiscount || 0,
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow p-6">
@@ -560,7 +569,7 @@ const p = {
         <R label="Plan" value={plan.planName} />
         <R label="Insurer" value={plan.companyId?.companyName || '—'} />
         <R label="Sum Insured" value={inr(plan.coverage?.sumInsured || proposal?.sumInsured)} />
-        <R label="Members" value={`${proposal?.members?.length || 0}`} />
+        <R label="Members" value={`${review?.proposal?.members?.length || proposal?.members?.length || 0}`} />
       </div>
       <div className="bg-white rounded-xl shadow p-6">
         <h3 className="font-bold text-slate-800 mb-4">Premium Breakdown</h3>
