@@ -545,15 +545,12 @@ function NomineeStep({ data, setData, onNext, onBack, saving }) {
 }
 
 function ReviewStep({ plan, proposal, review, onNext, onBack }) {
-  // Premium engine returns { base, gst, addons, discount, total } — read those first,
-  // then fall back to the nested shape in case backend switches formats.
-  const rawP =
-    (review?.premium && (review.premium.total || review.premium.totalPremium))
-      ? review.premium
-      : (proposal?.premium && (proposal.premium.total || proposal.premium.totalPremium))
-      ? proposal.premium
-      : (review?.premium || proposal?.premium || {});
- console.log('DEBUG ReviewStep:', { review, proposal, rawP });
+  // Premium engine returns { base, gst, addons, discount, total } — flat shape.
+  // Also unwrap nested wrappers if backend wraps differently.
+  let rawP = review?.premium || proposal?.premium || {};
+  if (rawP?.premium) rawP = rawP.premium;
+  if (rawP?.data) rawP = rawP.data;
+
   const p = {
     base: rawP.base || rawP.breakdown?.basePremium || 0,
     gst: rawP.gst || rawP.gstAmount || 0,
@@ -562,8 +559,10 @@ function ReviewStep({ plan, proposal, review, onNext, onBack }) {
     discount: rawP.discount || rawP.breakdown?.tenureDiscount || 0,
   };
 
+  console.log('FINAL rawP:', rawP, 'FINAL p:', p);
+
   return (
-    <div className="space-y-6">
+   <div className="space-y-6">
       <div className="bg-white rounded-xl shadow p-6">
         <h2 className="text-lg font-bold text-slate-800 mb-4">Review Your Application</h2>
         <R label="Plan" value={plan.planName} />
