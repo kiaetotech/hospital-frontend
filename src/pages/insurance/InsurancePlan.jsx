@@ -41,7 +41,12 @@ export function PlanDetail() {
   const [similar, setSimilar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview');
-
+  // Live quote state
+  const [liveAge, setLiveAge] = useState(30);
+  const [liveSI, setLiveSI] = useState(1000000);
+  const [liveZone, setLiveZone] = useState('tier1');
+  const [liveQuote, setLiveQuote] = useState(null);
+  const [calculating, setCalculating] = useState(false);
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -62,6 +67,36 @@ export function PlanDetail() {
     })();
     return () => { alive = false; };
   }, [id]);
+
+
+  const calculateLivePremium = async () => {
+    if (!plan) return;
+    setCalculating(true);
+    try {
+      const res = await getQuote({
+        planId: plan._id,
+        age: liveAge,
+        sumInsured: liveSI,
+        zone: liveZone,
+        habits: { smoker: false, alcohol: false, tobacco: false },
+        bmi: 0,
+        pedConditions: [],
+      });
+      const prem = res?.data?.premium;
+      if (prem) {
+        setLiveQuote({
+          base: prem.breakdown?.basePremium || 0,
+          gst: prem.gstAmount || 0,
+          total: prem.totalPremium || 0,
+          monthly: prem.monthlyPremium || 0,
+        });
+      }
+    } catch (e) {
+      console.warn('Live premium failed:', e.message);
+    } finally {
+      setCalculating(false);
+    }
+  };
 
   if (loading) return <div className="text-center py-20 text-slate-400">Loading plan…</div>;
   if (!plan) return (
@@ -119,6 +154,80 @@ export function PlanDetail() {
               <FaBalanceScale /> Compare
             </Link>
           </div>
+        </div>
+      </div>
+
+	      {/* LIVE QUOTE PANEL */}
+      <div className="max-w-5xl mx-auto px-4 pt-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+          <h3 className="font-bold text-blue-900 text-sm mb-3">💰 Get Your Live Premium</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Your Age</label>
+              <input
+                type="number"
+                value={liveAge}
+                onChange={(e) => setLiveAge(Number(e.target.value))}
+                min="1"
+                max="100"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Sum Insured</label>
+              <select
+                value={liveSI}
+                onChange={(e) => setLiveSI(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              >
+                {[300000, 500000, 1000000, 2500000, 5000000, 10000000].map(si => (
+                  <option key={si} value={si}>₹{si.toLocaleString('en-IN')}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Zone</label>
+              <select
+                value={liveZone}
+                onChange={(e) => setLiveZone(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              >
+                <option value="metro">Metro</option>
+                <option value="tier1">Tier 1</option>
+                <option value="tier2">Tier 2</option>
+                <option value="tier3">Tier 3</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={calculateLivePremium}
+                disabled={calculating}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm disabled:opacity-50"
+              >
+                {calculating ? '🔄 Calculating…' : '💰 Check Premium'}
+              </button>
+            </div>
+          </div>
+
+          {liveQuote && liveQuote.total > 0 && (
+            <div className="bg-white rounded-lg p-4 border border-blue-300 mt-3">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">Base Premium</div>
+                  <div className="text-lg font-bold text-slate-800">₹{liveQuote.base.toLocaleString('en-IN')}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">GST (18%)</div>
+                  <div className="text-lg font-bold text-slate-800">₹{liveQuote.gst.toLocaleString('en-IN')}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">Total</div>
+                  <div className="text-xl font-bold text-emerald-600">₹{liveQuote.total.toLocaleString('en-IN')}</div>
+                  <div className="text-xs text-slate-400">≈ ₹{liveQuote.monthly.toLocaleString('en-IN')}/mo</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
