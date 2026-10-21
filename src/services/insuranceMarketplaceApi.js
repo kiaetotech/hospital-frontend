@@ -38,7 +38,9 @@ export const getAddons = () =>
   api.get('/addons').then((r) => r.data);
 
 export const getQuote = (payload) =>
-  api.post('/quote', payload).then((r) => r.data);
+  axios
+    .post(`${API_URL}/api/insurance/quote`, payload)
+    .then((r) => r.data);
 
 export const getQuoteAll = (payload) =>
   axios
