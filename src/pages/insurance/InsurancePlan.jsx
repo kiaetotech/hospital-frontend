@@ -371,13 +371,23 @@ export function Quote() {
     if (!plan) return;
     setQuoting(true);
     try {
-      const res = await getQuote({
-        planId: plan._id,
-        members,
-        sumInsured,
-        addonCodes,
-        deductible,
-      });
+      const primaryAge = members?.[0]?.age || 30;
+const res = await getQuote({
+  planId: plan._id,
+  age: primaryAge,
+  sumInsured,
+  members,
+  addonCodes,
+  deductible,
+  zone: 'tier1',
+  habits: {
+    smoker: members?.[0]?.smoker || false,
+    alcohol: false,
+    tobacco: false,
+  },
+  bmi: 0,
+  pedConditions: [],
+});
       setQuote(res?.data || null);
     } catch (e) {
       console.warn('Quote failed:', e.message);
