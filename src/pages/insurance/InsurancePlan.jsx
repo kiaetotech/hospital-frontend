@@ -388,7 +388,15 @@ const res = await getQuote({
   bmi: 0,
   pedConditions: [],
 });
-      setQuote(res?.data || null);
+      const prem = res?.data?.premium;
+setQuote(prem ? {
+  base: prem.breakdown?.basePremium || 0,
+  gst: prem.gstAmount || 0,
+  total: prem.totalPremium || 0,
+  monthly: prem.monthlyPremium || 0,
+  addons: prem.breakdown?.ridersCost || 0,
+  discount: prem.breakdown?.tenureDiscount || 0,
+} : null);
     } catch (e) {
       console.warn('Quote failed:', e.message);
     } finally {
