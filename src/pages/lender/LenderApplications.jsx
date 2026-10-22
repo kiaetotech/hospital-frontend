@@ -89,18 +89,29 @@ const LenderApplications = () => {
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <div>
               <label style={{ fontSize: '0.875rem', marginRight: '0.5rem' }}>Status:</label>
-              <select
+                            <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 style={{ padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
               >
                 <option value="all">All</option>
+                <option value="draft">Draft</option>
                 <option value="submitted">Submitted</option>
                 <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="disbursed">Disbursed</option>
                 <option value="document_pending">Document Pending</option>
+                <option value="offer_issued">Offer Issued</option>
+                <option value="offer_accepted">Offer Accepted</option>
+                <option value="offer_declined">Offer Declined</option>
+                <option value="offer_expired">Offer Expired</option>
+                <option value="agreement_pending">Agreement Pending</option>
+                <option value="agreement_signed">Agreement Signed</option>
+                <option value="approved">Approved</option>
+                <option value="pending_disbursal">Pending Disbursal</option>
+                <option value="disbursed">Disbursed</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+                <option value="withdrawn">Withdrawn</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
             <div>

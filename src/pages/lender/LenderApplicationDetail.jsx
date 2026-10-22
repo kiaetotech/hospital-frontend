@@ -3,6 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLender } from '../../contexts/LenderContext';
 import { lenderApplications } from '../../services/lenderApi';
 
+const maskAadhaar = (aadhaar) => {
+  if (!aadhaar || aadhaar.length < 4) return 'N/A';
+  const last4 = aadhaar.slice(-4);
+  return `XXXX-XXXX-${last4}`;
+};
+
+const maskPAN = (pan) => {
+  if (!pan || pan.length < 4) return 'N/A';
+  const last4 = pan.slice(-4);
+  return `XXXXX${last4}`;
+};
+
 const LenderApplicationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -58,10 +70,15 @@ const LenderApplicationDetail = () => {
           description: actionData.description
         });
         alert('📄 Document request sent to patient.');
-      } else if (actionType === 'disburse') {
+            } else if (actionType === 'disburse') {
+        if (!actionData.utrNumber || actionData.utrNumber.trim().length < 8) {
+          alert('UTR number is required (min 8 characters). Ask the bank for the actual UTR.');
+          setActionLoading(false);
+          return;
+        }
         await lenderApplications.disburse(id, {
-          transactionId: actionData.transactionId || 'TXN' + Date.now(),
-          utrNumber: actionData.utrNumber || 'UTR' + Date.now()
+          transactionId: actionData.transactionId || `TXN_${Date.now()}`,
+          utrNumber: actionData.utrNumber.trim()
         });
         alert('💰 Loan disbursed successfully!');
       }
@@ -80,26 +97,48 @@ const LenderApplicationDetail = () => {
     setShowActionModal(true);
   };
 
-  const getStatusColor = (status) => {
+      const getStatusColor = (status) => {
     const colors = {
+      'draft': '#9ca3af',
       'submitted': '#f59e0b',
       'under_review': '#8b5cf6',
+      'document_pending': '#f97316',
+      'offer_issued': '#3b82f6',
+      'offer_accepted': '#2563eb',
+      'offer_declined': '#dc2626',
+      'offer_expired': '#6b7280',
+      'agreement_pending': '#a855f7',
+      'agreement_signed': '#7c3aed',
       'approved': '#10b981',
-      'rejected': '#ef4444',
+      'pending_disbursal': '#eab308',
       'disbursed': '#06b6d4',
-      'document_pending': '#f97316'
+      'completed': '#059669',
+      'rejected': '#ef4444',
+      'withdrawn': '#6b7280',
+      'cancelled': '#6b7280'
     };
     return colors[status] || '#6b7280';
   };
 
   const getStatusLabel = (status) => {
     const labels = {
+      'draft': '📝 Draft',
       'submitted': '⏳ Submitted',
       'under_review': '🔍 Under Review',
+      'document_pending': '📄 Document Pending',
+      'offer_issued': '📋 Offer Issued',
+      'offer_accepted': '✅ Offer Accepted',
+      'offer_declined': '❌ Offer Declined',
+      'offer_expired': '⌛ Offer Expired',
+      'agreement_pending': '✍️ Agreement Pending',
+      'agreement_signed': '✍️ Agreement Signed',
       'approved': '👍 Approved',
-      'rejected': '❌ Rejected',
+      'pending_disbursal': '💸 Pending Disbursal',
       'disbursed': '💰 Disbursed',
-      'document_pending': '📄 Document Pending'
+      'completed': '🎉 Completed',
+      'rejected': '❌ Rejected',
+      'withdrawn': '↩️ Withdrawn',
+      'cancelled': '🚫 Cancelled'
     };
     return labels[status] || status;
   };
@@ -159,11 +198,11 @@ const LenderApplicationDetail = () => {
           <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Patient Details</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
             <p><strong>Name:</strong> {application.patientDetails?.fullName || 'N/A'}</p>
-            <p><strong>Phone:</strong> {application.patientDetails?.phone || 'N/A'}</p>
-            <p><strong>Email:</strong> {application.patientDetails?.email || 'N/A'}</p>
-            <p><strong>PAN:</strong> {application.patientDetails?.pan || 'N/A'}</p>
-            <p><strong>Aadhaar:</strong> {application.patientDetails?.aadhaar || 'N/A'}</p>
-            <p><strong>Address:</strong> {application.patientDetails?.address || 'N/A'}</p>
+	    <p><strong>Phone:</strong> {application.patientDetails?.phone || 'N/A'}</p>
+	    <p><strong>Email:</strong> {application.patientDetails?.email || 'N/A'}</p>
+	    <p><strong>PAN:</strong> {maskPAN(application.patientDetails?.pan)}</p>
+	    <p><strong>Aadhaar:</strong> {maskAadhaar(application.patientDetails?.aadhaar)}</p>
+	    <p><strong>Address:</strong> {application.patientDetails?.address || 'N/A'}</p>
           </div>
         </div>
 
