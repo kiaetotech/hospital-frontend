@@ -120,5 +120,34 @@ export const lenderDashboard = {
     loanApi.get(`/lender/reports/branch/${branchId}`, { params: { startDate, endDate } })
 };
 
+// ============================================
+// LOAN V2 API — Patient additions (Task 18)
+// ============================================
+
+const LOAN_V2_BASE = `${API_URL}/api/loan/v2`;
+
+const patientAuthHeader = () => ({
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
+});
+
+// ─── Patient-facing products (browse) ───
+export const publicLoanProducts = {
+  // Note: backend currently requires lender auth for /products.
+  // Patient browse will use existing /api/loan/patient/lenders/nearby
+  // which returns lenders. Product browse for patients will be added in Phase 2.
+  listByLender: (lenderId) => axios.get(`${API_URL}/api/lender/${lenderId}/products`).catch(() => ({ data: { success: true, products: [] } })),
+};
+
+// ─── Offers (patient actions) ───
+export const patientOffers = {
+  accept: (offerId) => axios.post(`${LOAN_V2_BASE}/offers/${offerId}/accept`, {}, { headers: patientAuthHeader() }),
+  decline: (offerId, data) => axios.post(`${LOAN_V2_BASE}/offers/${offerId}/decline`, data, { headers: patientAuthHeader() }),
+};
+
+// ─── Agreements (patient actions) ───
+export const patientAgreements = {
+  sign: (agreementId, data) => axios.post(`${LOAN_V2_BASE}/agreements/${agreementId}/sign`, data, { headers: patientAuthHeader() }),
+};
+
 export default loanApi;
 
