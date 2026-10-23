@@ -1027,13 +1027,14 @@ const LenderLoanHub = () => {
           </div>
         )}
 
+                
         {/* ============================================
             TAB 6: REPAYMENT
             ============================================ */}
         {activeTab === 'repayment' && (
           <div>
             <div style={styles.card}>
-              <h2 style={styles.cardTitle}>💳 Repayment / Mandates</h2>
+              <h2 style={styles.cardTitle}>Repayment / Mandates</h2>
 
               {applications.filter(a => ['disbursed', 'completed'].includes(a.status)).length === 0 ? (
                 <p style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>
@@ -1051,7 +1052,7 @@ const LenderLoanHub = () => {
                   <option value="" disabled>Select application</option>
                   {applications.filter(a => ['disbursed', 'completed'].includes(a.status)).map(app => (
                     <option key={app.applicationId} value={app.applicationId}>
-                      {app.applicationId} — {app.patientDetails?.fullName} — ₹{(app.sanctionedAmount || 0).toLocaleString()}
+                      {app.applicationId} - {app.patientDetails?.fullName} - Rs.{(app.sanctionedAmount || 0).toLocaleString()}
                     </option>
                   ))}
                 </select>
@@ -1059,48 +1060,54 @@ const LenderLoanHub = () => {
 
               {selectedApplication && (
                 <div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                    <button onClick={async () => {
+                  <button
+                    onClick={async () => {
                       try {
                         const res = await loanRepayment.getSchedule(selectedApplication.applicationId);
                         setLoanSchedule(res.data);
                       } catch (err) {
                         alert('Failed: ' + (err.response?.data?.error || err.message));
                       }
-                    }} style={styles.buttonPrimary}>📊 View EMI Schedule</button>
-                  </div>
+                    }}
+                    style={{ ...styles.buttonPrimary, marginBottom: '1rem' }}
+                  >
+                    View EMI Schedule
+                  </button>
 
                   <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
                     Mandates ({applicationMandates.length})
                   </h3>
+
                   {applicationMandates.length === 0 ? (
-                    <div style={{ backgroundColor: '#fffbeb', padding: '1rem', borderRadius: '8px' }}>
+                    <div style={{ backgroundColor: '#fffbeb', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
                       <p style={{ color: '#92400e', fontSize: '0.875rem', margin: '0 0 0.75rem' }}>
                         No mandates yet. Create eNACH / UPI Autopay mandate for EMI collection.
                       </p>
-                      <form onSubmit={async (e) => {
-                        e.preventDefault();
-                        const form = e.target;
-                        try {
-                          await loanRepayment.createMandate({
-                            applicationId: selectedApplication.applicationId,
-                            type: form.type.value,
-                            accountHolderName: form.accountHolderName.value,
-                            accountNumber: form.accountNumber.value,
-                            ifsc: form.ifsc.value.toUpperCase(),
-                            bankName: form.bankName.value,
-                            maxAmount: parseFloat(form.maxAmount.value),
-                            frequency: form.frequency.value,
-                            startDate: form.startDate.value,
-                            endDate: form.endDate.value,
-                            provider: 'manual',
-                          });
-                          alert('Mandate created');
-                          await handleSelectApplication(selectedApplication);
-                        } catch (err) {
-                          alert('Failed: ' + (err.response?.data?.error || err.message));
-                        }
-                      }}>
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          const form = e.target;
+                          try {
+                            await loanRepayment.createMandate({
+                              applicationId: selectedApplication.applicationId,
+                              type: form.type.value,
+                              accountHolderName: form.accountHolderName.value,
+                              accountNumber: form.accountNumber.value,
+                              ifsc: form.ifsc.value.toUpperCase(),
+                              bankName: form.bankName.value,
+                              maxAmount: parseFloat(form.maxAmount.value),
+                              frequency: form.frequency.value,
+                              startDate: form.startDate.value,
+                              endDate: form.endDate.value,
+                              provider: 'manual',
+                            });
+                            alert('Mandate created');
+                            await handleSelectApplication(selectedApplication);
+                          } catch (err) {
+                            alert('Failed: ' + (err.response?.data?.error || err.message));
+                          }
+                        }}
+                      >
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                           <div>
                             <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Type *</label>
@@ -1137,7 +1144,7 @@ const LenderLoanHub = () => {
                             <input name="bankName" style={styles.input} />
                           </div>
                           <div>
-                            <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Max Amount (₹) *</label>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Max Amount (Rs.) *</label>
                             <input name="maxAmount" type="number" required defaultValue={selectedApplication.emi || 0} style={styles.input} />
                           </div>
                           <div>
@@ -1152,41 +1159,48 @@ const LenderLoanHub = () => {
                         <button type="submit" style={styles.buttonPrimary}>Create Mandate</button>
                       </form>
                     </div>
-                  )}
-
-                  {applicationMandates.map(mandate => (
-                    <div key={mandate.mandateId} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem', backgroundColor: mandate.status === 'active' ? '#f0fdf4' : 'white' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong>{mandate.type.toUpperCase()}</strong>
-                          <span style={{ marginLeft: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>
-                            · {mandate.accountNumber?.slice(-4).padStart(mandate.accountNumber.length, '*')} · ₹{(mandate.maxAmount || 0).toLocaleString()}/mo
-                          </span>
+                  ) : (
+                    <div>
+                      {applicationMandates.map(mandate => (
+                        <div key={mandate.mandateId} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem', backgroundColor: mandate.status === 'active' ? '#f0fdf4' : 'white' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <strong>{mandate.type ? mandate.type.toUpperCase() : 'MANDATE'}</strong>
+                              <span style={{ marginLeft: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>
+                                ending {(mandate.accountNumber || '****').slice(-4)} - Rs.{(mandate.maxAmount || 0).toLocaleString()}/mo
+                              </span>
+                            </div>
+                            <span style={styles.statusBadge(mandate.status === 'active' ? 'approved' : 'submitted')}>{mandate.status}</span>
+                          </div>
+                          {mandate.status === 'pending' && (
+                            <button
+                              onClick={async () => {
+                                const providerId = window.prompt('Provider mandate ID (optional)?') || '';
+                                try {
+                                  await loanRepayment.activateMandate(mandate.mandateId, { providerMandateId: providerId });
+                                  alert('Mandate activated');
+                                  await handleSelectApplication(selectedApplication);
+                                } catch (err) {
+                                  alert('Failed: ' + (err.response?.data?.error || err.message));
+                                }
+                              }}
+                              style={{ ...styles.buttonPrimary, marginTop: '0.5rem' }}
+                            >
+                              Activate
+                            </button>
+                          )}
                         </div>
-                        <span style={styles.statusBadge(mandate.status === 'active' ? 'approved' : 'submitted')}>{mandate.status}</span>
-                      </div>
-                      {mandate.status === 'pending' && (
-                        <button onClick={async () => {
-                          const providerId = window.prompt('Provider mandate ID (optional)?') || '';
-                          try {
-                            await loanRepayment.activateMandate(mandate.mandateId, { providerMandateId: providerId });
-                            alert('Mandate activated');
-                            await handleSelectApplication(selectedApplication);
-                          } catch (err) {
-                            alert('Failed: ' + (err.response?.data?.error || err.message));
-                          }
-                        }} style={{ ...styles.buttonPrimary, marginTop: '0.5rem' }}>Activate</button>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  )}
 
                   {loanSchedule && (
                     <div style={{ marginTop: '1rem' }}>
                       <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
-                        EMI Schedule — {loanSchedule.tenureMonths} months @ {loanSchedule.interestRate}%
+                        EMI Schedule - {loanSchedule.tenureMonths} months at {loanSchedule.interestRate}%
                       </h3>
                       <p style={{ marginBottom: '0.75rem', color: '#64748b', fontSize: '0.875rem' }}>
-                        EMI: ₹{(loanSchedule.emi || 0).toLocaleString()} · Total: ₹{(loanSchedule.totalPayable || 0).toLocaleString()} · Interest: ₹{(loanSchedule.totalInterest || 0).toLocaleString()}
+                        EMI: Rs.{(loanSchedule.emi || 0).toLocaleString()} - Total: Rs.{(loanSchedule.totalPayable || 0).toLocaleString()}
                       </p>
                       <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                         <table style={styles.table}>
@@ -1205,10 +1219,10 @@ const LenderLoanHub = () => {
                               <tr key={emi.emiNumber}>
                                 <td style={styles.td}>{emi.emiNumber}</td>
                                 <td style={styles.td}>{new Date(emi.dueDate).toLocaleDateString()}</td>
-                                <td style={styles.td}>₹{(emi.emiAmount || 0).toLocaleString()}</td>
-                                <td style={styles.td}>₹{(emi.principal || 0).toLocaleString()}</td>
-                                <td style={styles.td}>₹{(emi.interest || 0).toLocaleString()}</td>
-                                <td style={styles.td}>₹{(emi.closingBalance || 0).toLocaleString()}</td>
+                                <td style={styles.td}>Rs.{(emi.emiAmount || 0).toLocaleString()}</td>
+                                <td style={styles.td}>Rs.{(emi.principal || 0).toLocaleString()}</td>
+                                <td style={styles.td}>Rs.{(emi.interest || 0).toLocaleString()}</td>
+                                <td style={styles.td}>Rs.{(emi.closingBalance || 0).toLocaleString()}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1221,7 +1235,6 @@ const LenderLoanHub = () => {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );
