@@ -361,4 +361,36 @@ export const adminReports = {
   }
 };
 
+// ============================================
+// LOAN V2 ADMIN API — Task 19 additions
+// ============================================
+// These hit the existing legacy loan routes (already live).
+
+const ADMIN_API_URL = API_URL; // uses the same baseURL as adminApi
+const adminKeyHeader = () => ({ 'X-Admin-Key': process.env.REACT_APP_ADMIN_KEY || 'admin_secret_key_2024_hospitalhub_production_secure' });
+
+// ─── Applications ───
+export const adminLoanApplications = {
+  list: (filters = {}) => axios.get(`${ADMIN_API_URL}/api/loan/admin/applications`, { headers: adminKeyHeader(), params: filters }),
+  get: (applicationId) => axios.get(`${ADMIN_API_URL}/api/loan/admin/applications/${applicationId}`, { headers: adminKeyHeader() }),
+};
+
+// ─── Dashboard + Reports ───
+export const adminLoanDashboard = {
+  stats: () => axios.get(`${ADMIN_API_URL}/api/loan/admin/dashboard`, { headers: adminKeyHeader() }),
+  reports: (filters = {}) => axios.get(`${ADMIN_API_URL}/api/loan/admin/reports`, { headers: adminKeyHeader(), params: filters }),
+  commissionReport: (filters = {}) => axios.get(`${ADMIN_API_URL}/api/loan/admin/reports/commission`, { headers: adminKeyHeader(), params: filters }),
+};
+
+// ─── Commission ───
+export const adminLoanCommission = {
+  pay: (applicationIds) => axios.put(`${ADMIN_API_URL}/api/loan/admin/commission/pay`, { applicationIds }, { headers: adminKeyHeader() }),
+};
+
+// ─── Patients ───
+export const adminLoanPatients = {
+  list: () => axios.get(`${ADMIN_API_URL}/api/loan/admin/patients`, { headers: adminKeyHeader() }),
+  get: (patientId) => axios.get(`${ADMIN_API_URL}/api/loan/admin/patients/${patientId}`, { headers: adminKeyHeader() }),
+};
+
 export default adminApi;

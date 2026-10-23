@@ -148,6 +148,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminInsuranceClaims from './pages/admin/AdminInsuranceClaims';
 import InsuranceAdminPanel from './pages/admin/InsuranceAdminPanel';
 import AdminOnlineDoctor from './pages/admin/AdminOnlineDoctor';
+import AdminLoanHub from './pages/admin/AdminLoanHub';
 import CommandCenter from './pages/admin/CommandCenter';
 
 // ============================================
@@ -449,6 +450,8 @@ function App() {
           <Route path="/admin/mentalhealth" element={<AdminMentalHealth />} />
           <Route path="/admin/corporate" element={<AdminCorporate />} />
           <Route path="/admin/online-doctor" element={<AdminOnlineDoctor />} />
+          <Route path="/admin/loan-hub" element={<AdminLoanHub />} />
+          <Route path="/admin/loan" element={<AdminLoanHub />} />
 	
           {/* INSURANCE TAG — P2.1 Marketplace UI */}
 	  <Route path="/insurance" element={<InsuranceMarketplaceHub />} />
