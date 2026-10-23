@@ -60,17 +60,17 @@ const AdminLoanHub = () => {
   }, [filters]);
 
   const fetchLenders = useCallback(async () => {
-    try {
-      const [pendingRes, allRes] = await Promise.all([
-        adminLenders.getPending().catch(() => ({ data: [] })),
-        adminLenders.getAll().catch(() => ({ data: [] })),
-      ]);
-      setPendingLenders(pendingRes.data || []);
-      setAllLenders(allRes.data || []);
-    } catch (err) {
-      setError('Failed to load lenders: ' + (err.response?.data?.error || err.message));
-    }
-  }, []);
+  try {
+    const [pendingRes, allRes] = await Promise.all([
+      adminLenders.getPending().catch(() => ({ data: { lenders: [] } })),
+      adminLenders.getAll().catch(() => ({ data: { lenders: [] } })),
+    ]);
+    setPendingLenders(pendingRes.data?.lenders || []);
+    setAllLenders(allRes.data?.lenders || []);
+  } catch (err) {
+    setError('Failed to load lenders: ' + (err.response?.data?.error || err.message));
+  }
+}, []);
 
   const fetchCommission = useCallback(async () => {
     try {
