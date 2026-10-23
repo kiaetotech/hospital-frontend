@@ -111,16 +111,25 @@ const ProviderRegistrationLayout = ({
             >
               ← Previous
             </button>
-            <button
-              onClick={() => onStepChange(currentStep + 1)}
+              <button
+              onClick={() => {
+                if (currentStep === steps.length - 1) {
+                  if (typeof onSubmit === 'function') {
+                    onSubmit();
+                  }
+                } else {
+                  onStepChange(currentStep + 1);
+                }
+              }}
               style={{
                 padding: '0.6rem 2rem',
                 backgroundColor: '#2563eb',
                 color: 'white',
                 border: 'none',
                 borderRadius: '0.5rem',
-                cursor: 'pointer',
-                fontWeight: 'bold'
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold',
+                opacity: loading ? 0.7 : 1
               }}
               disabled={loading}
             >
