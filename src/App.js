@@ -117,6 +117,7 @@ import LenderDashboard from './pages/lender/LenderDashboard';
 import LenderApplications from './pages/lender/LenderApplications';
 import LenderApplicationDetail from './pages/lender/LenderApplicationDetail';
 import LenderRegister from './pages/lender/LenderRegister';
+import LoanHub from './pages/loan/LoanHub';
 
 // ============================================
 // ADMIN PANEL IMPORTS
@@ -417,6 +418,9 @@ function App() {
           <Route path="/lender/applications" element={<LenderApplications />} />
           <Route path="/lender/applications/:id" element={<LenderApplicationDetail />} />
           <Route path="/lender/register" element={<LenderRegister />} />
+	  {/* PATIENT LOAN HUB (Task 18) */}
+          <Route path="/loan" element={<LoanHub />} />
+          <Route path="/loan/hub" element={<LoanHub />} />
 
           {/* ADMIN PANEL */}
           <Route path="/admin/login" element={<AdminLogin />} />
