@@ -117,6 +117,7 @@ import LenderDashboard from './pages/lender/LenderDashboard';
 import LenderApplications from './pages/lender/LenderApplications';
 import LenderApplicationDetail from './pages/lender/LenderApplicationDetail';
 import LenderRegister from './pages/lender/LenderRegister';
+import LenderLoanHub from './pages/lender/LenderLoanHub';
 import LoanHub from './pages/loan/LoanHub';
 
 // ============================================
@@ -418,6 +419,8 @@ function App() {
           <Route path="/lender/applications" element={<LenderApplications />} />
           <Route path="/lender/applications/:id" element={<LenderApplicationDetail />} />
           <Route path="/lender/register" element={<LenderRegister />} />
+          <Route path="/lender/loan-hub" element={<LenderLoanHub />} />
+          <Route path="/lender/loan" element={<LenderLoanHub />} />
 	  {/* PATIENT LOAN HUB (Task 18) */}
           <Route path="/loan" element={<LoanHub />} />
           <Route path="/loan/hub" element={<LoanHub />} />
