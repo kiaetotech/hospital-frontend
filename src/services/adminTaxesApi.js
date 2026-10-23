@@ -1,7 +1,7 @@
 // src/services/adminTaxesApi.js
 import axios from 'axios';
 
-const API_BASE = 'https://hospital-backend-production-e2d5.up.railway.app';
+const API_BASE = 'https://hospital-backend-ilhi.onrender.com';
 const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
 
 const adminHeaders = () => ({

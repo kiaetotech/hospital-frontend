@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
 const ADMIN_KEY = 'admin_secret_key_2024_hospitalhub_production_secure';
 
 // Get token from localStorage

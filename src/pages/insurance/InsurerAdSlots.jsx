@@ -8,7 +8,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { insuranceApi } from '../../services/providerApi';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
 const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
 

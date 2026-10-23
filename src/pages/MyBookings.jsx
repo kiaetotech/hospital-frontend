@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 
-const API = 'https://hospital-backend-production-e2d5.up.railway.app/api';
+const API = 'https://hospital-backend-ilhi.onrender.com/api';
 
 // ─── Generic endpoint map per tag ───
 // If a route doesn't exist on the backend yet, the request 404s and the UI

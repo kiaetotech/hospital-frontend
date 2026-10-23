@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaIdCard, FaCheck, FaTimes, FaUpload, FaSpinner } from 'react-icons/fa';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
 
 // Field config per provider type
 const FIELD_CONFIGS = {

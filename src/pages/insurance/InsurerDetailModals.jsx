@@ -14,7 +14,7 @@ import React, { useEffect, useState } from 'react';
 const downloadPdf = async (url, filename) => {
   try {
     const token = localStorage.getItem('providerToken');
-    const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+    const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
     const r = await fetch(`${API}${url}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -199,7 +199,7 @@ export function PolicyDetailModal({ open, onClose, policy, insurerHeaders }) {
     const load = async () => {
       setLoading(true); setError('');
       try {
-        const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+        const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
         const token = localStorage.getItem('providerToken');
         const r = await fetch(`${API}/api/insurance/company/policies/${policy._id}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -331,7 +331,7 @@ export function ClaimDetailModal({ open, onClose, claim, onStatusChange }) {
     const load = async () => {
       setLoading(true); setError('');
       try {
-        const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+        const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
         const token = localStorage.getItem('providerToken');
         const r = await fetch(`${API}/api/insurance/company/claims/${claim._id}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -355,7 +355,7 @@ export function ClaimDetailModal({ open, onClose, claim, onStatusChange }) {
   const doUpdate = async (status) => {
     setUpdating(true);
     try {
-      const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+      const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
       const token = localStorage.getItem('providerToken');
       const body = { status };
       if (actionNote.trim()) body.note = actionNote.trim();

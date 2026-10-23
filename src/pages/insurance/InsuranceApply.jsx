@@ -15,7 +15,7 @@ import {
   saveNominee, getReview,
 } from '../../services/insuranceMarketplaceApi';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
 const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
 
 const STEPS = [
@@ -242,7 +242,7 @@ export function ApplyWizard() {
   const submitPayment = async () => {
     setSaving(true); setError('');
     try {
-      const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+      const API = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
       const token = localStorage.getItem('patientToken') || localStorage.getItem('token') || '';
 
       if (typeof window.Razorpay !== 'function') {

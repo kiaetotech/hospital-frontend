@@ -10,7 +10,7 @@ const MentalHealthJournal = () => {
   const [moodTrend, setMoodTrend] = useState(null);
   const [crisisAlert, setCrisisAlert] = useState(null);
 
-  const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app/api';
+  const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com/api';
 
   useEffect(() => {
     loadEntries();

@@ -14,7 +14,7 @@ import {
   getDriverTripHistory
 } from '../../services/api';
 
-const SOCKET_URL = 'https://hospital-backend-production-e2d5.up.railway.app';
+const SOCKET_URL = 'https://hospital-backend-ilhi.onrender.com';
 
 const DriverApp = () => {
   const navigate = useNavigate();

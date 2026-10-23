@@ -17,7 +17,7 @@ const HealthPackages = () => {
     homeCollection: false
   });
 
-  const API_URL = 'https://hospital-backend-production-e2d5.up.railway.app/api';
+  const API_URL = 'https://hospital-backend-ilhi.onrender.com/api';
 
   useEffect(() => {
     loadPackages();

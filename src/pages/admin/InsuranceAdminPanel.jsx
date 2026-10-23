@@ -22,7 +22,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer
 } from 'recharts';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
 // Admin auth uses JWT from localStorage (adminToken). No hardcoded key.
 
 const TABS = [

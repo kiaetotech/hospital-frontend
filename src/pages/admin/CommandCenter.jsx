@@ -10,7 +10,7 @@ import AdminLayout from '../../layouts/AdminLayout';
 
 const API_BASE =
   process.env.REACT_APP_API_URL ||
-  'https://hospital-backend-production-e2d5.up.railway.app';
+  'https://hospital-backend-ilhi.onrender.com';
 
 // ============================================
 // 12 TAGS

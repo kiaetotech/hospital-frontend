@@ -10,7 +10,7 @@ import {
   FaClock, FaExclamationTriangle, FaPlus,
 } from 'react-icons/fa';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-production-e2d5.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
 const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
 
 const patientHeaders = () => {
