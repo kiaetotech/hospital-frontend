@@ -95,6 +95,17 @@ const BookAdmission = () => {
     fetchHospital();
   }, [id]);
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const fetchHospital = async () => {
     try {
       const res = await getHospitalById(id);
@@ -245,6 +256,13 @@ const BookAdmission = () => {
             color: '#3b82f6'
           }
         };
+
+                const sdkLoaded = await loadRazorpayScript();
+        if (!sdkLoaded) {
+          setError('Failed to load payment SDK. Please try again.');
+          setSubmitting(false);
+          return;
+        }
 
         const razorpay = new window.Razorpay(options);
         razorpay.open();
