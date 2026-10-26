@@ -204,7 +204,7 @@ const BookAdmission = () => {
         totalAmount: calculateTotal().roomCost,
         advanceAmount: advanceAmount,
         bookingType: 'admission',
-        paymentMethod: 'netbanking'
+        paymentMethod: 'netbanking',
         userId: (JSON.parse(localStorage.getItem('user') || '{}').id) || localStorage.getItem('patientId') || undefined,
       };
 
