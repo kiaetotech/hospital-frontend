@@ -238,14 +238,10 @@ const BookAdmission = () => {
               razorpay_signature: response.razorpay_signature
             });
 
-            if (verifyRes.data.success) {
-              const admissionRes = await bookAdmission({
-                ...bookingData,
-                paymentId: response.razorpay_payment_id,
-                orderId: orderId
-              });
+                        if (verifyRes.data.success) {
+              const bookingId = verifyRes.data.bookingId || verifyRes.data.data?.bookingId || 'confirmed';
 
-              setSuccess('✅ Admission booked successfully! Check your email for confirmation.');
+              setSuccess(`✅ Admission booked successfully! Booking ID: ${bookingId}`);
               setTimeout(() => {
                 navigate('/my-bookings');
               }, 2000);
