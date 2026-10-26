@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
+import { useLender } from '../../contexts/LenderContext';
 
 const LenderLogin = () => {
   const navigate = useNavigate();
+  const { login: contextLogin } = useLender();
   const [activeTab, setActiveTab] = useState('email');
   const [form, setForm] = useState({ email: '', phone: '', password: '', otp: '' });
   const [loading, setLoading] = useState(false);
@@ -19,27 +21,41 @@ const LenderLogin = () => {
     if (!form.phone || form.phone.length < 10) { setError('Enter valid 10-digit number'); return; }
     try { await api.post('/otp/send', { phone: `+91${form.phone}`, type: 'login' }); setOtpSent(true); setOtpCountdown(30); setError(''); } catch (e) { setError('Failed'); }
   };
-  const handleLogin = async (e) => {
-    e.preventDefault(); setLoading(true); setError('');
+      const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      let res;
       if (activeTab === 'email') {
-        if (!form.email || !form.password) { setError('Fill all fields'); setLoading(false); return; }
-        res = await api.post('/lender/auth/login', { email: form.email, password: form.password });
-      } else {
-        if (!form.phone || !form.otp) { setError('Enter phone and OTP'); setLoading(false); return; }
-        res = await api.post('/otp/verify', { phone: `+91${form.phone}`, otp: form.otp, type: 'login' });
-        if (res.data?.success) res = await api.post('/lender/auth/login', { phone: `+91${form.phone}`, otpLogin: true });
-      }
-            if (res.data?.success) {
-        localStorage.setItem('lenderToken', res.data.token);
-        localStorage.setItem('lenderData', JSON.stringify(res.data.lender || {}));  // ← THE FIX
-        localStorage.setItem('providerToken', res.data.token);
-        localStorage.setItem('providerId', res.data.lender?.lenderId || '');
+        if (!form.email || !form.password) {
+          setError('Fill all fields');
+          return;
+        }
+        await contextLogin(form.email, form.password);
         localStorage.setItem('providerType', 'lender');
         navigate('/lender/dashboard');
-      } else setError(res.data?.message || res.data?.error || 'Login failed');
-    } catch (e) { setError(e.response?.data?.error || 'Login failed'); } finally { setLoading(false); }
+      } else {
+        if (!form.phone || !form.otp) {
+          setError('Enter phone and OTP');
+          return;
+        }
+        const verify = await api.post('/otp/verify', {
+          phone: `+91${form.phone}`,
+          otp: form.otp,
+          type: 'login',
+        });
+        if (!verify.data?.success) {
+          setError(verify.data?.message || 'OTP verification failed');
+          return;
+        }
+        setError('Phone/OTP login for lenders coming soon. Please use email login.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.message || err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const c = '#E65100';
