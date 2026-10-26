@@ -185,6 +185,24 @@ const MyBookings = () => {
       }));
     } catch (e) { console.log('No mental health bookings'); }
 
+    // Hospital/Generic bookings (admission, OPD, labtest, etc.)
+    let hospitalBookings = [];
+    try {
+      const r = await axios.get(`${API}/bookings/my-bookings?limit=100`, { headers });
+      hospitalBookings = (r.data?.data || []).map(b => ({
+        ...b,
+        bookingType: b.bookingType || 'hospital',
+        patientName: b.patientName || 'Patient',
+        patientPhone: b.patientPhone || '',
+        patientAge: b.patientAge || null,
+        patientGender: b.patientGender || '',
+        appointmentDate: b.appointmentDate || b.bookingDate,
+        finalAmount: b.finalAmount || b.originalAmount,
+        paymentStatus: b.paymentStatus,
+        status: b.status,
+      }));
+    } catch (e) { console.log('No hospital/generic bookings'); }
+
     // Caregiver
     let caregiverBookings = [];
     try {
@@ -210,9 +228,10 @@ const MyBookings = () => {
     } catch (e) { console.log('No insurance policies'); }
     setInsurancePolicies(insurancePoliciesData);
 
-    setBookings([
+        setBookings([
       ...ambulanceBookings, ...ayurvedaBookings, ...homeopathyBookings,
-      ...onlineDoctorBookings, ...mentalHealthBookings, ...caregiverBookings
+      ...onlineDoctorBookings, ...mentalHealthBookings, ...caregiverBookings,
+      ...hospitalBookings
     ]);
     setSearched(true);
 
