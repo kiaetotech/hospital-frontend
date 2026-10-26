@@ -31,8 +31,9 @@ const LenderLogin = () => {
         res = await api.post('/otp/verify', { phone: `+91${form.phone}`, otp: form.otp, type: 'login' });
         if (res.data?.success) res = await api.post('/lender/auth/login', { phone: `+91${form.phone}`, otpLogin: true });
       }
-      if (res.data?.success) {
+            if (res.data?.success) {
         localStorage.setItem('lenderToken', res.data.token);
+        localStorage.setItem('lenderData', JSON.stringify(res.data.lender || {}));  // ← THE FIX
         localStorage.setItem('providerToken', res.data.token);
         localStorage.setItem('providerId', res.data.lender?.lenderId || '');
         localStorage.setItem('providerType', 'lender');
