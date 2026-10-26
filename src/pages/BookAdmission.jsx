@@ -215,10 +215,14 @@ const BookAdmission = () => {
           hospitalId: id
         });
 
-        const { orderId, amount, currency } = paymentRes.data.data;
+                // Backend returns: { success, order: { id, amount, currency }, key_id, transactionId }
+        const { order, key_id } = paymentRes.data;
+        const orderId = order.id;
+        const amount = order.amount;
+        const currency = order.currency;
 
         const options = {
-          key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_xxxxxxxx',
+          key: key_id,
           amount: amount,
           currency: currency,
           name: hospital.name,
