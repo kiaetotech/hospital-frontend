@@ -453,7 +453,11 @@ const MyBookings = () => {
     </div>
   );
 
-  const filteredBookings = selectedType === 'all' ? bookings : bookings.filter(b => b.bookingType === selectedType);
+  const filteredBookings = selectedType === 'all' 
+    ? bookings 
+    : selectedType === 'opd'
+      ? bookings.filter(b => b.bookingType === 'opd' || b.bookingType === 'admission')
+      : bookings.filter(b => b.bookingType === selectedType);
   const labBookings = bookings.filter(b => b.bookingType === 'labtest');
   const hospitalBookings = bookings.filter(b => b.bookingType === 'opd' || b.bookingType === 'admission');
   const ambulanceBookings = bookings.filter(b => b.bookingType === 'ambulance');
