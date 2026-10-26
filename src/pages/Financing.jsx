@@ -41,11 +41,11 @@ const Financing = () => {
   const [activeApplication, setActiveApplication] = useState(null);
 
   const [formData, setFormData] = useState({
-    treatmentType: '', hospitalName: '', treatmentCost: '',
-    selectedLender: null, selectedTenure: null, emi: null,
-    totalPayable: null, totalInterest: null, fullName: '', pan: '',
-    phone: '', email: '', address: '', applicationStatus: 'pending', applicationId: null
-  });
+  treatmentType: '', hospitalName: '', treatmentCost: '', bookingId: '',
+  selectedLender: null, selectedTenure: null, emi: null,
+  totalPayable: null, totalInterest: null, fullName: '', pan: '',
+  phone: '', email: '', address: '', applicationStatus: 'pending', applicationId: null
+});
 
   // ============================================
   // LOAD SAVED DATA
@@ -227,12 +227,25 @@ const Financing = () => {
 
   const handleSelectLender = (lender) => setFormData({ ...formData, selectedLender: lender, selectedTenure: null, emi: null });
 
-  const handleSelectTenure = (tenure) => {
-    const principal = parseInt(formData.treatmentCost);
-    const rate = formData.selectedLender.interestRate || formData.selectedLender.loanProducts?.[0]?.interestRate || 12;
-    const emi = calculateEMI(principal, rate, tenure);
-    setFormData({ ...formData, selectedTenure: tenure, emi, totalPayable: emi * tenure, totalInterest: (emi * tenure) - principal });
-  };
+  const handleSelectTenure = (tenure, lenderFromButton) => {
+  // Use lender passed from button click, fallback to state
+  const lender = lenderFromButton || formData.selectedLender;
+  if (!lender) {
+    alert('Please select a lender first');
+    return;
+  }
+  const principal = parseInt(formData.treatmentCost);
+  const rate = lender.interestRate || lender.loanProducts?.[0]?.interestRate || 12;
+  const emi = calculateEMI(principal, rate, tenure);
+  setFormData({
+    ...formData,
+    selectedLender: lender,   // ensure it's set
+    selectedTenure: tenure,
+    emi,
+    totalPayable: emi * tenure,
+    totalInterest: (emi * tenure) - principal,
+  });
+};
 
   const handleSendAadhaarOTP = () => {
     if (!aadhaarNumber || aadhaarNumber.length !== 12) { alert('Enter valid 12-digit Aadhaar number'); return; }
@@ -269,12 +282,13 @@ const Financing = () => {
     setLoading(true);
     try {
       const applicationData = {
-        treatmentType: formData.treatmentType, hospitalName: formData.hospitalName,
-        estimatedAmount: parseInt(formData.treatmentCost),
-        lenderId: formData.selectedLender._id || formData.selectedLender.lenderId || formData.selectedLender.id,
-        tenure: formData.selectedTenure, collateral: collateralDetails,
-        patientLocation: { pincode: userPincode, city: userCity, district: userDistrict, state: userState }
-      };
+  treatmentType: formData.treatmentType, hospitalName: formData.hospitalName,
+  estimatedAmount: parseInt(formData.treatmentCost),
+  lenderId: formData.selectedLender._id || formData.selectedLender.lenderId || formData.selectedLender.id,
+  bookingId: formData.bookingId,
+  tenure: formData.selectedTenure, collateral: collateralDetails,
+  patientLocation: { pincode: userPincode, city: userCity, district: userDistrict, state: userState }
+};
 
       const response = await patientLoans.submitApplication(applicationData);
       const applicationId = response.data.applicationId;
@@ -425,6 +439,7 @@ const Financing = () => {
               <div style={{ marginBottom: '16px' }}><label style={s.label}>Treatment Type *</label><select value={formData.treatmentType} onChange={e => setFormData(p => ({ ...p, treatmentType: e.target.value }))} style={s.select} required><option value="">Select treatment</option><option value="Surgery">🏥 Surgery</option><option value="Dental">🦷 Dental</option><option value="Eye Care">👁️ Eye Care</option><option value="Maternity">👶 Maternity</option><option value="Heart/Cardiac">❤️ Heart/Cardiac</option><option value="Orthopedic">🦴 Orthopedic</option><option value="Diagnostic Tests">🔬 Diagnostic Tests</option><option value="Health Checkup">🩺 Health Checkup</option></select></div>
               <div style={{ marginBottom: '16px' }}><label style={s.label}>Hospital / Diagnostic Center *</label><input type="text" value={formData.hospitalName} onChange={e => setFormData(p => ({ ...p, hospitalName: e.target.value }))} placeholder="Enter hospital or lab name" style={s.input} required /></div>
               <div style={{ marginBottom: '20px' }}><label style={s.label}>Treatment Cost (₹) *</label><input type="number" value={formData.treatmentCost} onChange={e => setFormData(p => ({ ...p, treatmentCost: e.target.value }))} placeholder="Enter amount" style={s.input} required min="5000" /><div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '11px', color: '#6b7280' }}><span>Min: ₹5,000</span><span>Unsecured up to ₹55L | Secured up to ₹1Cr+</span></div></div>
+	     <div style={{ marginBottom: '16px' }}><label style={s.label}>Hospital Booking ID *</label><input type="text" value={formData.bookingId || ''} onChange={e => setFormData(p => ({ ...p, bookingId: e.target.value }))} placeholder="e.g., EMG1786971082962" style={s.input} required /><div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>From your HospitalHub booking confirmation</div></div>
               <button type="submit" style={s.btn('linear-gradient(135deg, #8b5cf6, #7c3aed)')}>View Loan Offers →</button>
             </form>
           </div>
@@ -501,7 +516,7 @@ const Financing = () => {
                         {(lender.tenure || [12, 24, 36]).map(t => {
                           const emi = calculateEMI(principal, lender.interestRate || 0, t);
                           return (
-                            <button key={t} onClick={(ev) => { ev.stopPropagation(); handleSelectTenure(t); }} style={{ padding: '10px 16px', borderRadius: '10px', border: formData.selectedTenure === t ? '2px solid #8b5cf6' : '1px solid #e2e8f0', background: formData.selectedTenure === t ? '#f3e8ff' : 'white', cursor: 'pointer', minWidth: '90px', fontWeight: formData.selectedTenure === t ? '700' : '500' }}>
+                            <button key={t} onClick={(ev) => { ev.stopPropagation(); handleSelectTenure(t, lender); }} style={{ padding: '10px 16px', borderRadius: '10px', border: formData.selectedTenure === t ? '2px solid #8b5cf6' : '1px solid #e2e8f0', background: formData.selectedTenure === t ? '#f3e8ff' : 'white', cursor: 'pointer', minWidth: '90px', fontWeight: formData.selectedTenure === t ? '700' : '500' }}>
                               <div style={{ fontSize: '14px' }}>{t} months</div><div style={{ fontSize: '11px', color: '#059669' }}>{formatINR(emi)}/mo</div>
                             </button>
                           );
