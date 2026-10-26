@@ -156,11 +156,11 @@ const BookOPD = () => {
         order_id: orderId,
         handler: async function(response) {
           // Verify payment
-          const verifyRes = await verifyPayment({
+                    const verifyRes = await verifyPayment({
+            ...bookingData,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature,
-            bookingData: bookingData
+            razorpay_signature: response.razorpay_signature
           });
 
           if (verifyRes.data.success) {
