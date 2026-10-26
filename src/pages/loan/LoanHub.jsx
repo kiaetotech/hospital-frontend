@@ -88,14 +88,23 @@ const LoanHub = () => {
     setSelectedOffer(null);
   };
 
-  const handleSelectLender = async (lender) => {
+    const handleSelectLender = async (lender) => {
     setSelectedLender(lender);
     try {
-      // Products per lender — currently returns empty array (Task 10 endpoint requires lender auth).
-      // Fallback: show lender's embedded loanProducts from Lender model.
-      setLenderProducts(lender.loanProducts || []);
+      // Fetch active v2 products for this lender (public endpoint, no auth required)
+      const res = await api.get('/loan/v2/products/public', {
+        params: { lenderId: lender.lenderId || lender._id },
+      });
+      const v2Products = res.data?.products || [];
+      if (v2Products.length > 0) {
+        setLenderProducts(v2Products);
+      } else {
+        // Fallback: legacy embedded products from Lender model
+        setLenderProducts(lender.loanProducts || []);
+      }
     } catch (err) {
-      setLenderProducts([]);
+      console.warn('[LoanHub] v2 products fetch failed, falling back to legacy:', err.message);
+      setLenderProducts(lender.loanProducts || []);
     }
   };
 
@@ -119,10 +128,15 @@ const LoanHub = () => {
   // ============================================
   // SUBMIT APPLICATION (Tab: Apply)
   // ============================================
-  const submitApplication = async (e) => {
+    const submitApplication = async (e) => {
     e.preventDefault();
     setError('');
     const form = e.target;
+
+    // Detect selected product (from v2 fetch or legacy)
+    const productIdField = form.querySelector('[name="productId"]');
+    const productId = productIdField?.value || '';
+
     const formData = {
       treatmentType: form.treatmentType.value,
       hospitalName: form.hospitalName.value,
@@ -131,6 +145,7 @@ const LoanHub = () => {
       lenderId: form.lenderId.value,
       bookingId: form.bookingId.value,
       tenure: parseInt(form.tenure.value),
+      productId: productId || undefined,
       patientLocation: {
         pincode: form.pincode.value,
         city: form.city.value,
@@ -391,6 +406,22 @@ const LoanHub = () => {
                 <h2 style={styles.cardTitle}>Step 2 — Application Details</h2>
                 <form onSubmit={submitApplication}>
                   <input type="hidden" name="lenderId" value={selectedLender._id} />
+                  {/* Product selection (v2 products fetched on lender select) */}
+                  {selectedLender && lenderProducts.length > 0 && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>
+                        Loan Product *
+                      </label>
+                      <select name="productId" required style={styles.input}>
+                        <option value="">-- Select Product --</option>
+                        {lenderProducts.map((p) => (
+                          <option key={p.productId || p._id} value={p.productId || p._id}>
+                            {p.productName} — ₹{(p.minAmount || 0).toLocaleString()} to ₹{(p.maxAmount || 0).toLocaleString()} @ {p.interestRate}% for {p.minTenureMonths}-{p.maxTenureMonths} months
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                     <div>
