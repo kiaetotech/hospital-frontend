@@ -205,6 +205,7 @@ const BookAdmission = () => {
         advanceAmount: advanceAmount,
         bookingType: 'admission',
         paymentMethod: 'netbanking'
+        userId: (JSON.parse(localStorage.getItem('user') || '{}').id) || localStorage.getItem('patientId') || undefined,
       };
 
       if (advanceAmount > 0) {
