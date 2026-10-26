@@ -203,7 +203,8 @@ const BookAdmission = () => {
         schemeApplied: formData.schemeApplied,
         totalAmount: calculateTotal().roomCost,
         advanceAmount: advanceAmount,
-        paymentMethod: formData.paymentMethod
+        bookingType: 'admission',
+        paymentMethod: 'netbanking'
       };
 
       if (advanceAmount > 0) {
