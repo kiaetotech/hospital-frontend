@@ -5,7 +5,7 @@ import { lenderApplications } from '../../services/lenderApi';
 
 const LenderDashboard = () => {
   const navigate = useNavigate();
-  const { lender, logout } = useLender();
+  const { lender, loading: contextLoading, logout } = useLender();
   const [stats, setStats] = useState({
     totalApplications: 0,
     pendingApplications: 0,
@@ -19,13 +19,14 @@ const LenderDashboard = () => {
   const [recentApplications, setRecentApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+    useEffect(() => {
+    if (loading) return;          
     if (!lender) {
       navigate('/lender/login');
       return;
     }
     fetchDashboardData();
-  }, [lender, navigate]);
+  }, [lender, loading, navigate]);
 
   const fetchDashboardData = async () => {
     try {
