@@ -2,41 +2,54 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
-const ResetPassword = () => {
+const ResetPassword = ({
+  userType: userTypeProp,
+  loginPath: loginPathProp,
+  forgotPath: forgotPathProp,
+  themeColor = '#e53935',
+}) => {
   const navigate = useNavigate();
   const [otp, setOtp] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [step, setStep] = useState('otp'); // 'otp' | 'password' | 'done'
+  const [step, setStep] = useState('otp');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  const storedContact = sessionStorage.getItem('resetContact') || '';
+  const storedUserType = sessionStorage.getItem('resetUserType') || '';
+  const storedLoginPath = sessionStorage.getItem('resetLoginPath') || '';
+
+  const userType = storedUserType || userTypeProp || 'patient';
+  const loginPath = storedLoginPath || loginPathProp || '/login';
+  const forgotPath = forgotPathProp || '/forgot-password';
+
   useEffect(() => {
-    const contact = sessionStorage.getItem('resetContact');
-    if (!contact) {
-      navigate('/forgot-password');
+    if (!storedContact) {
+      navigate(forgotPath);
     }
-  }, [navigate]);
+  }, [storedContact, navigate, forgotPath]);
 
   const getContactBody = () => {
-    const contact = sessionStorage.getItem('resetContact') || '';
-    const isEmail = contact.includes('@');
+    const isEmail = storedContact.includes('@');
     return isEmail
-      ? { email: contact.toLowerCase().trim() }
-      : { phone: contact.trim() };
+      ? { email: storedContact.toLowerCase().trim() }
+      : { phone: storedContact.trim() };
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      const body = { ...getContactBody(), otp: otp.trim() };
+      const body = {
+        ...getContactBody(),
+        otp: otp.trim(),
+        userType,
+      };
       const res = await api.post('/auth/verify-reset-otp', body);
-
       if (res.data.success) {
         setResetToken(res.data.resetToken);
         setStep('password');
@@ -54,23 +67,19 @@ const ResetPassword = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError('');
-
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-
     setLoading(true);
     try {
-      const res = await api.post('/auth/reset-password', {
-        resetToken,
-        newPassword
-      });
-
+      const res = await api.post('/auth/reset-password', { resetToken, newPassword });
       if (res.data.success) {
         setStep('done');
         sessionStorage.removeItem('resetContact');
-        setTimeout(() => navigate('/login'), 2500);
+        sessionStorage.removeItem('resetUserType');
+        sessionStorage.removeItem('resetLoginPath');
+        setTimeout(() => navigate(loginPath), 2500);
       } else {
         setError(res.data.message || 'Failed to reset password');
       }
@@ -82,9 +91,9 @@ const ResetPassword = () => {
   };
 
   return (
-    <div style={s.page}>
+    <div style={{ ...s.page, background: `linear-gradient(135deg, ${themeColor}, #b71c1c)` }}>
       <div style={s.card}>
-        <button onClick={() => navigate('/login')} style={s.back}>← Back to Login</button>
+        <button onClick={() => navigate(loginPath)} style={s.back}>← Back to Login</button>
 
         <div style={s.logo}>
           <span style={{ fontSize: '3rem' }}>{step === 'done' ? '✅' : '🔐'}</span>
@@ -118,7 +127,11 @@ const ResetPassword = () => {
                 required
               />
             </div>
-            <button type="submit" disabled={loading || otp.length !== 6} style={s.btn}>
+            <button
+              type="submit"
+              disabled={loading || otp.length !== 6}
+              style={{ ...s.btn, background: themeColor }}
+            >
               {loading ? 'Verifying...' : 'Verify OTP'}
             </button>
           </form>
@@ -149,7 +162,11 @@ const ResetPassword = () => {
                 required
               />
             </div>
-            <button type="submit" disabled={loading} style={s.btn}>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ ...s.btn, background: themeColor }}
+            >
               {loading ? 'Resetting...' : 'Reset Password'}
             </button>
           </form>
@@ -160,7 +177,7 @@ const ResetPassword = () => {
             <p style={{ color: '#2e7d32', fontWeight: 600, fontSize: '1rem' }}>
               Password reset successful!
             </p>
-            <Link to="/login" style={{ color: '#e53935', fontWeight: 700 }}>
+            <Link to={loginPath} style={{ color: themeColor, fontWeight: 700 }}>
               Go to Login →
             </Link>
           </div>
@@ -171,7 +188,7 @@ const ResetPassword = () => {
 };
 
 const s = {
-  page: { minHeight: '100vh', background: 'linear-gradient(135deg, #e53935, #c62828)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'system-ui, sans-serif' },
+  page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'system-ui, sans-serif' },
   card: { width: '100%', maxWidth: '420px', background: '#fff', borderRadius: '20px', padding: '25px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
   back: { fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', marginBottom: '10px', color: '#333' },
   logo: { textAlign: 'center', marginBottom: '20px' },
@@ -179,7 +196,7 @@ const s = {
   subtitle: { margin: 0, fontSize: '0.85rem', color: '#64748b' },
   label: { display: 'block', fontSize: '13px', fontWeight: 600, color: '#555', marginBottom: '6px' },
   input: { width: '100%', padding: '13px', border: '2px solid #e0e0e0', borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' },
-  btn: { width: '100%', padding: '14px', background: '#e53935', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' },
+  btn: { width: '100%', padding: '14px', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' },
   error: { background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '8px', fontSize: '13px', marginBottom: '15px', textAlign: 'center' },
   success: { background: '#e8f5e9', color: '#2e7d32', padding: '10px', borderRadius: '8px', fontSize: '13px', marginBottom: '15px', textAlign: 'center' },
   hint: { fontSize: '12px', color: '#94a3b8', marginTop: '4px' }
