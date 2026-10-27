@@ -224,9 +224,9 @@ const MyBookings = () => {
     const insurancePoliciesData = extract(insuranceRes);
     setInsurancePolicies(insurancePoliciesData);
 
-    // Loans — real patient name from profile, honest lender fallback
+        // Loans — real patient name from profile, honest lender fallback
     const realPatientName = profileRes.status === 'fulfilled'
-      ? (profileRes.value?.data?.fullName || profileRes.value?.data?.data?.fullName || 'Patient')
+      ? (profileRes.value?.data?.data?.name || profileRes.value?.data?.data?.fullName || profileRes.value?.data?.name || profileRes.value?.data?.fullName || 'Patient')
       : 'Patient';
     const loanBookings = extract(loanRes).map(b => ({
       ...b,
