@@ -12,15 +12,16 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { patientAuth, patientLoans, patientOffers, patientAgreements } from '../services/loanApi';
 import {
-  loanProducts,
-  loanOffers,
-  loanAgreements,
-  loanDisbursements,
-  loanRepayment,
-  loanRefunds,
-} from '../services/lenderApi';
+  patientAuth,
+  patientLoans,
+  patientOffers,
+  patientAgreements,
+  patientLoanOffers,
+  patientLoanAgreements,
+  patientLoanRepayment,
+  patientLoanRefunds,
+} from '../services/loanApi';
 import api from '../services/api';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
@@ -156,18 +157,18 @@ const Financing = () => {
   }, []);
 
   const handleSelectApplication = async (application) => {
-    setSelectedApplication(application);
-    try {
-      const [offersRes, agreementsRes, refundsRes] = await Promise.all([
-        loanOffers.listByApplication(application.applicationId).catch(() => ({ data: { offers: [] } })),
-        loanAgreements.listByApplication(application.applicationId).catch(() => ({ data: { agreements: [] } })),
-        loanRefunds.listByApplication(application.applicationId).catch(() => ({ data: { refunds: [] } })),
-      ]);
-      setApplicationOffers(offersRes.data.offers || []);
-      setApplicationAgreements(agreementsRes.data.agreements || []);
-      setApplicationRefunds(refundsRes.data.refunds || []);
-    } catch (err) { /* silent */ }
-  };
+  setSelectedApplication(application);
+  try {
+    const [offersRes, agreementsRes, refundsRes] = await Promise.all([
+      patientLoanOffers.listByApplication(application.applicationId).catch(() => ({ data: { offers: [] } })),
+      patientLoanAgreements.listByApplication(application.applicationId).catch(() => ({ data: { agreements: [] } })),
+      patientLoanRefunds.listByApplication(application.applicationId).catch(() => ({ data: { refunds: [] } })),
+    ]);
+    setApplicationOffers(offersRes.data.offers || []);
+    setApplicationAgreements(agreementsRes.data.agreements || []);
+    setApplicationRefunds(refundsRes.data.refunds || []);
+  } catch (err) { /* silent */ }
+};
 
   // ============================================
   // CALCULATIONS
@@ -678,7 +679,7 @@ const Financing = () => {
                   <select onChange={async (e) => {
                     const app = myApplications.find(a => a.applicationId === e.target.value); if (!app) return;
                     setSelectedApplication(app);
-                    try { const res = await loanRepayment.getSchedule(app.applicationId); setLoanSchedule(res.data); } catch (err) { setLoanSchedule(null); alert('Failed to load schedule'); }
+                    try { const res = await patientLoanRepayment.getSchedule(app.applicationId); setLoanSchedule(res.data); } catch (err) { setLoanSchedule(null); alert('Failed to load schedule'); }
                   }} style={{ ...s.input, marginBottom: '1rem' }} defaultValue="">
                     <option value="" disabled>Select a loan</option>
                     {myApplications.filter(a => ['disbursed', 'completed'].includes(a.status)).map(app => (<option key={app.applicationId} value={app.applicationId}>{app.applicationId} — ₹{(app.sanctionedAmount || 0).toLocaleString()}</option>))}

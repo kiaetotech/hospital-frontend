@@ -149,5 +149,25 @@ export const patientAgreements = {
   sign: (agreementId, data) => axios.post(`${LOAN_V2_BASE}/agreements/${agreementId}/sign`, data, { headers: patientAuthHeader() }),
 };
 
-export default loanApi;
+// ─── Patient-scoped read endpoints (Task 18+ merge) ───
+export const patientLoanOffers = {
+  listByApplication: (applicationId) =>
+    axios.get(`${LOAN_V2_BASE}/patient/offers/${applicationId}`, { headers: patientAuthHeader() }),
+};
 
+export const patientLoanAgreements = {
+  listByApplication: (applicationId) =>
+    axios.get(`${LOAN_V2_BASE}/patient/agreements/${applicationId}`, { headers: patientAuthHeader() }),
+};
+
+export const patientLoanRepayment = {
+  getSchedule: (applicationId) =>
+    axios.get(`${LOAN_V2_BASE}/patient/repayment/${applicationId}/schedule`, { headers: patientAuthHeader() }),
+};
+
+export const patientLoanRefunds = {
+  listByApplication: (applicationId) =>
+    axios.get(`${LOAN_V2_BASE}/patient/refunds/${applicationId}`, { headers: patientAuthHeader() }),
+};
+
+export default loanApi;
