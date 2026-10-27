@@ -205,18 +205,28 @@ const MyBookings = () => {
 
     // Loans (Health EMI)
     let loanBookings = [];
-try {
-  const loanToken = localStorage.getItem('patientToken') || token;
-  const r = await axios.get(`${API}/loan/patient/applications`, {
-    headers: { Authorization: `Bearer ${loanToken}` }
-  });
+    try {
+      const loanToken = localStorage.getItem('patientToken') || token;
+      const r = await axios.get(`${API}/loan/patient/applications`, {
+        headers: { Authorization: `Bearer ${loanToken}` }
+      });
       const apps = r.data?.applications || r.data?.data || [];
-            loanBookings = apps.map(b => ({
+
+      // Fix A: fetch real patient name and use for all loan cards
+      let realPatientName = 'Patient';
+      try {
+        const pRes = await axios.get(`${API}/auth/patient/profile`, { headers });
+        realPatientName = pRes.data?.fullName || pRes.data?.data?.fullName || 'Patient';
+      } catch (e) { console.log('Profile fetch failed, using fallback'); }
+
+      loanBookings = apps.map(b => ({
         ...b,
         bookingType: 'loan',
-        patientName: b.patientDetails?.fullName || b.patientName || 'Patient',
+        patientName: realPatientName,                                   // Fix A applied
         patientPhone: b.patientDetails?.phone || b.patientPhone || '',
-        lenderName: (typeof b.lenderId === 'object' && b.lenderId?.businessName) || b.lenderName || 'Test Medical Finance',
+        lenderName: (typeof b.lenderId === 'object' && b.lenderId?.businessName)
+                    || b.lenderName
+                    || `Lender ${typeof b.lenderId === 'string' ? b.lenderId.slice(-6) : 'N/A'}`,   // Fix B applied
         appointmentDate: b.submittedAt,
         finalAmount: b.estimatedAmount,
         status: b.status,
@@ -591,6 +601,21 @@ try {
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{caregiverCount}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Caregiver</div>
             </div>
+            <div
+              onClick={() => setSelectedType('loan')}
+              style={{
+                backgroundColor: selectedType === 'loan' ? '#e9d5ff' : '#f3e8ff',
+                padding: '15px',
+                borderRadius: '10px',
+                textAlign: 'center',
+                border: selectedType === 'loan' ? '2px solid #7c3aed' : '2px solid #8b5cf6',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{ fontSize: '24px' }}>💰</div>
+              <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{loanCount}</div>
+              <div style={{ fontSize: '12px', color: '#666' }}>Loan</div>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px', flexWrap: 'wrap' }}>
@@ -647,7 +672,19 @@ try {
                 const refundInfo = getRefundInfo(booking);
                 const isCancellable = canCancel(booking);
                 return (
-                  <div key={booking._id || booking.bookingId} style={{ backgroundColor: 'white', borderRadius: '10px', padding: '15px', marginBottom: '15px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: `4px solid ${getStatusColor(booking.status)}` }}>
+                  <div
+  key={booking._id || booking.bookingId}
+  onClick={() => booking.bookingType === 'loan' && navigate('/financing#dashboard')}
+  style={{
+    backgroundColor: 'white',
+    borderRadius: '10px',
+    padding: '15px',
+    marginBottom: '15px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    borderLeft: `4px solid ${getStatusColor(booking.status)}`,
+    cursor: booking.bookingType === 'loan' ? 'pointer' : 'default',
+  }}
+>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
                       <div>
                         <span style={{ fontSize: '20px', marginRight: '8px' }}>{getBookingTypeIcon(booking.bookingType)}</span>
