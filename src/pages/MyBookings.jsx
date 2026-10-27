@@ -98,183 +98,166 @@ const MyBookings = () => {
     );
   };
 
-  const fetchBookings = async () => {
+    const fetchBookings = async () => {
     const token = localStorage.getItem('token');
     if (!token) { alert('Please login to view your bookings'); navigate('/login'); return; }
     setLoading(true);
     const headers = { Authorization: `Bearer ${token}` };
+    const loanToken = localStorage.getItem('patientToken') || token;
+
+    // Fire all 12 requests in parallel
+    const [
+      ambulanceRes, ayurvedaRes, homeopathyRes, onlineDoctorRes,
+      mentalHealthRes, hospitalRes, caregiverRes, insuranceRes,
+      loanRes, profileRes,
+      ayuComplaintRes, homeoComplaintRes
+    ] = await Promise.allSettled([
+      axios.get(`${API}/ambulance/my-bookings?limit=100&page=1`, { headers }),
+      axios.get(`${API}/ayurveda/bookings/my-bookings`, { headers }),
+      axios.get(`${API}/homeopathy/bookings/my-bookings`, { headers }),
+      axios.get(`${API}/online-doctor/my-bookings`, { headers }),
+      axios.get(`${API}/mentalhealth/my-bookings`, { headers }),
+      axios.get(`${API}/bookings/my-bookings?limit=100`, { headers }),
+      axios.get(`${API}/caregivers/my-bookings`, { headers }),
+      axios.get(`${API}/insurance/my-policies`, { headers }),
+      axios.get(`${API}/loan/patient/applications`, { headers: { Authorization: `Bearer ${loanToken}` } }),
+      axios.get(`${API}/auth/patient/profile`, { headers }),
+      axios.get(`${API}/ayurveda/bookings/complaints/my`, { headers }),
+      axios.get(`${API}/homeopathy/bookings/complaints/my`, { headers }),
+    ]);
+
+    const extract = (r, fallback = []) => {
+      if (r.status !== 'fulfilled') return fallback;
+      const d = r.value?.data;
+      return d?.data || d?.applications || d || fallback;
+    };
 
     // Ambulance
-    let ambulanceBookings = [];
-    try {
-      const r = await axios.get(`${API}/ambulance/my-bookings?limit=100&page=1`, { headers });
-      ambulanceBookings = r.data?.data || r.data || [];
-    } catch (e) { console.log('No ambulance bookings'); }
+    const ambulanceBookings = extract(ambulanceRes).map(b => ({ ...b }));
 
     // Ayurveda
-    let ayurvedaBookings = [];
-    try {
-      const r = await axios.get(`${API}/ayurveda/bookings/my-bookings`, { headers });
-      ayurvedaBookings = (r.data?.data || []).map(b => ({
-        ...b,
-        bookingType: 'ayurveda_consultation',
-        patientName: b.patient?.name || 'Patient',
-        patientPhone: b.patient?.phone || '',
-        patientAge: b.patient?.age || null,
-        patientGender: b.patient?.gender || '',
-        appointmentDate: b.bookingDate,
-        doctorName: b.type === 'panchakarma_package' ? (b.centerName || 'Center') : (b.doctorName || 'Ayurveda Doctor'),
-        finalAmount: b.finalAmount,
-        paymentStatus: b.paymentStatus,
-        status: b.status
-      }));
-    } catch (e) { console.log('No ayurveda bookings'); }
+    const ayurvedaBookings = extract(ayurvedaRes).map(b => ({
+      ...b,
+      bookingType: 'ayurveda_consultation',
+      patientName: b.patient?.name || 'Patient',
+      patientPhone: b.patient?.phone || '',
+      patientAge: b.patient?.age || null,
+      patientGender: b.patient?.gender || '',
+      appointmentDate: b.bookingDate,
+      doctorName: b.type === 'panchakarma_package' ? (b.centerName || 'Center') : (b.doctorName || 'Ayurveda Doctor'),
+      finalAmount: b.finalAmount,
+      paymentStatus: b.paymentStatus,
+      status: b.status,
+    }));
 
     // Homeopathy
-    let homeopathyBookings = [];
-    try {
-      const r = await axios.get(`${API}/homeopathy/bookings/my-bookings`, { headers });
-      homeopathyBookings = (r.data?.data || []).map(b => ({
-        ...b,
-        bookingType: 'homeopathy_consult',
-        patientName: b.patient?.name || 'Patient',
-        patientPhone: b.patient?.phone || '',
-        patientAge: b.patient?.age || null,
-        patientGender: b.patient?.gender || '',
-        appointmentDate: b.bookingDate,
-        doctorName: b.type === 'naturopathy_center' ? (b.centerName || 'Center')
-                  : b.type === 'homeopathy_medicine' ? (b.pharmacyName || 'Pharmacy')
-                  : (b.doctorName || 'Homeopathy Doctor'),
-        finalAmount: b.finalAmount,
-        paymentStatus: b.paymentStatus,
-        status: b.status
-      }));
-    } catch (e) { console.log('No homeopathy bookings'); }
+    const homeopathyBookings = extract(homeopathyRes).map(b => ({
+      ...b,
+      bookingType: 'homeopathy_consult',
+      patientName: b.patient?.name || 'Patient',
+      patientPhone: b.patient?.phone || '',
+      patientAge: b.patient?.age || null,
+      patientGender: b.patient?.gender || '',
+      appointmentDate: b.bookingDate,
+      doctorName: b.type === 'naturopathy_center' ? (b.centerName || 'Center')
+                : b.type === 'homeopathy_medicine' ? (b.pharmacyName || 'Pharmacy')
+                : (b.doctorName || 'Homeopathy Doctor'),
+      finalAmount: b.finalAmount,
+      paymentStatus: b.paymentStatus,
+      status: b.status,
+    }));
 
     // Online Doctor
-    let onlineDoctorBookings = [];
-    try {
-      const r = await axios.get(`${API}/online-doctor/my-bookings`, { headers });
-      onlineDoctorBookings = (r.data?.data || []).map(b => ({
-        ...b,
-        bookingType: 'online_doctor',
-        patientName: b.patientName || 'Patient',
-        patientPhone: b.patientPhone || '',
-        appointmentDate: b.appointmentDate,
-        doctorName: b.doctorName || 'Online Doctor',
-        finalAmount: b.finalAmount || b.amount,
-        paymentStatus: b.paymentStatus,
-        status: b.status
-      }));
-    } catch (e) { console.log('No online doctor bookings'); }
+    const onlineDoctorBookings = extract(onlineDoctorRes).map(b => ({
+      ...b,
+      bookingType: 'online_doctor',
+      patientName: b.patientName || 'Patient',
+      patientPhone: b.patientPhone || '',
+      appointmentDate: b.appointmentDate,
+      doctorName: b.doctorName || 'Online Doctor',
+      finalAmount: b.finalAmount || b.amount,
+      paymentStatus: b.paymentStatus,
+      status: b.status,
+    }));
 
     // Mental Health
-    let mentalHealthBookings = [];
-    try {
-      const r = await axios.get(`${API}/mentalhealth/my-bookings`, { headers });
-      mentalHealthBookings = (r.data?.data || []).map(b => ({
-        ...b,
-        bookingType: 'mentalhealth',
-        patientName: b.patientName || 'Patient',
-        patientPhone: b.patientPhone || '',
-        appointmentDate: b.scheduledDate,
-        doctorName: b.therapistId?.name || 'Therapist',
-        finalAmount: b.amount,
-        paymentStatus: b.paymentStatus,
-        status: b.status
-      }));
-    } catch (e) { console.log('No mental health bookings'); }
+    const mentalHealthBookings = extract(mentalHealthRes).map(b => ({
+      ...b,
+      bookingType: 'mentalhealth',
+      patientName: b.patientName || 'Patient',
+      patientPhone: b.patientPhone || '',
+      appointmentDate: b.scheduledDate,
+      doctorName: b.therapistId?.name || 'Therapist',
+      finalAmount: b.amount,
+      paymentStatus: b.paymentStatus,
+      status: b.status,
+    }));
 
-    // Hospital/Generic bookings (admission, OPD, labtest, etc.)
-    let hospitalBookings = [];
-    try {
-      const r = await axios.get(`${API}/bookings/my-bookings?limit=100`, { headers });
-      hospitalBookings = (r.data?.data || []).map(b => ({
-        ...b,
-        bookingType: b.bookingType || 'hospital',
-        patientName: b.patientName || 'Patient',
-        patientPhone: b.patientPhone || '',
-        patientAge: b.patientAge || null,
-        patientGender: b.patientGender || '',
-        appointmentDate: b.appointmentDate || b.bookingDate,
-        finalAmount: b.finalAmount || b.originalAmount,
-        paymentStatus: b.paymentStatus,
-        status: b.status,
-      }));
-    } catch (e) { console.log('No hospital/generic bookings'); }
-
-    // Loans (Health EMI)
-    let loanBookings = [];
-    try {
-      const loanToken = localStorage.getItem('patientToken') || token;
-      const r = await axios.get(`${API}/loan/patient/applications`, {
-        headers: { Authorization: `Bearer ${loanToken}` }
-      });
-      const apps = r.data?.applications || r.data?.data || [];
-
-      // Fix A: fetch real patient name and use for all loan cards
-      let realPatientName = 'Patient';
-      try {
-        const pRes = await axios.get(`${API}/auth/patient/profile`, { headers });
-        realPatientName = pRes.data?.fullName || pRes.data?.data?.fullName || 'Patient';
-      } catch (e) { console.log('Profile fetch failed, using fallback'); }
-
-      loanBookings = apps.map(b => ({
-        ...b,
-        bookingType: 'loan',
-        patientName: realPatientName,                                   // Fix A applied
-        patientPhone: b.patientDetails?.phone || b.patientPhone || '',
-        lenderName: (typeof b.lenderId === 'object' && b.lenderId?.businessName)
-                    || b.lenderName
-                    || `Lender ${typeof b.lenderId === 'string' ? b.lenderId.slice(-6) : 'N/A'}`,   // Fix B applied
-        appointmentDate: b.submittedAt,
-        finalAmount: b.estimatedAmount,
-        status: b.status,
-      }));
-    } catch (e) { console.log('No loan applications'); }
+    // Hospital / generic
+    const hospitalBookings = extract(hospitalRes).map(b => ({
+      ...b,
+      bookingType: b.bookingType || 'hospital',
+      patientName: b.patientName || 'Patient',
+      patientPhone: b.patientPhone || '',
+      patientAge: b.patientAge || null,
+      patientGender: b.patientGender || '',
+      appointmentDate: b.appointmentDate || b.bookingDate,
+      finalAmount: b.finalAmount || b.originalAmount,
+      paymentStatus: b.paymentStatus,
+      status: b.status,
+    }));
 
     // Caregiver
-    let caregiverBookings = [];
-    try {
-      const r = await axios.get(`${API}/caregivers/my-bookings`, { headers });
-      caregiverBookings = (r.data?.data || []).map(b => ({
-        ...b,
-        bookingType: 'caregiver',
-        patientName: b.patientName || 'Patient',
-        patientPhone: b.patientPhone || '',
-        appointmentDate: b.date || b.startDate,
-        doctorName: b.caregiverId?.fullName || 'Caregiver',
-        finalAmount: b.totalAmount,
-        paymentStatus: b.paymentStatus,
-        status: b.status
-      }));
-        } catch (e) { console.log('No caregiver bookings'); }
+    const caregiverBookings = extract(caregiverRes).map(b => ({
+      ...b,
+      bookingType: 'caregiver',
+      patientName: b.patientName || 'Patient',
+      patientPhone: b.patientPhone || '',
+      appointmentDate: b.date || b.startDate,
+      doctorName: b.caregiverId?.fullName || 'Caregiver',
+      finalAmount: b.totalAmount,
+      paymentStatus: b.paymentStatus,
+      status: b.status,
+    }));
 
-    // Insurance Policies
-    let insurancePoliciesData = [];
-    try {
-      const r = await axios.get(`${API}/insurance/my-policies`, { headers });
-      insurancePoliciesData = r.data?.data || [];
-    } catch (e) { console.log('No insurance policies'); }
+    // Insurance
+    const insurancePoliciesData = extract(insuranceRes);
     setInsurancePolicies(insurancePoliciesData);
 
-            setBookings([
+    // Loans — real patient name from profile, honest lender fallback
+    const realPatientName = profileRes.status === 'fulfilled'
+      ? (profileRes.value?.data?.fullName || profileRes.value?.data?.data?.fullName || 'Patient')
+      : 'Patient';
+    const loanBookings = extract(loanRes).map(b => ({
+      ...b,
+      bookingType: 'loan',
+      patientName: realPatientName,
+      patientPhone: b.patientDetails?.phone || b.patientPhone || '',
+      lenderName: (typeof b.lenderId === 'object' && b.lenderId?.businessName)
+                  || b.lenderName
+                  || `Lender ${typeof b.lenderId === 'string' ? b.lenderId.slice(-6) : 'N/A'}`,
+      appointmentDate: b.submittedAt,
+      finalAmount: b.estimatedAmount,
+      status: b.status,
+    }));
+
+    // Merge into one list — all appear together
+    setBookings([
       ...ambulanceBookings, ...ayurvedaBookings, ...homeopathyBookings,
       ...onlineDoctorBookings, ...mentalHealthBookings, ...caregiverBookings,
-      ...hospitalBookings, ...loanBookings
+      ...hospitalBookings, ...loanBookings,
     ]);
     setSearched(true);
 
-    try {
-      const [ayuC, homeoC] = await Promise.allSettled([
-        axios.get(`${API}/ayurveda/bookings/complaints/my`, { headers }),
-        axios.get(`${API}/homeopathy/bookings/complaints/my`, { headers })
-      ]);
-      const all = [];
-      if (ayuC.status === 'fulfilled' && ayuC.value.data.success) all.push(...(ayuC.value.data.data || []));
-      if (homeoC.status === 'fulfilled' && homeoC.value.data.success) all.push(...(homeoC.value.data.data || []));
-      setMyComplaints(all);
-    } catch (e) { /* silent */ }
+    // Complaints — already resolved by Promise.allSettled
+    const allComplaints = [];
+    if (ayuComplaintRes.status === 'fulfilled' && ayuComplaintRes.value.data?.success) {
+      allComplaints.push(...(ayuComplaintRes.value.data.data || []));
+    }
+    if (homeoComplaintRes.status === 'fulfilled' && homeoComplaintRes.value.data?.success) {
+      allComplaints.push(...(homeoComplaintRes.value.data.data || []));
+    }
+    setMyComplaints(allComplaints);
 
     setLoading(false);
   };
@@ -601,22 +584,26 @@ const MyBookings = () => {
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{caregiverCount}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Caregiver</div>
             </div>
-            <div
-              onClick={() => setSelectedType('loan')}
-              style={{
-                backgroundColor: selectedType === 'loan' ? '#e9d5ff' : '#f3e8ff',
-                padding: '15px',
-                borderRadius: '10px',
-                textAlign: 'center',
-                border: selectedType === 'loan' ? '2px solid #7c3aed' : '2px solid #8b5cf6',
-                cursor: 'pointer'
-              }}
-            >
-              <div style={{ fontSize: '24px' }}>💰</div>
-              <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{loanCount}</div>
-              <div style={{ fontSize: '12px', color: '#666' }}>Loan</div>
-            </div>
-          </div>
+            <button
+  type="button"
+  onClick={() => setSelectedType('loan')}
+  style={{
+    backgroundColor: selectedType === 'loan' ? '#e9d5ff' : '#f3e8ff',
+    padding: '15px',
+    borderRadius: '10px',
+    textAlign: 'center',
+    border: selectedType === 'loan' ? '2px solid #7c3aed' : '2px solid #8b5cf6',
+    cursor: 'pointer',
+    display: 'block',
+    width: '100%',
+    fontFamily: 'inherit',
+  }}
+>
+  <div style={{ fontSize: '24px' }}>💰</div>
+  <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{loanCount}</div>
+  <div style={{ fontSize: '12px', color: '#666' }}>Loan</div>
+</button>
+	</div>
 
           <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px', flexWrap: 'wrap' }}>
             <button onClick={() => setSelectedType('all')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'all' ? '#3b82f6' : 'transparent', color: selectedType === 'all' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>All ({bookings.length + totalInsurancePolicies})</button>
