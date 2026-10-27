@@ -127,7 +127,8 @@ export const lenderDashboard = {
 const LOAN_V2_BASE = `${API_URL}/api/loan/v2`;
 
 const patientAuthHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem('token')}`,
+  
+Authorization: `Bearer ${localStorage.getItem('patientToken')}`,
 });
 
 // ─── Patient-facing products (browse) ───
