@@ -205,8 +205,11 @@ const MyBookings = () => {
 
     // Loans (Health EMI)
     let loanBookings = [];
-    try {
-      const r = await axios.get(`${API}/loan/patient/applications`, { headers });
+try {
+  const loanToken = localStorage.getItem('patientToken') || token;
+  const r = await axios.get(`${API}/loan/patient/applications`, {
+    headers: { Authorization: `Bearer ${loanToken}` }
+  });
       const apps = r.data?.applications || r.data?.data || [];
       loanBookings = apps.map(b => ({
         ...b,
