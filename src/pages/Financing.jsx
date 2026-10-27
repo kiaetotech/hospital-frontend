@@ -32,8 +32,13 @@ const Financing = () => {
   // ============================================
   // TOP-LEVEL VIEW STATE
   // ============================================
-  const [view, setView] = useState('wizard'); // 'wizard' | 'dashboard'
-  const [step, setStep] = useState(1);        // 1-5 for wizard
+  const [view, setView] = useState(
+    window.location.hash === '#dashboard' ? 'dashboard' : 'wizard'
+  ); // 'wizard' | 'dashboard' — restored from URL hash on F5
+  const [step, setStep] = useState(() => {
+    const saved = parseInt(localStorage.getItem('financingStep') || '1', 10);
+    return saved >= 1 && saved <= 5 ? saved : 1;
+  }); // 1-5 for wizard — restored from localStorage on F5
   const [activeTab, setActiveTab] = useState('applications');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -108,6 +113,20 @@ const Financing = () => {
     const savedNotifications = localStorage.getItem('notificationLog');
     if (savedNotifications) setNotificationLog(JSON.parse(savedNotifications));
   }, []);
+
+  // Persist view to URL hash so F5 keeps the same page (dashboard vs wizard)
+  useEffect(() => {
+    window.location.hash = view === 'dashboard' ? '#dashboard' : '';
+  }, [view]);
+
+  // Persist wizard step so F5 during wizard restores the same step
+  useEffect(() => {
+    if (view === 'wizard') {
+      localStorage.setItem('financingStep', String(step));
+    } else {
+      localStorage.removeItem('financingStep');
+    }
+  }, [step, view]);
 
   // ============================================
   // WIZARD FETCHERS
