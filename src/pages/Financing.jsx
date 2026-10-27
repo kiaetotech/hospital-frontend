@@ -284,13 +284,13 @@ const Financing = () => {
   };
 
   const handleLocationSubmit = async (e) => {
-    e.preventDefault();
-    if (!userPincode || userPincode.length !== 6) { alert('Enter valid 6-digit pincode'); return; }
-    setLoading(true);
-    try { await fetchLendersFromAPI(userPincode, userCity, userDistrict, userState); setStep(2); }
-    catch (error) { console.error('Location error:', error); setStep(2); }
-    finally { setLoading(false); }
-  };
+  e.preventDefault();
+  if (!userPincode || userPincode.length !== 6) { alert('Enter valid 6-digit pincode'); return; }
+  setLoading(true);
+  try { await fetchLendersFromAPI(userPincode, userCity, userDistrict, userState); setStep(isLoggedIn ? 3 : 2); }
+  catch (error) { console.error('Location error:', error); setStep(isLoggedIn ? 3 : 2); }
+  finally { setLoading(false); }
+};
 
   const handleCostSubmit = (e) => {
     e.preventDefault();
@@ -819,7 +819,7 @@ const Financing = () => {
             <div style={{ marginBottom: '14px' }}><label style={s.label}>PIN Code *</label><input type="text" value={userPincode} onChange={e => setUserPincode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="Enter 6-digit pincode" style={s.input} /></div>
             <div style={{ marginBottom: '14px' }}><label style={s.label}>City</label><input type="text" value={userCity} onChange={e => setUserCity(e.target.value)} placeholder="Your city" style={s.input} /></div>
             <button onClick={handleLocationSubmit} disabled={loading} style={s.btn('linear-gradient(135deg, #8b5cf6, #7c3aed)')}>{loading ? 'Finding lenders...' : 'Find Lenders →'}</button>
-            <button onClick={() => { fetchLendersFromAPI('', '', '', ''); setStep(2); }} style={{ ...s.btn('transparent'), color: '#8b5cf6', marginTop: '8px', fontWeight: 600, fontSize: '13px' }}>Skip (Show all lenders)</button>
+            <button onClick={() => { fetchLendersFromAPI('', '', '', ''); setStep(isLoggedIn ? 3 : 2); }} style={{ ...s.btn('transparent'), color: '#8b5cf6', marginTop: '8px', fontWeight: 600, fontSize: '13px' }}>Skip (Show all lenders)</button>
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px' }}>
             <Link to="/lender/register" style={{ padding: '10px 20px', background: '#10b981', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '13px' }}>🏦 Register as Lender</Link>
