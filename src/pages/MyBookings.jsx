@@ -211,11 +211,12 @@ try {
     headers: { Authorization: `Bearer ${loanToken}` }
   });
       const apps = r.data?.applications || r.data?.data || [];
-      loanBookings = apps.map(b => ({
+            loanBookings = apps.map(b => ({
         ...b,
         bookingType: 'loan',
-        patientName: b.patientName || 'Patient',
-        patientPhone: b.patientPhone || '',
+        patientName: b.patientDetails?.fullName || b.patientName || 'Patient',
+        patientPhone: b.patientDetails?.phone || b.patientPhone || '',
+        lenderName: (typeof b.lenderId === 'object' && b.lenderId?.businessName) || b.lenderName || 'Test Medical Finance',
         appointmentDate: b.submittedAt,
         finalAmount: b.estimatedAmount,
         status: b.status,
@@ -763,7 +764,7 @@ try {
                       ) : booking.bookingType === 'loan' ? (
                         <>
                           <p><strong>💰 Loan Type:</strong> {booking.treatmentType || 'Medical Loan'}</p>
-                          <p><strong>🏦 Lender:</strong> {booking.lenderId?.businessName || 'Lender'}</p>
+                          <p><strong>🏦 Lender:</strong> {booking.lenderName || 'Lender'}</p>
                           <p><strong>🏥 Hospital:</strong> {booking.hospitalName || 'N/A'}</p>
                           <p><strong>💵 Estimated:</strong> ₹{(booking.estimatedAmount || 0).toLocaleString()}</p>
                           {booking.sanctionedAmount > 0 && <p><strong>✅ Sanctioned:</strong> ₹{booking.sanctionedAmount.toLocaleString()}</p>}
