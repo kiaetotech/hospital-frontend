@@ -203,6 +203,22 @@ const MyBookings = () => {
       }));
     } catch (e) { console.log('No hospital/generic bookings'); }
 
+    // Loans (Health EMI)
+    let loanBookings = [];
+    try {
+      const r = await axios.get(`${API}/loan/patient/applications`, { headers });
+      const apps = r.data?.applications || r.data?.data || [];
+      loanBookings = apps.map(b => ({
+        ...b,
+        bookingType: 'loan',
+        patientName: b.patientName || 'Patient',
+        patientPhone: b.patientPhone || '',
+        appointmentDate: b.submittedAt,
+        finalAmount: b.estimatedAmount,
+        status: b.status,
+      }));
+    } catch (e) { console.log('No loan applications'); }
+
     // Caregiver
     let caregiverBookings = [];
     try {
@@ -228,10 +244,10 @@ const MyBookings = () => {
     } catch (e) { console.log('No insurance policies'); }
     setInsurancePolicies(insurancePoliciesData);
 
-        setBookings([
+            setBookings([
       ...ambulanceBookings, ...ayurvedaBookings, ...homeopathyBookings,
       ...onlineDoctorBookings, ...mentalHealthBookings, ...caregiverBookings,
-      ...hospitalBookings
+      ...hospitalBookings, ...loanBookings
     ]);
     setSearched(true);
 
@@ -413,21 +429,22 @@ const MyBookings = () => {
     return map[status] || status;
   };
 
-  const getBookingTypeIcon = (type) => {
+    const getBookingTypeIcon = (type) => {
     const map = {
       opd: '🏥', admission: '🛏️', ambulance: '🚑', labtest: '🔬', caregiver: '🏠',
       ayurveda_consultation: '🧘', homeopathy_consult: '🌿', homeopathy_medicine: '💊',
-      online_doctor: '🩺', mentalhealth: '🧠', insurance: '🛡️'
+      online_doctor: '🩺', mentalhealth: '🧠', insurance: '🛡️', loan: '💰'
     };
     return map[type] || '📋';
   };
 
-  const getBookingTypeLabel = (type) => {
+    const getBookingTypeLabel = (type) => {
     const map = {
       opd: 'OPD Consultation', admission: 'Hospital Admission', ambulance: 'Ambulance',
       labtest: 'Lab Test', caregiver: 'Caregiver', ayurveda_consultation: 'Ayurveda Consult',
       homeopathy_consult: 'Homeopathy Consult', homeopathy_medicine: 'Medicine Order',
-      online_doctor: 'Online Doctor', mentalhealth: 'Mental Health', insurance: 'Insurance'
+      online_doctor: 'Online Doctor', mentalhealth: 'Mental Health', insurance: 'Insurance',
+      loan: 'Health EMI Loan'
     };
     return map[type] || 'Booking';
   };
@@ -468,6 +485,7 @@ const MyBookings = () => {
   const onlineDoctorCount = bookings.filter(b => b.bookingType === 'online_doctor').length;
   const mentalHealthCount = bookings.filter(b => b.bookingType === 'mentalhealth').length;
   const caregiverCount = bookings.filter(b => b.bookingType === 'caregiver').length;
+  const loanCount = bookings.filter(b => b.bookingType === 'loan').length;
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
@@ -582,6 +600,7 @@ const MyBookings = () => {
             <button onClick={() => setSelectedType('online_doctor')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'online_doctor' ? '#2563eb' : 'transparent', color: selectedType === 'online_doctor' ? 'white' : '#333', border: selectedType === 'online_doctor' ? 'none' : '1px solid #2563eb', borderRadius: '20px', cursor: 'pointer' }}>🩺 Online Dr ({onlineDoctorCount})</button>
             <button onClick={() => setSelectedType('mentalhealth')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'mentalhealth' ? '#7c3aed' : 'transparent', color: selectedType === 'mentalhealth' ? 'white' : '#333', border: selectedType === 'mentalhealth' ? 'none' : '1px solid #7c3aed', borderRadius: '20px', cursor: 'pointer' }}>🧠 Mental Health ({mentalHealthCount})</button>
             <button onClick={() => setSelectedType('caregiver')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'caregiver' ? '#0891b2' : 'transparent', color: selectedType === 'caregiver' ? 'white' : '#333', border: selectedType === 'caregiver' ? 'none' : '1px solid #0891b2', borderRadius: '20px', cursor: 'pointer' }}>🏠 Caregiver ({caregiverCount})</button>
+            <button onClick={() => setSelectedType('loan')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'loan' ? '#8b5cf6' : 'transparent', color: selectedType === 'loan' ? 'white' : '#333', border: selectedType === 'loan' ? 'none' : '1px solid #8b5cf6', borderRadius: '20px', cursor: 'pointer' }}>💰 Loan ({loanCount})</button>
           </div>
 
           {(selectedType === 'all' || selectedType === 'insurance') && insurancePolicies.length > 0 && (
@@ -737,6 +756,15 @@ const MyBookings = () => {
                           <p><strong>🛡️ Insurance:</strong> {booking.insuranceCompanyName}</p>
                           <p><strong>📋 Plan:</strong> {booking.insurancePlanName}</p>
                           <p><strong>💰 Premium:</strong> ₹{booking.premiumAmount}</p>
+                        </>
+                      ) : booking.bookingType === 'loan' ? (
+                        <>
+                          <p><strong>💰 Loan Type:</strong> {booking.treatmentType || 'Medical Loan'}</p>
+                          <p><strong>🏦 Lender:</strong> {booking.lenderId?.businessName || 'Lender'}</p>
+                          <p><strong>🏥 Hospital:</strong> {booking.hospitalName || 'N/A'}</p>
+                          <p><strong>💵 Estimated:</strong> ₹{(booking.estimatedAmount || 0).toLocaleString()}</p>
+                          {booking.sanctionedAmount > 0 && <p><strong>✅ Sanctioned:</strong> ₹{booking.sanctionedAmount.toLocaleString()}</p>}
+                          <p><strong>📋 Application:</strong> <code>{booking.applicationId}</code></p>
                         </>
                       ) : (
                         <>
