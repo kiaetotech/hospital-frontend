@@ -148,13 +148,13 @@ const Financing = () => {
   // DASHBOARD FETCHERS
   // ============================================
   const fetchMyApplications = useCallback(async () => {
-    try {
-      const res = await api.get('/loan/patient/applications');
-      setMyApplications(res.data.applications || []);
-    } catch (err) {
-      setError('Failed to load applications: ' + (err.response?.data?.error || err.message));
-    }
-  }, []);
+  try {
+    const res = await patientLoans.getApplications();       // ← use loanApi (correct patient token)
+    setMyApplications(res.data.applications || []);
+  } catch (err) {
+    setError('Failed to load applications: ' + (err.response?.data?.error || err.message));
+  }
+}, []);
 
   const handleSelectApplication = async (application) => {
   setSelectedApplication(application);
