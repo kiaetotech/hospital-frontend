@@ -274,16 +274,30 @@ const LenderApplicationDetail = () => {
           </div>
         </div>
 
-        {/* Documents */}
+                {/* Documents */}
         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '1rem', marginBottom: '1.5rem' }}>
           <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Documents</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <p><strong>Tentative Estimate:</strong> {application.documents?.tentativeEstimate ? '✅ Uploaded' : '❌ Not Uploaded'}</p>
-            <p><strong>PAN Card:</strong> {application.documents?.panCard ? '✅ Uploaded' : '❌ Not Uploaded'}</p>
-            <p><strong>Aadhaar Card:</strong> {application.documents?.aadhaarCard ? '✅ Uploaded' : '❌ Not Uploaded'}</p>
-            <p><strong>Salary Slip:</strong> {application.documents?.salarySlip ? '✅ Uploaded' : '❌ Not Uploaded'}</p>
-            <p><strong>Bank Statement:</strong> {application.documents?.bankStatement ? '✅ Uploaded' : '❌ Not Uploaded'}</p>
-            <p><strong>Final Bill:</strong> {application.documents?.finalBill ? '✅ Uploaded' : '⏳ Pending'}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
+            {[
+              { key: 'tentativeEstimate', label: '🏥 Tentative Estimate' },
+              { key: 'panCard', label: '📇 PAN Card' },
+              { key: 'aadhaarCard', label: '🆔 Aadhaar Card' },
+              { key: 'salarySlip', label: '💰 Salary Slip' },
+              { key: 'bankStatement', label: '🏦 Bank Statement' },
+              { key: 'finalBill', label: '📄 Final Bill' },
+            ].map(({ key, label }) => {
+              const url = application.documents?.[key];
+              return (
+                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', borderBottom: '1px solid #f1f5f9' }}>
+                  <span><strong>{label}:</strong></span>
+                  {url ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 600 }}>✅ View Document ↗</a>
+                  ) : (
+                    <span style={{ color: '#ef4444' }}>❌ Not Uploaded</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 

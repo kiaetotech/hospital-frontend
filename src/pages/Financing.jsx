@@ -436,11 +436,21 @@ const Financing = () => {
         if (uploadedDocuments[docType]?.file) formDataObj.append(docType, uploadedDocuments[docType].file);
       });
 
-      if ([...formDataObj.keys()].length > 0) {
-        const token = localStorage.getItem('patientToken');
-        await fetch(`${API_URL}/api/loan/patient/applications/${applicationId}/upload-documents`, {
-          method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formDataObj,
-        });
+            if ([...formDataObj.keys()].length > 0) {
+        const token = localStorage.getItem('patientToken') || localStorage.getItem('token');
+        try {
+          const uploadRes = await fetch(`${API_URL}/api/loan/patient/applications/${applicationId}/upload-documents`, {
+            method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formDataObj,
+          });
+          if (!uploadRes.ok) {
+            const errBody = await uploadRes.json().catch(() => ({}));
+            console.error('[upload] Failed:', uploadRes.status, errBody);
+            alert(`⚠️ Application submitted (${applicationId}) but documents failed: ${errBody.error || uploadRes.status}. Re-upload from the application detail page.`);
+          }
+        } catch (uploadErr) {
+          console.error('[upload] Network error:', uploadErr);
+          alert(`⚠️ Application submitted but documents could not be uploaded. Re-upload from the application detail page.`);
+        }
       }
 
       const lenderName = formData.selectedLender.businessName || formData.selectedLender.name || 'Lender';
