@@ -105,10 +105,10 @@ export const loanOffers = {
 export const loanAgreements = {
   listByApplication: (applicationId) => axios.get(`${LOAN_V2_BASE}/agreements/${applicationId}`, { headers: authHeader() }),
   initiate: (data) => axios.post(`${LOAN_V2_BASE}/agreements`, data, { headers: authHeader() }),
+  sign: (agreementId, data) => axios.post(`${LOAN_V2_BASE}/agreements/${agreementId}/sign`, data, { headers: authHeader() }),
   cancel: (agreementId, data) => axios.post(`${LOAN_V2_BASE}/agreements/${agreementId}/cancel`, data, { headers: authHeader() }),
   getPdf: (agreementId) => axios.get(`${LOAN_V2_BASE}/agreements/${agreementId}/pdf`, { headers: authHeader() }),
 };
-
 // ─── Disbursements ───
 export const loanDisbursements = {
   listByApplication: (applicationId) => axios.get(`${LOAN_V2_BASE}/disbursements/${applicationId}`, { headers: authHeader() }),
