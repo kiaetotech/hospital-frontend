@@ -49,12 +49,12 @@ const LenderApplicationDetail = () => {
   const handleAction = async () => {
     setActionLoading(true);
     try {
-            if (actionType === 'approve') {
-        // Step 1: submitted → under_review (valid backend status)
-        if (application.status === 'submitted') {
+                  if (actionType === 'approve') {
+        // Step 1: submitted OR document_pending → under_review (valid backend transition)
+        if (['submitted', 'document_pending'].includes(application.status)) {
           await lenderApplications.updateStatus(id, {
             status: 'under_review',
-            note: 'Lender initiated review'
+            note: 'Lender approved after review'
           });
         }
 
