@@ -35,10 +35,7 @@ const Financing = () => {
   const [view, setView] = useState(
     window.location.hash === '#dashboard' ? 'dashboard' : 'wizard'
   ); // 'wizard' | 'dashboard' — restored from URL hash on F5
-  const [step, setStep] = useState(() => {
-    const saved = parseInt(localStorage.getItem('financingStep') || '1', 10);
-    return saved >= 1 && saved <= 5 ? saved : 1;
-  }); // 1-5 for wizard — restored from localStorage on F5
+  const [step, setStep] = useState(1); // 1-5 for wizard — always starts fresh at step 1
   const [activeTab, setActiveTab] = useState('applications');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -144,14 +141,10 @@ const Financing = () => {
     window.location.hash = view === 'dashboard' ? '#dashboard' : '';
   }, [view]);
 
-  // Persist wizard step so F5 during wizard restores the same step
+    // Do not persist wizard step — always start at step 1 on reload.
   useEffect(() => {
-    if (view === 'wizard') {
-      localStorage.setItem('financingStep', String(step));
-    } else {
-      localStorage.removeItem('financingStep');
-    }
-  }, [step, view]);
+    localStorage.removeItem('financingStep');
+  }, [view]);
 
   // ============================================
   // WIZARD FETCHERS
