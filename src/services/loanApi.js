@@ -124,7 +124,7 @@ export const lenderDashboard = {
 // LOAN V2 API — Patient additions (Task 18)
 // ============================================
 
-const LOAN_V2_BASE = `${API_URL}/api/loan/v2`;
+const LOAN_V2_BASE = `${API_URL}/loan/v2`;
 
 const patientAuthHeader = () => {
   const token = localStorage.getItem('patientToken') || localStorage.getItem('token');
