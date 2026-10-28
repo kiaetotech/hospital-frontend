@@ -436,16 +436,18 @@ const Financing = () => {
         if (uploadedDocuments[docType]?.file) formDataObj.append(docType, uploadedDocuments[docType].file);
       });
 
-            if ([...formDataObj.keys()].length > 0) {
+                        if ([...formDataObj.keys()].length > 0) {
         const token = localStorage.getItem('patientToken') || localStorage.getItem('token');
         try {
           const uploadRes = await fetch(`${API_URL}/api/loan/patient/applications/${applicationId}/upload-documents`, {
-            method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formDataObj,
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formDataObj,
           });
           if (!uploadRes.ok) {
             const errBody = await uploadRes.json().catch(() => ({}));
             console.error('[upload] Failed:', uploadRes.status, errBody);
-            alert(`⚠️ Application submitted (${applicationId}) but documents failed: ${errBody.error || uploadRes.status}. Re-upload from the application detail page.`);
+            alert(`⚠️ Application submitted but documents failed: ${errBody.error || uploadRes.status}. Re-upload from the application detail page.`);
           }
         } catch (uploadErr) {
           console.error('[upload] Network error:', uploadErr);
@@ -615,7 +617,7 @@ const Financing = () => {
 
               {selectedApplication && (
                 <div style={s.card}>
-                  <h2 style={dash.cardTitle}>Application {selectedApplication.applicationId}<button onClick={() => setSelectedApplication(null)} style={{ ...dash.buttonSecondary, float: 'right' }}>Close</button></h2>
+                                    <h2 style={dash.cardTitle}>Application {selectedApplication.applicationId}<button onClick={() => setSelectedApplication(null)} style={{ ...dash.buttonSecondary, float: 'right' }}>Close</button></h2>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.875rem' }}>
                     <div><strong>Treatment:</strong> {selectedApplication.treatmentType || 'N/A'}</div>
                     <div><strong>Hospital:</strong> {selectedApplication.hospitalName || 'N/A'}</div>
@@ -626,6 +628,62 @@ const Financing = () => {
                     <div><strong>EMI:</strong> ₹{(selectedApplication.emi || 0).toLocaleString()}</div>
                     <div><strong>Status:</strong> <span style={dash.statusBadge(selectedApplication.status)}>{selectedApplication.status}</span></div>
                   </div>
+
+                  {/* NEW: Upload Documents when lender requested them */}
+                  {selectedApplication.status === 'document_pending' && (
+                    <div style={{ marginTop: '1rem', backgroundColor: '#fef3c7', border: '1px solid #f59e0b', padding: '1rem', borderRadius: '8px' }}>
+                      <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '8px', color: '#92400e' }}>
+                        📄 Lender has requested additional documents
+                      </p>
+                      {(selectedApplication.lenderRequests || []).filter(r => r.status === 'pending').map(req => (
+                        <div key={req.requestId} style={{ fontSize: '13px', marginBottom: '8px', color: '#92400e' }}>
+                          → {req.description} <span style={{ color: '#6b7280' }}>(requested {new Date(req.requestedAt).toLocaleDateString()})</span>
+                        </div>
+                      ))}
+                      {['tentativeEstimate', 'panCard', 'aadhaarCard', 'salarySlip', 'bankStatement'].map(docType => (
+                        <div key={docType} style={{ marginBottom: '8px', backgroundColor: 'white', padding: '8px', borderRadius: '6px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                            {docType === 'tentativeEstimate' && '🏥 Tentative Estimate'}
+                            {docType === 'panCard' && '📇 PAN Card'}
+                            {docType === 'aadhaarCard' && '🆔 Aadhaar Card'}
+                            {docType === 'salarySlip' && '💰 Salary Slip'}
+                            {docType === 'bankStatement' && '🏦 Bank Statement'}
+                          </label>
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.png"
+                            style={{ fontSize: '12px' }}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const t = localStorage.getItem('patientToken') || localStorage.getItem('token');
+                              const fd = new FormData();
+                              fd.append(docType, file);
+                              try {
+                                const r = await fetch(`${API_URL}/api/loan/patient/applications/${selectedApplication.applicationId}/upload-documents`, {
+                                  method: 'POST',
+                                  headers: { Authorization: `Bearer ${t}` },
+                                  body: fd
+                                });
+                                if (r.ok) {
+                                  alert(`✅ ${docType} uploaded`);
+                                  await fetchMyApplications();
+                                  const refreshed = (await patientLoans.getApplications()).data.applications?.find(a => a.applicationId === selectedApplication.applicationId);
+                                  if (refreshed) setSelectedApplication(refreshed);
+                                } else {
+                                  const err = await r.json().catch(() => ({}));
+                                  alert('Upload failed: ' + (err.error || r.status));
+                                }
+                              } catch (err) {
+                                alert('Upload failed: ' + err.message);
+                              }
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {selectedApplication.status === 'approved' && !selectedApplication.finalBillAmount && (
                     <div style={{ marginTop: '1rem', backgroundColor: '#fef3c7', padding: '1rem', borderRadius: '8px' }}>
                       <p style={{ fontWeight: 600, fontSize: '13px', marginBottom: '8px' }}>🏥 Upload Final Hospital Bill</p>
