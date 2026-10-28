@@ -114,6 +114,31 @@ const Financing = () => {
     if (savedNotifications) setNotificationLog(JSON.parse(savedNotifications));
   }, []);
 
+  // Fetch offers/agreements/refunds when tab + app are selected
+  useEffect(() => {
+    if (activeTab === 'offers' && selectedApplication?.applicationId) {
+      patientLoanOffers.listByApplication(selectedApplication.applicationId)
+        .then(res => setApplicationOffers(res.data?.offers || []))
+        .catch(err => console.error('[offers]', err.message));
+    }
+  }, [activeTab, selectedApplication]);
+
+  useEffect(() => {
+    if (activeTab === 'agreements' && selectedApplication?.applicationId) {
+      patientLoanAgreements.listByApplication(selectedApplication.applicationId)
+        .then(res => setApplicationAgreements(res.data?.agreements || []))
+        .catch(err => console.error('[agreements]', err.message));
+    }
+  }, [activeTab, selectedApplication]);
+
+  useEffect(() => {
+    if (activeTab === 'refunds' && selectedApplication?.applicationId) {
+      patientLoanRefunds.listByApplication(selectedApplication.applicationId)
+        .then(res => setApplicationRefunds(res.data?.refunds || []))
+        .catch(err => console.error('[refunds]', err.message));
+    }
+  }, [activeTab, selectedApplication]);
+
   // Persist view to URL hash so F5 keeps the same page (dashboard vs wizard)
   useEffect(() => {
     window.location.hash = view === 'dashboard' ? '#dashboard' : '';
