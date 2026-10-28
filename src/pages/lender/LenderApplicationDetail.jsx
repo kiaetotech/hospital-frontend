@@ -49,15 +49,27 @@ const LenderApplicationDetail = () => {
   const handleAction = async () => {
     setActionLoading(true);
     try {
-      if (actionType === 'approve') {
-        await lenderApplications.updateStatus(id, {
-          status: 'approved',
+            if (actionType === 'approve') {
+        // Step 1: submitted → under_review (valid backend status)
+        if (application.status === 'submitted') {
+          await lenderApplications.updateStatus(id, {
+            status: 'under_review',
+            note: 'Lender initiated review'
+          });
+        }
+
+        // Step 2: issue offer — this creates the offer and transitions status to offer_issued
+        const { loanOffers } = await import('../../services/lenderApi');
+        await loanOffers.issue({
+          applicationId: id,
           sanctionedAmount: actionData.amount || application.estimatedAmount,
-          tenure: actionData.tenure || 12,
-          interestRate: actionData.rate || 10,
-          note: actionData.note || 'Approved by lender'
+          tenureMonths: actionData.tenure || application.tenure || 12,
+          interestRate: actionData.rate || application.interestRate || 10,
+          validUntilDays: 7,
+          notes: actionData.note || 'Offer issued by lender'
         });
-        alert('✅ Loan approved successfully!');
+
+        alert('✅ Offer issued successfully! Patient can now accept it.');
       } else if (actionType === 'reject') {
         await lenderApplications.updateStatus(id, {
           status: 'rejected',
