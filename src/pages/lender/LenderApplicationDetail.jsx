@@ -82,7 +82,7 @@ const LenderApplicationDetail = () => {
           description: actionData.description
         });
         alert('📄 Document request sent to patient.');
-            } else if (actionType === 'disburse') {
+                        } else if (actionType === 'disburse') {
         if (!actionData.utrNumber || actionData.utrNumber.trim().length < 8) {
           alert('UTR number is required (min 8 characters). Ask the bank for the actual UTR.');
           setActionLoading(false);
@@ -93,6 +93,47 @@ const LenderApplicationDetail = () => {
           utrNumber: actionData.utrNumber.trim()
         });
         alert('💰 Loan disbursed successfully!');
+      } else if (actionType === 'initiate_agreement') {
+        const { loanAgreements } = await import('../../services/lenderApi');
+        const res = await loanAgreements.initiate({
+          applicationId: id,
+          offerId: actionData.offerId,
+          esignProvider: 'manual',
+        });
+        alert(`✅ Agreement initiated: ${res.data.agreementId}\n\nPatient can now sign from their Agreements tab.`);
+      } else if (actionType === 'sign_agreement') {
+        const { loanAgreements } = await import('../../services/lenderApi');
+        const res = await loanAgreements.sign(actionData.agreementId, {
+          signerRole: 'lender',
+          signatoryName: actionData.signatoryName || 'Lender',
+        });
+        if (res.data.bothPartiesSigned) {
+          alert('✅ Both parties signed! Ready for disbursement.');
+        } else {
+          alert('✅ Lender signature recorded. Waiting for patient to sign.');
+        }
+      } else if (actionType === 'initiate_disbursement') {
+        const { loanDisbursements } = await import('../../services/lenderApi');
+        const utr = actionData.utrNumber;
+        if (!utr || utr.trim().length < 6) {
+          alert('UTR number required (min 6 chars)');
+          setActionLoading(false);
+          return;
+        }
+        const res = await loanDisbursements.initiate({
+          applicationId: id,
+          agreementId: actionData.agreementId,
+          amount: actionData.amount || application.sanctionedAmount,
+          mode: 'neft',
+          utrNumber: utr.trim(),
+          beneficiaryType: 'hospital',
+          beneficiaryName: application.hospitalName || 'Hospital',
+        });
+        const disbursementId = res.data.disbursementId;
+        const confirmRes = await loanDisbursements.confirm(disbursementId, {
+          bankReference: actionData.bankReference || `REF_${Date.now()}`,
+        });
+        alert(`💰 Disbursement confirmed!\nAmount: ₹${(actionData.amount || application.sanctionedAmount).toLocaleString()}\nCommission: ₹${confirmRes.data.commission?.commissionAmount || 0}`);
       }
       setShowActionModal(false);
       fetchApplication();
@@ -246,37 +287,96 @@ const LenderApplicationDetail = () => {
           </div>
         </div>
 
-        {/* Actions */}
-        {application.status !== 'rejected' && application.status !== 'disbursed' && (
+                {/* Actions */}
+        {!['rejected', 'disbursed', 'cancelled'].includes(application.status) && (
           <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '1rem' }}>
             <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Actions</h3>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => openActionModal('approve', { amount: application.estimatedAmount, tenure: 12, rate: 10 })}
-                style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-              >
-                ✅ Approve
-              </button>
-              <button
-                onClick={() => openActionModal('reject', {})}
-                style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-              >
-                ❌ Reject
-              </button>
-              <button
-                onClick={() => openActionModal('document', {})}
-                style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
-              >
-                📄 Request Documents
-              </button>
-              {application.status === 'approved' && application.documents?.finalBill && (
+
+              {/* Phase 1: Approve / Reject / Request Documents */}
+              {['submitted', 'under_review', 'document_pending'].includes(application.status) && (
+                <>
+                  <button
+                    onClick={() => openActionModal('approve', { amount: application.estimatedAmount, tenure: application.tenure || 12, rate: application.interestRate || 10 })}
+                    style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+                  >
+                    ✅ Approve & Issue Offer
+                  </button>
+                  <button
+                    onClick={() => openActionModal('reject', {})}
+                    style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+                  >
+                    ❌ Reject
+                  </button>
+                  <button
+                    onClick={() => openActionModal('document', {})}
+                    style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+                  >
+                    📄 Request Documents
+                  </button>
+                </>
+              )}
+
+              {/* Phase 2: Initiate Agreement (after patient accepts offer) */}
+              {application.status === 'offer_accepted' && (
                 <button
-                  onClick={() => openActionModal('disburse', {})}
-                  style={{ backgroundColor: '#06b6d4', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+                  onClick={async () => {
+                    try {
+                      const { loanOffers } = await import('../../services/lenderApi');
+                      const res = await loanOffers.listByApplication(id);
+                      const acceptedOffer = res.data.offers?.find(o => o.status === 'accepted');
+                      if (!acceptedOffer) { alert('No accepted offer found. Refresh the page.'); return; }
+                      openActionModal('initiate_agreement', { offerId: acceptedOffer.offerId });
+                    } catch (err) {
+                      alert('Failed to fetch offer: ' + (err.response?.data?.error || err.message));
+                    }
+                  }}
+                  style={{ backgroundColor: '#a855f7', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
                 >
-                  💰 Disburse
+                  ✍️ Initiate Agreement
                 </button>
               )}
+
+              {/* Phase 3: Sign Agreement (after agreement initiated) */}
+              {application.status === 'agreement_pending' && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const { loanAgreements } = await import('../../services/lenderApi');
+                      const res = await loanAgreements.listByApplication(id);
+                      const activeAgreement = res.data.agreements?.find(a => ['pending', 'initiated'].includes(a.status));
+                      if (!activeAgreement) { alert('No active agreement found. Refresh page.'); return; }
+                      openActionModal('sign_agreement', { agreementId: activeAgreement.agreementId, signatoryName: 'Lender' });
+                    } catch (err) {
+                      alert('Failed to fetch agreement: ' + (err.response?.data?.error || err.message));
+                    }
+                  }}
+                  style={{ backgroundColor: '#7c3aed', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+                >
+                  ✍️ Sign Agreement
+                </button>
+              )}
+
+              {/* Phase 4: Disburse (after both signed) */}
+              {application.status === 'agreement_signed' && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const { loanAgreements } = await import('../../services/lenderApi');
+                      const res = await loanAgreements.listByApplication(id);
+                      const signedAgreement = res.data.agreements?.find(a => a.status === 'signed');
+                      if (!signedAgreement) { alert('No signed agreement found. Refresh page.'); return; }
+                      openActionModal('initiate_disbursement', { agreementId: signedAgreement.agreementId, amount: application.sanctionedAmount });
+                    } catch (err) {
+                      alert('Failed to fetch agreement: ' + (err.response?.data?.error || err.message));
+                    }
+                  }}
+                  style={{ backgroundColor: '#06b6d4', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+                >
+                  💰 Disburse Loan
+                </button>
+              )}
+
             </div>
           </div>
         )}
@@ -286,11 +386,14 @@ const LenderApplicationDetail = () => {
       {showActionModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', maxWidth: '500px', width: '90%' }}>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>
-              {actionType === 'approve' && 'Approve Loan'}
+                        <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>
+              {actionType === 'approve' && 'Approve & Issue Offer'}
               {actionType === 'reject' && 'Reject Loan'}
               {actionType === 'document' && 'Request Documents'}
-              {actionType === 'disburse' && 'Disburse Loan'}
+              {actionType === 'disburse' && 'Disburse Loan (Legacy)'}
+              {actionType === 'initiate_agreement' && 'Initiate Agreement'}
+              {actionType === 'sign_agreement' && 'Sign Agreement as Lender'}
+              {actionType === 'initiate_disbursement' && 'Disburse Loan'}
             </h3>
             
             {actionType === 'approve' && (
@@ -342,7 +445,7 @@ const LenderApplicationDetail = () => {
               </>
             )}
             
-            {actionType === 'disburse' && (
+                        {actionType === 'disburse' && (
               <>
                 <div style={{ marginBottom: '0.75rem' }}>
                   <label>Disbursal Amount (₹)</label>
@@ -351,6 +454,67 @@ const LenderApplicationDetail = () => {
                 <div style={{ marginBottom: '0.75rem' }}>
                   <label>UTR Number</label>
                   <input type="text" value={actionData.utrNumber || ''} onChange={(e) => setActionData({...actionData, utrNumber: e.target.value})} style={{ width: '100%', padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }} />
+                </div>
+              </>
+            )}
+
+            {actionType === 'initiate_agreement' && (
+              <div style={{ marginBottom: '0.75rem' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem', lineHeight: '1.5' }}>
+                  This will create a loan agreement for <strong>offer {actionData.offerId}</strong>.
+                  <br /><br />
+                  After creating it, the patient must sign from their <strong>Agreements</strong> tab, then you sign here.
+                </p>
+              </div>
+            )}
+
+            {actionType === 'sign_agreement' && (
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label>Your Name (as signatory)</label>
+                <input
+                  type="text"
+                  value={actionData.signatoryName || 'Lender'}
+                  onChange={(e) => setActionData({...actionData, signatoryName: e.target.value})}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+                />
+                <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  Agreement ID: {actionData.agreementId}
+                </p>
+              </div>
+            )}
+
+            {actionType === 'initiate_disbursement' && (
+              <>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label>Amount (₹)</label>
+                  <input
+                    type="number"
+                    value={actionData.amount || application.sanctionedAmount || ''}
+                    onChange={(e) => setActionData({...actionData, amount: parseFloat(e.target.value)})}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+                  />
+                </div>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label>UTR Number (from bank transfer) *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. HDFC123456789"
+                    value={actionData.utrNumber || ''}
+                    onChange={(e) => setActionData({...actionData, utrNumber: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+                  />
+                  <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    The real UTR from your bank — used to prevent duplicate disbursements.
+                  </p>
+                </div>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label>Bank Reference (optional)</label>
+                  <input
+                    type="text"
+                    value={actionData.bankReference || ''}
+                    onChange={(e) => setActionData({...actionData, bankReference: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+                  />
                 </div>
               </>
             )}
