@@ -10,7 +10,7 @@ const loanApi = axios.create({
 
 // Add token to requests
 loanApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('patientToken');
+  const token = localStorage.getItem('patientToken') || localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -126,10 +126,10 @@ export const lenderDashboard = {
 
 const LOAN_V2_BASE = `${API_URL}/api/loan/v2`;
 
-const patientAuthHeader = () => ({
-  
-Authorization: `Bearer ${localStorage.getItem('patientToken')}`,
-});
+const patientAuthHeader = () => {
+  const token = localStorage.getItem('patientToken') || localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 // ─── Patient-facing products (browse) ───
 export const publicLoanProducts = {
