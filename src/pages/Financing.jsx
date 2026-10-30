@@ -99,7 +99,7 @@ const Financing = () => {
     const history = localStorage.getItem('healthEmiHistory');
     if (history) setLoanHistory(JSON.parse(history));
     const savedPatientId = localStorage.getItem('patientId');
-    const savedToken = localStorage.getItem('patientToken');
+    const savedToken = localStorage.getItem('patientToken') || localStorage.getItem('token');
     if (savedPatientId && savedToken) {
       setPatientId(savedPatientId);
       setIsLoggedIn(true);
