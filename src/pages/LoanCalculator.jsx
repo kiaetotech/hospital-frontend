@@ -9,7 +9,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
 
 // ============================================
 // EMI MATH — copied verbatim from Financing.jsx
@@ -31,7 +30,7 @@ const calculateFullBreakdown = (product, principal, tenure) => {
   const emi = calculateEMI(principal, rate, tenure);
   const totalRepayment = emi * tenure;
   const totalInterest = totalRepayment - principal;
-  const pf = product.processingFee || 2;
+  const pf = product.processingFeePercent ?? product.processingFee ?? 2;
   const rawPF = Math.round((principal * pf) / 100);
   const processingFee = Math.max(200, Math.min(rawPF, 5000));
   const gstOnPF = Math.round((processingFee * 18) / 100);
@@ -65,17 +64,21 @@ const LoanCalculator = () => {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
 
-  // Fetch public loan products on mount
+    // Fetch public loan products on mount (bare fetch — no auth, no interceptor)
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const res = await api.get('/loan/products/public');
-        const list = res.data?.products || res.data?.data || [];
+        const API_URL = process.env.REACT_APP_API_URL || 'https://hospital-backend-ilhi.onrender.com';
+        const res = await fetch(`${API_URL}/api/loan/v2/products/public`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list = data?.products || data?.data || [];
         setProducts(Array.isArray(list) ? list : []);
+        setFetchError('');
       } catch (err) {
         console.error('[LoanCalculator] product fetch error:', err.message);
-        setFetchError('Could not load lender offers. You can still calculate EMI below.');
+        setFetchError(`Could not load lender offers (${err.message}). You can still calculate EMI below.`);
       } finally {
         setLoading(false);
       }
@@ -83,8 +86,9 @@ const LoanCalculator = () => {
     fetchProducts();
   }, []);
 
-  // Filter products by amount range + CIBIL
+    // Filter products by amount range + CIBIL
   const eligibleProducts = products.filter((p) => {
+    if (!amount || amount < 5000) return false;
     const minL = p.minAmount || 5000;
     const maxL = p.maxAmount || 10000000;
     if (amount < minL || amount > maxL) return false;
@@ -268,7 +272,10 @@ const LoanCalculator = () => {
               <input
                 type="number"
                 value={amount}
-                onChange={(e) => setAmount(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+  const v = e.target.value;
+  setAmount(v === '' ? '' : parseInt(v) || 0);
+}}
                 min="5000"
                 max="10000000"
                 style={s.input}
@@ -317,7 +324,7 @@ const LoanCalculator = () => {
               {bestEMI !== null ? formatINR(bestEMI) : '—'}
             </p>
             <p style={{ ...s.summaryLabel, fontSize: '0.9rem' }}>
-              for {formatINR(amount)} over {tenure} months
+              {amount && amount >= 5000 ? `for ${formatINR(amount)} over ${tenure} months` : 'Enter amount to see EMI'}
             </p>
 
             {productCalculations.length > 0 && (
