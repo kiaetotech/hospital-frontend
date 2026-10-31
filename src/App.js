@@ -119,6 +119,7 @@ import LenderApplicationDetail from './pages/lender/LenderApplicationDetail';
 import LenderRegister from './pages/lender/LenderRegister';
 import LenderLoanHub from './pages/lender/LenderLoanHub';
 import LoanHub from './pages/loan/LoanHub';
+import LoanCalculator from './pages/LoanCalculator';
 
 // ============================================
 // ADMIN PANEL IMPORTS
@@ -269,6 +270,7 @@ function App() {
 	  <Route path="/provider-terms" element={<ProviderTerms />} />
 	  <Route path="/data-retention" element={<DataRetention />} />
 	  <Route path="/payment-terms" element={<PaymentTerms />} />
+	  <Route path="/healthcare-emi-calculator" element={<LoanCalculator />} />
 	  <Route path="/dashboard" element={<PatientDashboard />} />
           <Route path="/forgot-password" element={<ProviderForgotPassword />} />
 
