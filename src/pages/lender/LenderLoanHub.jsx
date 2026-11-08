@@ -68,6 +68,22 @@ const LenderLoanHub = () => {
     }
   }, [lender, navigate]);
 
+
+  // Auto-select application from URL param (?applicationId=APP_XXX)
+  useEffect(() => {
+    if (!lender) return;
+    if (applications.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const urlAppId = params.get('applicationId');
+    if (urlAppId) {
+      const app = applications.find(a => a.applicationId === urlAppId);
+      if (app) {
+        setActiveTab('applications');
+        handleSelectApplication(app);
+      }
+    }
+   }, [lender, applications]);
+
   // ============================================
   // FETCHERS
   // ============================================
@@ -236,6 +252,26 @@ const LenderLoanHub = () => {
     } finally {
       setUnderwritingLoading(false);
     }
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      'submitted': '⏳ Submitted',
+      'under_review': '🔍 Under Review',
+      'document_pending': '📄 Document Pending',
+      'offer_issued': '📄 Offer Issued',
+      'offer_accepted': '✅ Offer Accepted',
+      'agreement_pending': '✍️ Agreement Pending',
+      'agreement_signed': '✍️ Agreement Signed',
+      'pending_disbursal': '⏳ Pending Disbursal',
+      'disbursed': '💰 Disbursed',
+      'completed': '✅ Completed',
+      'rejected': '❌ Rejected',
+      'withdrawn': '↩️ Withdrawn',
+      'cancelled': '⏹️ Cancelled',
+      'approved': '👍 Approved',
+    };
+    return labels[status] || status;
   };
 
   // ============================================
@@ -552,19 +588,92 @@ const LenderLoanHub = () => {
 
             {/* Application Detail */}
             {selectedApplication && (
-              <div style={styles.card}>
-                <h2 style={styles.cardTitle}>
-                  Application {selectedApplication.applicationId}
-                  <button onClick={() => setSelectedApplication(null)} style={{ ...styles.buttonSecondary, float: 'right' }}>Close</button>
-                </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                  <div><strong>Patient:</strong> {selectedApplication.patientDetails?.fullName}</div>
-                  <div><strong>Phone:</strong> {selectedApplication.patientDetails?.phone}</div>
-                  <div><strong>Treatment:</strong> {selectedApplication.treatmentType}</div>
-                  <div><strong>Hospital:</strong> {selectedApplication.hospitalName}</div>
-                  <div><strong>Estimated:</strong> ₹{(selectedApplication.estimatedAmount || 0).toLocaleString()}</div>
-                  <div><strong>Status:</strong> <span style={styles.statusBadge(selectedApplication.status)}>{selectedApplication.status}</span></div>
+                            <div style={styles.card}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  <div>
+                    <button
+                      onClick={() => setSelectedApplication(null)}
+                      style={{ ...styles.buttonSecondary, fontSize: '0.8rem', marginBottom: '0.5rem' }}
+                    >
+                      ← Back to List
+                    </button>
+                    <h2 style={styles.cardTitle}>
+                      Application {selectedApplication.applicationId}
+                    </h2>
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: '#475569' }}>
+                      Status: <span style={styles.statusBadge(selectedApplication.status)}>
+                        {getStatusLabel(selectedApplication.status)}
+                      </span>
+                      {selectedApplication.submittedAt && (
+                        <span style={{ marginLeft: '1rem' }}>
+                          · Submitted: {new Date(selectedApplication.submittedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <button onClick={() => setSelectedApplication(null)} style={styles.buttonSecondary}>Close</button>
                 </div>
+
+                {/* Patient + Loan Details (3-column merged view) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Patient Details</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Name:</strong> {selectedApplication.patientDetails?.fullName || 'N/A'}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Phone:</strong> {selectedApplication.patientDetails?.phone || 'N/A'}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Email:</strong> {selectedApplication.patientDetails?.email || 'N/A'}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>PAN:</strong> {selectedApplication.patientDetails?.pan || 'N/A'}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Aadhaar:</strong> {selectedApplication.patientDetails?.aadhaar || 'N/A'}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Address:</strong> {selectedApplication.patientDetails?.address || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Loan Details</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Treatment:</strong> {selectedApplication.treatmentType || 'N/A'}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Hospital:</strong> {selectedApplication.hospitalName || 'N/A'}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Estimated:</strong> ₹{(selectedApplication.estimatedAmount || 0).toLocaleString()}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Sanctioned:</strong> ₹{(selectedApplication.sanctionedAmount || 0).toLocaleString()}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Tenure:</strong> {selectedApplication.tenure || 0} months</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Collateral:</strong> {selectedApplication.collateral ? 'Yes' : 'None'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Financial</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Interest Rate:</strong> {selectedApplication.interestRate || 0}%</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>EMI:</strong> ₹{(selectedApplication.emi || 0).toLocaleString()}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Disbursed:</strong> ₹{(selectedApplication.disbursedAmount || 0).toLocaleString()}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Patient Liability:</strong> ₹{(selectedApplication.patientLiability || 0).toLocaleString()}</div>
+                    <div style={{ marginBottom: '0.25rem' }}><strong>Linked Booking:</strong> {selectedApplication.linkedBookingId || 'N/A'}</div>
+                  </div>
+                </div>
+
+                {/* Documents Viewer (from LenderApplicationDetail) */}
+                {selectedApplication.documents && (
+                  <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.75rem' }}>📄 Documents</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem' }}>
+                      {[
+                        { key: 'tentativeEstimate', label: '🏥 Tentative Estimate' },
+                        { key: 'panCard', label: '📇 PAN Card' },
+                        { key: 'aadhaarCard', label: '🆔 Aadhaar Card' },
+                        { key: 'salarySlip', label: '💰 Salary Slip' },
+                        { key: 'bankStatement', label: '🏦 Bank Statement' },
+                        { key: 'finalBill', label: '📄 Final Bill' },
+                      ].map(doc => {
+                        const url = selectedApplication.documents?.[doc.key];
+                        return (
+                          <div key={doc.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0.6rem', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
+                            <span>{doc.label}:</span>
+                            {url ? (
+                              <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontWeight: 600, textDecoration: 'none' }}>
+                                ✅ View Document ↗
+                              </a>
+                            ) : (
+                              <span style={{ color: '#94a3b8' }}>❌ Not Uploaded</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Underwrite</h3>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

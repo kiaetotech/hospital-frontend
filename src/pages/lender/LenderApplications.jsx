@@ -166,7 +166,7 @@ const LenderApplications = () => {
                     </td>
                     <td style={{ padding: '0.75rem' }}>
                       <button
-                        onClick={() => navigate(`/lender/applications/${app.applicationId}`)}
+                        onClick={() => navigate(`/lender/loan-hub?applicationId=${app.applicationId}`)}
                         style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
                       >
                         View

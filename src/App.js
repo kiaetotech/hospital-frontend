@@ -420,7 +420,7 @@ function App() {
           <Route path="/lender/login" element={<LenderLogin />} />
           <Route path="/lender/dashboard" element={<LenderDashboard />} />
           <Route path="/lender/applications" element={<LenderApplications />} />
-          <Route path="/lender/applications/:id" element={<LenderApplicationDetail />} />
+          <Route path="/lender/applications/:id" element={<Navigate to="/lender/loan-hub" replace />} />
           <Route path="/lender/register" element={<LenderRegister />} />
           <Route path="/lender/loan-hub" element={<LenderLoanHub />} />
           <Route path="/lender/loan" element={<LenderLoanHub />} />
