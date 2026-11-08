@@ -418,7 +418,7 @@ function App() {
 
           {/* LENDER PORTAL */}
           <Route path="/lender/login" element={<LenderLogin />} />
-          <Route path="/lender/dashboard" element={<LenderDashboard />} />
+          <Route path="/lender/dashboard" element={<Navigate to="/lender/loan-hub" replace />} />
           <Route path="/lender/applications" element={<LenderApplications />} />
           <Route path="/lender/applications/:id" element={<Navigate to="/lender/loan-hub" replace />} />
           <Route path="/lender/register" element={<LenderRegister />} />

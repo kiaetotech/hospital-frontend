@@ -289,6 +289,27 @@ const LenderLoanHub = () => {
   // ============================================
   const styles = {
     container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' },
+    statCard: {
+      backgroundColor: 'white',
+      padding: '0.75rem 1rem',
+      borderRadius: '10px',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      border: '1px solid #e2e8f0',
+    },
+    statLabel: {
+      fontSize: '0.7rem',
+      color: '#64748b',
+      fontWeight: 600,
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      marginBottom: '0.25rem',
+    },
+    statValue: {
+      fontSize: '1.75rem',
+      fontWeight: 800,
+      color: '#1e293b',
+      lineHeight: 1,
+    },
     header: { background: 'linear-gradient(135deg, #0f766e, #059669)', color: 'white', padding: '1.5rem 2rem' },
     headerTitle: { fontSize: '1.75rem', fontWeight: 800, margin: 0 },
     headerSubtitle: { opacity: 0.9, fontSize: '0.9rem', marginTop: '4px' },
@@ -361,6 +382,48 @@ const LenderLoanHub = () => {
       </div>
 
       {/* TABS */}
+      {/* STATS OVERVIEW (merged from LenderDashboard) */}
+      <div style={{ padding: '1.5rem 2rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Total Applications</div>
+              <div style={styles.statValue}>{appTotal}</div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Pending</div>
+              <div style={{ ...styles.statValue, color: '#f59e0b' }}>
+                {applications.filter(a => ['submitted', 'under_review', 'document_pending'].includes(a.status)).length}
+              </div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Approved</div>
+              <div style={{ ...styles.statValue, color: '#10b981' }}>
+                {applications.filter(a => ['approved', 'offer_issued', 'offer_accepted', 'agreement_pending', 'agreement_signed', 'pending_disbursal'].includes(a.status)).length}
+              </div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Disbursed</div>
+              <div style={{ ...styles.statValue, color: '#06b6d4' }}>
+                {applications.filter(a => ['disbursed', 'completed'].includes(a.status)).length}
+              </div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Total Disbursed</div>
+              <div style={styles.statValue}>
+                ₹{applications.filter(a => a.status === 'disbursed' || a.status === 'completed').reduce((sum, a) => sum + (a.sanctionedAmount || 0), 0).toLocaleString()}
+              </div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Commission Earned</div>
+              <div style={{ ...styles.statValue, color: '#8b5cf6' }}>
+                ₹{applications.filter(a => a.status === 'disbursed' || a.status === 'completed').reduce((sum, a) => sum + (a.platformCommission || 0), 0).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div style={styles.tabsBar}>
         {[
           { id: 'products', label: `📦 Products (${products.length})` },

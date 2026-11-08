@@ -34,7 +34,7 @@ const LenderLogin = () => {
         }
         await contextLogin(form.email, form.password);
         localStorage.setItem('providerType', 'lender');
-        navigate('/lender/dashboard');
+        navigate('/lender/loan-hub');
       } else {
         if (!form.phone || !form.otp) {
           setError('Enter phone and OTP');
