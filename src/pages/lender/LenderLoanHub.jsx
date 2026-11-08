@@ -119,14 +119,24 @@ const LenderLoanHub = () => {
   // TAB HANDLERS
   // ============================================
   const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    setError('');
-    setSelectedApplication(null);
-  };
+  setActiveTab(tab);
+  setError('');
+  setSelectedApplication(null);
+
+  // Clear URL param when switching tabs
+  const url = new URL(window.location.href);
+  url.searchParams.delete('applicationId');
+  window.history.replaceState({}, '', url.toString());
+};
 
   const handleSelectApplication = async (application) => {
     setSelectedApplication(application);
     setUnderwritingResult(null);  // reset when switching apps
+
+// Update URL to reflect selected app (so refresh/share works)
+  const url = new URL(window.location.href);
+  url.searchParams.set('applicationId', application.applicationId);
+  window.history.replaceState({}, '', url.toString());
     try {
       const [offersRes, agreementsRes, disbsRes, mandatesRes] = await Promise.all([
         loanOffers.listByApplication(application.applicationId).catch(() => ({ data: { offers: [] } })),
