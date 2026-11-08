@@ -145,5 +145,17 @@ export const loanAudit = {
   get: (applicationId) => axios.get(`${LOAN_V2_BASE}/audit/${applicationId}`, { headers: authHeader() }),
 };
 
+// ============================================
+// LOAN V2 — UNDERWRITING
+// ============================================
+
+export const loanUnderwriting = {
+  run: (applicationId) => axios.post(
+    `${LOAN_V2_BASE}/applications/${applicationId}/run-underwriting`,
+    {},
+    { headers: authHeader() }
+  ),
+};
+
 export default lenderApi;
 

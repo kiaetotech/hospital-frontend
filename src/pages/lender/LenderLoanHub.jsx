@@ -15,6 +15,7 @@ import {
   loanDisbursements,
   loanRepayment,
   lenderApplications,
+  loanUnderwriting,
 } from '../../services/lenderApi';
 
 // ============================================
@@ -38,6 +39,9 @@ const LenderLoanHub = () => {
   const [appFilters, setAppFilters] = useState({ status: 'all', page: 1, limit: 20 });
   const [appTotalPages, setAppTotalPages] = useState(1);
   const [appTotal, setAppTotal] = useState(0);
+  // Underwriting state
+  const [underwritingResult, setUnderwritingResult] = useState(null);
+  const [underwritingLoading, setUnderwritingLoading] = useState(false);
 
   // Tab: Offers
   const [applicationOffers, setApplicationOffers] = useState([]);
@@ -106,6 +110,7 @@ const LenderLoanHub = () => {
 
   const handleSelectApplication = async (application) => {
     setSelectedApplication(application);
+    setUnderwritingResult(null);  // reset when switching apps
     try {
       const [offersRes, agreementsRes, disbsRes, mandatesRes] = await Promise.all([
         loanOffers.listByApplication(application.applicationId).catch(() => ({ data: { offers: [] } })),
@@ -208,6 +213,28 @@ const LenderLoanHub = () => {
       setSelectedApplication(null);
     } catch (err) {
       alert('Failed: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+
+  // ============================================
+  // UNDERWRITING HANDLER
+  // ============================================
+  const handleRunUnderwriting = async (applicationId) => {
+    setUnderwritingLoading(true);
+    setUnderwritingResult(null);
+    try {
+      const res = await loanUnderwriting.run(applicationId);
+      setUnderwritingResult(res.data);
+    } catch (err) {
+      const errData = err.response?.data;
+      if (errData?.code === 'UNDERWRITING_NOT_CONFIGURED') {
+        alert('Underwriting engine not configured on server. Set UNDERWRITING_MODE=live on Render.');
+      } else {
+        alert('Underwriting failed: ' + (errData?.error || err.message));
+      }
+    } finally {
+      setUnderwritingLoading(false);
     }
   };
 
@@ -565,6 +592,92 @@ const LenderLoanHub = () => {
                     }} style={styles.buttonDanger}>
                       ❌ Reject
                     </button>
+                  )}
+                </div>
+
+                {/* UNDERWRITING ENGINE SECTION */}
+                <div style={{ marginTop: '1.25rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>🔍 Underwriting Engine</h4>
+                    <button
+                      onClick={() => handleRunUnderwriting(selectedApplication.applicationId)}
+                      disabled={underwritingLoading}
+                      style={{ ...styles.buttonPrimary, padding: '0.5rem 1rem', fontSize: '0.85rem', opacity: underwritingLoading ? 0.6 : 1, cursor: underwritingLoading ? 'not-allowed' : 'pointer' }}
+                    >
+                      {underwritingLoading ? 'Evaluating...' : 'Run Underwriting'}
+                    </button>
+                  </div>
+
+                  {underwritingResult && (
+                    <div>
+                      <div
+                        style={{
+                          padding: '0.75rem 1rem',
+                          borderRadius: '8px',
+                          marginBottom: '0.75rem',
+                          backgroundColor:
+                            underwritingResult.decision === 'approve' ? '#d1fae5'
+                            : underwritingResult.decision === 'reject' ? '#fee2e2'
+                            : '#fef3c7',
+                          color:
+                            underwritingResult.decision === 'approve' ? '#065f46'
+                            : underwritingResult.decision === 'reject' ? '#991b1b'
+                            : '#92400e',
+                        }}
+                      >
+                        <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>
+                          {underwritingResult.decision === 'approve' ? '✅ APPROVED'
+                           : underwritingResult.decision === 'reject' ? '❌ REJECTED'
+                           : '⚠️ MANUAL REVIEW'}
+                        </div>
+                        <div style={{ fontSize: '0.8rem' }}>
+                          Max eligible: ₹{(underwritingResult.maxEligibleAmount || 0).toLocaleString()}
+                          {underwritingResult.decisionId && ` · ${underwritingResult.decisionId}`}
+                        </div>
+                      </div>
+
+                      {underwritingResult.reasons && underwritingResult.reasons.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.4rem' }}>
+                            Reasons:
+                          </div>
+                          {underwritingResult.reasons.map((r, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                padding: '0.4rem 0.75rem',
+                                marginBottom: '0.35rem',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                backgroundColor:
+                                  r.severity === 'block' ? '#fee2e2'
+                                  : r.severity === 'warn' ? '#fef3c7'
+                                  : '#dbeafe',
+                                borderLeft: `3px solid ${
+                                  r.severity === 'block' ? '#dc2626'
+                                  : r.severity === 'warn' ? '#f59e0b'
+                                  : '#3b82f6'
+                                }`,
+                              }}
+                            >
+                              <strong>{r.rule}:</strong> {r.message}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {underwritingResult.decision === 'reject' && (
+                        <div style={{ fontSize: '0.8rem', color: '#991b1b', fontWeight: 600, marginTop: '0.5rem' }}>
+                          ⚠️ Offer issuance will be blocked by the underwriting gate
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {!underwritingResult && !underwritingLoading && (
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
+                      Run the underwriting engine to evaluate against credit bureau, KYC, and rule-based criteria.
+                    </p>
                   )}
                 </div>
               </div>
