@@ -254,16 +254,16 @@ const LenderLoanHub = () => {
     fetchCollectionsPortfolio().then(() => fetchCollectionsBucket(collectionsBucket));
   }
 
-  // Fetch analytics when the analytics tab opens (first time only)
+    // Fetch analytics when the analytics tab opens (first time only)
   if (tab === 'analytics' && !analyticsData && !analyticsError) {
     fetchAnalytics();
   }
-};
 
   // Fetch webhooks when the webhooks tab opens (first time only)
   if (tab === 'webhooks' && webhookSubs.length === 0 && !webhookError) {
     fetchWebhooks();
   }
+};
 
   const handleSelectApplication = async (application) => {
     setSelectedApplication(application);
