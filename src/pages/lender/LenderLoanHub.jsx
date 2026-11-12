@@ -411,7 +411,7 @@ const LenderLoanHub = () => {
             <div style={styles.statCard}>
               <div style={styles.statLabel}>Total Disbursed</div>
               <div style={styles.statValue}>
-                ₹{applications.filter(a => a.status === 'disbursed' || a.status === 'completed').reduce((sum, a) => sum + (a.sanctionedAmount || 0), 0).toLocaleString()}
+                ₹{applications.filter(a => a.status === 'disbursed' || a.status === 'completed').reduce((sum, a) => sum + (a.disbursedAmount || a.sanctionedAmount || 0), 0).toLocaleString()}
               </div>
             </div>
             <div style={styles.statCard}>
