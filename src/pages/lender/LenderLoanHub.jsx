@@ -16,6 +16,7 @@ import {
   loanRepayment,
   lenderApplications,
   loanUnderwriting,
+  loanCollections,
 } from '../../services/lenderApi';
 
 // ============================================
@@ -57,6 +58,12 @@ const LenderLoanHub = () => {
   // Tab: Repayment
   const [applicationMandates, setApplicationMandates] = useState([]);
   const [loanSchedule, setLoanSchedule] = useState(null);
+
+  // Tab: Collections
+  const [collectionsPortfolio, setCollectionsPortfolio] = useState(null);
+  const [collectionsBucket, setCollectionsBucket] = useState('current');
+  const [collectionsLoans, setCollectionsLoans] = useState([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
 
   // ============================================
   // AUTH GUARD
@@ -107,6 +114,34 @@ const LenderLoanHub = () => {
     }
   }, [appFilters]);
 
+
+  // Fetch Collections portfolio (called when collections tab opens)
+  const fetchCollectionsPortfolio = useCallback(async () => {
+    setCollectionsLoading(true);
+    try {
+      const res = await loanCollections.getPortfolio();
+      setCollectionsPortfolio(res.data);
+      return res.data;
+    } catch (err) {
+      setError('Failed to load collections: ' + (err.response?.data?.error || err.message));
+      return null;
+    } finally {
+      setCollectionsLoading(false);
+    }
+  }, []);
+
+  const fetchCollectionsBucket = useCallback(async (bucket) => {
+    setCollectionsLoading(true);
+    try {
+      const res = await loanCollections.getByBucket(bucket, { limit: 100 });
+      setCollectionsLoans(res.data.collections || []);
+    } catch (err) {
+      setError('Failed to load bucket: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setCollectionsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -118,7 +153,7 @@ const LenderLoanHub = () => {
   // ============================================
   // TAB HANDLERS
   // ============================================
-  const handleTabChange = (tab) => {
+    const handleTabChange = (tab) => {
   setActiveTab(tab);
   setError('');
   setSelectedApplication(null);
@@ -127,6 +162,11 @@ const LenderLoanHub = () => {
   const url = new URL(window.location.href);
   url.searchParams.delete('applicationId');
   window.history.replaceState({}, '', url.toString());
+
+  // Fetch collections data when the collections tab opens (first time only)
+  if (tab === 'collections' && !collectionsPortfolio) {
+    fetchCollectionsPortfolio().then(() => fetchCollectionsBucket(collectionsBucket));
+  }
 };
 
   const handleSelectApplication = async (application) => {
@@ -425,13 +465,14 @@ const LenderLoanHub = () => {
       </div>
 
       <div style={styles.tabsBar}>
-        {[
+         {[
           { id: 'products', label: `📦 Products (${products.length})` },
           { id: 'applications', label: `📋 Applications (${appTotal})` },
           { id: 'offers', label: '📄 Offers' },
           { id: 'agreements', label: '✍️ Agreements' },
           { id: 'disbursements', label: '💸 Disbursements' },
           { id: 'repayment', label: '💳 Repayment' },
+          { id: 'collections', label: '📊 Collections' },
         ].map(tab => (
           <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={styles.tabButton(activeTab === tab.id)}>
             {tab.label}
@@ -1526,6 +1567,125 @@ const LenderLoanHub = () => {
                     </div>
                   )}
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================
+            TAB 7: COLLECTIONS
+            ============================================ */}
+        {activeTab === 'collections' && (
+          <div>
+            <div style={styles.card}>
+              <h2 style={styles.cardTitle}>📊 Collections Portfolio</h2>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                Loans grouped by days past due (DPD). Click a bucket to see individual loans.
+              </p>
+
+              {collectionsLoading && !collectionsPortfolio && (
+                <p style={{ color: '#64748b', padding: '2rem', textAlign: 'center' }}>Loading portfolio…</p>
+              )}
+
+              {collectionsPortfolio && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                    {['current', '30_plus', '60_plus', '90_plus', 'npa'].map(bucket => {
+                      const bucketData = collectionsPortfolio.byBucket?.[bucket] || {};
+                      const isActive = collectionsBucket === bucket;
+                      const labelMap = {
+                        current: 'CURRENT',
+                        '30_plus': '30+ DPD',
+                        '60_plus': '60+ DPD',
+                        '90_plus': '90+ DPD',
+                        npa: 'NPA',
+                      };
+                      return (
+                        <div
+                          key={bucket}
+                          onClick={() => {
+                            setCollectionsBucket(bucket);
+                            fetchCollectionsBucket(bucket);
+                          }}
+                          style={{
+                            padding: '1rem',
+                            borderRadius: '10px',
+                            border: isActive ? '2px solid #059669' : '1px solid #e2e8f0',
+                            cursor: 'pointer',
+                            backgroundColor: isActive ? '#ecfdf5' : 'white',
+                          }}
+                        >
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.05em' }}>
+                            {labelMap[bucket]}
+                          </div>
+                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1e293b', lineHeight: 1, marginTop: '0.25rem' }}>
+                            {bucketData.count || 0}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.25rem' }}>
+                            ₹{((bucketData.totalOverdue || 0) / 1000).toFixed(1)}K overdue
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>
+                      Loans in {collectionsBucket.replace('_plus', '+ DPD').replace('_', ' ').toUpperCase()}
+                    </h3>
+                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                      {collectionsLoans.length} loan{collectionsLoans.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  {collectionsLoans.length === 0 ? (
+                    <p style={{ color: '#64748b', padding: '2rem', textAlign: 'center' }}>
+                      No loans in this bucket.
+                    </p>
+                  ) : (
+                    <table style={styles.table}>
+                      <thead>
+                        <tr>
+                          <th style={styles.th}>Application ID</th>
+                          <th style={styles.th}>DPD</th>
+                          <th style={styles.th}>Overdue (₹)</th>
+                          <th style={styles.th}>Bucket</th>
+                          <th style={styles.th}>Status</th>
+                          <th style={styles.th}>Pending Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {collectionsLoans.map(loan => (
+                          <tr key={loan.collectionId || loan.applicationId}>
+                            <td style={styles.td}><code>{loan.applicationId}</code></td>
+                            <td style={styles.td}>{loan.dpd || 0}</td>
+                            <td style={styles.td}>₹{(loan.totalOverdue || 0).toLocaleString()}</td>
+                            <td style={styles.td}>{loan.bucket}</td>
+                            <td style={styles.td}><span style={styles.statusBadge(loan.status)}>{loan.status}</span></td>
+                            <td style={styles.td}>
+                              {(loan.pendingActions || []).length > 0 ? (
+                                <span style={{ fontSize: '0.8rem', color: '#92400e' }}>
+                                  {loan.pendingActions.length} pending
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+
+              {!collectionsPortfolio && !collectionsLoading && (
+                <button
+                  onClick={() => fetchCollectionsPortfolio().then(() => fetchCollectionsBucket(collectionsBucket))}
+                  style={styles.buttonPrimary}
+                >
+                  Load Collections
+                </button>
               )}
             </div>
           </div>

@@ -157,5 +157,16 @@ export const loanUnderwriting = {
   ),
 };
 
+
+// ============================================
+// LOAN V2 — COLLECTIONS (DPD / overdue loans)
+// ============================================
+
+export const loanCollections = {
+  getPortfolio: () => axios.get(`${LOAN_V2_BASE}/collections/portfolio`, { headers: authHeader() }),
+  getByBucket: (bucket, params) => axios.get(`${LOAN_V2_BASE}/collections/${bucket}`, { headers: authHeader(), params }),
+  completeAction: (collectionId, data) => axios.post(`${LOAN_V2_BASE}/collections/${collectionId}/complete-action`, data, { headers: authHeader() }),
+};
+
 export default lenderApi;
 
