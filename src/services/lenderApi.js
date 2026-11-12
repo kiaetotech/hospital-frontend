@@ -159,6 +159,15 @@ export const loanUnderwriting = {
 
 
 // ============================================
+// LOAN V2 — ANALYTICS (Portfolio-level metrics)
+// ============================================
+
+export const loanAnalytics = {
+  getPortfolio: (params) => axios.get(`${LOAN_V2_BASE}/analytics/portfolio`, { headers: authHeader(), params }),
+};
+
+
+// ============================================
 // LOAN V2 — COLLECTIONS (DPD / overdue loans)
 // ============================================
 

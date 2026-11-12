@@ -17,6 +17,7 @@ import {
   lenderApplications,
   loanUnderwriting,
   loanCollections,
+  loanAnalytics,
 } from '../../services/lenderApi';
 
 // ============================================
@@ -64,6 +65,11 @@ const LenderLoanHub = () => {
   const [collectionsBucket, setCollectionsBucket] = useState('current');
   const [collectionsLoans, setCollectionsLoans] = useState([]);
   const [collectionsLoading, setCollectionsLoading] = useState(false);
+
+  // Tab: Analytics
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState(null);
 
   // ============================================
   // AUTH GUARD
@@ -142,6 +148,27 @@ const LenderLoanHub = () => {
     }
   }, []);
 
+
+  // Fetch Analytics portfolio (called when analytics tab opens)
+  const fetchAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    try {
+      const res = await loanAnalytics.getPortfolio();
+      if (res.data?.disabled) {
+        setAnalyticsError(res.data.message || 'Analytics not enabled on server. Set ANALYTICS_MODE=live.');
+        setAnalyticsData(null);
+      } else {
+        setAnalyticsData(res.data);
+        setAnalyticsError(null);
+      }
+    } catch (err) {
+      setAnalyticsError('Failed to load analytics: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -166,6 +193,11 @@ const LenderLoanHub = () => {
   // Fetch collections data when the collections tab opens (first time only)
   if (tab === 'collections' && !collectionsPortfolio) {
     fetchCollectionsPortfolio().then(() => fetchCollectionsBucket(collectionsBucket));
+  }
+
+  // Fetch analytics when the analytics tab opens (first time only)
+  if (tab === 'analytics' && !analyticsData && !analyticsError) {
+    fetchAnalytics();
   }
 };
 
@@ -473,6 +505,7 @@ const LenderLoanHub = () => {
           { id: 'disbursements', label: '💸 Disbursements' },
           { id: 'repayment', label: '💳 Repayment' },
           { id: 'collections', label: '📊 Collections' },
+          { id: 'analytics', label: '📈 Analytics' },
         ].map(tab => (
           <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={styles.tabButton(activeTab === tab.id)}>
             {tab.label}
@@ -1679,12 +1712,222 @@ const LenderLoanHub = () => {
                 </>
               )}
 
-              {!collectionsPortfolio && !collectionsLoading && (
+                  {!collectionsPortfolio && !collectionsLoading && (
                 <button
                   onClick={() => fetchCollectionsPortfolio().then(() => fetchCollectionsBucket(collectionsBucket))}
                   style={styles.buttonPrimary}
                 >
                   Load Collections
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================
+            TAB 8: ANALYTICS
+            ============================================ */}
+        {activeTab === 'analytics' && (
+          <div>
+            <div style={styles.card}>
+              <h2 style={styles.cardTitle}>📈 Portfolio Analytics</h2>
+
+              {analyticsLoading && (
+                <p style={{ color: '#64748b', padding: '2rem', textAlign: 'center' }}>Loading analytics…</p>
+              )}
+
+              {analyticsError && (
+                <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', color: '#92400e', fontSize: '0.9rem' }}>
+                  ⚠️ {analyticsError}
+                </div>
+              )}
+
+              {analyticsData && !analyticsError && (
+                <>
+                  {/* Portfolio Overview */}
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#1e293b' }}>Portfolio Overview</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                    <div style={styles.statCard}>
+                      <div style={styles.statLabel}>Total Applications</div>
+                      <div style={styles.statValue}>{analyticsData.portfolio?.totalApplications || 0}</div>
+                    </div>
+                    <div style={styles.statCard}>
+                      <div style={styles.statLabel}>Total Disbursed</div>
+                      <div style={styles.statValue}>₹{(analyticsData.portfolio?.totalDisbursed || 0).toLocaleString()}</div>
+                    </div>
+                    <div style={styles.statCard}>
+                      <div style={styles.statLabel}>Disbursed Count</div>
+                      <div style={styles.statValue}>{analyticsData.portfolio?.disbursedCount || 0}</div>
+                    </div>
+                    <div style={styles.statCard}>
+                      <div style={styles.statLabel}>Avg Loan Size</div>
+                      <div style={styles.statValue}>₹{(analyticsData.portfolio?.avgLoanSize || 0).toLocaleString()}</div>
+                    </div>
+                  </div>
+
+                  {/* PAR Metrics */}
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#1e293b' }}>Portfolio at Risk (PAR)</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                    {[
+                      { key: 'par30', label: 'PAR 30', healthy: analyticsData.par?.interpretation?.par30_healthy, threshold: '<5%' },
+                      { key: 'par60', label: 'PAR 60', healthy: analyticsData.par?.interpretation?.par60_healthy, threshold: '<3%' },
+                      { key: 'par90', label: 'PAR 90', healthy: analyticsData.par?.interpretation?.par90_healthy, threshold: '<1%' },
+                    ].map(({ key, label, healthy, threshold }) => (
+                      <div
+                        key={key}
+                        style={{
+                          ...styles.statCard,
+                          borderLeft: `4px solid ${healthy ? '#10b981' : '#ef4444'}`,
+                        }}
+                      >
+                        <div style={styles.statLabel}>{label} ({threshold})</div>
+                        <div style={{ ...styles.statValue, color: healthy ? '#059669' : '#dc2626' }}>
+                          {analyticsData.par?.[key] || 0}%
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                          {healthy ? '✅ Healthy' : '⚠️ Above threshold'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Collection Efficiency */}
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#1e293b' }}>Collection Efficiency</h3>
+                  <div style={{ ...styles.statCard, marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={styles.statLabel}>Collection Efficiency</div>
+                        <div style={styles.statValue}>{analyticsData.collectionEfficiency?.cePercent || 0}%</div>
+                      </div>
+                      <div>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '0.4rem 1rem',
+                            borderRadius: '20px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            backgroundColor:
+                              analyticsData.collectionEfficiency?.status === 'excellent' ? '#d1fae5'
+                              : analyticsData.collectionEfficiency?.status === 'good' ? '#dbeafe'
+                              : analyticsData.collectionEfficiency?.status === 'fair' ? '#fef3c7'
+                              : '#fee2e2',
+                            color:
+                              analyticsData.collectionEfficiency?.status === 'excellent' ? '#065f46'
+                              : analyticsData.collectionEfficiency?.status === 'good' ? '#1e40af'
+                              : analyticsData.collectionEfficiency?.status === 'fair' ? '#92400e'
+                              : '#991b1b',
+                          }}
+                        >
+                          {analyticsData.collectionEfficiency?.status || 'n/a'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bucket Distribution */}
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#1e293b' }}>Bucket Distribution</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                    {['current', '30_plus', '60_plus', '90_plus', 'npa'].map(bucket => {
+                      const b = analyticsData.buckets?.[bucket] || { count: 0, amount: 0 };
+                      const labelMap = { current: 'CURRENT', '30_plus': '30+', '60_plus': '60+', '90_plus': '90+', npa: 'NPA' };
+                      return (
+                        <div key={bucket} style={{ ...styles.statCard, textAlign: 'center' }}>
+                          <div style={styles.statLabel}>{labelMap[bucket]}</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>{b.count}</div>
+                          <div style={{ fontSize: '0.7rem', color: '#059669' }}>₹{((b.amount || 0) / 1000).toFixed(1)}K</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Approval + Underwriting Funnels */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={styles.card}>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem' }}>Approval Funnel</h4>
+                      <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.8 }}>
+                        <div>Submitted: <strong>{analyticsData.approvalFunnel?.submitted || 0}</strong></div>
+                        <div>Approved: <strong style={{ color: '#059669' }}>{analyticsData.approvalFunnel?.approved || 0}</strong></div>
+                        <div>Rejected: <strong style={{ color: '#dc2626' }}>{analyticsData.approvalFunnel?.rejected || 0}</strong></div>
+                        <div>Approval Rate: <strong>{analyticsData.approvalFunnel?.approvalRate || 0}%</strong></div>
+                      </div>
+                    </div>
+                    <div style={styles.card}>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem' }}>Underwriting Funnel</h4>
+                      <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.8 }}>
+                        <div>Total Decisions: <strong>{analyticsData.underwritingFunnel?.total || 0}</strong></div>
+                        <div>Approve: <strong style={{ color: '#059669' }}>{analyticsData.underwritingFunnel?.approve || 0}</strong></div>
+                        <div>Manual Review: <strong style={{ color: '#f59e0b' }}>{analyticsData.underwritingFunnel?.manual_review || 0}</strong></div>
+                        <div>Reject: <strong style={{ color: '#dc2626' }}>{analyticsData.underwritingFunnel?.reject || 0}</strong></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vintage Analysis */}
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#1e293b' }}>Vintage Analysis</h3>
+                  {(analyticsData.vintage || []).length === 0 ? (
+                    <p style={{ color: '#64748b', padding: '1rem', textAlign: 'center' }}>No vintage data yet.</p>
+                  ) : (
+                    <table style={styles.table}>
+                      <thead>
+                        <tr>
+                          <th style={styles.th}>Cohort Month</th>
+                          <th style={styles.th}>Disbursed</th>
+                          <th style={styles.th}>Overdue</th>
+                          <th style={styles.th}>Overdue Rate</th>
+                          <th style={styles.th}>NPA Count</th>
+                          <th style={styles.th}>NPA Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analyticsData.vintage.map(v => (
+                          <tr key={v.month}>
+                            <td style={styles.td}><strong>{v.month}</strong></td>
+                            <td style={styles.td}>{v.disbursedCount}</td>
+                            <td style={styles.td}>{v.overdueCount}</td>
+                            <td style={styles.td}>{v.overdueRate}%</td>
+                            <td style={styles.td}>{v.npaCount}</td>
+                            <td style={styles.td}>{v.npaRate}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {/* Monthly Disbursements */}
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '1.5rem 0 0.75rem', color: '#1e293b' }}>Monthly Disbursements</h3>
+                  {(analyticsData.monthlyDisbursements || []).length === 0 ? (
+                    <p style={{ color: '#64748b', padding: '1rem', textAlign: 'center' }}>No disbursement data yet.</p>
+                  ) : (
+                    <table style={styles.table}>
+                      <thead>
+                        <tr>
+                          <th style={styles.th}>Month</th>
+                          <th style={styles.th}>Count</th>
+                          <th style={styles.th}>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analyticsData.monthlyDisbursements.map(m => (
+                          <tr key={m.month}>
+                            <td style={styles.td}><strong>{m.month}</strong></td>
+                            <td style={styles.td}>{m.count}</td>
+                            <td style={styles.td}>₹{(m.amount || 0).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'right' }}>
+                    Generated: {analyticsData.generatedAt ? new Date(analyticsData.generatedAt).toLocaleString() : 'N/A'}
+                  </div>
+                </>
+              )}
+
+              {!analyticsData && !analyticsLoading && !analyticsError && (
+                <button onClick={fetchAnalytics} style={styles.buttonPrimary}>
+                  Load Analytics
                 </button>
               )}
             </div>
