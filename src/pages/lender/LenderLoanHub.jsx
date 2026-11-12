@@ -19,6 +19,7 @@ import {
   loanCollections,
   loanAnalytics,
   loanWebhooks,
+  loanCompliance,
 } from '../../services/lenderApi';
 
 // ============================================
@@ -84,6 +85,18 @@ const LenderLoanHub = () => {
     events: ['loan.approved', 'loan.disbursed'],
   });
   const [showWebhookForm, setShowWebhookForm] = useState(false);
+
+  // Tab: Compliance
+  const [aprForm, setAprForm] = useState({ principal: 50000, interestRate: 12, tenureMonths: 12, processingFee: 1000 });
+  const [aprResult, setAprResult] = useState(null);
+  const [aprLoading, setAprLoading] = useState(false);
+  const [kfsApplicationId, setKfsApplicationId] = useState('');
+  const [kfsResult, setKfsResult] = useState(null);
+  const [kfsLoading, setKfsLoading] = useState(false);
+  const [disclosuresApplicationId, setDisclosuresApplicationId] = useState('');
+  const [disclosures, setDisclosures] = useState([]);
+  const [disclosuresLoading, setDisclosuresLoading] = useState(false);
+  const [complianceError, setComplianceError] = useState(null);
 
   // ============================================
   // AUTH GUARD
@@ -226,6 +239,70 @@ const LenderLoanHub = () => {
     } catch (err) {
       alert('Failed to revoke: ' + (err.response?.data?.error || err.message));
     }
+  };
+
+
+  // Compliance: Calculate APR
+  const handleCalculateApr = async (e) => {
+    e.preventDefault();
+    setAprLoading(true);
+    setComplianceError(null);
+    setAprResult(null);
+    try {
+      const res = await loanCompliance.calculateApr(aprForm);
+      if (res.data?.disabled) {
+        setComplianceError(res.data.message || 'Compliance not enabled. Set COMPLIANCE_MODE=live.');
+      } else {
+        setAprResult(res.data.apr || res.data);
+      }
+    } catch (err) {
+      setComplianceError('Failed to calculate APR: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setAprLoading(false);
+    }
+  };
+
+  // Compliance: Generate KFS
+  const handleGenerateKfs = async (applicationId) => {
+    if (!applicationId) { alert('Select an application first'); return; }
+    setKfsLoading(true);
+    setComplianceError(null);
+    setKfsResult(null);
+    try {
+      const res = await loanCompliance.generateKfs(applicationId);
+      if (res.data?.disabled) {
+        setComplianceError(res.data.message || 'Compliance not enabled.');
+      } else {
+        setKfsResult(res.data);
+      }
+    } catch (err) {
+      setComplianceError('Failed to generate KFS: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setKfsLoading(false);
+    }
+  };
+
+  // Compliance: Load disclosures
+  const handleLoadDisclosures = async (applicationId) => {
+    if (!applicationId) return;
+    setDisclosuresLoading(true);
+    setComplianceError(null);
+    setDisclosures([]);
+    try {
+      const res = await loanCompliance.listDisclosures(applicationId);
+      setDisclosures(res.data.disclosures || []);
+    } catch (err) {
+      setComplianceError('Failed to load disclosures: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setDisclosuresLoading(false);
+    }
+  };
+
+  // Compliance: Copy KFS text
+  const handleCopyKfs = () => {
+    if (!kfsResult?.kfsText) return;
+    navigator.clipboard.writeText(kfsResult.kfsText);
+    alert('KFS copied to clipboard');
   };
 
   useEffect(() => {
@@ -571,6 +648,7 @@ const LenderLoanHub = () => {
           { id: 'collections', label: '📊 Collections' },
           { id: 'analytics', label: '📈 Analytics' },
 	  { id: 'webhooks', label: '🔔 Webhooks' },
+	  { id: 'compliance', label: '📋 Compliance' },
         ].map(tab => (
           <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={styles.tabButton(activeTab === tab.id)}>
             {tab.label}
@@ -2168,7 +2246,7 @@ const LenderLoanHub = () => {
                         <td style={styles.td}>
                           {sub.successfulDeliveries || 0} / {sub.totalDeliveries || 0}
                         </td>
-                        <td style={styles.td}>
+                         <td style={styles.td}>
                           {sub.status === 'active' && (
                             <button
                               onClick={() => handleRevokeWebhook(sub.subscriptionId)}
@@ -2177,6 +2255,211 @@ const LenderLoanHub = () => {
                               Revoke
                             </button>
                           )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================
+            TAB 10: COMPLIANCE (KFS + APR)
+            ============================================ */}
+        {activeTab === 'compliance' && (
+          <div>
+            {complianceError && (
+              <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', color: '#92400e', fontSize: '0.9rem' }}>
+                ⚠️ {complianceError}
+              </div>
+            )}
+
+            {/* SECTION 1: APR Calculator */}
+            <div style={styles.card}>
+              <h2 style={styles.cardTitle}>📊 APR Calculator</h2>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                RBI requires lenders to disclose the all-inclusive APR — not just nominal interest rate.
+              </p>
+
+              <form onSubmit={handleCalculateApr}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Principal (₹)</label>
+                    <input
+                      type="number"
+                      value={aprForm.principal}
+                      onChange={(e) => setAprForm({ ...aprForm, principal: parseFloat(e.target.value) || 0 })}
+                      style={styles.input}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Interest Rate (%)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={aprForm.interestRate}
+                      onChange={(e) => setAprForm({ ...aprForm, interestRate: parseFloat(e.target.value) || 0 })}
+                      style={styles.input}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Tenure (months)</label>
+                    <input
+                      type="number"
+                      value={aprForm.tenureMonths}
+                      onChange={(e) => setAprForm({ ...aprForm, tenureMonths: parseInt(e.target.value) || 0 })}
+                      style={styles.input}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Processing Fee (₹)</label>
+                    <input
+                      type="number"
+                      value={aprForm.processingFee}
+                      onChange={(e) => setAprForm({ ...aprForm, processingFee: parseFloat(e.target.value) || 0 })}
+                      style={styles.input}
+                    />
+                  </div>
+                </div>
+                <button type="submit" disabled={aprLoading} style={styles.buttonPrimary}>
+                  {aprLoading ? 'Calculating…' : 'Calculate APR'}
+                </button>
+              </form>
+
+              {aprResult && (
+                <div style={{ marginTop: '1.25rem', padding: '1rem', backgroundColor: '#ecfdf5', borderRadius: '8px', border: '1px solid #10b981' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Nominal Rate</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1e293b' }}>{aprResult.interestRate}%</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Effective APR</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#dc2626' }}>{aprResult.aprPercent}%</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Total Interest</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1e293b' }}>₹{(aprResult.totalInterest || 0).toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Total Payable</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1e293b' }}>₹{(aprResult.totalPayable || 0).toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 2: KFS Generator */}
+            <div style={styles.card}>
+              <h2 style={styles.cardTitle}>📄 Key Fact Statement (KFS)</h2>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                RBI-mandated disclosure that must be shown before loan signing. Includes all fees, APR, cooling-off period, and grievance details.
+              </p>
+
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Application</label>
+                  <select
+                    value={kfsApplicationId}
+                    onChange={(e) => setKfsApplicationId(e.target.value)}
+                    style={styles.input}
+                  >
+                    <option value="">Select an application</option>
+                    {applications.map(app => (
+                      <option key={app.applicationId} value={app.applicationId}>
+                        {app.applicationId} — {app.patientDetails?.fullName} — {app.status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => handleGenerateKfs(kfsApplicationId)}
+                  disabled={kfsLoading || !kfsApplicationId}
+                  style={{ ...styles.buttonPrimary, opacity: (kfsLoading || !kfsApplicationId) ? 0.6 : 1 }}
+                >
+                  {kfsLoading ? 'Generating…' : 'Generate KFS'}
+                </button>
+              </div>
+
+              {kfsResult && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                      Disclosure ID: <code>{kfsResult.disclosureId || 'n/a'}</code>
+                      {kfsResult.kfs?.aprPercent != null && (
+                        <span style={{ marginLeft: '1rem', color: '#dc2626', fontWeight: 700 }}>
+                          APR: {kfsResult.kfs.aprPercent}%
+                        </span>
+                      )}
+                    </div>
+                    <button onClick={handleCopyKfs} style={styles.buttonSecondary}>Copy</button>
+                  </div>
+                  <pre style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.75rem', lineHeight: 1.5, maxHeight: '400px', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+                    {kfsResult.kfsText || 'No KFS text generated'}
+                  </pre>
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 3: Disclosures History */}
+            <div style={styles.card}>
+              <h2 style={styles.cardTitle}>📚 Disclosure History</h2>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                Audit trail of all KFS/APR/consent disclosures generated for each application.
+              </p>
+
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Application</label>
+                  <select
+                    value={disclosuresApplicationId}
+                    onChange={(e) => {
+                      setDisclosuresApplicationId(e.target.value);
+                      handleLoadDisclosures(e.target.value);
+                    }}
+                    style={styles.input}
+                  >
+                    <option value="">Select an application</option>
+                    {applications.map(app => (
+                      <option key={app.applicationId} value={app.applicationId}>
+                        {app.applicationId} — {app.patientDetails?.fullName} — {app.status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {disclosuresLoading && (
+                <p style={{ color: '#64748b', padding: '1rem', textAlign: 'center' }}>Loading disclosures…</p>
+              )}
+
+              {!disclosuresLoading && disclosuresApplicationId && disclosures.length === 0 && (
+                <p style={{ color: '#64748b', padding: '1rem', textAlign: 'center' }}>No disclosures generated for this application yet.</p>
+              )}
+
+              {disclosures.length > 0 && (
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Disclosure ID</th>
+                      <th style={styles.th}>Type</th>
+                      <th style={styles.th}>Version</th>
+                      <th style={styles.th}>Generated</th>
+                      <th style={styles.th}>Accepted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {disclosures.map(d => (
+                      <tr key={d.disclosureId}>
+                        <td style={styles.td}><code>{d.disclosureId}</code></td>
+                        <td style={styles.td}>{d.disclosureType}</td>
+                        <td style={styles.td}>{d.version}</td>
+                        <td style={styles.td}>{d.generatedAt ? new Date(d.generatedAt).toLocaleDateString() : 'N/A'}</td>
+                        <td style={styles.td}>
+                          {d.accepted ? '✅ Accepted' : '❌ Not accepted'}
                         </td>
                       </tr>
                     ))}
