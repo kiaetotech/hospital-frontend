@@ -168,6 +168,16 @@ export const loanAnalytics = {
 
 
 // ============================================
+// LOAN V2 — OUTBOUND WEBHOOKS (B2B integration)
+// ============================================
+
+export const loanWebhooks = {
+  list: () => axios.get(`${LOAN_V2_BASE}/webhooks/subscriptions`, { headers: authHeader() }),
+  create: (data) => axios.post(`${LOAN_V2_BASE}/webhooks/subscriptions`, data, { headers: authHeader() }),
+  revoke: (subscriptionId, reason) => axios.delete(`${LOAN_V2_BASE}/webhooks/subscriptions/${subscriptionId}`, { headers: authHeader(), data: { reason } }),
+};
+
+// ============================================
 // LOAN V2 — COLLECTIONS (DPD / overdue loans)
 // ============================================
 

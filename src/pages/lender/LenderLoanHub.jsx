@@ -18,6 +18,7 @@ import {
   loanUnderwriting,
   loanCollections,
   loanAnalytics,
+  loanWebhooks,
 } from '../../services/lenderApi';
 
 // ============================================
@@ -70,6 +71,19 @@ const LenderLoanHub = () => {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
+
+
+  // Tab: Webhooks
+  const [webhookSubs, setWebhookSubs] = useState([]);
+  const [webhookLoading, setWebhookLoading] = useState(false);
+  const [webhookError, setWebhookError] = useState(null);
+  const [newWebhookSecret, setNewWebhookSecret] = useState(null);
+  const [webhookForm, setWebhookForm] = useState({
+    subscriberName: '',
+    endpointUrl: '',
+    events: ['loan.approved', 'loan.disbursed'],
+  });
+  const [showWebhookForm, setShowWebhookForm] = useState(false);
 
   // ============================================
   // AUTH GUARD
@@ -169,6 +183,51 @@ const LenderLoanHub = () => {
     }
   }, []);
 
+
+  // Fetch Webhook subscriptions (called when webhooks tab opens)
+  const fetchWebhooks = useCallback(async () => {
+    setWebhookLoading(true);
+    setWebhookError(null);
+    try {
+      const res = await loanWebhooks.list();
+      setWebhookSubs(res.data.subscriptions || []);
+    } catch (err) {
+      setWebhookError('Failed to load webhooks: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setWebhookLoading(false);
+    }
+  }, []);
+
+  // Create webhook subscription
+  const handleCreateWebhook = async (e) => {
+    e.preventDefault();
+    setWebhookError(null);
+    try {
+      const res = await loanWebhooks.create(webhookForm);
+      setNewWebhookSecret({
+        subscriptionId: res.data.subscriptionId,
+        signingSecret: res.data.signingSecret,
+      });
+      setShowWebhookForm(false);
+      setWebhookForm({ subscriberName: '', endpointUrl: '', events: ['loan.approved', 'loan.disbursed'] });
+      await fetchWebhooks();
+    } catch (err) {
+      setWebhookError('Failed to create webhook: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  // Revoke webhook subscription
+  const handleRevokeWebhook = async (subscriptionId) => {
+    const reason = window.prompt('Reason for revoking this webhook?');
+    if (!reason) return;
+    try {
+      await loanWebhooks.revoke(subscriptionId, reason);
+      await fetchWebhooks();
+    } catch (err) {
+      alert('Failed to revoke: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -200,6 +259,11 @@ const LenderLoanHub = () => {
     fetchAnalytics();
   }
 };
+
+  // Fetch webhooks when the webhooks tab opens (first time only)
+  if (tab === 'webhooks' && webhookSubs.length === 0 && !webhookError) {
+    fetchWebhooks();
+  }
 
   const handleSelectApplication = async (application) => {
     setSelectedApplication(application);
@@ -506,6 +570,7 @@ const LenderLoanHub = () => {
           { id: 'repayment', label: '💳 Repayment' },
           { id: 'collections', label: '📊 Collections' },
           { id: 'analytics', label: '📈 Analytics' },
+	  { id: 'webhooks', label: '🔔 Webhooks' },
         ].map(tab => (
           <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={styles.tabButton(activeTab === tab.id)}>
             {tab.label}
@@ -1925,10 +1990,198 @@ const LenderLoanHub = () => {
                 </>
               )}
 
-              {!analyticsData && !analyticsLoading && !analyticsError && (
+                            {!analyticsData && !analyticsLoading && !analyticsError && (
                 <button onClick={fetchAnalytics} style={styles.buttonPrimary}>
                   Load Analytics
                 </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================
+            TAB 9: WEBHOOKS
+            ============================================ */}
+        {activeTab === 'webhooks' && (
+          <div>
+            <div style={styles.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 style={styles.cardTitle}>🔔 Webhook Subscriptions</h2>
+                <button
+                  onClick={() => { setShowWebhookForm(true); setNewWebhookSecret(null); }}
+                  style={styles.buttonPrimary}
+                >
+                  + New Webhook Subscription
+                </button>
+              </div>
+
+              <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                Subscribe to real-time loan events. We send signed POST requests to your HTTPS endpoint with an X-Kiaeto-Signature header.
+              </p>
+
+              {webhookLoading && (
+                <p style={{ color: '#64748b', padding: '2rem', textAlign: 'center' }}>Loading subscriptions…</p>
+              )}
+
+              {webhookError && (
+                <div style={{ background: '#fee2e2', color: '#991b1b', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                  ⚠️ {webhookError}
+                </div>
+              )}
+
+              {newWebhookSecret && (
+                <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                  <p style={{ fontWeight: 700, color: '#92400e', margin: '0 0 0.5rem' }}>
+                    ⚠️ Save this signing secret now — it will not be shown again.
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <code style={{ background: 'white', padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.85rem', flex: 1, wordBreak: 'break-all' }}>
+                      {newWebhookSecret.signingSecret}
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(newWebhookSecret.signingSecret);
+                        alert('Signing secret copied to clipboard');
+                      }}
+                      style={styles.buttonPrimary}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#92400e', margin: '0.5rem 0 0' }}>
+                    Subscription ID: {newWebhookSecret.subscriptionId}
+                  </p>
+                  <button
+                    onClick={() => setNewWebhookSecret(null)}
+                    style={{ ...styles.buttonSecondary, marginTop: '0.75rem' }}
+                  >
+                    I've saved it — dismiss
+                  </button>
+                </div>
+              )}
+
+              {showWebhookForm && (
+                <div style={{ background: '#f0f9ff', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>New Subscription</h3>
+                  <form onSubmit={handleCreateWebhook}>
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                        Subscriber Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={webhookForm.subscriberName}
+                        onChange={(e) => setWebhookForm({ ...webhookForm, subscriberName: e.target.value })}
+                        placeholder="Hospital CRM"
+                        style={styles.input}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                        Endpoint URL (HTTPS only) *
+                      </label>
+                      <input
+                        type="url"
+                        required
+                        value={webhookForm.endpointUrl}
+                        onChange={(e) => setWebhookForm({ ...webhookForm, endpointUrl: e.target.value })}
+                        placeholder="https://hospital.example.com/webhooks/loan"
+                        style={styles.input}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                        Events to receive
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.85rem' }}>
+                        {[
+                          'loan.approved',
+                          'loan.disbursed',
+                          'loan.rejected',
+                          'loan.completed',
+                          'loan.overdue_30',
+                          'loan.overdue_60',
+                          'loan.overdue_90',
+                          'loan.npa',
+                        ].map((event) => (
+                          <label key={event} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={webhookForm.events.includes(event)}
+                              onChange={(e) => {
+                                const updated = e.target.checked
+                                  ? [...webhookForm.events, event]
+                                  : webhookForm.events.filter((x) => x !== event);
+                                setWebhookForm({ ...webhookForm, events: updated });
+                              }}
+                            />
+                            <span>{event}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button type="submit" style={styles.buttonPrimary}>Create Subscription</button>
+                      <button
+                        type="button"
+                        onClick={() => setShowWebhookForm(false)}
+                        style={styles.buttonSecondary}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {!webhookLoading && webhookSubs.length === 0 && !showWebhookForm && !newWebhookSecret && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                  <p style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>No webhook subscriptions yet.</p>
+                  <p style={{ fontSize: '0.85rem' }}>Create one to receive real-time loan events.</p>
+                </div>
+              )}
+
+              {webhookSubs.length > 0 && (
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Name</th>
+                      <th style={styles.th}>Endpoint</th>
+                      <th style={styles.th}>Events</th>
+                      <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Deliveries</th>
+                      <th style={styles.th}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {webhookSubs.map((sub) => (
+                      <tr key={sub.subscriptionId}>
+                        <td style={styles.td}><strong>{sub.subscriberName}</strong></td>
+                        <td style={styles.td}><code style={{ fontSize: '0.75rem' }}>{sub.endpointUrl}</code></td>
+                        <td style={styles.td}>{(sub.events || []).length} events</td>
+                        <td style={styles.td}>
+                          <span style={styles.statusBadge(sub.status === 'active' ? 'approved' : 'cancelled')}>
+                            {sub.status}
+                          </span>
+                        </td>
+                        <td style={styles.td}>
+                          {sub.successfulDeliveries || 0} / {sub.totalDeliveries || 0}
+                        </td>
+                        <td style={styles.td}>
+                          {sub.status === 'active' && (
+                            <button
+                              onClick={() => handleRevokeWebhook(sub.subscriptionId)}
+                              style={styles.buttonDanger}
+                            >
+                              Revoke
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
