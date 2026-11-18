@@ -29,6 +29,14 @@ export const patientAuth = {
   updateProfile: (data) => loanApi.put('/patient/profile', data)
 };
 
+
+// ============================================
+// PATIENT NOTIFICATIONS (real notification history)
+// ============================================
+export const patientNotifications = {
+  list: (params) => loanApi.get('/patient/notifications', { params }),
+};
+
 // ============================================
 // PATIENT LOAN APPLICATION
 // ============================================
