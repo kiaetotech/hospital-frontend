@@ -588,9 +588,18 @@ const LenderLoanHub = () => {
             <h1 style={styles.headerTitle}>🏦 Lender Loan Hub</h1>
             <p style={styles.headerSubtitle}>{lender?.businessName} · Manage products, applications, offers, agreements, disbursements</p>
           </div>
-          <button onClick={() => navigate('/lender/dashboard')} style={{ ...styles.buttonSecondary, background: 'rgba(255,255,255,0.2)', color: 'white' }}>
-            ← Back to Dashboard
-          </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => handleTabChange('applications')} style={{ ...styles.buttonSecondary, background: 'rgba(255,255,255,0.2)', color: 'white' }}>
+              📋 View Applications
+            </button>
+            <button onClick={() => {
+              localStorage.removeItem('lenderToken');
+              localStorage.removeItem('lender');
+              navigate('/lender/login');
+            }} style={{ ...styles.buttonSecondary, background: 'rgba(255,255,255,0.2)', color: 'white' }}>
+              🚪 Logout
+            </button>
+          </div>
         </div>
       </div>
 

@@ -16,6 +16,22 @@ lenderApi.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle expired/invalid tokens — production auth guard
+lenderApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      localStorage.removeItem('lenderToken');
+      localStorage.removeItem('lender');
+      if (!window.location.pathname.includes('/lender/login')) {
+        window.location.href = '/lender/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ============================================
 // LENDER AUTHENTICATION
 // ============================================
