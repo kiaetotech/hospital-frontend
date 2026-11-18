@@ -178,6 +178,16 @@ export const loanWebhooks = {
 };
 
 // ============================================
+// LOAN V2 — COMPLIANCE (RBI KFS + APR)
+// ============================================
+
+export const loanCompliance = {
+  calculateApr: (params) => axios.get(`${LOAN_V2_BASE}/compliance/apr`, { headers: authHeader(), params }),
+  generateKfs: (applicationId) => axios.post(`${LOAN_V2_BASE}/compliance/kfs/${applicationId}`, {}, { headers: authHeader() }),
+  listDisclosures: (applicationId) => axios.get(`${LOAN_V2_BASE}/compliance/disclosures/${applicationId}`, { headers: authHeader() }),
+};
+
+// ============================================
 // LOAN V2 — COLLECTIONS (DPD / overdue loans)
 // ============================================
 
