@@ -2,4 +2,8 @@ node_modules/
 .env
 .DS_Store
 build/
-*.log"test-results/" 
+*.log
+
+# Playwright test artifacts
+test-results/
+playwright-report/
