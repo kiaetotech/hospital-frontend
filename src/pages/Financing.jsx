@@ -21,6 +21,7 @@ import {
   patientLoanAgreements,
   patientLoanRepayment,
   patientLoanRefunds,
+  patientNotifications,
 } from '../services/loanApi';
 import api from '../services/api';
 
@@ -66,7 +67,8 @@ const Financing = () => {
   const [userDistrict, setUserDistrict] = useState('');
   const [userState, setUserState] = useState('');
   const [availableLenders, setAvailableLenders] = useState([]);
-  const [notificationLog, setNotificationLog] = useState([]);
+  const [realNotifications, setRealNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState({});
   const [loanHistory, setLoanHistory] = useState([]);
   const [activeApplication, setActiveApplication] = useState(null);
@@ -106,10 +108,9 @@ const Financing = () => {
       fetchPatientProfile();
       fetchLoanHistory();
       fetchMyApplications();
+      fetchRealNotifications();
     }
-    const savedNotifications = localStorage.getItem('notificationLog');
-    if (savedNotifications) setNotificationLog(JSON.parse(savedNotifications));
-  }, []);
+   }, []);
 
   // Fetch offers/agreements/refunds when tab + app are selected
   useEffect(() => {
@@ -193,6 +194,20 @@ const Financing = () => {
   }
 }, []);
 
+
+  const fetchRealNotifications = async () => {
+    setNotificationsLoading(true);
+    try {
+      const res = await patientNotifications.list({ limit: 50 });
+      setRealNotifications(res.data.notifications || []);
+    } catch (err) {
+      console.error('[notifications] fetch failed:', err.message);
+      // Non-fatal — notifications are optional UX
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
   const handleSelectApplication = async (application) => {
   setSelectedApplication(application);
   try {
@@ -261,29 +276,18 @@ const Financing = () => {
     });
   };
 
-  // ============================================
-  // NOTIFICATIONS (log only — real delivery is Phase 2)
+    // ============================================
+  // NOTIFICATION STUBS — Aadhaar OTP simulated in test mode
+  // Real emails are sent by the backend (Resend). These stubs only
+  // keep the Aadhaar test flow working until real provider is integrated.
   // ============================================
   const sendSMS = (phoneNumber, message) => {
-    const notification = { id: Date.now() + Math.random(), type: 'sms', to: phoneNumber, message, sentAt: new Date().toISOString() };
-    setNotificationLog(prev => [notification, ...prev]);
-    localStorage.setItem('notificationLog', JSON.stringify([notification, ...notificationLog]));
-    return true;
-  };
-  const sendEmail = (email, subject, body) => {
-    if (!email) return;
-    const notification = { id: Date.now() + Math.random(), type: 'email', to: email, subject, message: body, sentAt: new Date().toISOString() };
-    setNotificationLog(prev => [notification, ...prev]);
+    console.log('[STUB SMS — real SMS not sent]', phoneNumber, message);
     return true;
   };
   const sendWhatsApp = (phoneNumber, message) => {
-    const notification = { id: Date.now() + Math.random(), type: 'whatsapp', to: phoneNumber, message, sentAt: new Date().toISOString() };
-    setNotificationLog(prev => [notification, ...prev]);
+    console.log('[STUB WhatsApp — real WhatsApp not sent]', phoneNumber, message);
     return true;
-  };
-  const sendAllNotifications = (phone, email, smsMessage, emailSubject, emailBody, whatsappMessage) => {
-    if (phone && phone.length === 10) { sendSMS(phone, smsMessage); sendWhatsApp(phone, whatsappMessage || smsMessage); }
-    if (email && email.includes('@')) sendEmail(email, emailSubject, emailBody);
   };
 
   // ============================================
@@ -447,15 +451,6 @@ const Financing = () => {
           alert(`⚠️ Application submitted but documents could not be uploaded. Re-upload from the application detail page.`);
         }
       }
-
-      const lenderName = formData.selectedLender.businessName || formData.selectedLender.name || 'Lender';
-      sendAllNotifications(
-        formData.phone, formData.email,
-        `Loan application ${applicationId} submitted to ${lenderName}. Track: https://kiaetocare.com/my-loans. - KiaetoCare`,
-        `Loan Application Submitted - ${applicationId}`,
-        `Dear ${formData.fullName}, your loan application has been submitted.\n\nApplication ID: ${applicationId}\nAmount: ₹${parseInt(formData.treatmentCost).toLocaleString()}\nLender: ${lenderName}`,
-        null
-      );
 
       alert(`✅ Application Submitted!\nApplication ID: ${applicationId}`);
       await fetchLoanHistory();
@@ -860,16 +855,53 @@ const Financing = () => {
             </div>
           )}
 
-          {/* NOTIFICATION HISTORY — shown under all tabs */}
-          {notificationLog.length > 0 && (
+                    {/* NOTIFICATION HISTORY — real records from backend */}
+          {realNotifications.length > 0 && (
             <div style={{ ...s.card, marginTop: '1rem' }}>
-              <h3 style={{ fontWeight: 700, marginBottom: '1rem', fontSize: '1.1rem' }}>📱 Notification History</h3>
-              <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                {notificationLog.slice(0, 10).map((notif, idx) => (
-                  <div key={idx} style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', padding: '8px', borderBottom: '1px solid #f1f5f9' }}>
-                    <span>{notif.type === 'sms' && '📱'} {notif.type === 'email' && '📧'} {notif.type === 'whatsapp' && '💬'}</span>
-                    <span style={{ marginLeft: '8px' }}>{new Date(notif.sentAt).toLocaleString()}</span>
-                    <p style={{ marginTop: '4px', color: '#374151' }}>{notif.message?.substring(0, 150)}...</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontWeight: 700, margin: 0, fontSize: '1.1rem' }}>📬 Notification History</h3>
+                <button
+                  onClick={fetchRealNotifications}
+                  disabled={notificationsLoading}
+                  style={{ ...dash.buttonSecondary, fontSize: '0.75rem', padding: '4px 10px', opacity: notificationsLoading ? 0.6 : 1 }}
+                >
+                  {notificationsLoading ? '↻ Refreshing...' : '↻ Refresh'}
+                </button>
+              </div>
+              <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                {realNotifications.slice(0, 20).map((notif, idx) => (
+                  <div key={notif.notificationId || idx} style={{ fontSize: '12px', color: '#6b7280', marginBottom: '10px', padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                      <div>
+                        <span style={{ marginRight: '6px' }}>
+                          {notif.channel === 'email' && '📧'}
+                          {notif.channel === 'sms' && '📱'}
+                          {notif.channel === 'whatsapp' && '💬'}
+                        </span>
+                        <strong style={{ color: '#1e293b' }}>{notif.subject || notif.templateKey || 'Notification'}</strong>
+                      </div>
+                      <span style={{
+                        fontSize: '10px',
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        fontWeight: 600,
+                        backgroundColor: notif.status === 'delivered' ? '#d1fae5' : notif.status === 'failed' ? '#fee2e2' : '#fef3c7',
+                        color: notif.status === 'delivered' ? '#065f46' : notif.status === 'failed' ? '#991b1b' : '#92400e',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {notif.status}
+                      </span>
+                    </div>
+                    {notif.message && (
+                      <p style={{ margin: '4px 0', color: '#374151', fontSize: '11px', lineHeight: 1.4 }}>
+                        {notif.message.substring(0, 180)}{notif.message.length > 180 ? '...' : ''}
+                      </p>
+                    )}
+                    <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
+                      {new Date(notif.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {notif.applicationId && <span> · {notif.applicationId}</span>}
+                      {notif.provider && <span> · via {notif.provider}</span>}
+                    </div>
                   </div>
                 ))}
               </div>
