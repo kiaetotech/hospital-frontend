@@ -311,8 +311,11 @@ const LoanCalculator = () => {
                 max="900"
                 style={s.input}
               />
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.3rem' }}>
-                Enter to filter lenders by eligibility
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.3rem' }}>
+                Enter to filter lenders by eligibility ·{' '}
+                <Link to="/credit-score-simulator" style={{ color: '#059669', fontWeight: 600, textDecoration: 'none' }}>
+                  Don't know your score? Estimate it →
+                </Link>
               </div>
             </div>
           </div>
