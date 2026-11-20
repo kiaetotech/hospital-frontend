@@ -69,8 +69,13 @@ const Login = () => {
       } else {
         setError(res.data?.message || 'Login failed');
       }
-    } catch (err) {
-      setError('Login failed. Check credentials.');
+        } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Login failed. Check credentials.';
+      setError(msg);
     }
     setLoading(false);
   };
@@ -80,13 +85,22 @@ const Login = () => {
     if (registerForm.password !== registerForm.confirmPassword) { setError('Passwords do not match'); return; }
     setLoading(true);
     setError('');
-    try {
+        try {
       const res = await api.post('/auth/register', { ...registerForm, role: 'patient', phone: `+91${registerForm.phone}` });
       if (res.data?.success) {
         setSuccess('Registration successful!');
         setTimeout(() => { setIsRegister(false); setSuccess(''); }, 1500);
-      } else { setError(res.data?.message || 'Registration failed'); }
-    } catch (err) { setError('Registration failed'); }
+      } else {
+        setError(res.data?.message || res.data?.error || 'Registration failed');
+      }
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Registration failed. Please try again.';
+      setError(msg);
+    }
     setLoading(false);
   };
 
