@@ -1,10 +1,10 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 
 const API = 'https://hospital-backend-ilhi.onrender.com/api';
 
-// â”€â”€â”€ Generic endpoint map per tag â”€â”€â”€
+// ─── Generic endpoint map per tag ───
 // If a route doesn't exist on the backend yet, the request 404s and the UI
 // shows a "Coming soon" message. When the backend route lands, no frontend change is needed.
 const ENDPOINTS = {
@@ -98,8 +98,7 @@ const MyBookings = () => {
     );
   };
 
-
-const fetchBookings = async () => {
+    const fetchBookings = async () => {
   const token = localStorage.getItem('token');
 
   if (!token) {
@@ -441,7 +440,7 @@ const fetchBookings = async () => {
 
       if (quoteRes.data?.success) {
         const quote = quoteRes.data.data;
-        const confirmMsg = `Cancellation Fee: â‚¹${quote.cancellationFee}\nRefund: â‚¹${quote.refundAmount}\n\nConfirm cancellation?`;
+        const confirmMsg = `Cancellation Fee: ₹${quote.cancellationFee}\nRefund: ₹${quote.refundAmount}\n\nConfirm cancellation?`;
         if (!window.confirm(confirmMsg)) { setCancelLoading(false); setShowCancelModal(false); return; }
       }
 
@@ -458,7 +457,7 @@ const fetchBookings = async () => {
 
       if (res.data.success) {
         const ref = res.data.data;
-        setActionMessage(`âœ… Booking cancelled! Refund: â‚¹${ref?.refundAmount || 0} (${ref?.refundPercentage || 0}%)`);
+        setActionMessage(`✅ Booking cancelled! Refund: ₹${ref?.refundAmount || 0} (${ref?.refundPercentage || 0}%)`);
         fetchBookings();
       }
       setShowCancelModal(false);
@@ -501,7 +500,7 @@ const fetchBookings = async () => {
       }
 
       if (res.data.success) {
-        setActionMessage('âœ… Rating submitted successfully');
+        setActionMessage('✅ Rating submitted successfully');
         fetchBookings();
       }
       setShowReviewModal(false);
@@ -530,7 +529,7 @@ const fetchBookings = async () => {
         throw e;
       }
 
-      if (res.data.success) setActionMessage('âœ… Complaint submitted successfully');
+      if (res.data.success) setActionMessage('✅ Complaint submitted successfully');
       setShowComplaintModal(false);
       fetchBookings();
     } catch (error) {
@@ -580,11 +579,11 @@ const fetchBookings = async () => {
 
     const getBookingTypeIcon = (type) => {
     const map = {
-      opd: 'ðŸ¥', admission: 'ðŸ›ï¸', ambulance: 'ðŸš‘', labtest: 'ðŸ”¬', caregiver: 'ðŸ ',
-      ayurveda_consultation: 'ðŸ§˜', homeopathy_consult: 'ðŸŒ¿', homeopathy_medicine: 'ðŸ’Š',
-      online_doctor: 'ðŸ©º', mentalhealth: 'ðŸ§ ', insurance: 'ðŸ›¡ï¸', loan: 'ðŸ’°'
+      opd: '🏥', admission: '🛏️', ambulance: '🚑', labtest: '🔬', caregiver: '🏠',
+      ayurveda_consultation: '🧘', homeopathy_consult: '🌿', homeopathy_medicine: '💊',
+      online_doctor: '🩺', mentalhealth: '🧠', insurance: '🛡️', loan: '💰'
     };
-    return map[type] || 'ðŸ“‹';
+    return map[type] || '📋';
   };
 
     const getBookingTypeLabel = (type) => {
@@ -612,7 +611,7 @@ const fetchBookings = async () => {
         {[1, 2, 3, 4, 5].map(star => (
           <span key={star} onClick={() => onChange && onChange(star)}
             style={{ fontSize: '1.5rem', cursor: onChange ? 'pointer' : 'default', color: star <= value ? '#f59e0b' : '#d1d5db' }}>
-            â˜…
+            ★
           </span>
         ))}
       </div>
@@ -638,7 +637,7 @@ const fetchBookings = async () => {
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>ðŸ“‹ My Bookings</h1>
+      <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>📋 My Bookings</h1>
       <button
         onClick={async () => {
           if (confirm('Delete all cancelled bookings older than 30 days?')) {
@@ -651,7 +650,7 @@ const fetchBookings = async () => {
           }
         }}
         style={{ padding: '8px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, float: 'right' }}
-      >ðŸ—‘ï¸ Delete Old Cancelled</button>
+      >🗑️ Delete Old Cancelled</button>
       {selectedBookings.length > 0 && (
         <button
           onClick={async () => {
@@ -665,14 +664,14 @@ const fetchBookings = async () => {
             }
           }}
           style={{ padding: '8px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, float: 'right', marginLeft: 10 }}
-        >ðŸ—‘ï¸ Delete Selected ({selectedBookings.length})</button>
+        >🗑️ Delete Selected ({selectedBookings.length})</button>
       )}
       <p style={{ color: '#6b7280', marginBottom: '20px' }}>View, cancel, and review all your bookings</p>
 
       {actionMessage && (
         <div style={{
-          backgroundColor: actionMessage.includes('âœ…') ? '#d1fae5' : '#fee2e2',
-          color: actionMessage.includes('âœ…') ? '#065f46' : '#dc2626',
+          backgroundColor: actionMessage.includes('✅') ? '#d1fae5' : '#fee2e2',
+          color: actionMessage.includes('✅') ? '#065f46' : '#dc2626',
           padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem', fontWeight: 'bold'
         }}>{actionMessage}</div>
       )}
@@ -692,47 +691,47 @@ const fetchBookings = async () => {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '25px' }}>
             <div style={{ backgroundColor: '#e0f2fe', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '24px' }}>ðŸ¥</div>
+              <div style={{ fontSize: '24px' }}>🏥</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{hospitalBookings.length}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Hospital</div>
             </div>
             <div style={{ backgroundColor: '#d1fae5', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '24px' }}>ðŸ”¬</div>
+              <div style={{ fontSize: '24px' }}>🔬</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{labBookings.length}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Lab Tests</div>
             </div>
             <div style={{ backgroundColor: '#fed7aa', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '24px' }}>ðŸš‘</div>
+              <div style={{ fontSize: '24px' }}>🚑</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{ambulanceBookings.length}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Ambulance</div>
             </div>
             <div style={{ backgroundColor: '#bfdbfe', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '2px solid #2563eb' }}>
-              <div style={{ fontSize: '24px' }}>ðŸ›¡ï¸</div>
+              <div style={{ fontSize: '24px' }}>🛡️</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{totalInsurancePolicies}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Insurance</div>
             </div>
             <div style={{ backgroundColor: '#d1fae5', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '2px solid #10b981' }}>
-              <div style={{ fontSize: '24px' }}>ðŸ§˜</div>
+              <div style={{ fontSize: '24px' }}>🧘</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{ayurvedaCount}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Ayurveda</div>
             </div>
             <div style={{ backgroundColor: '#d1fae5', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '2px solid #059669' }}>
-              <div style={{ fontSize: '24px' }}>ðŸŒ¿</div>
+              <div style={{ fontSize: '24px' }}>🌿</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{homeopathyCount}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Homeopathy</div>
             </div>
             <div style={{ backgroundColor: '#dbeafe', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '2px solid #2563eb' }}>
-              <div style={{ fontSize: '24px' }}>ðŸ©º</div>
+              <div style={{ fontSize: '24px' }}>🩺</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{onlineDoctorCount}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Online Dr</div>
             </div>
             <div style={{ backgroundColor: '#ede9fe', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '2px solid #7c3aed' }}>
-              <div style={{ fontSize: '24px' }}>ðŸ§ </div>
+              <div style={{ fontSize: '24px' }}>🧠</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{mentalHealthCount}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Mental Health</div>
             </div>
             <div style={{ backgroundColor: '#cffafe', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '2px solid #0891b2' }}>
-              <div style={{ fontSize: '24px' }}>ðŸ </div>
+              <div style={{ fontSize: '24px' }}>🏠</div>
               <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{caregiverCount}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>Caregiver</div>
             </div>
@@ -751,7 +750,7 @@ const fetchBookings = async () => {
     fontFamily: 'inherit',
   }}
 >
-  <div style={{ fontSize: '24px' }}>ðŸ’°</div>
+  <div style={{ fontSize: '24px' }}>💰</div>
   <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{loanCount}</div>
   <div style={{ fontSize: '12px', color: '#666' }}>Loan</div>
 </button>
@@ -759,29 +758,29 @@ const fetchBookings = async () => {
 
           <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px', flexWrap: 'wrap' }}>
             <button onClick={() => setSelectedType('all')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'all' ? '#3b82f6' : 'transparent', color: selectedType === 'all' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>All ({bookings.length + totalInsurancePolicies})</button>
-            <button onClick={() => setSelectedType('opd')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'opd' ? '#8b5cf6' : 'transparent', color: selectedType === 'opd' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>ðŸ¥ Hospital ({hospitalBookings.length})</button>
-            <button onClick={() => setSelectedType('labtest')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'labtest' ? '#10b981' : 'transparent', color: selectedType === 'labtest' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>ðŸ”¬ Lab ({labBookings.length})</button>
-            <button onClick={() => setSelectedType('ambulance')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'ambulance' ? '#f59e0b' : 'transparent', color: selectedType === 'ambulance' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>ðŸš‘ Ambulance ({ambulanceBookings.length})</button>
-            <button onClick={() => setSelectedType('insurance')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'insurance' ? '#2563eb' : 'transparent', color: selectedType === 'insurance' ? 'white' : '#333', border: selectedType === 'insurance' ? 'none' : '1px solid #2563eb', borderRadius: '20px', cursor: 'pointer' }}>ðŸ›¡ï¸ Insurance ({totalInsurancePolicies})</button>
-            <button onClick={() => setSelectedType('ayurveda_consultation')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'ayurveda_consultation' ? '#10b981' : 'transparent', color: selectedType === 'ayurveda_consultation' ? 'white' : '#333', border: selectedType === 'ayurveda_consultation' ? 'none' : '1px solid #10b981', borderRadius: '20px', cursor: 'pointer' }}>ðŸ§˜ Ayurveda ({ayurvedaCount})</button>
-            <button onClick={() => setSelectedType('homeopathy_consult')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'homeopathy_consult' ? '#059669' : 'transparent', color: selectedType === 'homeopathy_consult' ? 'white' : '#333', border: selectedType === 'homeopathy_consult' ? 'none' : '1px solid #059669', borderRadius: '20px', cursor: 'pointer' }}>ðŸŒ¿ Homeopathy ({homeopathyCount})</button>
-            <button onClick={() => setSelectedType('online_doctor')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'online_doctor' ? '#2563eb' : 'transparent', color: selectedType === 'online_doctor' ? 'white' : '#333', border: selectedType === 'online_doctor' ? 'none' : '1px solid #2563eb', borderRadius: '20px', cursor: 'pointer' }}>ðŸ©º Online Dr ({onlineDoctorCount})</button>
-            <button onClick={() => setSelectedType('mentalhealth')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'mentalhealth' ? '#7c3aed' : 'transparent', color: selectedType === 'mentalhealth' ? 'white' : '#333', border: selectedType === 'mentalhealth' ? 'none' : '1px solid #7c3aed', borderRadius: '20px', cursor: 'pointer' }}>ðŸ§  Mental Health ({mentalHealthCount})</button>
-            <button onClick={() => setSelectedType('caregiver')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'caregiver' ? '#0891b2' : 'transparent', color: selectedType === 'caregiver' ? 'white' : '#333', border: selectedType === 'caregiver' ? 'none' : '1px solid #0891b2', borderRadius: '20px', cursor: 'pointer' }}>ðŸ  Caregiver ({caregiverCount})</button>
-            <button onClick={() => setSelectedType('loan')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'loan' ? '#8b5cf6' : 'transparent', color: selectedType === 'loan' ? 'white' : '#333', border: selectedType === 'loan' ? 'none' : '1px solid #8b5cf6', borderRadius: '20px', cursor: 'pointer' }}>ðŸ’° Loan ({loanCount})</button>
+            <button onClick={() => setSelectedType('opd')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'opd' ? '#8b5cf6' : 'transparent', color: selectedType === 'opd' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>🏥 Hospital ({hospitalBookings.length})</button>
+            <button onClick={() => setSelectedType('labtest')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'labtest' ? '#10b981' : 'transparent', color: selectedType === 'labtest' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>🔬 Lab ({labBookings.length})</button>
+            <button onClick={() => setSelectedType('ambulance')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'ambulance' ? '#f59e0b' : 'transparent', color: selectedType === 'ambulance' ? 'white' : '#333', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>🚑 Ambulance ({ambulanceBookings.length})</button>
+            <button onClick={() => setSelectedType('insurance')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'insurance' ? '#2563eb' : 'transparent', color: selectedType === 'insurance' ? 'white' : '#333', border: selectedType === 'insurance' ? 'none' : '1px solid #2563eb', borderRadius: '20px', cursor: 'pointer' }}>🛡️ Insurance ({totalInsurancePolicies})</button>
+            <button onClick={() => setSelectedType('ayurveda_consultation')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'ayurveda_consultation' ? '#10b981' : 'transparent', color: selectedType === 'ayurveda_consultation' ? 'white' : '#333', border: selectedType === 'ayurveda_consultation' ? 'none' : '1px solid #10b981', borderRadius: '20px', cursor: 'pointer' }}>🧘 Ayurveda ({ayurvedaCount})</button>
+            <button onClick={() => setSelectedType('homeopathy_consult')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'homeopathy_consult' ? '#059669' : 'transparent', color: selectedType === 'homeopathy_consult' ? 'white' : '#333', border: selectedType === 'homeopathy_consult' ? 'none' : '1px solid #059669', borderRadius: '20px', cursor: 'pointer' }}>🌿 Homeopathy ({homeopathyCount})</button>
+            <button onClick={() => setSelectedType('online_doctor')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'online_doctor' ? '#2563eb' : 'transparent', color: selectedType === 'online_doctor' ? 'white' : '#333', border: selectedType === 'online_doctor' ? 'none' : '1px solid #2563eb', borderRadius: '20px', cursor: 'pointer' }}>🩺 Online Dr ({onlineDoctorCount})</button>
+            <button onClick={() => setSelectedType('mentalhealth')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'mentalhealth' ? '#7c3aed' : 'transparent', color: selectedType === 'mentalhealth' ? 'white' : '#333', border: selectedType === 'mentalhealth' ? 'none' : '1px solid #7c3aed', borderRadius: '20px', cursor: 'pointer' }}>🧠 Mental Health ({mentalHealthCount})</button>
+            <button onClick={() => setSelectedType('caregiver')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'caregiver' ? '#0891b2' : 'transparent', color: selectedType === 'caregiver' ? 'white' : '#333', border: selectedType === 'caregiver' ? 'none' : '1px solid #0891b2', borderRadius: '20px', cursor: 'pointer' }}>🏠 Caregiver ({caregiverCount})</button>
+            <button onClick={() => setSelectedType('loan')} style={{ padding: '8px 16px', backgroundColor: selectedType === 'loan' ? '#8b5cf6' : 'transparent', color: selectedType === 'loan' ? 'white' : '#333', border: selectedType === 'loan' ? 'none' : '1px solid #8b5cf6', borderRadius: '20px', cursor: 'pointer' }}>💰 Loan ({loanCount})</button>
           </div>
 
           {(selectedType === 'all' || selectedType === 'insurance') && insurancePolicies.length > 0 && (
             <div style={{ marginBottom: '25px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>
-                <span>ðŸ›¡ï¸</span> My Insurance Policies
+                <span>🛡️</span> My Insurance Policies
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
                 {insurancePolicies.map((policy) => (
                   <div key={policy._id} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: `4px solid ${policy.status === 'active' ? '#10b981' : '#f59e0b'}`, border: '1px solid #e5e7eb' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
                       <div>
-                        <span style={{ fontSize: '20px' }}>ðŸ›¡ï¸</span>
+                        <span style={{ fontSize: '20px' }}>🛡️</span>
                         <strong style={{ fontSize: '16px' }}>{policy.policyName || 'Insurance Policy'}</strong>
                         <span style={{ padding: '2px 10px', borderRadius: '12px', backgroundColor: getStatusColor(policy.status), color: 'white', fontSize: '11px', fontWeight: 'bold', marginLeft: '8px' }}>{getStatusText(policy.status)}</span>
                       </div>
@@ -843,20 +842,20 @@ const fetchBookings = async () => {
                     <div style={{ borderTop: '1px solid #eee', paddingTop: '10px' }}>
                       {booking.bookingType === 'labtest' ? (
                         <>
-                          <p><strong>ðŸ”¬ Lab:</strong> {booking.providerName}</p>
-                          <p><strong>ðŸ§ª Tests:</strong> {booking.tests?.join(', ')}</p>
-                          <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount}</p>
-                          {booking.homeCollectionRequested && <p><strong>ðŸ  Home Collection:</strong> Yes</p>}
+                          <p><strong>🔬 Lab:</strong> {booking.providerName}</p>
+                          <p><strong>🧪 Tests:</strong> {booking.tests?.join(', ')}</p>
+                          <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
+                          {booking.homeCollectionRequested && <p><strong>🏠 Home Collection:</strong> Yes</p>}
                         </>
                       ) : booking.bookingType === 'ambulance' ? (
                         <>
-                          <p><strong>ðŸš‘ Type:</strong> {booking.ambulanceType}</p>
-                          <p><strong>ðŸ“ Pickup:</strong> {booking.pickupAddress}</p>
-                          <p><strong>ðŸ“ Drop:</strong> {booking.dropAddress}</p>
-                          <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount}</p>
-                          {booking.driverName && <p><strong>ðŸš‘ Driver:</strong> {booking.driverName}</p>}
-                          {booking.driverPhone && <p><strong>ðŸ“ž Driver Contact:</strong> {booking.driverPhone}</p>}
-                          {booking.vehicleNumber && <p><strong>ðŸš Vehicle:</strong> {booking.vehicleNumber}</p>}
+                          <p><strong>🚑 Type:</strong> {booking.ambulanceType}</p>
+                          <p><strong>📍 Pickup:</strong> {booking.pickupAddress}</p>
+                          <p><strong>📍 Drop:</strong> {booking.dropAddress}</p>
+                          <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
+                          {booking.driverName && <p><strong>🚑 Driver:</strong> {booking.driverName}</p>}
+                          {booking.driverPhone && <p><strong>📞 Driver Contact:</strong> {booking.driverPhone}</p>}
+                          {booking.vehicleNumber && <p><strong>🚐 Vehicle:</strong> {booking.vehicleNumber}</p>}
                           {booking.tripOtp && booking.status !== 'completed' && (
                             <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#d1fae5', borderRadius: '6px', textAlign: 'center' }}>
                               <p style={{ fontSize: '12px', margin: '0 0 3px', color: '#065f46' }}>Share this OTP with driver:</p>
@@ -868,18 +867,18 @@ const fetchBookings = async () => {
                         <>
                           {booking.type === 'panchakarma_package' ? (
                             <>
-                              {booking.centerName && <p><strong>ðŸ¨ Center:</strong> {booking.centerName}</p>}
-                              {booking.package?.name && <p><strong>ðŸ“¦ Package:</strong> {booking.package.name}</p>}
-                              {booking.package?.duration && <p><strong>â±ï¸ Duration:</strong> {booking.package.duration} days</p>}
-                              <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount}</p>
+                              {booking.centerName && <p><strong>🏨 Center:</strong> {booking.centerName}</p>}
+                              {booking.package?.name && <p><strong>📦 Package:</strong> {booking.package.name}</p>}
+                              {booking.package?.duration && <p><strong>⏱️ Duration:</strong> {booking.package.duration} days</p>}
+                              <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                             </>
                           ) : (
                             <>
-                              {booking.doctorName && <p><strong>ðŸ‘¨â€âš•ï¸ Doctor:</strong> {booking.doctorName}</p>}
-                              {booking.doctorSpecialization && <p><strong>ðŸŒ¿ Specialty:</strong> {booking.doctorSpecialization}</p>}
-                              {booking.consultationType && <p><strong>ðŸ“¹ Type:</strong> {booking.consultationType}</p>}
-                              {booking.slotTime && <p><strong>â° Time:</strong> {booking.slotTime}</p>}
-                              <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount}</p>
+                              {booking.doctorName && <p><strong>👨‍⚕️ Doctor:</strong> {booking.doctorName}</p>}
+                              {booking.doctorSpecialization && <p><strong>🌿 Specialty:</strong> {booking.doctorSpecialization}</p>}
+                              {booking.consultationType && <p><strong>📹 Type:</strong> {booking.consultationType}</p>}
+                              {booking.slotTime && <p><strong>⏰ Time:</strong> {booking.slotTime}</p>}
+                              <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                             </>
                           )}
                         </>
@@ -887,89 +886,89 @@ const fetchBookings = async () => {
                         <>
                           {booking.type === 'naturopathy_center' ? (
                             <>
-                              {booking.centerName && <p><strong>ðŸ¨ Center:</strong> {booking.centerName}</p>}
-                              {booking.package?.name && <p><strong>ðŸ“¦ Package:</strong> {booking.package.name}</p>}
-                              {booking.package?.duration && <p><strong>â±ï¸ Duration:</strong> {booking.package.duration} days</p>}
-                              <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount}</p>
+                              {booking.centerName && <p><strong>🏨 Center:</strong> {booking.centerName}</p>}
+                              {booking.package?.name && <p><strong>📦 Package:</strong> {booking.package.name}</p>}
+                              {booking.package?.duration && <p><strong>⏱️ Duration:</strong> {booking.package.duration} days</p>}
+                              <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                             </>
                           ) : booking.type === 'homeopathy_medicine' ? (
                             <>
-                              {booking.pharmacyName && <p><strong>ðŸ’Š Pharmacy:</strong> {booking.pharmacyName}</p>}
-                              {booking.medicines?.length > 0 && <p><strong>ðŸ§ª Medicines:</strong> {booking.medicines.map(m => m.name).join(', ')}</p>}
-                              {booking.deliveryAddress && <p><strong>ðŸ“ Delivery:</strong> {booking.deliveryAddress}</p>}
-                              <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount}</p>
+                              {booking.pharmacyName && <p><strong>💊 Pharmacy:</strong> {booking.pharmacyName}</p>}
+                              {booking.medicines?.length > 0 && <p><strong>🧪 Medicines:</strong> {booking.medicines.map(m => m.name).join(', ')}</p>}
+                              {booking.deliveryAddress && <p><strong>📍 Delivery:</strong> {booking.deliveryAddress}</p>}
+                              <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                             </>
                           ) : (
                             <>
-                              {booking.doctorName && <p><strong>ðŸ‘¨â€âš•ï¸ Doctor:</strong> {booking.doctorName}</p>}
-                              {booking.doctorSpecialization && <p><strong>ðŸŒ¿ Specialty:</strong> {booking.doctorSpecialization}</p>}
-                              {booking.consultationType && <p><strong>ðŸ“¹ Type:</strong> {booking.consultationType}</p>}
-                              {booking.slotTime && <p><strong>â° Time:</strong> {booking.slotTime}</p>}
-                              <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount}</p>
+                              {booking.doctorName && <p><strong>👨‍⚕️ Doctor:</strong> {booking.doctorName}</p>}
+                              {booking.doctorSpecialization && <p><strong>🌿 Specialty:</strong> {booking.doctorSpecialization}</p>}
+                              {booking.consultationType && <p><strong>📹 Type:</strong> {booking.consultationType}</p>}
+                              {booking.slotTime && <p><strong>⏰ Time:</strong> {booking.slotTime}</p>}
+                              <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
                             </>
                           )}
                         </>
                       ) : booking.bookingType === 'online_doctor' ? (
                         <>
-                          {booking.doctorName && <p><strong>ðŸ©º Doctor:</strong> {booking.doctorName}</p>}
+                          {booking.doctorName && <p><strong>🩺 Doctor:</strong> {booking.doctorName}</p>}
                           {booking.doctorSpecialization && <p><strong>Specialty:</strong> {booking.doctorSpecialization}</p>}
-                          {booking.timeSlot && <p><strong>â° Time:</strong> {booking.timeSlot}</p>}
-                          {booking.reason && <p><strong>ðŸ“ Symptoms:</strong> {booking.reason}</p>}
-                          <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount || booking.amount || 0}</p>
+                          {booking.timeSlot && <p><strong>⏰ Time:</strong> {booking.timeSlot}</p>}
+                          {booking.reason && <p><strong>📝 Symptoms:</strong> {booking.reason}</p>}
+                          <p><strong>💰 Amount:</strong> ₹{booking.finalAmount || booking.amount || 0}</p>
                         </>
                       ) : booking.bookingType === 'mentalhealth' ? (
                         <>
-                          {booking.therapistId?.name && <p><strong>ðŸ§  Therapist:</strong> {booking.therapistId.name}</p>}
-                          {booking.scheduledTime && <p><strong>â° Time:</strong> {booking.scheduledTime}</p>}
-                          {booking.sessionType && <p><strong>ðŸ“¹ Type:</strong> {booking.sessionType}</p>}
-                          <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.amount || 0}</p>
+                          {booking.therapistId?.name && <p><strong>🧠 Therapist:</strong> {booking.therapistId.name}</p>}
+                          {booking.scheduledTime && <p><strong>⏰ Time:</strong> {booking.scheduledTime}</p>}
+                          {booking.sessionType && <p><strong>📹 Type:</strong> {booking.sessionType}</p>}
+                          <p><strong>💰 Amount:</strong> ₹{booking.amount || 0}</p>
                         </>
                       ) : booking.bookingType === 'caregiver' ? (
                         <>
-                          {booking.caregiverId?.fullName && <p><strong>ðŸ  Caregiver:</strong> {booking.caregiverId.fullName}</p>}
-                          {booking.startTime && <p><strong>â° Time:</strong> {booking.startTime} {booking.endTime ? `â€“ ${booking.endTime}` : ''}</p>}
-                          {booking.address && <p><strong>ðŸ“ Address:</strong> {booking.address}</p>}
-                          <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.totalAmount || 0}</p>
+                          {booking.caregiverId?.fullName && <p><strong>🏠 Caregiver:</strong> {booking.caregiverId.fullName}</p>}
+                          {booking.startTime && <p><strong>⏰ Time:</strong> {booking.startTime} {booking.endTime ? `– ${booking.endTime}` : ''}</p>}
+                          {booking.address && <p><strong>📍 Address:</strong> {booking.address}</p>}
+                          <p><strong>💰 Amount:</strong> ₹{booking.totalAmount || 0}</p>
                         </>
                       ) : booking.bookingType === 'insurance' ? (
                         <>
-                          <p><strong>ðŸ›¡ï¸ Insurance:</strong> {booking.insuranceCompanyName}</p>
-                          <p><strong>ðŸ“‹ Plan:</strong> {booking.insurancePlanName}</p>
-                          <p><strong>ðŸ’° Premium:</strong> â‚¹{booking.premiumAmount}</p>
+                          <p><strong>🛡️ Insurance:</strong> {booking.insuranceCompanyName}</p>
+                          <p><strong>📋 Plan:</strong> {booking.insurancePlanName}</p>
+                          <p><strong>💰 Premium:</strong> ₹{booking.premiumAmount}</p>
                         </>
                       ) : booking.bookingType === 'loan' ? (
                         <>
-                          <p><strong>ðŸ’° Loan Type:</strong> {booking.treatmentType || 'Medical Loan'}</p>
-                          <p><strong>ðŸ¦ Lender:</strong> {booking.lenderName || 'Lender'}</p>
-                          <p><strong>ðŸ¥ Hospital:</strong> {booking.hospitalName || 'N/A'}</p>
-                          <p><strong>ðŸ’µ Estimated:</strong> â‚¹{(booking.estimatedAmount || 0).toLocaleString()}</p>
-                          {booking.sanctionedAmount > 0 && <p><strong>âœ… Sanctioned:</strong> â‚¹{booking.sanctionedAmount.toLocaleString()}</p>}
-                          <p><strong>ðŸ“‹ Application:</strong> <code>{booking.applicationId}</code></p>
+                          <p><strong>💰 Loan Type:</strong> {booking.treatmentType || 'Medical Loan'}</p>
+                          <p><strong>🏦 Lender:</strong> {booking.lenderName || 'Lender'}</p>
+                          <p><strong>🏥 Hospital:</strong> {booking.hospitalName || 'N/A'}</p>
+                          <p><strong>💵 Estimated:</strong> ₹{(booking.estimatedAmount || 0).toLocaleString()}</p>
+                          {booking.sanctionedAmount > 0 && <p><strong>✅ Sanctioned:</strong> ₹{booking.sanctionedAmount.toLocaleString()}</p>}
+                          <p><strong>📋 Application:</strong> <code>{booking.applicationId}</code></p>
                         </>
                       ) : (
                         <>
-                          {booking.hospitalName && <p><strong>ðŸ¥ Hospital:</strong> {booking.hospitalName}</p>}
-                          {booking.doctorName && <p><strong>ðŸ‘¨â€âš•ï¸ Doctor:</strong> {booking.doctorName}</p>}
-                          {booking.timeSlot && <p><strong>â° Time:</strong> {booking.timeSlot}</p>}
-                          {booking.roomType && <p><strong>ðŸ›ï¸ Room:</strong> {booking.roomType}</p>}
-                          <p><strong>ðŸ’° Amount:</strong> â‚¹{booking.finalAmount}</p>
-                          {booking.discount > 0 && <p><strong>ðŸŽ‰ Discount:</strong> â‚¹{booking.discount}</p>}
+                          {booking.hospitalName && <p><strong>🏥 Hospital:</strong> {booking.hospitalName}</p>}
+                          {booking.doctorName && <p><strong>👨‍⚕️ Doctor:</strong> {booking.doctorName}</p>}
+                          {booking.timeSlot && <p><strong>⏰ Time:</strong> {booking.timeSlot}</p>}
+                          {booking.roomType && <p><strong>🛏️ Room:</strong> {booking.roomType}</p>}
+                          <p><strong>💰 Amount:</strong> ₹{booking.finalAmount}</p>
+                          {booking.discount > 0 && <p><strong>🎉 Discount:</strong> ₹{booking.discount}</p>}
                         </>
                       )}
 
-                      <p><strong>ðŸ“… Date:</strong> {new Date(booking.appointmentDate || booking.bookingDate).toLocaleDateString()}</p>
+                      <p><strong>📅 Date:</strong> {new Date(booking.appointmentDate || booking.bookingDate).toLocaleDateString()}</p>
                       <p>
-                        <strong>ðŸ‘¤ Patient:</strong> {booking.patientName}
+                        <strong>👤 Patient:</strong> {booking.patientName}
                         {(booking.patientAge || booking.patientGender) && (
-                          <> ({booking.patientAge || 'â€”'} yrs, {booking.patientGender || 'â€”'})</>
+                          <> ({booking.patientAge || '—'} yrs, {booking.patientGender || '—'})</>
                         )}
                       </p>
-                      <p><strong>ðŸ“ž Patient Contact:</strong> {booking.patientPhone}</p>
+                      <p><strong>📞 Patient Contact:</strong> {booking.patientPhone}</p>
                                             {booking.paymentStatus && (
-                        <p><strong>ðŸ’³ Payment:</strong> <span style={{ color: booking.paymentStatus === 'paid' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{booking.paymentStatus.toUpperCase()}</span></p>
+                        <p><strong>💳 Payment:</strong> <span style={{ color: booking.paymentStatus === 'paid' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{booking.paymentStatus.toUpperCase()}</span></p>
                       )}
 
-                      {/* ðŸ†• Consultation OTP (only while active and not yet verified) */}
+                      {/* 🆕 Consultation OTP (only while active and not yet verified) */}
                       {booking.otp &&
                        booking.paymentStatus === 'paid' &&
                        !booking.otpVerified &&
@@ -983,7 +982,7 @@ const fetchBookings = async () => {
                           textAlign: 'center'
                         }}>
                           <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
-                            ðŸ” CONSULTATION OTP
+                            🔐 CONSULTATION OTP
                           </p>
                           <p style={{
                             margin: '4px 0',
@@ -1007,10 +1006,10 @@ const fetchBookings = async () => {
 
                       {booking.review && (booking.review.rating || booking.review.comment) && (
                         <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#fef3c7', borderRadius: '8px' }}>
-                          <p style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>â­ Your Review</p>
+                          <p style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>⭐ Your Review</p>
                           <p style={{ margin: '0', fontSize: '14px' }}>"{booking.review.comment || booking.review.review || ''}"</p>
                           <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: '#6b7280', marginTop: '5px' }}>
-                            <span>â­ {booking.review.rating}/5</span>
+                            <span>⭐ {booking.review.rating}/5</span>
                           </div>
                         </div>
                       )}
@@ -1022,7 +1021,7 @@ const fetchBookings = async () => {
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                                 <div>
                                   <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase' }}>
-                                    ðŸš¨ Complaint: {c.category?.replace(/_/g, ' ')}
+                                    🚨 Complaint: {c.category?.replace(/_/g, ' ')}
                                   </p>
                                   <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4b5563' }}>{c.description}</p>
                                 </div>
@@ -1061,13 +1060,13 @@ const fetchBookings = async () => {
                         {isCancellable && getTagKey(booking) && (
                           <button onClick={() => handleCancelBooking(booking)}
                             style={{ padding: '6px 14px', backgroundColor: '#fff', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
-                            âŒ Cancel Booking
+                            ❌ Cancel Booking
                           </button>
                         )}
                         {['confirmed', 'in_progress', 'completed'].includes(booking.status) && getTagKey(booking) && (
                           <button onClick={() => { setSelectedBooking(booking); setShowComplaintModal(true); }}
                             style={{ padding: '6px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
-                            ðŸš¨ Report Issue
+                            🚨 Report Issue
                           </button>
                         )}
                         {(booking.status === 'completed' || booking.status === 'confirmed') &&
@@ -1075,7 +1074,7 @@ const fetchBookings = async () => {
                          !(booking.review && (booking.review.rating || booking.review.comment)) && (
                           <button onClick={() => handleOpenReview(booking)}
                             style={{ padding: '6px 14px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
-                            â­ Write Review
+                            ⭐ Write Review
                           </button>
                         )}
                         {isCancellable && refundInfo && (
@@ -1115,7 +1114,7 @@ const fetchBookings = async () => {
       {showCancelModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1003, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '450px', width: '90%' }}>
-            <h3 style={{ marginBottom: '10px' }}>âŒ Cancel Booking</h3>
+            <h3 style={{ marginBottom: '10px' }}>❌ Cancel Booking</h3>
             <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '15px' }}>Are you sure you want to cancel booking <strong>{cancellingId}</strong>?</p>
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', fontWeight: '500', marginBottom: '5px', fontSize: '14px' }}>Reason (optional)</label>
@@ -1136,7 +1135,7 @@ const fetchBookings = async () => {
       {showComplaintModal && selectedBooking && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1005, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%' }}>
-            <h3 style={{ marginBottom: '10px' }}>ðŸš¨ Report Issue</h3>
+            <h3 style={{ marginBottom: '10px' }}>🚨 Report Issue</h3>
             <select value={complaintData.category} onChange={e => setComplaintData({ ...complaintData, category: e.target.value })}
               style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #ddd' }}>
               <option value="service_quality">Service Quality</option>
@@ -1172,10 +1171,10 @@ const fetchBookings = async () => {
       {showReviewModal && selectedBooking && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1004, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflowY: 'auto' }}>
-            <h3 style={{ marginBottom: '5px' }}>â­ Write a Review</h3>
+            <h3 style={{ marginBottom: '5px' }}>⭐ Write a Review</h3>
             <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '15px' }}>
               {selectedBooking.hospitalName && `Hospital: ${selectedBooking.hospitalName}`}
-              {selectedBooking.doctorName && ` â€¢ ${selectedBooking.doctorName}`}
+              {selectedBooking.doctorName && ` • ${selectedBooking.doctorName}`}
             </p>
             <StarRating label="Overall Rating" value={reviewData.rating} onChange={(val) => setReviewData({ ...reviewData, rating: val })} />
             <StarRating label="Doctor Rating" value={reviewData.doctorRating} onChange={(val) => setReviewData({ ...reviewData, doctorRating: val })} />
@@ -1192,7 +1191,7 @@ const fetchBookings = async () => {
               <button onClick={() => setShowReviewModal(false)} style={{ flex: 1, padding: '10px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
               <button onClick={submitReview} disabled={reviewLoading}
                 style={{ flex: 1, padding: '10px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: reviewLoading ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
-                {reviewLoading ? 'Submitting...' : 'Submit Review â­'}
+                {reviewLoading ? 'Submitting...' : 'Submit Review ⭐'}
               </button>
             </div>
           </div>
