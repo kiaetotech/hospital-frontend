@@ -638,6 +638,22 @@ const MyBookings = () => {
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
       <h1 style={{ fontSize: '28px', marginBottom: '5px' }}>📋 My Bookings</h1>
+	<button
+  type="button"
+  onClick={() => navigate('/dashboard')}
+  style={{
+    padding: '10px 16px',
+    marginBottom: '15px',
+    backgroundColor: '#2563eb',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '600'
+  }}
+>
+  ← Back to Dashboard
+</button>
       <button
         onClick={async () => {
           if (confirm('Delete all cancelled bookings older than 30 days?')) {
