@@ -1127,9 +1127,9 @@ const LenderLoanHub = () => {
                         </div>
                       )}
 
-                      {underwritingResult.decision === 'reject' && (
-                        <div style={{ fontSize: '0.8rem', color: '#991b1b', fontWeight: 600, marginTop: '0.5rem' }}>
-                          ⚠️ Offer issuance will be blocked by the underwriting gate
+                           {underwritingResult.decision === 'reject' && (
+                        <div style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 600, marginTop: '0.5rem' }}>
+                          ⚠️ Underwriting recommends rejection. If bureau is disabled on server, the offer gate is skipped and manual issuance is allowed.
                         </div>
                       )}
                     </div>
