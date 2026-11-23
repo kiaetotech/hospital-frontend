@@ -342,14 +342,27 @@ const LenderLoanHub = () => {
   }
 };
 
-  const handleSelectApplication = async (application) => {
+    const handleSelectApplication = async (application) => {
     setSelectedApplication(application);
-    setUnderwritingResult(null);  // reset when switching apps
+    setUnderwritingResult(null);
 
-// Update URL to reflect selected app (so refresh/share works)
-  const url = new URL(window.location.href);
-  url.searchParams.set('applicationId', application.applicationId);
-  window.history.replaceState({}, '', url.toString());
+    // Update URL to reflect selected app
+    const url = new URL(window.location.href);
+    url.searchParams.set('applicationId', application.applicationId);
+    window.history.replaceState({}, '', url.toString());
+
+    // Skip API calls for statuses that have no workflow yet
+    // (avoids 4× 404 noise per application in network tab)
+    const noWorkflowStatuses = ['submitted', 'under_review', 'document_pending', 'withdrawn', 'rejected', 'cancelled'];
+    if (noWorkflowStatuses.includes(application.status)) {
+      setApplicationOffers([]);
+      setApplicationAgreements([]);
+      setApplicationDisbursements([]);
+      setApplicationMandates([]);
+      setLoanSchedule(null);
+      return;
+    }
+
     try {
       const [offersRes, agreementsRes, disbsRes, mandatesRes] = await Promise.all([
         loanOffers.listByApplication(application.applicationId).catch(() => ({ data: { offers: [] } })),
@@ -444,14 +457,17 @@ const LenderLoanHub = () => {
   // ============================================
   // APPLICATION UNDERWRITE HANDLERS
   // ============================================
-  const handleUpdateStatus = async (applicationId, status, extraData = {}) => {
+    const handleUpdateStatus = async (applicationId, status, extraData = {}, options = {}) => {
     try {
       await lenderApplications.updateStatus(applicationId, { status, ...extraData });
-      alert(`Application ${status}`);
+      alert(`Application status: ${status}`);
       await fetchApplications();
-      setSelectedApplication(null);
+      if (options.keepSelected !== true) {
+        setSelectedApplication(null);
+      }
     } catch (err) {
       alert('Failed: ' + (err.response?.data?.error || err.message));
+      throw err;  // re-throw so caller can handle
     }
   };
 
@@ -492,7 +508,6 @@ const LenderLoanHub = () => {
       'rejected': '❌ Rejected',
       'withdrawn': '↩️ Withdrawn',
       'cancelled': '⏹️ Cancelled',
-      'approved': '👍 Approved',
     };
     return labels[status] || status;
   };
@@ -550,7 +565,7 @@ const LenderLoanHub = () => {
         document_pending: { bg: '#fed7aa', color: '#9a3412' },
         offer_issued: { bg: '#dbeafe', color: '#1e40af' },
         offer_accepted: { bg: '#d1fae5', color: '#065f46' },
-        approved: { bg: '#d1fae5', color: '#065f46' },
+        // Note: no 'approved' status — lifecycle uses offer_issued, offer_accepted, etc.
         pending_disbursal: { bg: '#fef3c7', color: '#92400e' },
         disbursed: { bg: '#d1fae5', color: '#065f46' },
         completed: { bg: '#d1fae5', color: '#065f46' },
@@ -621,7 +636,7 @@ const LenderLoanHub = () => {
             <div style={styles.statCard}>
               <div style={styles.statLabel}>Approved</div>
               <div style={{ ...styles.statValue, color: '#10b981' }}>
-                {applications.filter(a => ['approved', 'offer_issued', 'offer_accepted', 'agreement_pending', 'agreement_signed', 'pending_disbursal'].includes(a.status)).length}
+               {applications.filter(a => ['offer_issued', 'offer_accepted', 'agreement_pending', 'agreement_signed', 'pending_disbursal'].includes(a.status)).length}
               </div>
             </div>
             <div style={styles.statCard}>
@@ -981,17 +996,55 @@ const LenderLoanHub = () => {
                       → Under Review
                     </button>
                   )}
-                  {['submitted', 'under_review', 'document_pending'].includes(selectedApplication.status) && (
-                    <button onClick={() => {
-                      const sanction = parseFloat(window.prompt('Sanctioned amount (₹)?') || '0');
-                      const tenure = parseInt(window.prompt('Tenure (months)?') || '12');
-                      const rate = parseFloat(window.prompt('Interest rate (%)?') || '12');
-                      if (!sanction || !tenure || !rate) return;
-                      handleUpdateStatus(selectedApplication.applicationId, 'approved', { sanctionedAmount: sanction, tenure, interestRate: rate, note: 'Approved' });
-                    }} style={{ ...styles.buttonPrimary, background: '#10b981' }}>
-                      ✅ Approve
-                    </button>
-                  )}
+                                    {['submitted', 'under_review', 'document_pending', 'offer_declined', 'offer_expired'].includes(selectedApplication.status) && (
+  <button onClick={async () => {
+    const sanction = parseFloat(window.prompt('Sanctioned amount?') || '0');
+    const tenure = parseInt(window.prompt('Tenure (months)?') || '12', 10);
+    const rate = parseFloat(window.prompt('Interest rate %?') || '12');
+    if (!sanction || sanction <= 0) { alert('Invalid sanctioned amount'); return; }
+    if (!tenure || tenure < 1) { alert('Invalid tenure'); return; }
+
+    try {
+      // Step 1: transition to under_review if needed — DO NOT close detail
+      if (['submitted', 'document_pending', 'offer_declined', 'offer_expired'].includes(selectedApplication.status)) {
+        await handleUpdateStatus(
+          selectedApplication.applicationId,
+          'under_review',
+          { note: 'Moved to review for offer issuance' },
+          { keepSelected: true }  // ← critical: keep detail open
+        );
+      }
+
+      // Step 2: issue offer
+      const offerRes = await loanOffers.issue({
+        applicationId: selectedApplication.applicationId,
+        sanctionedAmount: sanction,
+        tenureMonths: tenure,
+        interestRate: rate,
+        emi: 0,
+        processingFee: 0,
+        validUntilDays: 7,
+      });
+
+      const offerId = offerRes.data?.offerId || offerRes.data?.offer?.offerId || 'issued';
+      alert('✅ Offer issued: ' + offerId);
+
+      // Step 3: refresh applications list + detail
+      await fetchApplications();
+      const refreshed = await lenderApplications.getById(selectedApplication.applicationId);
+      const refreshedApp = refreshed.data?.application || refreshed.data;
+      setSelectedApplication(refreshedApp);
+
+      // Step 4: refresh offers for this app
+      const offersRes = await loanOffers.listByApplication(selectedApplication.applicationId);
+      setApplicationOffers(offersRes.data.offers || []);
+    } catch (err) {
+      alert('Offer failed: ' + (err.response?.data?.error || err.message));
+    }
+  }} style={{ ...styles.buttonPrimary, background: '#10b981' }}>
+    ✅ Issue Offer
+  </button>
+)}
                   {!['disbursed', 'rejected', 'withdrawn', 'cancelled', 'completed'].includes(selectedApplication.status) && (
                     <button onClick={() => {
                       const reason = window.prompt('Rejection reason?');
