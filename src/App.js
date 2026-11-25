@@ -42,6 +42,7 @@ import ProviderTerms from './pages/ProviderTerms';
 import DataRetention from './pages/DataRetention';
 import PaymentTerms from './pages/PaymentTerms';
 import PatientDashboard from './pages/PatientDashboard';
+import NotificationsPage from './pages/NotificationsPage';
 import ProviderForgotPassword from './pages/ProviderForgotPassword';
 
 
@@ -274,6 +275,7 @@ function App() {
 	  <Route path="/healthcare-emi-calculator" element={<LoanCalculator />} />
 	  <Route path="/credit-score-simulator" element={<CreditScoreSimulator />} />
 	  <Route path="/dashboard" element={<PatientDashboard />} />
+	  <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/forgot-password" element={<ProviderForgotPassword />} />
 
           {/* HOSPITALS TAG */}

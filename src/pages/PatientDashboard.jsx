@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api, { getPatientProfile } from '../services/api';
+import NotificationCenter from '../components/NotificationCenter';
 import {
-  FaSearch, FaMapMarkerAlt, FaBell, FaUser,
+  FaSearch, FaMapMarkerAlt, FaUser,
   FaAmbulance, FaUserMd, FaHospital, FaFlask,
   FaLeaf, FaSeedling, FaBrain, FaHome,
   FaShieldAlt, FaCreditCard, FaBuilding, FaUtensils,
@@ -265,9 +266,7 @@ const PatientDashboard = () => {
             <button onClick={() => navigate('/profile')} className="hidden lg:flex items-center gap-1 text-sm text-gray-600 hover:text-green-600 px-2 py-1 rounded">
               <FaMapMarkerAlt /> {city}
             </button>
-            <button onClick={() => navigate('/my-bookings')} className="p-2 rounded hover:bg-gray-100 relative" aria-label="Notifications">
-              <FaBell className="text-gray-600" />
-            </button>
+            <HeaderNotificationBell />
             <button onClick={() => navigate('/profile')} className="flex items-center gap-2 p-1 rounded hover:bg-gray-100">
               <FaUserCircle className="text-gray-600 text-xl" />
               <span className="hidden sm:inline text-sm font-medium text-gray-700">{firstName}</span>
@@ -277,6 +276,7 @@ const PatientDashboard = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 pt-6">
+        <NotificationCenter variant="banner" />
 
         {/* ========== WELCOME ========== */}
         <div className="mb-6">

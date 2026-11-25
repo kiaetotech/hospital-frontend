@@ -960,6 +960,37 @@ const MyBookings = () => {
                           <p><strong>💵 Estimated:</strong> ₹{(booking.estimatedAmount || 0).toLocaleString()}</p>
                           {booking.sanctionedAmount > 0 && <p><strong>✅ Sanctioned:</strong> ₹{booking.sanctionedAmount.toLocaleString()}</p>}
                           <p><strong>📋 Application:</strong> <code>{booking.applicationId}</code></p>
+			  {booking.status === 'offer_issued' && (
+  <div style={{
+    marginTop: 10,
+    padding: 12,
+    background: '#fef3c7',
+    border: '2px solid #f59e0b',
+    borderRadius: 8
+  }}>
+    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#92400e' }}>
+      🔴 Action Required — Review your loan offer
+    </p>
+    <p style={{ margin: '4px 0 8px', fontSize: 12, color: '#78350f' }}>
+      Accept or decline to proceed. Offers expire in 7 days.
+    </p>
+    <button
+      onClick={(e) => { e.stopPropagation(); navigate(`/financing#offer/${booking.applicationId}`); }}
+      style={{
+        padding: '8px 16px',
+        background: '#dc2626',
+        color: 'white',
+        border: 'none',
+        borderRadius: 6,
+        cursor: 'pointer',
+        fontWeight: 700,
+        fontSize: 13
+      }}
+    >
+      Review Offer →
+    </button>
+  </div>
+)}
                         </>
                       ) : (
                         <>
