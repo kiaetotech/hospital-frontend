@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api, { getPatientProfile } from '../services/api';
 import NotificationCenter from '../components/NotificationCenter';
+import HeaderNotificationBell from '../components/HeaderNotificationBell';
 import {
   FaSearch, FaMapMarkerAlt, FaUser,
   FaAmbulance, FaUserMd, FaHospital, FaFlask,
