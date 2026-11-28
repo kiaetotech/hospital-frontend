@@ -104,9 +104,18 @@ const NotificationCenter = ({ variant = 'banner' }) => {
   }, [location.pathname, filter, variant]);
 
   // ─── Actions ───
-  const handleAction = (item) => {
+    const handleAction = (item) => {
     if (item.actionUrl) {
-      navigate(item.actionUrl);
+      // Use window.location.href to guarantee hash fragment is preserved.
+      // React Router's navigate() can strip hash in some configurations.
+      // For deep-links like /financing#offer/APP_XXX, full URL navigation is safer.
+      const url = item.actionUrl;
+      if (url.includes('#')) {
+        // Force full-page navigation for hash links — ensures hash reaches target page
+        window.location.href = url;
+      } else {
+        navigate(url);
+      }
     } else {
       navigate('/notifications');
     }

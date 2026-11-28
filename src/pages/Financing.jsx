@@ -140,30 +140,54 @@ const Financing = () => {
   // ─── Parse URL hash to open the correct tab + application ───
   // Notifications link to /financing#offer/APP_XXX, /financing#agreement/APP_XXX, etc.
   // Without this, the browser lands on /financing#... but the page ignores the hash.
-  useEffect(() => {
-    const hash = window.location.hash.replace('#', '');
-    if (!hash) return;
+    useEffect(() => {
+    // Parse hash ONCE on mount — and again when applications load
+    const parseHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (!hash) return;
 
-    const [action, appId] = hash.split('/');
-    const apps = myApplications || [];
-    const selectApp = (id) => {
-      const app = apps.find(a => a.applicationId === id);
-      if (app) setSelectedApplication(app);
+      const [action, appId] = hash.split('/');
+
+      // Switch tab based on hash
+      if (action === 'offer') {
+        setActiveTab('offers');
+      } else if (action === 'agreement') {
+        setActiveTab('agreements');
+      } else if (action === 'disbursal' || action === 'loan') {
+        setActiveTab('loans');
+      }
+
+      // If we have an appId and the applications are loaded, select it
+      if (appId) {
+        const applications = window.__financingApps || [];
+        const app = applications.find(a => a.applicationId === appId);
+        if (app && setSelectedApplication) {
+          setSelectedApplication(app);
+        } else {
+          // Store appId to select after applications load
+          window.__pendingAppId = appId;
+        }
+      }
     };
 
-    if (action === 'offer' && appId) {
-      setActiveTab('offers');
-      selectApp(appId);
-    } else if (action === 'agreement' && appId) {
-      setActiveTab('agreements');
-      selectApp(appId);
-    } else if (action === 'disbursal' && appId) {
-      setActiveTab('loans');
-      selectApp(appId);
-    } else if (action === 'loan' && appId) {
-      setActiveTab('loans');
-      selectApp(appId);
+    parseHash();
+
+    // Also re-parse when hash changes (browser back/forward)
+    window.addEventListener('hashchange', parseHash);
+    return () => window.removeEventListener('hashchange', parseHash);
+  }, []);  // runs once on mount
+
+  // After applications load, select pending app
+  useEffect(() => {
+    const pendingAppId = window.__pendingAppId;
+    if (pendingAppId && myApplications?.length > 0) {
+      const app = myApplications.find(a => a.applicationId === pendingAppId);
+      if (app) {
+        setSelectedApplication(app);
+        window.__pendingAppId = null;
+      }
     }
+    window.__financingApps = myApplications;  // expose for hash parser
   }, [myApplications]);
 
   // Persist view to URL hash so F5 keeps the same page (dashboard vs wizard)
