@@ -33,9 +33,15 @@ const Financing = () => {
   // ============================================
   // TOP-LEVEL VIEW STATE
   // ============================================
-  const [view, setView] = useState(
-    window.location.hash === '#dashboard' ? 'dashboard' : 'wizard'
-  ); // 'wizard' | 'dashboard' — restored from URL hash on F5
+    const [view, setView] = useState(() => {
+    const h = window.location.hash;
+    // Deep-link hashes (#offer/, #approved/, etc.) → open dashboard, parser will select the app
+    // #dashboard → dashboard
+    // empty or # → wizard (new application form)
+    if (!h || h === '#') return 'wizard';
+    if (h === '#dashboard') return 'dashboard';
+    return 'dashboard';
+  }); // 'wizard' | 'dashboard'
   const [step, setStep] = useState(1); // 1-5 for wizard — always starts fresh at step 1
   const [activeTab, setActiveTab] = useState('applications');
   const [loading, setLoading] = useState(false);
@@ -150,8 +156,13 @@ const Financing = () => {
     window.__financingApps = myApplications;  // expose for hash parser
   }, [myApplications]);
 
-  // Persist view to URL hash so F5 keeps the same page (dashboard vs wizard)
+    // Persist view to URL hash so F5 keeps the same page (dashboard vs wizard)
+  // But do NOT overwrite deep-link hashes (#offer/, #approved/, etc.) — the parser needs them
   useEffect(() => {
+    const currentHash = window.location.hash;
+    const isDeepLink = /^#(offer|agreement|approved|loan|disbursal)\//.test(currentHash);
+    if (isDeepLink) return;   // let the parser handle it
+
     window.location.hash = view === 'dashboard' ? '#dashboard' : '';
   }, [view]);
 
@@ -536,7 +547,9 @@ const Financing = () => {
     finally { setLoading(false); }
   };
 
-  const handleBookAnother = () => {
+    const handleBookAnother = () => {
+    window.history.replaceState(null, '', '/financing');   // ← ADD THIS LINE
+
     setFormData({
       treatmentType: '', hospitalName: '', treatmentCost: '', bookingId: '',
       selectedLender: null, selectedTenure: null, emi: null, totalPayable: null, totalInterest: null,
