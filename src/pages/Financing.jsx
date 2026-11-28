@@ -137,6 +137,35 @@ const Financing = () => {
     }
   }, [activeTab, selectedApplication]);
 
+  // ─── Parse URL hash to open the correct tab + application ───
+  // Notifications link to /financing#offer/APP_XXX, /financing#agreement/APP_XXX, etc.
+  // Without this, the browser lands on /financing#... but the page ignores the hash.
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (!hash) return;
+
+    const [action, appId] = hash.split('/');
+    const apps = myApplications || [];
+    const selectApp = (id) => {
+      const app = apps.find(a => a.applicationId === id);
+      if (app) setSelectedApplication(app);
+    };
+
+    if (action === 'offer' && appId) {
+      setActiveTab('offers');
+      selectApp(appId);
+    } else if (action === 'agreement' && appId) {
+      setActiveTab('agreements');
+      selectApp(appId);
+    } else if (action === 'disbursal' && appId) {
+      setActiveTab('loans');
+      selectApp(appId);
+    } else if (action === 'loan' && appId) {
+      setActiveTab('loans');
+      selectApp(appId);
+    }
+  }, [myApplications]);
+
   // Persist view to URL hash so F5 keeps the same page (dashboard vs wizard)
   useEffect(() => {
     window.location.hash = view === 'dashboard' ? '#dashboard' : '';
