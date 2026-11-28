@@ -100,10 +100,10 @@ const Financing = () => {
   useEffect(() => {
     const history = localStorage.getItem('healthEmiHistory');
     if (history) setLoanHistory(JSON.parse(history));
-    const savedPatientId = localStorage.getItem('patientId');
+        const savedPatientId = localStorage.getItem('patientId');
     const savedToken = localStorage.getItem('patientToken') || localStorage.getItem('token');
-    if (savedPatientId && savedToken) {
-      setPatientId(savedPatientId);
+    if (savedToken) {
+      if (savedPatientId) setPatientId(savedPatientId);
       setIsLoggedIn(true);
       fetchPatientProfile();
       fetchLoanHistory();
@@ -136,46 +136,6 @@ const Financing = () => {
         .catch(err => console.error('[refunds]', err.message));
     }
   }, [activeTab, selectedApplication]);
-
-  // ─── Parse URL hash to open the correct tab + application ───
-  // Notifications link to /financing#offer/APP_XXX, /financing#agreement/APP_XXX, etc.
-  // Without this, the browser lands on /financing#... but the page ignores the hash.
-    useEffect(() => {
-    // Parse hash ONCE on mount — and again when applications load
-    const parseHash = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (!hash) return;
-
-      const [action, appId] = hash.split('/');
-
-      // Switch tab based on hash
-      if (action === 'offer') {
-        setActiveTab('offers');
-      } else if (action === 'agreement') {
-        setActiveTab('agreements');
-      } else if (action === 'disbursal' || action === 'loan') {
-        setActiveTab('loans');
-      }
-
-      // If we have an appId and the applications are loaded, select it
-      if (appId) {
-        const applications = window.__financingApps || [];
-        const app = applications.find(a => a.applicationId === appId);
-        if (app && setSelectedApplication) {
-          setSelectedApplication(app);
-        } else {
-          // Store appId to select after applications load
-          window.__pendingAppId = appId;
-        }
-      }
-    };
-
-    parseHash();
-
-    // Also re-parse when hash changes (browser back/forward)
-    window.addEventListener('hashchange', parseHash);
-    return () => window.removeEventListener('hashchange', parseHash);
-  }, []);  // runs once on mount
 
   // After applications load, select pending app
   useEffect(() => {
@@ -247,6 +207,47 @@ const Financing = () => {
   }
 }, []);
 
+
+  // ============================================
+  // HASH ROUTER — deep link to specific tab + application
+  // ============================================
+  // Reads URL hash on mount and after applications load:
+  //   #offer/APP_xxx      → offers tab, app selected
+  //   #agreement/APP_xxx  → agreements tab, app selected
+  //   #approved/APP_xxx   → applications tab, app selected
+  //   #loan/APP_xxx       → loans tab, app selected
+  //   #dashboard          → applications tab, no app
+  useEffect(() => {
+    if (!myApplications || myApplications.length === 0) return;
+
+        const hash = window.location.hash;
+    if (!hash || hash === '#dashboard') {
+  setView('dashboard');
+  setSelectedApplication(null);
+  return;
+}
+
+    const match = hash.match(/^#(offer|agreement|approved|loan|disbursal)\/(.+)$/);
+    if (!match) return;
+
+    const [, kind, appId] = match;
+    const app = myApplications.find(a => a.applicationId === appId);
+    if (!app) {
+      console.warn('[Financing] hash deep link app not found:', appId);
+      return;
+    }
+
+    setSelectedApplication(app);
+    setView('dashboard');
+
+    switch (kind) {
+      case 'offer':     setActiveTab('offers');       break;
+      case 'agreement': setActiveTab('agreements');   break;
+      case 'approved':  setActiveTab('applications'); break;
+      case 'loan':      setActiveTab('loans');        break;
+      case 'disbursal': setActiveTab('loans');        break;
+    }
+  }, [myApplications]);
 
   const fetchRealNotifications = async () => {
     setNotificationsLoading(true);
